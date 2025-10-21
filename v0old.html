@@ -339,9 +339,108 @@ html.dark .tag-suggestion:hover {
   background-color: #374151; /* dark:bg-gray-600 */
 }
 
-  /* NOVO: Estilos para filtro de busca no histórico */
-  .search-highlight {
-    background-color: #fef3c7;
+/* Mobile quick summary cards */
+.mobile-summary-card {
+  border-radius: 1rem;
+  padding: 0.75rem 0.9rem;
+  color: #ffffff;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.18);
+  backdrop-filter: blur(6px);
+  transform: translateY(0);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.mobile-summary-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 36px rgba(15, 23, 42, 0.22);
+}
+
+.mobile-summary-card .card-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  opacity: 0.85;
+}
+
+.mobile-summary-card .card-value {
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.mobile-summary-card.entradas {
+  background: linear-gradient(135deg, #34d399, #059669);
+}
+
+.mobile-summary-card.saidas {
+  background: linear-gradient(135deg, #fb923c, #ef4444);
+}
+
+.mobile-summary-card.saldo-card {
+  background: linear-gradient(135deg, #38bdf8, #0ea5e9);
+}
+
+.mobile-summary-card.saldo-card.saldo-positivo {
+  background: linear-gradient(135deg, #34d399, #10b981);
+}
+
+.mobile-summary-card.saldo-card.saldo-negativo {
+  background: linear-gradient(135deg, #f97316, #ef4444);
+}
+
+.mobile-summary-card.saldo-card.saldo-neutro {
+  background: linear-gradient(135deg, #6366f1, #4338ca);
+}
+
+.mobile-tab-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.55rem 1rem;
+  border-radius: 9999px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  border: 1px solid rgba(148, 163, 184, 0.45);
+  color: #1f2937;
+  background: rgba(255, 255, 255, 0.78);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease, color 0.2s ease;
+  white-space: nowrap;
+}
+
+html.dark .mobile-tab-button {
+  border-color: rgba(148, 163, 184, 0.35);
+  background: rgba(15, 23, 42, 0.82);
+  color: #e2e8f0;
+}
+
+.mobile-tab-button.active {
+  background: linear-gradient(135deg, #2563eb, #4f46e5);
+  color: #ffffff;
+  border-color: transparent;
+  box-shadow: 0 12px 22px rgba(37, 99, 235, 0.35);
+  transform: translateY(-1px);
+}
+
+.mobile-tab-button:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.35);
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* NOVO: Estilos para filtro de busca no histórico */
+.search-highlight {
+  background-color: #fef3c7;
     padding: 0.125rem 0.25rem;
     border-radius: 0.25rem;
   }
@@ -478,6 +577,39 @@ html.dark .tag-suggestion:hover {
   </div>
 
 </header>
+
+<!-- MOBILE QUICK SUMMARY + NAV -->
+<section id="mobile-quickbar" class="lg:hidden sticky top-16 z-30 px-4 py-3 space-y-3 bg-white/90 dark:bg-gray-900/90 backdrop-blur border-b border-gray-200/70 dark:border-gray-700/60 shadow-sm">
+  <div class="flex items-center justify-between text-[0.7rem] uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
+    <span>Visão geral</span>
+    <span class="font-semibold text-blue-600 dark:text-blue-300">Mobile</span>
+  </div>
+  <div id="mobile-resumo" class="grid grid-cols-3 gap-2">
+    <div class="mobile-summary-card entradas">
+      <span class="card-label">Entradas</span>
+      <span class="card-value" id="mobile-resumo-entradas">R$ 0,00</span>
+    </div>
+    <div class="mobile-summary-card saidas">
+      <span class="card-label">Saídas</span>
+      <span class="card-value" id="mobile-resumo-saidas">R$ 0,00</span>
+    </div>
+    <div class="mobile-summary-card saldo-card saldo-neutro" id="mobile-resumo-saldo-card">
+      <span class="card-label">Saldo +1%</span>
+      <span class="card-value" id="mobile-resumo-saldo">R$ 0,00</span>
+    </div>
+  </div>
+  <nav id="mobile-panels-nav" class="text-sm font-medium">
+    <div class="flex gap-2 overflow-x-auto no-scrollbar">
+      <button type="button" class="mobile-tab-button" data-panel-target="painel-gastos">Gastos</button>
+      <button type="button" class="mobile-tab-button" data-panel-target="painel-saidas">Saídas</button>
+      <button type="button" class="mobile-tab-button" data-panel-target="painel-entradas">Entradas</button>
+      <button type="button" class="mobile-tab-button" data-panel-target="painel-investimentos">Invest.</button>
+      <button type="button" class="mobile-tab-button" data-panel-target="painel-saude-financeira">Saúde</button>
+      <button type="button" class="mobile-tab-button" data-panel-target="painel-fixos">Fixos</button>
+      <button type="button" class="mobile-tab-button" data-panel-target="painel-cartoes">Cartões</button>
+    </div>
+  </nav>
+</section>
 
 <!-- LOADING SCREEN -->
 <div id="loading-screen" class="fixed inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-900 dark:to-gray-800 z-[9999]">
@@ -637,7 +769,7 @@ html.dark .tag-suggestion:hover {
 <main class="container mx-auto px-4 py-6 grid grid-cols-1 lg:grid-cols-4 gap-6">
 
   <!-- LEFT: main (resumo + histórico + parcelados) -->
-  <section class="lg:col-span-3 space-y-6">
+  <section id="painel-gastos" class="mobile-panel hidden lg:block lg:col-span-3 space-y-6">
 
     <!-- danger banner (strong visual alert) -->
     <div id="danger-banner" class="hidden danger-banner">⚠️ Atenção — fixos + parcelas do mês ultrapassam o limite! Verifique.</div>
@@ -818,7 +950,7 @@ html.dark .tag-suggestion:hover {
   <aside class="space-y-6">
 
     <!-- NOVO: Entradas de dinheiro -->
-    <div class="section-card space-y-4" id="painel-entradas">
+    <div class="mobile-panel hidden lg:block section-card space-y-4" id="painel-entradas">
       <div>
         <h3 class="font-semibold text-lg flex items-center gap-2"><i class="fa fa-arrow-down text-green-500"></i>Entradas de Dinheiro</h3>
         <p class="text-sm text-gray-500 dark:text-gray-400">Registre salários, vendas e rendas extras e acompanhe o fluxo mensal.</p>
@@ -860,7 +992,7 @@ html.dark .tag-suggestion:hover {
     </div>
 
     <!-- NOVO: Resumo das saídas -->
-    <div class="section-card space-y-3">
+    <div class="mobile-panel hidden lg:block section-card space-y-3" id="painel-saidas">
       <div class="flex items-center justify-between">
         <h3 class="font-semibold text-lg flex items-center gap-2"><i class="fa fa-arrow-up text-red-500"></i>Saídas do Mês</h3>
         <span class="text-sm font-semibold text-gray-700 dark:text-gray-200">R$ <span id="saidas-total-card">0,00</span></span>
@@ -898,7 +1030,7 @@ html.dark .tag-suggestion:hover {
     </div>
 
     <!-- NOVO: Investimentos -->
-    <div class="section-card space-y-4" id="painel-investimentos">
+    <div class="mobile-panel hidden lg:block section-card space-y-4" id="painel-investimentos">
       <div class="flex items-center justify-between">
         <h3 class="font-semibold text-lg flex items-center gap-2"><i class="fa fa-chart-line text-indigo-500"></i>Investimentos</h3>
         <span class="text-xs text-gray-500 dark:text-gray-400">Projeção com 1% ao mês</span>
@@ -939,7 +1071,7 @@ html.dark .tag-suggestion:hover {
     </div>
 
     <!-- NOVO: Indicador de saúde financeira -->
-    <div class="section-card space-y-4" id="painel-saude-financeira">
+    <div class="mobile-panel hidden lg:block section-card space-y-4" id="painel-saude-financeira">
       <div class="flex items-center justify-between">
         <h3 class="font-semibold text-lg flex items-center gap-2"><i class="fa fa-heartbeat text-rose-500"></i>Saúde Financeira</h3>
         <span class="text-sm font-semibold text-rose-600 dark:text-rose-300" id="saude-score">--</span>
@@ -967,7 +1099,7 @@ html.dark .tag-suggestion:hover {
     </div>
 
     <!-- FIXOS recorrentes LIST - MELHORADO -->
-    <div class="section-card">
+    <div class="mobile-panel hidden lg:block section-card" id="painel-fixos">
       <div class="flex items-center justify-between mb-3">
         <h3 class="font-semibold">Fixos recorrentes</h3>
         <div class="flex gap-2">
@@ -1001,7 +1133,7 @@ html.dark .tag-suggestion:hover {
     </div>
 
     <!-- CARTÕES compact - MOVIDO PARA DEPOIS DOS FIXOS -->
-    <div class="section-card">
+    <div class="mobile-panel hidden lg:block section-card" id="painel-cartoes">
       <div class="flex items-center justify-between mb-2">
         <h3 class="font-semibold">Cartões</h3>
         <button id="btn-gerenciar-cartoes" class="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 transition-colors">Gerenciar Cartões</button>
@@ -2817,6 +2949,7 @@ function atualizarResumoUI(){
   document.getElementById('resumo-parcelas-mes').textContent = moeda(resumo.parcelasMes||0);
 
   painelFinanceiroState.totalGastosMes = totalGastosPrevistosMes;
+  atualizarResumoRapido();
   atualizarResumoSaidasCard(totalGastosPrevistosMes);
   atualizarSaudeFinanceira();
 }
@@ -2970,6 +3103,7 @@ function renderEntradasSidebar(docs = []) {
 
   painelFinanceiroState.entradasMes = totalMes;
   painelFinanceiroState.entradasTotais = totalGeral;
+  atualizarResumoRapido();
   atualizarSaudeFinanceira();
   atualizarFiltroMeses();
 }
@@ -3049,6 +3183,7 @@ function renderInvestimentosSidebar(docs = []) {
   painelFinanceiroState.investimentosMes = totalMes;
   painelFinanceiroState.investimentosTotais = totalGeral;
   painelFinanceiroState.investimentosProjetados = totalProjetado;
+  atualizarResumoRapido();
   atualizarSaudeFinanceira();
   atualizarFiltroMeses();
 }
@@ -3078,6 +3213,36 @@ function atualizarResumoSaidasCard(totalGastosPrevistosMes) {
   fixosBar.style.width = `${calcPercent(fixoVal)}%`;
   variavelBar.style.width = `${calcPercent(variavelVal)}%`;
   parceladoBar.style.width = `${calcPercent(parceladoVal)}%`;
+}
+
+function atualizarResumoRapido() {
+  const entradasEl = document.getElementById('mobile-resumo-entradas');
+  const saidasEl = document.getElementById('mobile-resumo-saidas');
+  const saldoEl = document.getElementById('mobile-resumo-saldo');
+  const saldoCard = document.getElementById('mobile-resumo-saldo-card');
+
+  if (!entradasEl || !saidasEl || !saldoEl || !saldoCard) return;
+
+  const entradasMes = painelFinanceiroState.entradasMes || 0;
+  const totalGastosMes = painelFinanceiroState.totalGastosMes || 0;
+  const projInvest = painelFinanceiroState.investimentosProjetados || 0;
+  const totalInvest = painelFinanceiroState.investimentosTotais || 0;
+  const ganhoInvest = Math.max(0, projInvest - totalInvest);
+  const saldo = entradasMes - totalGastosMes;
+  const saldoProjetado = saldo + ganhoInvest;
+
+  entradasEl.textContent = `R$ ${moeda(entradasMes)}`;
+  saidasEl.textContent = `R$ ${moeda(totalGastosMes)}`;
+  saldoEl.textContent = `R$ ${moeda(saldoProjetado)}`;
+
+  saldoCard.classList.remove('saldo-positivo', 'saldo-negativo', 'saldo-neutro');
+  if (saldoProjetado > 50) {
+    saldoCard.classList.add('saldo-positivo');
+  } else if (saldoProjetado < -50) {
+    saldoCard.classList.add('saldo-negativo');
+  } else {
+    saldoCard.classList.add('saldo-neutro');
+  }
 }
 
 function atualizarSaudeFinanceira() {
@@ -3129,6 +3294,53 @@ function atualizarSaudeFinanceira() {
   progressEl.style.width = `${score}%`;
   progressEl.style.backgroundColor = cor;
   statusEl.textContent = mensagem;
+}
+
+function initMobilePanels() {
+  const nav = document.getElementById('mobile-panels-nav');
+  const panels = Array.from(document.querySelectorAll('.mobile-panel'));
+  if (!nav || panels.length === 0) return;
+
+  const buttons = Array.from(nav.querySelectorAll('[data-panel-target]')).filter(btn => btn.dataset.panelTarget);
+  if (!buttons.length) return;
+
+  const firstAvailable = buttons.find(btn => panels.some(panel => panel.id === btn.dataset.panelTarget));
+  let activeId = firstAvailable ? firstAvailable.dataset.panelTarget : panels[0]?.id;
+  if (!activeId) return;
+
+  const applyState = (id) => {
+    if (!id) return;
+    activeId = id;
+    const isDesktop = window.innerWidth >= 1024;
+    panels.forEach(panel => {
+      if (isDesktop) {
+        panel.classList.remove('hidden');
+      } else {
+        panel.classList.toggle('hidden', panel.id !== id);
+      }
+    });
+    buttons.forEach(btn => btn.classList.toggle('active', btn.dataset.panelTarget === id));
+  };
+
+  buttons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.panelTarget;
+      if (!target || target === activeId) return;
+      applyState(target);
+    });
+  });
+
+  const handleResize = () => {
+    if (window.innerWidth >= 1024) {
+      panels.forEach(panel => panel.classList.remove('hidden'));
+    } else {
+      applyState(activeId);
+    }
+  };
+
+  applyState(activeId);
+  window.addEventListener('resize', handleResize);
+  handleResize();
 }
 
 /* ===========================
@@ -4890,6 +5102,8 @@ if (e.key === 'Escape') {
 });
 
 /* start */
+initMobilePanels();
+atualizarResumoRapido();
 boot();
 
 </script>
