@@ -1,0 +1,4324 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="light"> <!-- Classe inicial 'light' - JS alterna para 'dark' -->
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Organizador Financeiro — Completo</title>
+
+<!-- Tailwind + icons -->
+<script src="https://cdn.tailwindcss.com"></script>
+<!-- Config Tailwind para Dark Mode -->
+<script>
+  tailwind.config = {
+    darkMode: 'class', // Usa classe 'dark' no <html> para alternar
+  }
+</script>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet"/>
+
+<!-- Manifest PWA -->
+<link rel="manifest" href="manifest.json" />
+<!-- Theme-color para Light e Dark Mode -->
+<meta name="theme-color" content="#4ade80" media="(prefers-color-scheme: light)" />
+<meta name="theme-color" content="#1f2937" media="(prefers-color-scheme: dark)" />
+
+<!-- Adicione no <head> para incluir Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- NOVO: Modal de Gráficos Interativos com filtros -->
+<div id="modal-graficos" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+  <div class="bg-white dark:bg-gray-800 rounded-lg p-6 w-11/12 max-w-3xl mx-auto relative shadow-lg modal-content max-h-[90vh] overflow-y-auto">
+    <button id="modal-graficos-close" class="absolute top-3 right-3 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 text-2xl font-bold" aria-label="Fechar modal">&times;</button>
+    <h2 class="text-xl font-bold mb-4 text-gray-800 dark:text-gray-100">Gráficos Interativos</h2>
+
+    <!-- NOVO: Resumo de Totais no Modal -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
+      <div>
+        <h4 class="font-semibold text-blue-800 dark:text-blue-200 mb-1">Total de Gastos Filtrados</h4>
+        <div class="text-xl font-bold text-blue-600 dark:text-blue-400" id="graficos-total-filtrado">R$ 0,00</div>
+      </div>
+      <div>
+        <h4 class="font-semibold text-blue-800 dark:text-blue-200 mb-1">Média Mensal (Período)</h4>
+        <div class="text-xl font-bold text-blue-600 dark:text-blue-400" id="graficos-media-mensal">R$ 0,00</div>
+      </div>
+    </div>
+
+    <div class="mb-4">
+      <h3 class="font-semibold mb-2 text-gray-800 dark:text-gray-100">Filtrar por Cartões</h3>
+      <div id="filtro-cartoes-container" class="flex flex-wrap gap-3">
+        <!-- Checkboxes serão inseridos via JS -->
+      </div>
+    </div>
+
+    <div class="mb-4">
+      <h3 class="font-semibold mb-2 text-gray-800 dark:text-gray-100">Filtrar por Categorias</h3>
+      <div id="filtro-categorias-container" class="flex flex-wrap gap-3">
+        <!-- Checkboxes serão inseridos via JS -->
+      </div>
+    </div>
+
+    <!-- NOVO: Filtro por Período -->
+    <div class="mb-4">
+      <h3 class="font-semibold mb-2 text-gray-800 dark:text-gray-100">Filtrar por Período</h3>
+      <div class="flex flex-wrap gap-3 items-center">
+        <select id="filtro-periodo-graficos" class="px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600">
+          <option value="current_month">Mês Atual</option>
+          <option value="last_3_months">Últimos 3 Meses</option>
+          <option value="last_6_months">Últimos 6 Meses</option>
+          <option value="current_year">Ano Atual</option>
+          <option value="custom">Personalizado</option>
+        </select>
+        <input type="month" id="filtro-periodo-start" class="px-3 py-2 border rounded-lg hidden bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" />
+        <input type="month" id="filtro-periodo-end" class="px-3 py-2 border rounded-lg hidden bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" />
+      </div>
+    </div>
+
+    <div class="flex gap-4 mb-4">
+      <button id="btn-aplicar-filtros" class="bg-blue-600 dark:bg-blue-700 text-white px-4 py-2 rounded hover:bg-blue-700 dark:hover:bg-blue-800 transition">Aplicar Filtros</button>
+      <button id="btn-limpar-filtros" class="bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-100 px-4 py-2 rounded hover:bg-gray-400 dark:hover:bg-gray-700 transition">Limpar Filtros</button>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div>
+        <h3 class="font-semibold mb-2 text-gray-800 dark:text-gray-100">Gastos por Categoria</h3>
+        <canvas id="grafico-categorias" width="400" height="300"></canvas>
+      </div>
+      <div>
+        <h3 class="font-semibold mb-2 text-gray-800 dark:text-gray-100">Gastos por Cartão</h3>
+        <canvas id="grafico-cartoes" width="400" height="300"></canvas>
+      </div>
+      <!-- MELHORADO: Canvas para gráfico de tendência com controles -->
+      <div class="md:col-span-2">
+        <div class="flex justify-between items-center mb-3">
+          <h3 class="font-semibold text-gray-800 dark:text-gray-100">📈 Tendência de Gastos por Categoria</h3>
+          <div class="flex gap-2">
+            <select id="tendencia-tipo-grafico" class="px-2 py-1 border rounded text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600">
+              <option value="line">Linha</option>
+              <option value="bar">Barras</option>
+              <option value="area">Área</option>
+            </select>
+            <button id="btn-toggle-todas-categorias" class="px-2 py-1 bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-200 rounded text-sm hover:bg-blue-200 dark:hover:bg-blue-900/40">
+              Mostrar Todas
+            </button>
+          </div>
+        </div>
+        <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg mb-3">
+          <div class="text-xs text-gray-600 dark:text-gray-400 mb-2">💡 Dica: Clique nas categorias da legenda para mostrar/ocultar</div>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs text-gray-800 dark:text-gray-100">
+            <div>📊 <strong>Total período:</strong> <span id="tendencia-total">R$ 0,00</span></div>
+            <div>📈 <strong>Maior mês:</strong> <span id="tendencia-maior-mes">-</span></div>
+            <div>📉 <strong>Menor mês:</strong> <span id="tendencia-menor-mes">-</span></div>
+            <div>🎯 <strong>Média:</strong> <span id="tendencia-media">R$ 0,00</span></div>
+          </div>
+        </div>
+        <div class="relative">
+          <canvas id="grafico-tendencia-categorias" width="800" height="400"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- NOVO: Modal de Gráficos dos Fixos -->
+<div id="modal-graficos-fixos" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+  <div class="bg-white dark:bg-gray-800 rounded-lg p-6 w-11/12 max-w-2xl mx-auto relative shadow-lg modal-content max-h-[90vh] overflow-y-auto">
+    <button id="modal-graficos-fixos-close" class="absolute top-3 right-3 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 text-2xl font-bold" aria-label="Fechar modal">&times;</button>
+    <h2 class="text-xl font-bold mb-4 text-gray-800 dark:text-gray-100">Análise dos Gastos Fixos</h2>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+      <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+        <h4 class="font-semibold text-blue-800 dark:text-blue-200 mb-2">Total Fixos Ativos</h4>
+        <div class="text-2xl font-bold text-blue-600 dark:text-blue-400" id="total-fixos-ativos">R$ 0,00</div>
+      </div>
+      <div class="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+        <h4 class="font-semibold text-gray-800 dark:text-gray-100 mb-2">Total Fixos Inativos</h4>
+        <div class="text-2xl font-bold text-gray-600 dark:text-gray-400" id="total-fixos-inativos">R$ 0,00</div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div>
+        <h3 class="font-semibold mb-2 text-gray-800 dark:text-gray-100">Distribuição por Categoria</h3>
+        <canvas id="grafico-fixos-categoria" width="400" height="300"></canvas>
+      </div>
+      <div>
+        <h3 class="font-semibold mb-2 text-gray-800 dark:text-gray-100">Impacto no Orçamento</h3>
+        <canvas id="grafico-fixos-impacto" width="400" height="300"></canvas>
+      </div>
+    </div>
+
+    <div class="mt-6">
+      <h3 class="font-semibold mb-3 text-gray-800 dark:text-gray-100">Detalhamento por Item</h3>
+      <div id="detalhes-fixos" class="space-y-2">
+        <!-- Detalhes serão inseridos via JS -->
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .progress-bar{transition:width .4s ease}
+  .badge-alert{color:#b91c1c;font-weight:700;margin-left:.4rem}
+  .section-card{background:white;border-radius:.75rem;box-shadow:0 1px 2px rgba(0,0,0,.06);padding:1rem}
+  .th{font-weight:600;color:#374151;font-size:.85rem;text-align:left;padding:.5rem .75rem;border-bottom:1px solid #e5e7eb}
+  .td{padding:.45rem .75rem;border-bottom:1px solid #f3f4f6;font-size:.95rem;vertical-align:middle}
+  .pill{font-size:.75rem;border-radius:9999px;padding:.15rem .5rem;background:#f3f4f6}
+   .danger-banner{background:#fee2e2;border:1px solid #fca5a5;color:#991b1b;padding:1rem;border-radius:.5rem;margin-bottom:1rem;border-left:4px solid #dc2626}
+  
+  /* Transições suaves para o botão flutuante */
+  .floating-btn-transition {
+    transition: transform 0.3s ease, opacity 0.3s ease, bottom 0.3s ease; /* Adicionado bottom */
+  }
+  
+  /* Melhorias visuais para o modal */
+  .modal-content {
+    animation: modalFadeIn 0.3s ease-out;
+  }
+  
+  @keyframes modalFadeIn {
+    from { opacity: 0; transform: translateY(-20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* NOVO: Estilo para o histórico de variáveis com scroll */
+  #historico-variavel-scroll-container {
+    max-height: 400px; /* Ajuste a altura máxima conforme sua preferência */
+    overflow-y: auto;
+    border: 1px solid #e5e7eb; /* Borda sutil */
+    border-radius: .5rem;
+    margin-top: 1rem;
+  }
+  /* Ajuste para a tabela dentro do container de scroll */
+  #historico-variavel-scroll-container table {
+    width: 100%; /* Garante que a tabela ocupe a largura total do container */
+    border-collapse: collapse; /* Remove espaçamento entre as bordas das células */
+  }
+  #historico-variavel-scroll-container .th,
+  #historico-variavel-scroll-container .td {
+    white-space: nowrap; /* Evita que o texto quebre em várias linhas */
+  }
+  /* Estilo para o spinner de carregamento */
+  .loading-spinner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6b7280; /* gray-500 */
+    font-size: 0.9rem;
+    padding: 1rem;
+  }
+  .loading-spinner i {
+    margin-right: 0.5rem;
+  }
+  /* Classe específica para ocultar spinners, para evitar conflito com o 'hidden' do Tailwind */
+  .spinner-hidden {
+    display: none !important;
+  }
+
+  /* NOVO: Estilo para o Toast de feedback */
+  #toast-message {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #333;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+    z-index: 1000;
+    font-size: 0.9rem;
+  
+  }
+  #toast-message.show {
+    opacity: 1;
+  }
+
+  /* NOVO: Estilos para cards de fixos melhorados */
+  .fixo-card {
+    border-left: 4px solid;
+    transition: all 0.3s ease;
+  }
+  .fixo-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+  .fixo-card.ativo {
+    border-left-color: #10b981; /* green-500 */
+  }
+  .fixo-card.inativo {
+    border-left-color: #6b7280; /* gray-500 */
+    opacity: 0.7;
+  }
+
+  /* NOVO: Melhorias visuais para parcelados */
+  .parcelado-status {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+  .parcelado-ativo {
+    background-color: #dbeafe; /* blue-100 */
+    color: #1e40af; /* blue-800 */
+  }
+  .parcelado-finalizado {
+    background-color: #d1fae5; /* green-100 */
+    color: #065f46; /* green-800 */
+  }
+  .parcelado-futuro {
+    background-color: #f3f4f6; /* gray-100 */
+    color: #374151; /* gray-700 */
+  }
+
+  /* Melhoria na barra de progresso dos parcelados */
+  .progress-parcelado {
+    height: 6px;
+    background-color: #e5e7eb;
+    border-radius: 3px;
+    overflow: hidden;
+    margin-top: 4px;
+  }
+  .progress-parcelado-fill {
+    height: 100%;
+    transition: width 0.4s ease;
+    border-radius: 3px;
+  }
+  .progress-ativo {
+    background-color: #3b82f6; /* blue-500 */
+  }
+  .progress-finalizado {
+    background-color: #10b981; /* green-500 */
+  }
+
+  /* NOVO: Estilos para sistema de tags */
+.tag-pill {
+  display: inline-block;
+  background-color: #3b82f6;
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  margin: 0.125rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.tag-pill:hover {
+  background-color: #2563eb;
+  transform: scale(1.05);
+}
+.tag-pill.removable {
+  padding-right: 1.5rem;
+  position: relative;
+}
+.tag-pill .remove-tag {
+  position: absolute;
+  right: 0.25rem;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  font-weight: bold;
+}
+.tag-suggestion {
+  padding: 0.5rem;
+  cursor: pointer;
+  border-bottom: 1px solid #e5e7eb;
+  transition: background-color 0.2s ease;
+}
+.tag-suggestion:hover {
+  background-color: #f3f4f6;
+}
+.tag-suggestion:last-child {
+  border-bottom: none;
+}
+/* Dark mode para tag suggestions */
+html.dark .tag-suggestion {
+  border-bottom-color: #374151; /* dark:border-b-gray-600 */
+}
+html.dark .tag-suggestion:hover {
+  background-color: #374151; /* dark:bg-gray-600 */
+}
+
+  /* NOVO: Estilos para filtro de busca no histórico */
+  .search-highlight {
+    background-color: #fef3c7;
+    padding: 0.125rem 0.25rem;
+    border-radius: 0.25rem;
+  }
+
+  /* NOVO: Estilos para modo escuro (mantendo padrão original) */
+  .dark {
+    background-color: #1f2937;
+    color: #f9fafb;
+  }
+  .dark .section-card {
+    background-color: #374151;
+    color: #f9fafb;
+  }
+  .dark .bg-white {
+    background-color: #374151 !important;
+  }
+  .dark .text-gray-800 {
+    color: #f9fafb !important;
+  }
+  .dark .text-gray-600 {
+    color: #d1d5db !important;
+  }
+  .dark .text-gray-500 {
+    color: #9ca3af !important;
+  }
+  .dark .border-gray-300 {
+    border-color: #4b5563 !important;
+  }
+  .dark .bg-gray-50 {
+    background-color: #1f2937 !important;
+  }
+  .dark .bg-gray-100 {
+    background-color: #374151 !important;
+  }
+
+  /* Dark mode para elementos específicos (mantendo padrão original) */
+  html.dark .th {
+    color: #d1d5db; /* dark:text-gray-300 */
+    border-bottom-color: #374151; /* dark:border-b-gray-700 */
+  }
+  html.dark .td {
+    border-bottom-color: #374151; /* dark:border-b-gray-700 */
+  }
+  html.dark .danger-banner {
+    background-color: #1f2937; /* dark:bg-red-900/20 (aprox) */
+    border-color: #7f1d1d; /* dark:border-red-700 */
+    color: #f3e8e8; /* dark:text-red-300 */
+    border-left-color: #b91c1c; /* dark:border-left-red-600 */
+  }
+  html.dark .loading-spinner {
+    color: #9ca3af; /* dark:gray-400 */
+  }
+  html.dark #toast-message {
+    background-color: #f3f4f6; /* dark:bg-gray-200 */
+    color: #111827; /* dark:text-gray-900 */
+  }
+  html.dark .pill {
+    background-color: #374151; /* dark:bg-gray-700 */
+  }
+  html.dark .search-highlight {
+    background-color: #92400e; /* dark:bg-yellow-700 (aprox) para legibilidade */
+  }
+  html.dark .tag-suggestion {
+    border-bottom-color: #374151; /* dark:border-b-gray-600 */
+  }
+  html.dark .tag-suggestion:hover {
+    background-color: #374151; /* dark:bg-gray-600 */
+  }
+  html.dark #historico-variavel-scroll-container {
+    border-color: #374151; /* dark:border-gray-700 */
+  }
+  html.dark .progress-parcelado {
+    background-color: #374151; /* dark:gray-700 */
+  }
+  html.dark .parcelado-ativo {
+    background-color: #1e3a8a; /* dark:bg-blue-900/20 (aprox) */
+    color: #bfdbfe; /* dark:text-blue-200 */
+  }
+  html.dark .parcelado-finalizado {
+    background-color: #064e3b; /* dark:bg-green-900/20 (aprox) */
+    color: #86efac; /* dark:text-green-200 */
+  }
+  html.dark .parcelado-futuro {
+    background-color: #374151; /* dark:bg-gray-700 */
+    color: #d1d5db; /* dark:text-gray-300 */
+  }
+
+/* NOVO: Estilo para o botão flutuante quando invisível */
+#floating-menu.invisible {
+  pointer-events: none;
+  display: none; /* Adicionado para garantir que não ocupe espaço nem receba cliques */
+}
+
+#secondary-buttons {
+  pointer-events: none; /* impede cliques quando invisível */
+}
+
+#floating-menu.open #secondary-buttons {
+  pointer-events: auto; /* permite cliques apenas quando aberto */
+}
+
+</style>
+
+
+</head>
+<body class="bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-900 dark:to-gray-800 min-h-screen text-gray-800 dark:text-gray-100 transition-colors duration-300">
+
+<!-- HEADER: filtro mês (geral) + botão adicionar gasto (desktop) + Dark Mode Toggle -->
+<header class="bg-white dark:bg-gray-900 shadow sticky top-0 z-40 flex items-center justify-between px-4 py-4 md:py-3 relative">
+  <div class="flex items-center gap-4">
+    <!-- Ajuste para mobile: text-xl no mobile, text-2xl no desktop -->
+    <div class="text-xl md:text-2xl font-bold text-blue-600 dark:text-blue-400">Org. Financeiro</div>
+    <!-- Esconde o subtítulo no mobile -->
+    <div class="text-sm text-gray-500 dark:text-gray-400 hidden md:block">Controle familiar</div>
+  </div>
+  <div class="flex items-center gap-4">
+  <div class="flex items-center gap-4">
+    <!-- Filtro de mês GERAL (para histórico e resumo) -->
+    <select id="filtro-mes" class="px-3 py-1 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600 text-sm">
+      <option value="all">Todos</option>
+    </select>
+    
+    <!-- Botão visível só no desktop -->
+    <button id="btn-open-add-gasto" 
+      class="hidden md:flex bg-blue-600 dark:bg-blue-700 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700 dark:hover:bg-blue-800 flex items-center gap-2 transition-colors"
+      aria-label="Adicionar gasto">
+      <i class="fa fa-plus"></i> <span class="hidden md:inline">Adicionar gasto</span>
+    </button>
+    <!-- NOVO: Botão Toggle Dark Mode -->
+    <button id="toggleDark" class="p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-100 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
+      <span class="dark:hidden">🌙</span>
+      <span class="hidden dark:inline">☀️</span>
+    </button>
+  </div>
+
+</header>
+
+<!-- LOADING SCREEN -->
+<div id="loading-screen" class="fixed inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-900 dark:to-gray-800 z-[9999]">
+  <h1 class="text-2xl font-bold text-blue-600 dark:text-blue-400 mb-8">Organizador Financeiro</h1>
+  
+  <!-- Animação de gráfico -->
+  <div class="flex space-x-2 mb-6">
+    <div class="w-3 h-8 bg-green-500 rounded animate-bounce" style="animation-delay: -0.3s"></div>
+    <div class="w-3 h-12 bg-green-400 rounded animate-bounce" style="animation-delay: -0.15s"></div>
+    <div class="w-3 h-6 bg-green-600 rounded animate-bounce"></div>
+  </div>
+
+  <p class="text-gray-600 dark:text-gray-300">Organizando suas finanças…</p>
+</div>
+
+
+<!-- Modal para adicionar/editar parcelado -->
+<div id="modal-parcelado" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+  <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg w-96 p-6 relative">
+    <h2 class="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-100" id="modal-parcelado-title">Editar Parcelado</h2>
+    <form id="form-parcelado" class="space-y-4">
+      <div>
+        <label for="parcelado-desc" class="block font-medium mb-1 text-gray-800 dark:text-gray-100">Descrição</label>
+        <input type="text" id="parcelado-desc" name="descricao" required class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600"/>
+      </div>
+      <div>
+        <label for="parcelado-valor" class="block font-medium mb-1 text-gray-800 dark:text-gray-100">Valor da Parcela (R$)</label>
+        <input type="number" id="parcelado-valor" name="valorParcela" min="0" step="0.01" required class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600"/>
+      </div>
+      <div>
+        <label for="parcelado-num" class="block font-medium mb-1 text-gray-800 dark:text-gray-100">Número de Parcelas</label>
+        <input type="number" id="parcelado-num" name="numParcelas" min="1" required class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600"/>
+      </div>
+      <div>
+        <label for="parcelado-cartao" class="block font-medium mb-1 text-gray-800 dark:text-gray-100">Cartão</label>
+        <select id="parcelado-cartao" name="cartao" class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600">
+          <option value="">Nenhum</option>
+          <option value="nubank">Nubank</option>
+          <option value="itau">Itaú</option>
+          <option value="univ">Univ</option>
+          <option value="amazon">Amazon</option>
+          <option value="mercado">Mercado Pago</option>
+          <option value="pix">PIX</option>
+        </select>
+      </div>
+      <div>
+        <label for="parcelado-inicio" class="block font-medium mb-1 text-gray-800 dark:text-gray-100">Data de Início</label>
+        <input type="month" id="parcelado-inicio" name="dataInicio" required class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600"/>
+      </div>
+      <div class="flex justify-end space-x-2 mt-4">
+        <button type="button" id="btn-cancelar-parcelado" class="px-4 py-2 rounded bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-100 hover:bg-gray-400 dark:hover:bg-gray-700">Cancelar</button>
+        <button type="submit" class="px-4 py-2 rounded bg-blue-600 dark:bg-blue-700 text-white hover:bg-blue-700 dark:hover:bg-blue-800">Salvar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- NOVO: Modal de Confirmação Customizado -->
+<div id="modal-confirmacao" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+  <div class="bg-white rounded-lg p-6 w-11/12 max-w-sm mx-auto relative shadow-lg modal-content">
+    <h2 class="text-xl font-bold mb-4 text-gray-800" id="modal-confirmacao-title">Confirmar Ação</h2>
+    <p class="text-gray-700 mb-6" id="modal-confirmacao-message">Você tem certeza que deseja realizar esta ação?</p>
+    <div class="flex justify-end gap-3">
+      <button type="button" id="btn-cancelar-confirmacao" class="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-100 transition-colors">Cancelar</button>
+      <button type="button" id="btn-confirmar-acao" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- Modal para adicionar/editar gasto fixo -->
+<div id="modal-fixo" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+  <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg w-96 p-6 relative">
+    <h2 class="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-100" id="modal-fixo-title">Adicionar Gasto Fixo</h2>
+    <form id="form-fixo" class="space-y-4">
+      <div>
+        <label for="fixo-nome" class="block font-medium mb-1 text-gray-800 dark:text-gray-100">Nome</label>
+        <input type="text" id="fixo-nome" name="nome" required class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600"/>
+      </div>
+      <div>
+        <label for="fixo-categoria" class="block font-medium mb-1 text-gray-800 dark:text-gray-100">Categoria</label>
+        <select id="fixo-categoria" name="categoria" required class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600">
+          <option value="">Selecione uma categoria</option>
+          <option value="Assinaturas">Assinaturas</option>
+          <option value="Contas">Contas</option>
+          <option value="Seguros">Seguros</option>
+          <option value="Outros">Outros</option>
+        </select>
+      </div>
+      <div>
+        <label for="fixo-subcategoria" class="block font-medium mb-1 text-gray-800 dark:text-gray-100">Subcategoria</label>
+        <select id="fixo-subcategoria" name="subcategoria" class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" disabled>
+          <option value="">Selecione uma categoria primeiro</option>
+        </select>
+      </div>
+      <div>
+        <label for="fixo-valor" class="block font-medium mb-1 text-gray-800 dark:text-gray-100">Valor (R$)</label>
+        <input type="number" id="fixo-valor" name="valor" min="0" step="0.01" required class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600"/>
+      </div>
+      <div class="flex items-center space-x-2">
+        <input type="checkbox" id="fixo-ativo" name="ativo" checked class="form-checkbox h-4 w-4 text-blue-600 dark:text-blue-400 border-gray-300 dark:border-gray-600 rounded"/>
+        <label for="fixo-ativo" class="font-medium text-gray-800 dark:text-gray-100">Ativo</label>
+      </div>
+      <div class="flex justify-end space-x-2 mt-4">
+        <button type="button" id="btn-cancelar-fixo" class="px-4 py-2 rounded bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-100 hover:bg-gray-400 dark:hover:bg-gray-700">Cancelar</button>
+        <button type="submit" class="px-4 py-2 rounded bg-blue-600 dark:bg-blue-700 text-white hover:bg-blue-700 dark:hover:bg-blue-800">Salvar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal para adicionar gasto -->
+<div id="modal-add-gasto" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+  <div class="bg-white dark:bg-gray-800 rounded-lg p-6 w-11/12 max-w-md mx-auto relative shadow-lg modal-content">
+    <button id="modal-close" class="absolute top-3 right-3 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 text-2xl font-bold" aria-label="Fechar modal">&times;</button>
+    <h2 class="text-xl font-bold mb-4 text-gray-800 dark:text-gray-100">Adicionar Gasto Variável</h2>
+    <form id="form-add-gasto-modal" class="space-y-4">
+      <select id="modal-cartao" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600">
+        <option value="pix" selected>PIX</option>
+        <option value="nubank">Nubank</option>
+        <option value="itau">Itaú</option>
+        <option value="univ">Univ</option>
+        <option value="amazon">Amazon</option>
+        <option value="mercado">Mercado Pago</option>
+        <option value="">Nenhum</option>
+      </select>
+      <div class="text-xs text-gray-500 dark:text-gray-400 mt-1" id="mes-fatura-estimado">Mês de Pagamento Estimado: <span class="font-semibold">Mês Atual</span></div>
+      <select id="modal-categoria" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600">
+        <option value="" disabled selected>Categoria (opcional)</option>
+        <option value="alimentacao">Alimentação</option>
+        <option value="transporte">Transporte</option>
+        <option value="moradia">Moradia</option>
+        <option value="lazer">Lazer</option>
+        <option value="saude">Saúde</option>
+        <option value="educacao">Educação</option>
+        <option value="contas">Contas</option>
+        <option value="outros">Outros</option>
+      </select>
+      <input id="modal-valor" type="number" step="0.01" min="0.01" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" placeholder="Valor (R$)" required />
+      <p id="error-modal-valor" class="text-red-500 dark:text-red-400 text-xs mt-1 hidden">Por favor, insira um valor válido maior que zero.</p>
+      <input id="modal-desc" type="text" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" placeholder="Descrição (opcional)" />
+      
+      <!-- NOVO: Sistema de Tags Inteligente -->
+      <div class="relative">
+        <input id="modal-tags" type="text" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" placeholder="Tags (ex: padaria, supermercado)" />
+        <div id="tags-suggestions" class="absolute z-10 w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg mt-1 hidden max-h-32 overflow-y-auto"></div>
+        <div id="selected-tags" class="flex flex-wrap gap-1 mt-2"></div>
+      </div>
+      <div class="flex justify-end gap-3">
+        <button type="button" id="modal-cancel" class="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-100">Cancelar</button>
+        <button type="submit" class="bg-blue-600 dark:bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-700 dark:hover:bg-blue-800 transition-colors">Adicionar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<main class="container mx-auto px-4 py-6 grid grid-cols-1 lg:grid-cols-4 gap-6">
+
+  <!-- LEFT: main (resumo + histórico + parcelados) -->
+  <section class="lg:col-span-3 space-y-6">
+
+    <!-- danger banner (strong visual alert) -->
+    <div id="danger-banner" class="hidden danger-banner">⚠️ Atenção — fixos + parcelas do mês ultrapassam o limite! Verifique.</div>
+
+    <!-- RESUMO -->
+    <div class="section-card grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div>
+        <div class="text-sm text-gray-500 dark:text-gray-400">Total previsto (mês)</div>
+        <div class="text-2xl font-bold">R$ <span id="resumo-total-mes">0,00</span></div>
+        <div class="text-xs text-gray-400 dark:text-gray-500">Histórico + Parcelas do mês</div>
+      </div>
+      <div>
+        <div class="text-sm text-gray-500 dark:text-gray-400">Cartões</div>
+        <div class="text-2xl font-bold">R$ <span id="resumo-cartoes">0,00</span></div>
+        <div class="text-xs text-gray-400 dark:text-gray-500">Inclui parcelas do mês</div>
+      </div>
+      <div>
+        <div class="text-sm text-gray-500 dark:text-gray-400">PIX</div>
+        <div class="text-2xl font-bold">R$ <span id="resumo-pix">0,00</span></div>
+      </div>
+      <div>
+        <div class="text-sm text-gray-500 dark:text-gray-400">Parcelas (mês)</div>
+        <div class="text-2xl font-bold">R$ <span id="resumo-parcelas-mes">0,00</span></div>
+      </div>
+    </div>
+
+    <!-- LIMITES (barras) -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="section-card border-l-4 border-blue-500">
+        <div class="flex justify-between items-center mb-1">
+          <div class="font-semibold">Custo Fixo</div>
+          <div class="text-sm text-gray-500 dark:text-gray-400">Teto: R$ <input id="limite-fixo-input" type="number" class="w-24 inline-block border px-1 py-0.5 rounded text-right bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" value="1300"/></div>
+        </div>
+        <div class="text-lg font-bold">R$ <span id="gasto-fixo">0,00</span></div>
+        <div class="text-xs text-gray-400 dark:text-gray-500">Restante: R$ <span id="restante-fixo">0,00</span></div>
+        <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mt-2"><div id="progress-fixo" class="progress-bar bg-blue-500 h-2 rounded-full" style="width:100%"></div></div>
+      </div>
+
+      <div class="section-card border-l-4 border-green-500">
+        <div class="flex justify-between items-center mb-1">
+          <div class="font-semibold">Parcelado (mês)</div>
+          <div class="text-sm text-gray-500 dark:text-gray-400">Teto: R$ <input id="limite-parcelado-input" type="number" class="w-24 inline-block border px-1 py-0.5 rounded text-right bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" value="1400"/></div>
+        </div>
+        <div class="text-lg font-bold">R$ <span id="gasto-parcelado">0,00</span></div>
+        <div class="text-xs text-gray-400 dark:text-gray-500">Restante: R$ <span id="restante-parcelado">0,00</span></div>
+        <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mt-2"><div id="progress-parcelado" class="progress-bar bg-green-500 h-2 rounded-full" style="width:100%"></div></div>
+      </div>
+
+      <div class="section-card border-l-4 border-orange-500">
+        <div class="flex justify-between items-center mb-1">
+          <div class="font-semibold">Variável</div>
+          <div class="text-sm text-gray-500 dark:text-gray-400">Teto: R$ <input id="limite-variavel-input" type="number" class="w-24 inline-block border px-1 py-0.5 rounded text-right bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" value="2000"/></div>
+        </div>
+        <div class="text-lg font-bold">R$ <span id="gasto-variavel">0,00</span></div>
+        <div class="text-xs text-gray-400 dark:text-gray-500">Restante: R$ <span id="restante-variavel">0,00</span></div>
+        <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mt-2"><div id="progress-variavel" class="progress-bar bg-orange-500 h-2 rounded-full" style="width:100%"></div></div>
+      </div>
+    </div>
+
+<!-- NOVA SEÇÃO: GASTOS POR CATEGORIA -->
+    <div class="section-card">
+      <h3 class="text-lg font-bold mb-3">Gastos por Categoria (mês)</h3>
+      <div id="categorias-list" class="space-y-3">
+        <!-- Categorias serão renderizadas aqui pelo JS -->
+        <div class="text-gray-500 dark:text-gray-400">Nenhum gasto categorizado no mês.</div>
+      </div>
+    </div>
+
+    <!-- NOVO: Dashboard de Insights Inteligentes -->
+    <div class="section-card">
+      <h3 class="text-lg font-bold mb-3">💡 Insights Financeiros</h3>
+      <div id="insights-container" class="space-y-3">
+        <!-- Insights serão gerados automaticamente aqui -->
+        <div class="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg text-green-800 dark:text-green-200">Carregando insights...</div>
+      </div>
+    </div>
+
+    <!-- HISTÓRICO (variáveis + fixos avulsos) -->
+      <div class="section-card">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="text-lg font-bold">Histórico (mês)</h3>
+        <div class="flex items-center gap-2">
+          <button id="exportar-csv" class="bg-green-600 dark:bg-green-700 text-white px-3 py-1 rounded hover:bg-green-700 dark:hover:bg-green-800 transition-colors">Exportar CSV (mês)</button>
+        </div>
+      </div>
+
+      <!-- NOVO: Filtro de busca no histórico -->
+      <div class="mb-3 flex flex-wrap gap-2 items-center">
+        <input id="search-historico" type="text" placeholder="Buscar na descrição ou tags..." class="flex-1 min-w-48 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" />
+        <select id="group-by-historico" class="px-3 py-2 border rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600">
+          <option value="">Sem agrupamento</option>
+          <option value="categoria">Agrupar por Categoria</option>
+          <option value="cartao">Agrupar por Cartão</option>
+          <option value="tag">Agrupar por Tag</option>
+        </select>
+        <button id="clear-search" class="px-3 py-2 bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-100 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-700 transition-colors">
+          <i class="fa fa-times"></i>
+        </button>
+      </div>
+
+      <!-- NOVO: Container com scroll para o histórico de variáveis -->
+      <div id="historico-variavel-scroll-container" class="overflow-x-auto">
+        <div id="historico-loading-spinner" class="loading-spinner spinner-hidden">
+          <i class="fa fa-spinner fa-spin"></i> Carregando histórico...
+        </div>
+        <table class="w-full">
+          <thead>
+            <tr>
+              <th class="th">Cartão/PIX</th><th class="th">Descrição</th><th class="th">Valor</th><th class="th">Data Transação</th><th class="th">Mês Fatura</th><th class="th">Tipo</th><th class="th">Tags</th><th class="th">Ações</th>
+            </tr>
+          </thead>
+            </tr>
+          </thead>
+          <tbody id="transactions-list">
+            <tr><td class="td" colspan="8">Nenhum gasto registrado no mês</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- PARCELADOS (painel dedicado) - MELHORADO -->
+    <div class="section-card">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="text-lg font-bold">Parcelados (seção dedicada)</h3>
+      </div>
+
+      <!-- add parcelado -->
+      <form id="parcelado-form" class="grid grid-cols-1 md:grid-cols-6 gap-2 mb-3">
+        <input id="p-desc" class="px-2 py-1 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" placeholder="Descrição (ex: Guarda-roupa)" required/>
+        <input id="p-valor" type="number" step="0.01" class="px-2 py-1 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" placeholder="Valor da parcela (R$)" required/>
+        <input id="p-num" type="number" min="1" class="px-2 py-1 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" placeholder="Nº parcelas" required/>
+        <select id="p-cartao" class="px-2 py-1 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600">
+          <option value="">Nenhum</option>
+          <option value="nubank">Nubank</option>
+          <option value="itau">Itaú</option>
+          <option value="univ">Univ</option>
+          <option value="amazon">Amazon</option>
+          <option value="mercado">Mercado Pago</option>
+          <option value="pix">PIX</option>
+        </select>
+        <input id="p-inicio" type="month" class="px-2 py-1 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" required/>
+        <button class="bg-purple-600 dark:bg-purple-700 text-white px-3 py-1 rounded hover:bg-purple-700 dark:hover:bg-purple-800 transition-colors">Adicionar Parcelado</button>
+      </form>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+        <div class="section-card">
+          <div class="text-sm text-gray-500 dark:text-gray-400">Parcelas no mês</div>
+          <div class="text-2xl font-bold">R$ <span id="p-total-mes">0,00</span></div>
+        </div>
+        <div class="section-card">
+          <div class="text-sm text-gray-500 dark:text-gray-400">Comprometido total</div>
+          <div class="text-2xl font-bold">R$ <span id="p-total-restante">0,00</span></div>
+        </div>
+        <div class="section-card">
+          <div class="text-sm text-gray-500 dark:text-gray-400">Parcelados ativos</div>
+          <div class="text-2xl font-bold"><span id="p-ativos">0</span></div>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <div id="parcelados-loading-spinner" class="loading-spinner spinner-hidden">
+          <i class="fa fa-spinner fa-spin"></i> Carregando parcelados...
+        </div>
+        <table class="w-full">
+          <thead>
+            <tr><th class="th">Descrição</th><th class="th">Parcela (R$)</th><th class="th">Progresso</th><th class="th">Status</th><th class="th">Cartão</th><th class="th">Início</th><th class="th">Fim</th><th class="th">Ações</th></tr>
+          </thead>
+          <tbody id="parcelados-list">
+            <tr><td class="td" colspan="8">Nenhum parcelado para o mês selecionado</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- RIGHT: sidebar (fixos list + cartões compact + ações) - MELHORADO -->
+  <aside class="space-y-6">
+
+    <!-- FIXOS recorrentes LIST - MELHORADO -->
+    <div class="section-card">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="font-semibold">Fixos recorrentes</h3>
+        <div class="flex gap-2">
+          <button id="btn-graficos-fixos" class="text-sm bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-200 px-2 py-1 rounded hover:bg-blue-200 dark:hover:bg-blue-900/40 transition-colors">
+            <i class="fa fa-chart-pie mr-1"></i>Gráficos
+          </button>
+          <button id="add-fixo-open" class="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 transition-colors">Novo fixo</button>
+        </div>
+      </div>
+
+      <!-- Resumo visual dos fixos -->
+      <div class="grid grid-cols-2 gap-2 mb-4">
+        <div class="bg-green-50 dark:bg-green-900/20 p-3 rounded">
+          <div class="text-xs text-green-700 dark:text-green-200">Ativos</div>
+          <div class="font-bold text-green-800 dark:text-green-400" id="resumo-fixos-ativos">R$ 0,00</div>
+        </div>
+        <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded">
+          <div class="text-xs text-gray-700 dark:text-gray-300">Inativos</div>
+          <div class="font-bold text-gray-800 dark:text-gray-100" id="resumo-fixos-inativos">R$ 0,00</div>
+        </div>
+      </div>
+
+      <div class="overflow-y-auto max-h-80">
+        <div id="fixos-loading-spinner" class="loading-spinner spinner-hidden">
+          <i class="fa fa-spinner fa-spin"></i> Carregando fixos...
+        </div>
+        <div id="fixos-cards-container" class="space-y-2">
+          <!-- Cards de fixos serão inseridos aqui -->
+        </div>
+      </div>
+    </div>
+
+    <!-- CARTÕES compact - MOVIDO PARA DEPOIS DOS FIXOS -->
+    <div class="section-card">
+      <div class="flex items-center justify-between mb-2">
+        <h3 class="font-semibold">Cartões</h3>
+        <button id="btn-gerenciar-cartoes" class="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 transition-colors">Gerenciar Cartões</button>
+      </div>
+      <div id="cartoes-container" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div id="cartoes-loading-spinner" class="loading-spinner spinner-hidden col-span-full">
+          <i class="fa fa-spinner fa-spin"></i> Carregando cartões...
+        </div>
+        <!-- Cards de cartão serão inseridos aqui -->
+      </div>
+    </div>
+
+    <!-- NOVO: Modal para Gerenciar Cartões -->
+<div id="modal-gerenciar-cartoes" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+  <div class="bg-white dark:bg-gray-800 rounded-lg p-6 w-11/12 max-w-md mx-auto relative shadow-lg modal-content max-h-[90vh] overflow-y-auto">
+    <button id="modal-gerenciar-cartoes-close" class="absolute top-3 right-3 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 text-2xl font-bold" aria-label="Fechar modal">&times;</button>
+    <h2 class="text-xl font-bold mb-4 text-gray-800 dark:text-gray-100">Gerenciar Cartões</h2>
+
+    <!-- Formulário para Adicionar Novo Cartão -->
+    <div class="mb-6 p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+      <h3 class="font-semibold mb-3 text-gray-800 dark:text-gray-100">Adicionar Novo Cartão</h3>
+      <form id="form-add-cartao" class="space-y-3">
+        <div>
+          <label for="novo-cartao-label" class="block font-medium mb-1 text-gray-800 dark:text-gray-100">Nome de Exibição (ex: Nubank, Itaú)</label>
+          <input type="text" id="novo-cartao-label" name="label" required class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" placeholder="Nome amigável"/>
+        </div>
+        <div>
+          <label for="novo-cartao-fechamento" class="block font-medium mb-1 text-gray-800 dark:text-gray-100">Dia de Fechamento (1-31, opcional)</label>
+          <input type="number" id="novo-cartao-fechamento" name="fechamento" min="1" max="31" class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" placeholder="Ex: 15"/>
+        </div>
+        <button type="submit" class="w-full bg-blue-600 dark:bg-blue-700 text-white px-4 py-2 rounded hover:bg-blue-700 dark:hover:bg-blue-800 transition">Adicionar Cartão</button>
+         <div>
+    <label for="novo-cartao-offset" class="block font-medium mb-1 text-gray-800 dark:text-gray-100">Offset de Vencimento</label>
+    <select id="novo-cartao-offset" name="offset" class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600">
+      <option value="0">Mesmo Mês (ex: Itaú, Nubank)</option>
+      <option value="1" selected>Próximo Mês (ex: Univ, Amazon)</option>
+    </select>
+    <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">0: Vencimento no mesmo mês da fatura. 1: Vencimento no mês seguinte.</p>
+  </div>
+  
+      </form>
+    </div>
+
+    <!-- Lista de Cartões Existentes -->
+    <div class="mb-4">
+      <h3 class="font-semibold mb-3 text-gray-800 dark:text-gray-100">Cartões Existentes</h3>
+      <div id="lista-cartoes-existentes" class="space-y-2">
+        <!-- Cartões serão inseridos aqui via JS -->
+        <div class="text-gray-500 dark:text-gray-400">Nenhum cartão adicionado ainda.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+    <!-- ações rápidas - MOVIDO PARA O FINAL DA ASIDE -->
+    <div class="section-card text-sm">
+      <div class="font-semibold mb-2">Ações rápidas</div>
+      <button id="exportar-tudo" class="w-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-100 px-3 py-2 rounded mb-2 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">Exportar tudo (CSV)</button>
+      <div class="text-xs text-gray-500 dark:text-gray-400">Notas: exportar mês filtra só o mês selecionado; exportar tudo pega tudo.</div>
+    </div>
+
+  </aside>
+</main>
+
+<!-- MELHORADO: Menu flutuante expansível para mobile -->
+ <div id="floating-menu" class="fixed top-40 right-6 z-50 md:hidden"> 
+  <!-- Botão principal (sempre visível) -->
+  <button id="btn-main-float" 
+    class="bg-blue-600 dark:bg-blue-700 text-white p-4 rounded-full shadow-lg floating-btn-transition mb-3"
+    aria-label="Menu de ações">
+    <i class="fa fa-plus text-xl" id="main-icon"></i>
+  </button>
+  
+  <!-- Botões secundários (aparecem quando expandido) -->
+  <div id="secondary-buttons" class="space-y-3 opacity-0 transform translate-y-4 transition-all duration-300">
+    <button id="btn-add-gasto-float" 
+      class="bg-blue-500 dark:bg-blue-600 text-white p-3 rounded-full shadow-lg floating-btn-transition block"
+      aria-label="Adicionar gasto">
+      <i class="fa fa-shopping-cart text-lg"></i>
+    </button>
+    
+    <button id="btn-open-graficos" 
+      class="bg-green-600 dark:bg-green-700 text-white p-3 rounded-full shadow-lg floating-btn-transition block"
+      aria-label="Abrir gráficos">
+      <i class="fa fa-chart-pie text-lg"></i>
+    </button>
+    
+    <button id="btn-add-fixo-float" 
+      class="bg-purple-600 dark:bg-purple-700 text-white p-3 rounded-full shadow-lg floating-btn-transition block"
+      aria-label="Adicionar fixo">
+      <i class="fa fa-calendar text-lg"></i>
+    </button>
+    <button id="btn-add-parcelado-float"
+      class="bg-indigo-600 dark:bg-indigo-700 text-white p-3 rounded-full shadow-lg floating-btn-transition block"
+      aria-label="Adicionar parcelado">
+      <i class="fa fa-file-invoice-dollar text-lg"></i>
+    </button>
+  </div>
+</div>
+
+<script>
+// Dark Mode Toggle (Detecta sistema + salva preferência)
+const html = document.documentElement;
+const toggleBtn = document.getElementById('toggleDark');
+
+function initDarkMode() {
+  if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+    html.classList.add('dark');
+  } else {
+    html.classList.remove('dark');
+  }
+  // Atualiza ícone do botão
+  if (toggleBtn) {
+    toggleBtn.innerHTML = html.classList.contains('dark') ? '☀️' : '🌙';
+  }
+}
+
+if (toggleBtn) {
+  toggleBtn.addEventListener('click', () => {
+    html.classList.toggle('dark');
+    localStorage.theme = html.classList.contains('dark') ? 'dark' : 'light';
+    toggleBtn.innerHTML = html.classList.contains('dark') ? '☀️' : '🌙';
+  });
+}
+
+initDarkMode(); // Inicializa ao carregar
+
+// Registro SW (limpo, como antes)
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("/sw.js")
+    .then((registration) => {
+      console.log("✅ Service Worker registrado com sucesso:", registration.scope);
+    })
+    .catch((err) => {
+      console.error("❌ Erro ao registrar SW:", err);
+    });
+} else {
+  console.log("❌ Service Workers não suportados neste navegador.");
+}
+</script>
+
+<!-- NOVO: Toast Message para feedback -->
+<div id="toast-message" class="hidden"></div>
+
+<footer class="text-center text-sm text-gray-500 dark:text-gray-400 py-6">© 2025 Organizador Financeiro <br> Vitor Barbosa</br></footer>
+
+<!-- Firebase compat scripts -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
+
+<script>
+/* ===========================
+   CONFIG FIREBASE (sua config)
+   =========================== */
+const firebaseConfig = {
+  apiKey: "AIzaSyCpBfq801WlkxgHhWwORDvnKWpXGXz3k4c",
+  authDomain: "organizacao-financeira1.firebaseapp.com",
+  projectId: "organizacao-financeira1",
+  storageBucket: "organizacao-financeira1.firebasestorage.app",
+  messagingSenderId: "896359450111",
+  appId: "1:896359450111:web:bd8d7c2f2e35d4f27a93ca",
+  measurementId: "G-58ZVECNK3B"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+const messaging = firebase.messaging(); // Inicializa o Messaging
+
+/* ===========================
+   UTIL
+   =========================== */
+const moeda = v => (Number(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const pct = (a,b)=> b? Math.max(0,Math.min(100,(a/b)*100)) : 0;
+const yyyymm = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+const mmYYYY = key => { const [y,m]=key.split('-'); return `${m}/${y}`; };
+const addMonths = (d,n) => new Date(d.getFullYear(), d.getMonth()+n, 1);
+const monthDiff = (dStart,dEnd) => (dEnd.getFullYear()-dStart.getFullYear())*12 + (dEnd.getMonth()-dStart.getMonth());
+
+// NOVO: Função para calcular o mês de referência da fatura
+function calcularMesFatura(dataTransacao, diaFechamento, offset = 0) {  // Adicionado offset com default 0
+  const data = new Date(dataTransacao);
+  const ano = data.getFullYear();
+  const mes = data.getMonth(); // 0-11
+  if (diaFechamento === null || diaFechamento === undefined) {
+    // Para PIX ou sem fechamento: sempre mês atual
+    return yyyymm(new Date(ano, mes, 1));
+  }
+  if (data.getDate() > diaFechamento) {
+    // Após fechamento: adiciona o offset (0 = mesmo mês; 1 = próximo)
+    return yyyymm(new Date(ano, mes + offset, 1));
+  } else {
+    // Antes/na data de fechamento: mês atual
+    return yyyymm(new Date(ano, mes, 1));
+  }
+}
+
+// Função para mostrar toast message
+function showToast(message, type = 'success') {
+  const toast = document.getElementById('toast-message');
+  
+  // Define ícone baseado no tipo
+  let icon = '';
+  switch(type) {
+    case 'success': icon = '✅ '; break;
+    case 'error': icon = '❌ '; break;
+    case 'warning': icon = '⚠️ '; break;
+    case 'info': icon = 'ℹ️ '; break;
+    default: icon = '✅ '; break;
+  }
+  
+  toast.textContent = icon + message;
+  toast.className = 'show'; // Remove 'hidden' e adiciona 'show'
+  
+  // Define cor baseada no tipo
+  switch(type) {
+    case 'error':
+      toast.style.backgroundColor = '#dc2626'; // red-600
+      break;
+    case 'warning':
+      toast.style.backgroundColor = '#d97706'; // amber-600
+      break;
+    case 'info':
+      toast.style.backgroundColor = '#2563eb'; // blue-600
+      break;
+    default:
+      toast.style.backgroundColor = '#059669'; // green-600
+      break;
+  }
+  
+  setTimeout(() => {
+    toast.classList.remove('show');
+    toast.classList.add('hidden'); // Esconde após a transição
+  }, 3000); // Esconde após 3 segundos
+}
+
+// Variáveis e função para o modal de confirmação customizado
+const modalConfirmacao = document.getElementById('modal-confirmacao');
+const modalConfirmacaoTitle = document.getElementById('modal-confirmacao-title');
+const modalConfirmacaoMessage = document.getElementById('modal-confirmacao-message');
+const btnCancelarConfirmacao = document.getElementById('btn-cancelar-confirmacao');
+const btnConfirmarAcao = document.getElementById('btn-confirmar-acao');
+
+let confirmCallback = null; // Variável para armazenar a função a ser executada na confirmação
+
+function abrirModalConfirmacao(title, message, callback, modalOrigemId = null) {
+  fecharTodosOsModais(); // <--- NOVO: Fecha todos os outros modais antes de abrir a confirmação
+  modalConfirmacaoTitle.textContent = title;
+  modalConfirmacaoMessage.textContent = message;
+  confirmCallback = callback; // Armazena o callback
+  modalConfirmacao.classList.remove('hidden');
+  updateFloatingMenuVisibility(); // Esconde o menu flutuante se estiver aberto
+}
+
+function fecharModalConfirmacao() {
+  modalConfirmacao.classList.add('hidden');
+  confirmCallback = null; // Limpa o callback
+  
+  // Se havia um modal anterior, reabre-o
+  if (modalAnteriorAberto) {
+    document.getElementById(modalAnteriorAberto).classList.remove('hidden');
+    modalAnteriorAberto = null; // Limpa a referência
+  }
+  updateFloatingMenuVisibility(); // Mostra o menu flutuante novamente
+}
+
+// Event listeners para o modal de confirmação
+btnCancelarConfirmacao.addEventListener('click', fecharModalConfirmacao);
+btnConfirmarAcao.addEventListener('click', () => {
+  if (confirmCallback) {
+    confirmCallback(); // Executa a função de confirmação
+  }
+  fecharModalConfirmacao();
+});
+
+// Fechar modal ao clicar fora
+modalConfirmacao.addEventListener('click', (e) => {
+  if (e.target === modalConfirmacao) {
+    fecharModalConfirmacao();
+  }
+});
+
+// Fechar modal com ESC
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && !modalConfirmacao.classList.contains('hidden')) {
+    fecharModalConfirmacao();
+  }
+});
+
+
+/* ===========================
+   ESTADO/CONFIGURAÇÕES
+   =========================== */
+let limites = {fixo:1300, parcelado:1400, variavel:2000}; // persisted in Firestore
+const cartoesCfgDefault = {
+  nubank: { fechamento: 15, label: 'Nubank', mesVencimentoOffset: 0 },  // Mesmo mês
+  itau: { fechamento: 2, label: 'Itaú', mesVencimentoOffset: 0 },       // Mesmo mês
+  univ: { fechamento: 27, label: 'Univ', mesVencimentoOffset: 1 },      // Próximo mês
+  amazon: { fechamento: 25, label: 'Amazon', mesVencimentoOffset: 1 },  // Próximo mês
+  mercado: { fechamento: 4, label: 'Mercado Pago', mesVencimentoOffset: 0 },  // Mesmo mês
+  pix: { fechamento: null, label: 'PIX', mesVencimentoOffset: 0 }       // Sempre mesmo mês
+};
+let cartoesCfg = {...cartoesCfgDefault};
+
+/* caches */
+let mesesDisponiveis = new Set(); // Meses com gastos (para filtro geral)
+let mesesParceladosColetados = new Set(); // Meses que contêm parcelados (do início ao fim, para filtro geral)
+let allFixosDocs = []; // NOVO: Cache global dos documentos de fixos
+
+/* resumo */
+const resumo = {historicoMes:0, cartoesMes:0, pixMes:0, parcelasMes:0, fixosMes:0}; // MODIFICADO: Renomeado caixaAcumulado para saldoTotalAcumulado
+
+/* NOVO: Sistema de Tags Inteligente */
+let allTags = new Set(); // Cache de todas as tags existentes
+let selectedTagsArray = []; // Tags selecionadas no modal
+let currentSearchTerm = ''; // Termo de busca atual
+let currentGroupBy = ''; // Agrupamento atual
+
+/* NOVO: Variável para controle de scroll */
+let lastScrollTop = 0;
+
+/* ===========================
+   NOVO: SISTEMA DE TAGS INTELIGENTE
+   =========================== */
+function initTagsSystem() {
+  const tagsInput = document.getElementById('modal-tags');
+  const tagsSuggestions = document.getElementById('tags-suggestions');
+  const selectedTagsContainer = document.getElementById('selected-tags');
+
+  // Carrega tags existentes do Firestore
+  loadExistingTags();
+
+  // Event listeners para o sistema de tags
+  tagsInput.addEventListener('input', (e) => {
+    const value = e.target.value.toLowerCase().trim();
+    if (value.length > 0) {
+      showTagSuggestions(value);
+    } else {
+      hideTagSuggestions();
+    }
+  });
+
+  tagsInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ',') {
+      e.preventDefault();
+      const tag = e.target.value.trim();
+      if (tag) {
+        addTag(tag);
+        e.target.value = '';
+        hideTagSuggestions();
+      }
+    }
+  });
+
+  // Clica fora para esconder sugestões
+  document.addEventListener('click', (e) => {
+    if (!tagsInput.contains(e.target) && !tagsSuggestions.contains(e.target)) {
+      hideTagSuggestions();
+    }
+  });
+}
+
+function loadExistingTags() {
+  db.collection('gastos').get().then(snapshot => {
+    snapshot.docs.forEach(doc => {
+      const data = doc.data();
+      if (data.tags && Array.isArray(data.tags)) {
+        data.tags.forEach(tag => allTags.add(tag.toLowerCase()));
+      }
+    });
+  });
+}
+
+function showTagSuggestions(searchTerm) {
+  const suggestions = Array.from(allTags).filter(tag => 
+    tag.includes(searchTerm) && !selectedTagsArray.includes(tag)
+  );
+  
+  const container = document.getElementById('tags-suggestions');
+  container.innerHTML = '';
+  
+  if (suggestions.length > 0) {
+    suggestions.slice(0, 5).forEach(tag => {
+      const div = document.createElement('div');
+      div.className = 'tag-suggestion';
+      div.textContent = tag;
+      div.addEventListener('click', () => {
+        addTag(tag);
+        document.getElementById('modal-tags').value = '';
+        hideTagSuggestions();
+      });
+      container.appendChild(div);
+    });
+    container.classList.remove('hidden');
+  } else {
+    hideTagSuggestions();
+  }
+}
+
+function hideTagSuggestions() {
+  document.getElementById('tags-suggestions').classList.add('hidden');
+}
+
+function addTag(tagText) {
+  const tag = tagText.toLowerCase().trim();
+  if (tag && !selectedTagsArray.includes(tag)) {
+    selectedTagsArray.push(tag);
+    allTags.add(tag); // Adiciona à lista global
+    renderSelectedTags();
+  }
+}
+
+function removeTag(tag) {
+  selectedTagsArray = selectedTagsArray.filter(t => t !== tag);
+  renderSelectedTags();
+}
+
+function renderSelectedTags() {
+  const container = document.getElementById('selected-tags');
+  container.innerHTML = '';
+  
+  selectedTagsArray.forEach(tag => {
+    const pill = document.createElement('span');
+    pill.className = 'tag-pill removable';
+    pill.innerHTML = `${tag} <span class="remove-tag" onclick="removeTag('${tag}')">&times;</span>`;
+    container.appendChild(pill);
+  });
+}
+
+/* ===========================
+   NOVO: BUSCA E AGRUPAMENTO NO HISTÓRICO
+   =========================== */
+function initHistoricoSearch() {
+  const searchInput = document.getElementById('search-historico');
+  const groupBySelect = document.getElementById('group-by-historico');
+  const clearButton = document.getElementById('clear-search');
+
+  searchInput.addEventListener('input', (e) => {
+    currentSearchTerm = e.target.value.toLowerCase().trim();
+    renderHistoricoWithFilters();
+  });
+
+  groupBySelect.addEventListener('change', (e) => {
+    currentGroupBy = e.target.value;
+    renderHistoricoWithFilters();
+  });
+
+  clearButton.addEventListener('click', () => {
+    searchInput.value = '';
+    groupBySelect.value = '';
+    currentSearchTerm = '';
+    currentGroupBy = '';
+    renderHistoricoWithFilters();
+  });
+}
+
+ // Remove tela de carregamento após load
+  window.addEventListener("load", () => {
+    const loading = document.getElementById("loading-screen");
+    if (loading) {
+      loading.style.opacity = "0";
+      setTimeout(() => loading.remove(), 500); // fade-out
+    }
+  });
+  
+function renderHistoricoWithFilters() {
+  const tbody = document.getElementById('transactions-list');
+  tbody.innerHTML = '';
+  
+  const mesSel = document.getElementById('filtro-mes').value || yyyymm(new Date());
+  
+  let filteredDocs = allGastosDocs.filter(doc => {
+    const d = doc.data();
+    if (!d.data) return false;
+    const keyTransacao = yyyymm(d.data.toDate ? d.data.toDate() : new Date(d.data));
+    const keyFatura = d.mesFatura || keyTransacao; // Usa mesFatura para filtragem
+
+    // Filtro por mês
+    if (mesSel !== 'all' && keyFatura !== mesSel) return false; // Filtra por mesFatura
+    
+    // Filtro por busca
+    if (currentSearchTerm) {
+      const desc = (d.descricao || '').toLowerCase();
+      const tags = (d.tags || []).join(' ').toLowerCase();
+      if (!desc.includes(currentSearchTerm) && !tags.includes(currentSearchTerm)) {
+        return false;
+      }
+    }
+    
+    return true;
+  });
+
+    if (filteredDocs.length === 0) {
+      tbody.innerHTML = '<tr><td class="td" colspan="8">Nenhum gasto encontrado</td></tr>';
+      return;
+    }
+    
+  // Agrupamento
+    if (currentGroupBy === 'cartao') {
+      renderHistoricoGroupedByCartao(filteredDocs);
+    } else if (currentGroupBy) {
+      renderHistoricoGrouped(filteredDocs, currentGroupBy);
+    } else {
+      renderHistoricoNormal(filteredDocs);
+    }
+    
+}
+
+function renderHistoricoNormal(docs) {
+  const tbody = document.getElementById('transactions-list');
+  
+  docs.forEach(doc => {
+    const d = doc.data();
+    const id = doc.id;
+    const dt = d.data.toDate ? d.data.toDate() : new Date(d.data);
+    const mesFaturaDisplay = d.mesFatura ? mmYYYY(d.mesFatura) : '-';
+    
+    // Renderiza tags
+    const tagsHtml = (d.tags || []).map(tag => 
+      `<span class="tag-pill" style="font-size: 0.6rem; padding: 0.125rem 0.25rem;">${tag}</span>`
+    ).join('');
+    
+    // Destaca termo de busca
+    let descricao = d.descricao || '';
+    if (currentSearchTerm) {
+      const regex = new RegExp(`(${currentSearchTerm})`, 'gi');
+      descricao = descricao.replace(regex, '<span class="search-highlight">$1</span>');
+    }
+    
+      const tr = document.createElement('tr');
+          tr.innerHTML = `
+      <td class="td">${(cartoesCfg[d.cartao] && cartoesCfg[d.cartao].label) || d.cartao || ''}</td>
+      <td class="td">${descricao}</td>
+      <td class="td">R$ ${moeda(d.valor)}</td>
+      <td class="td">${dt.toLocaleDateString('pt-BR')}</td>
+      <td class="td">${mesFaturaDisplay}</td>
+      <td class="td">${d.tipo}</td>
+      <td class="td">
+        <div class="flex flex-wrap gap-1">${tagsHtml}</div>
+      </td>
+      <td class="td">
+        <button class="text-blue-600 dark:text-blue-400 edit-gasto mr-2 hover:text-blue-800 dark:hover:text-blue-200" data-id="${id}" aria-label="Editar gasto">
+          <i class="fa fa-edit"></i>
+        </button>
+        <button class="text-red-600 dark:text-red-400 delete-gasto hover:text-red-800 dark:hover:text-red-200" data-id="${id}" aria-label="Remover gasto">
+          <i class="fa fa-trash"></i>
+        </button>
+      </td>
+    `;
+    
+    
+    tbody.appendChild(tr);
+    
+  });
+}
+
+function renderHistoricoGrouped(docs, groupBy) {
+  const tbody = document.getElementById('transactions-list');
+  const groups = {};
+
+  // Agrupa os documentos
+  docs.forEach(doc => {
+    const d = doc.data();
+    let groupKey = 'Outros'; // Default group key
+
+    switch (groupBy) {
+      case 'categoria':
+        groupKey = d.categoria || 'Sem categoria';
+        break;
+      case 'cartao': // Este caso já é tratado por renderHistoricoGroupedByCartao, mas mantido para completude
+        groupKey = d.cartao || 'Sem cartão';
+        break;
+      case 'tag':
+        groupKey = (d.tags && d.tags.length > 0) ? d.tags[0] : 'Sem tags';
+        break;
+    }
+
+    if (!groups[groupKey]) {
+      groups[groupKey] = [];
+    }
+    groups[groupKey].push(doc);
+  });
+
+  // Renderiza grupos
+  Object.keys(groups).sort().forEach(groupKey => {
+    const totalGroup = groups[groupKey].reduce((sum, doc) => sum + (doc.data().valor || 0), 0);
+    const isCollapsed = collapsedGroups[groupKey] || false;
+    const iconClass = isCollapsed ? 'fa-chevron-right' : 'fa-chevron-down';
+
+    // Cabeçalho do grupo
+    const groupHeader = document.createElement('tr');
+    groupHeader.className = 'group-header cursor-pointer bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors';
+    groupHeader.dataset.groupKey = groupKey;
+    groupHeader.setAttribute('role', 'button');
+    groupHeader.setAttribute('tabindex', '0');
+    groupHeader.setAttribute('aria-expanded', !isCollapsed);
+    groupHeader.innerHTML = `
+      <td colspan="8" class="td font-semibold text-gray-800 dark:text-gray-100">
+        <i class="fa ${iconClass} mr-2 group-toggle-icon"></i>
+        ${groupKey.charAt(0).toUpperCase() + groupKey.slice(1)} — Total: R$ ${moeda(totalGroup)}
+      </td>
+    `;
+    tbody.appendChild(groupHeader);
+
+    // Itens do grupo
+    groups[groupKey].forEach(doc => {
+      const d = doc.data();
+      const id = doc.id;
+      const dt = d.data.toDate ? d.data.toDate() : new Date(d.data);
+      const mesFaturaDisplay = d.mesFatura ? mmYYYY(d.mesFatura) : '-';
+
+      const tagsHtml = (d.tags || []).map(tag =>
+        `<span class="tag-pill" style="font-size: 0.6rem; padding: 0.125rem 0.25rem;">${tag}</span>`
+      ).join('');
+
+      let descricao = d.descricao || '';
+      if (currentSearchTerm) {
+        const regex = new RegExp(`(${currentSearchTerm})`, 'gi');
+        descricao = descricao.replace(regex, '<span class="search-highlight">$1</span>');
+      }
+
+      const tr = document.createElement('tr');
+      tr.className = `group-item ${isCollapsed ? 'hidden' : ''}`; // Adiciona classe 'hidden' se o grupo estiver colapsado
+      tr.dataset.groupKey = groupKey; // Adiciona data-group-key para os itens
+      tr.innerHTML = `
+        <td class="td">${(cartoesCfg[d.cartao] && cartoesCfg[d.cartao].label) || d.cartao || ''}</td>
+        <td class="td">${descricao}</td>
+        <td class="td">R$ ${moeda(d.valor)}</td>
+        <td class="td">${dt.toLocaleDateString('pt-BR')}</td>
+        <td class="td">${mesFaturaDisplay}</td>
+        <td class="td">${d.tipo}</td>
+        <td class="td">
+          <div class="flex flex-wrap gap-1">${tagsHtml}</div>
+        </td>
+        <td class="td">
+          <button class="text-blue-600 dark:text-blue-400 edit-gasto mr-2 hover:text-blue-800 dark:hover:text-blue-200" data-id="${id}" aria-label="Editar gasto">
+            <i class="fa fa-edit"></i>
+          </button>
+          <button class="text-red-600 dark:text-red-400 delete-gasto hover:text-red-800 dark:hover:text-red-200" data-id="${id}" aria-label="Remover gasto">
+            <i class="fa fa-trash"></i>
+          </button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  });
+}
+
+// Variáveis para o modal de gerenciamento de cartões
+const modalGerenciarCartoes = document.getElementById('modal-gerenciar-cartoes');
+const modalGerenciarCartoesClose = document.getElementById('modal-gerenciar-cartoes-close');
+const btnGerenciarCartoes = document.getElementById('btn-gerenciar-cartoes');
+const formAddCartao = document.getElementById('form-add-cartao');
+const listaCartoesExistentes = document.getElementById('lista-cartoes-existentes');
+
+/* ===========================
+   PERSISTÊNCIA: LIMITES
+   =========================== */
+function carregarLimites(){
+  db.collection('limites').doc('conta_unica').get().then(doc=>{
+    if(doc.exists) limites = {...limites, ...doc.data()};
+    document.getElementById('limite-fixo-input').value = limites.fixo;
+    document.getElementById('limite-parcelado-input').value = limites.parcelado;
+    document.getElementById('limite-variavel-input').value = limites.variavel;
+    atualizarBarrasVisuais();
+  });
+}
+function salvarLimite(key,val){ 
+  limites[key]=parseFloat(val)||0; 
+  db.collection('limites').doc('conta_unica').set(limites,{merge:true})
+    .then(() => showToast('Limite atualizado com sucesso!'))
+    .catch(err => showToast('Erro ao salvar limite.', 'error'));
+}
+
+function abrirModalGerenciarCartoes() {
+  modalGerenciarCartoes.classList.remove('hidden');
+  renderListaCartoesExistentes(); // Renderiza a lista de cartões ao abrir
+  updateFloatingMenuVisibility(); // Esconde o menu flutuante
+}
+function fecharModalGerenciarCartoes() {
+  modalGerenciarCartoes.classList.add('hidden');
+  formAddCartao.reset(); // Limpa o formulário
+  updateFloatingMenuVisibility(); // Mostra o menu flutuante
+}
+
+function renderListaCartoesExistentes() {
+  listaCartoesExistentes.innerHTML = '';
+  const cartoesAtuais = Object.keys(cartoesCfg).filter(key => key !== 'pix'); 
+  if (cartoesAtuais.length === 0) {
+    listaCartoesExistentes.innerHTML = '<div class="text-gray-500 dark:text-gray-400">Nenhum cartão adicionado ainda.</div>';
+    return;
+  }
+  cartoesAtuais.forEach(key => {
+    const cfg = cartoesCfg[key];
+    const cardItem = document.createElement('div');
+    cardItem.className = 'flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg';
+    cardItem.innerHTML = `
+      <div>
+        <div class="font-semibold text-gray-800 dark:text-gray-100">${cfg.label}</div> <!-- MODIFICADO AQUI: Removido o (key) -->
+        <div class="text-sm text-gray-600 dark:text-gray-300">
+          Fechamento: ${cfg.fechamento !== null ? cfg.fechamento : 'N/A'}
+          <button class="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 ml-2" onclick="editarFechamentoCartao('${key}')" title="Editar Dia de Fechamento">
+            <i class="fa fa-pencil-alt"></i>
+          </button>
+        </div>
+      </div>
+      <button class="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-200" onclick="removerCartao('${key}')" title="Remover Cartão">
+        <i class="fa fa-trash"></i>
+      </button>
+      <button class="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-200 ml-2" onclick="editarOffsetCartao('${key}')" title="Editar Offset de Vencimento">
+      <i class="fa fa-calendar-alt"></i>
+    </button>
+    
+    `;
+    listaCartoesExistentes.appendChild(cardItem);
+  });
+}
+
+   // Função nova para editar offset
+    function editarOffsetCartao(key) {
+      const cfg = cartoesCfg[key] || { mesVencimentoOffset: 1 };
+      const novoOffset = prompt(`Offset de vencimento para ${cfg.label} (0 = mesmo mês, 1 = próximo mês):`, cfg.mesVencimentoOffset);
+      if (novoOffset === null) return;
+      const val = parseInt(novoOffset);
+      if (isNaN(val) || val < 0 || val > 1) {
+        showToast('Offset inválido. Use 0 ou 1.', 'error');
+        return;
+      }
+      cartoesCfg[key] = { ...cfg, mesVencimentoOffset: val };
+      db.collection('config').doc('cartoes').set(cartoesCfg, { merge: true })
+        .then(() => {
+          showToast('Offset atualizado!');
+          renderListaCartoesExistentes();
+          startObservers();  // Recarrega para aplicar
+        })
+        .catch(err => showToast('Erro ao atualizar offset.', 'error'));
+    }
+
+function editarFechamentoCartao(key) {
+  const cfg = cartoesCfg[key] || {label: key, fechamento: null}; // Garante que cfg exista
+  const novoFechamento = prompt(`Digite o novo dia de fechamento para ${cfg.label} (1-31). Deixe vazio para remover:`, cfg.fechamento !== null ? String(cfg.fechamento) : '');
+  if (novoFechamento === null) return; // Usuário cancelou
+  const val = novoFechamento.trim() === '' ? null : parseInt(novoFechamento);
+  if (val !== null && (isNaN(val) || val < 1 || val > 31)) {
+    showToast('Dia de fechamento inválido. Use um número entre 1 e 31 ou deixe vazio.', 'error');
+    return;
+  }
+  // Atualiza a configuração local
+  cartoesCfg[key] = { ...cfg, fechamento: val };
+  // Atualiza no Firestore
+  db.collection('config').doc('cartoes').set(cartoesCfg, { merge: true })
+    .then(() => {
+      showToast('Dia de fechamento atualizado com sucesso!');
+      renderListaCartoesExistentes(); // Atualiza a lista no modal de gerenciamento
+      startObservers(); // Recarrega tudo para refletir a mudança
+    })
+    .catch(err => showToast('Erro ao atualizar dia de fechamento: ' + err.message, 'error'));
+}
+
+function removerCartao(idCartao) {
+  abrirModalConfirmacao(
+    'Remover Cartão',
+    `Tem certeza que deseja remover o cartão "${cartoesCfg[idCartao].label}"? Todos os gastos associados a ele permanecerão, mas o cartão não aparecerá mais nas opções.`,
+    () => { // Callback de confirmação
+      // Remove o cartão da configuração local
+      // É crucial criar uma CÓPIA do objeto cartoesCfg para evitar problemas de referência
+      const novosCartoesCfg = { ...cartoesCfg }; 
+      delete novosCartoesCfg[idCartao];
+      // Atualiza no Firestore com o objeto MODIFICADO
+      db.collection('config').doc('cartoes').set(novosCartoesCfg) // Use .set() para sobrescrever, não .update()
+        .then(() => {
+          showToast('Cartão removido com sucesso!');
+          // Atualiza a variável global cartoesCfg com a nova configuração
+          cartoesCfg = novosCartoesCfg; 
+          
+          // Fechar o modal de gerenciamento de cartões após a remoção bem-sucedida
+          fecharModalGerenciarCartoes(); 
+          
+          // Força uma atualização completa para que os filtros e resumos reflitam a mudança
+          // Isso é importante para que os selects de cartão e os resumos sejam atualizados
+          startObservers(); 
+        })
+        .catch(err => showToast('Erro ao remover cartão: ' + err.message, 'error'));
+    },
+    'modal-gerenciar-cartoes' // <--- NOVO: Passa o ID do modal de origem
+  );
+}
+
+/* ===========================
+   FIXOS (recorrentes) - MELHORADO
+   =========================== */
+function renderFixos(docs) {
+  allFixosDocs = docs; // Atualiza o cache global
+
+  // Renderização melhorada com cards
+  const container = document.getElementById('fixos-cards-container');
+  container.innerHTML = '';
+  
+  let totalAtivos = 0;
+  let totalInativos = 0;
+  
+  if (!docs.length) { 
+    container.innerHTML = '<div class="text-center text-gray-500 dark:text-gray-400 py-4">Sem fixos cadastrados</div>';
+  } else {
+    docs.forEach(doc => {
+      const f = doc.data();
+      const id = doc.id;
+      const ativo = f.ativo !== false;
+      
+      if (ativo) {
+        totalAtivos += (f.valor || 0);
+      } else {
+        totalInativos += (f.valor || 0);
+      }
+      
+      const card = document.createElement('div');
+      card.className = `fixo-card section-card p-3 ${ativo ? 'ativo' : 'inativo'}`;
+      card.innerHTML = `
+        <div class="flex justify-between items-start mb-2">
+          <div class="flex-1">
+            <div class="font-semibold text-sm">${f.nome || ''}</div>
+            <div class="text-xs text-gray-500 dark:text-gray-400">${f.categoria || 'outros'}</div>
+            ${f.subcategoria ? `<div class="text-xs text-gray-400 dark:text-gray-500">${f.subcategoria}</div>` : ''}
+          </div>
+          <div class="text-right">
+            <div class="font-bold text-sm">R$ ${moeda(f.valor)}</div>
+            <div class="text-xs ${ativo ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}">${ativo ? 'Ativo' : 'Inativo'}</div>
+          </div>
+        </div>
+        <div class="flex justify-end gap-1">
+          <button class="text-blue-600 dark:text-blue-400 text-xs hover:text-blue-800 dark:hover:text-blue-200" onclick="editarFixoPrompt('${id}')" title="Editar">
+            <i class="fa fa-edit"></i>
+          </button>
+          <button class="text-red-600 dark:text-red-400 text-xs hover:text-red-800 dark:hover:text-red-200" onclick="removerFixo('${id}')" title="Remover">
+            <i class="fa fa-trash"></i>
+          </button>
+          <button class="${ativo ? 'text-yellow-600 dark:text-yellow-400 hover:text-yellow-800 dark:hover:text-yellow-200' : 'text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-200'} text-xs" onclick="toggleAtivoFixo('${id}', ${ativo})" title="${ativo ? 'Desativar' : 'Ativar'}">
+            <i class="fa ${ativo ? 'fa-pause' : 'fa-play'}"></i>
+          </button>
+        </div>
+      `;
+      container.appendChild(card);
+    });
+  }
+  
+  // Atualiza resumos
+  document.getElementById('resumo-fixos-ativos').textContent = `R$ ${moeda(totalAtivos)}`;
+  document.getElementById('resumo-fixos-inativos').textContent = `R$ ${moeda(totalInativos)}`;
+}
+
+function toggleAtivoFixo(id, atual) {
+  db.collection('fixos').doc(id).update({ ativo: !atual })
+    .then(() => {
+      showToast(`Gasto fixo ${!atual ? 'ativado' : 'desativado'} com sucesso!`);
+      carregarFixos(); // Recarrega a lista para atualizar os botões
+    })
+    .catch(() => {
+      showToast('Erro ao atualizar o gasto fixo.', 'error');
+    });
+}
+
+function carregarFixos() {
+  db.collection('fixos').orderBy('nome').get().then(snapshot => {
+    renderFixos(snapshot.docs);
+  });
+}
+
+        function removerFixo(id) {
+          abrirModalConfirmacao(
+            'Remover Gasto Fixo',
+            'Tem certeza que deseja remover este gasto fixo? Esta ação é irreversível.',
+            () => { // Callback de confirmação
+              db.collection('fixos').doc(id).delete()
+                .then(() => showToast('Fixo removido com sucesso!'))
+                .catch(err => showToast('Erro ao remover fixo.', 'error'));
+            }
+          );
+        }
+        
+
+function editarFixoPrompt(id){
+  db.collection('fixos').doc(id).get().then(doc=>{
+    if(!doc.exists) {
+      showToast('Documento não encontrado', 'error');
+      return;
+    }
+    const d = doc.data();
+    
+    // Abre o modal com os dados para edição
+    abrirModalFixo({
+      id: id,
+      nome: d.nome,
+      categoria: d.categoria,
+      subcategoria: d.subcategoria,
+      valor: d.valor,
+      ativo: d.ativo
+    });
+  });
+}
+
+document.getElementById('add-fixo-open').addEventListener('click', () => {
+  abrirModalFixo();
+});
+
+// NOVO: Função para popular os selects de cartão
+function popularSelectCartoes() {
+  const selectsCartao = document.querySelectorAll('#modal-cartao, #p-cartao'); 
+  
+  selectsCartao.forEach(select => {
+    const valorAtual = select.value; 
+    select.innerHTML = ''; 
+    // Adiciona a opção "PIX" primeiro
+    const pixOption = document.createElement('option');
+    pixOption.value = 'pix';
+    pixOption.textContent = 'PIX';
+    select.appendChild(pixOption);
+    // Adiciona os outros cartões configurados
+    const cartoesOrdenados = Object.keys(cartoesCfg).filter(key => key !== 'pix').sort((a, b) => {
+      const labelA = (cartoesCfg[a]?.label || a).toLowerCase();
+      const labelB = (cartoesCfg[b]?.label || b).toLowerCase();
+      return labelA.localeCompare(labelB);
+    });
+    cartoesOrdenados.forEach(key => {
+      const option = document.createElement('option');
+      option.value = key; // O 'key' é o ID gerado
+      option.textContent = cartoesCfg[key].label; // O 'label' é o nome amigável
+      select.appendChild(option);
+    });
+    // Adiciona a opção "Nenhum" por último
+    const nenhumOption = document.createElement('option');
+    nenhumOption.value = '';
+    nenhumOption.textContent = 'Nenhum';
+    select.appendChild(nenhumOption);
+    // Tenta restaurar o valor selecionado
+    if (select.querySelector(`option[value="${valorAtual}"]`)) {
+      select.value = valorAtual;
+    } else {
+      select.value = 'pix'; 
+    }
+  });
+  atualizarMesFaturaEstimado(); 
+}
+
+
+
+// Event listeners para o modal de gerenciamento de cartões
+btnGerenciarCartoes.addEventListener('click', abrirModalGerenciarCartoes);
+modalGerenciarCartoesClose.addEventListener('click', fecharModalGerenciarCartoes);
+modalGerenciarCartoes.addEventListener('click', (e) => {
+  if (e.target === modalGerenciarCartoes) {
+    fecharModalGerenciarCartoes();
+  }
+});
+
+// Event listener para o formulário de adicionar novo cartão
+formAddCartao.addEventListener('submit', (e) => {
+  e.preventDefault();
+  // const id = document.getElementById('novo-cartao-id').value.toLowerCase().trim(); // REMOVER ESTA LINHA
+  const label = document.getElementById('novo-cartao-label').value.trim();
+  const fechamentoInput = document.getElementById('novo-cartao-fechamento').value;
+  const fechamento = fechamentoInput ? parseInt(fechamentoInput) : null;
+  // NOVO: Gerar o ID interno a partir do label
+  // Remove espaços, converte para minúsculas e remove caracteres especiais
+  const id = label.toLowerCase().replace(/[^a-z0-9]/g, ''); 
+  if (!label) { // Agora só precisamos validar o label
+    showToast('O Nome do Cartão é obrigatório.', 'error');
+    return;
+  }
+  if (id === 'pix') {
+    showToast('O nome "PIX" (ou similar) é reservado e não pode ser usado para um novo cartão.', 'error');
+    return;
+  }
+  if (cartoesCfg[id]) {
+    showToast(`Já existe um cartão com o nome "${label}" (ID interno: ${id}). Por favor, use um nome único.`, 'error');
+    return;
+  }
+  if (fechamento !== null && (isNaN(fechamento) || fechamento < 1 || fechamento > 31)) {
+    showToast('Dia de fechamento inválido. Use um número entre 1 e 31 ou deixe vazio.', 'error');
+    return;
+  }
+  const offset = parseInt(document.getElementById('novo-cartao-offset').value) || 1;  // <-- NOVO
+  cartoesCfg[id] = { label, fechamento, mesVencimentoOffset: offset };  // <-- NOVO: Salva offset
+  db.collection('config').doc('cartoes').set(cartoesCfg, { merge: true })
+    .then(() => {
+      showToast('Cartão adicionado com sucesso!');
+      formAddCartao.reset();
+      renderListaCartoesExistentes(); // Atualiza a lista no modal
+      startObservers(); 
+    })
+    .catch(err => showToast('Erro ao adicionar cartão: ' + err.message, 'error'));
+});
+
+
+
+/* ===========================
+   NOVO: GRÁFICOS DOS FIXOS
+   =========================== */
+let chartFixosCategoria = null;
+let chartFixosImpacto = null;
+
+function renderGraficosFixos() {
+  if (!allFixosDocs || allFixosDocs.length === 0) {
+    showToast('Nenhum gasto fixo encontrado para análise.', 'error');
+    return;
+  }
+
+  const fixosAtivos = allFixosDocs.filter(doc => doc.data().ativo !== false);
+  const fixosInativos = allFixosDocs.filter(doc => doc.data().ativo === false);
+
+  // Calcula totais
+  const totalAtivos = fixosAtivos.reduce((sum, doc) => sum + (doc.data().valor || 0), 0);
+  const totalInativos = fixosInativos.reduce((sum, doc) => sum + (doc.data().valor || 0), 0);
+
+  // Atualiza totais no modal
+  document.getElementById('total-fixos-ativos').textContent = `R$ ${moeda(totalAtivos)}`;
+  document.getElementById('total-fixos-inativos').textContent = `R$ ${moeda(totalInativos)}`;
+
+  // Gráfico por categoria (apenas fixos ativos)
+  const categorias = {};
+  fixosAtivos.forEach(doc => {
+    const categoria = doc.data().categoria || 'Outros';
+    categorias[categoria] = (categorias[categoria] || 0) + (doc.data().valor || 0);
+  });
+
+  renderGraficoFixosCategoria(categorias);
+  renderGraficoFixosImpacto(fixosAtivos);
+  renderDetalhesFixos(fixosAtivos);
+}
+
+function renderGraficoFixosCategoria(categorias) {
+  const labels = Object.keys(categorias);
+  const data = Object.values(categorias);
+
+  const ctx = document.getElementById('grafico-fixos-categoria').getContext('2d');
+  if (chartFixosCategoria) chartFixosCategoria.destroy();
+  
+  chartFixosCategoria = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Fixos por Categoria',
+        data,
+        backgroundColor: [
+          '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'
+        ],
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { 
+          position: 'bottom',
+          labels: {
+            color: html.classList.contains('dark') ? '#d1d5db' : '#374151' // Cor da legenda
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label: ctx => {
+              const label = ctx.label || '';
+              const value = ctx.parsed || 0;
+              const total = ctx.dataset.data.reduce((a,b) => a+b, 0);
+              const pct = total ? ((value / total) * 100).toFixed(1) : 0;
+              return `${label}: R$ ${moeda(value)} (${pct}%)`;
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
+function renderGraficoFixosImpacto(fixosAtivos) {
+  const labels = fixosAtivos.map(doc => doc.data().nome || 'Sem nome');
+  const data = fixosAtivos.map(doc => doc.data().valor || 0);
+  const percentuais = data.map(valor => (valor / limites.fixo * 100).toFixed(1));
+
+  const ctx = document.getElementById('grafico-fixos-impacto').getContext('2d');
+  if (chartFixosImpacto) chartFixosImpacto.destroy();
+  
+  chartFixosImpacto = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Impacto no Orçamento (%)',
+        data: percentuais,
+        backgroundColor: data.map(valor => valor > (limites.fixo * 0.2) ? '#ef4444' : '#10b981'),
+      }]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        y: {
+          beginAtZero: true,
+          max: 100,
+          ticks: {
+            callback: val => `${val}%`,
+            color: html.classList.contains('dark') ? '#d1d5db' : '#374151' // Cor dos ticks
+          },
+          grid: {
+            color: html.classList.contains('dark') ? '#4b5563' : '#e5e7eb' // Cor da grid
+          }
+        },
+        x: {
+          ticks: {
+            color: html.classList.contains('dark') ? '#d1d5db' : '#374151' // Cor dos ticks
+          },
+          grid: {
+            color: html.classList.contains('dark') ? '#4b5563' : '#e5e7eb' // Cor da grid
+          }
+        }
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => `${ctx.parsed.y}% do orçamento (R$ ${moeda(data[ctx.dataIndex])})`
+          }
+        }
+      }
+    }
+  });
+}
+
+function renderDetalhesFixos(fixosAtivos) {
+  const container = document.getElementById('detalhes-fixos');
+  container.innerHTML = '';
+
+  // Ordena por valor (maior primeiro)
+  const ordenados = fixosAtivos.sort((a, b) => (b.data().valor || 0) - (a.data().valor || 0));
+
+  ordenados.forEach(doc => {
+    const f = doc.data();
+    const percentual = ((f.valor || 0) / limites.fixo * 100).toFixed(1);
+    const isAlto = (f.valor || 0) > (limites.fixo * 0.2);
+
+    const item = document.createElement('div');
+    item.className = `flex justify-between items-center p-2 rounded ${isAlto ? 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700' : 'bg-gray-50 dark:bg-gray-700'}`;
+    item.innerHTML = `
+      <div class="flex-1">
+        <div class="font-semibold text-sm">${f.nome || 'Sem nome'}</div>
+        <div class="text-xs text-gray-500 dark:text-gray-400">${f.categoria || 'Outros'}${f.subcategoria ? ` › ${f.subcategoria}` : ''}</div>
+      </div>
+      <div class="text-right">
+        <div class="font-bold ${isAlto ? 'text-red-600 dark:text-red-400' : 'text-gray-700 dark:text-gray-100'}">R$ ${moeda(f.valor)}</div>
+        <div class="text-xs ${isAlto ? 'text-red-500 dark:text-red-300' : 'text-gray-500 dark:text-gray-400'}">${percentual}% do orçamento</div>
+      </div>
+    `;
+    container.appendChild(item);
+  });
+}
+
+// Event listeners para gráficos dos fixos
+document.getElementById('btn-graficos-fixos').addEventListener('click', () => {
+  document.getElementById('modal-graficos-fixos').classList.remove('hidden');
+  renderGraficosFixos();
+});
+
+document.getElementById('modal-graficos-fixos-close').addEventListener('click', () => {
+  document.getElementById('modal-graficos-fixos').classList.add('hidden');
+  if (chartFixosCategoria) {
+    chartFixosCategoria.destroy();
+    chartFixosCategoria = null;
+  }
+  if (chartFixosImpacto) {
+    chartFixosImpacto.destroy();
+    chartFixosImpacto = null;
+  }
+});
+
+/* ===========================
+   PARCELADOS - CORRIGIDO E MELHORADO
+   =========================== */
+function renderParcelados(docs){
+  const tbody = document.getElementById('parcelados-list');
+  tbody.innerHTML='';
+  
+  const mesKey = document.getElementById('filtro-mes').value;
+  const hoje = new Date();
+  const alvoKey = (mesKey === 'all' || !mesKey) ? yyyymm(hoje) : mesKey; 
+  const [ay,am] = alvoKey.split('-'); 
+  const refDate = new Date(parseInt(ay), parseInt(am)-1, 1); // Data de referência para o mês selecionado
+
+  let totalMes=0, totalRestante=0, countAtivos=0;
+
+  const filteredDocs = docs.filter(doc => {
+    const p = doc.data();
+    const inicio = p.dataInicio && p.dataInicio.toDate ? p.dataInicio.toDate() : new Date(p.dataInicio);
+    const diff = monthDiff(inicio, refDate);
+    const ativaNoMes = diff >= 0 && diff < p.numParcelas;
+    
+    return ativaNoMes;
+  });
+
+  if(!filteredDocs.length){ 
+    tbody.innerHTML='<tr><td class="td" colspan="8">Nenhum parcelado para o mês selecionado</td></tr>'; 
+    document.getElementById('p-total-mes').textContent = moeda(0);
+    document.getElementById('p-total-restante').textContent = moeda(0);
+    document.getElementById('p-ativos').textContent = String(0);
+    atualizarBarra('parcelado', 0);
+    resumo.parcelasMes = 0;
+    return; 
+  }
+
+  filteredDocs.forEach(doc=>{
+    const p = doc.data();
+    const id = doc.id;
+    const inicio = p.dataInicio && p.dataInicio.toDate ? p.dataInicio.toDate() : new Date(p.dataInicio);
+    const fim = addMonths(inicio, p.numParcelas-1);
+
+    // CORREÇÃO: Calcula a parcela atual baseada no mês de referência (filtro), não na data atual
+    const parcelaAtualIndex = Math.max(0, Math.min(p.numParcelas-1, monthDiff(inicio, refDate)));
+    const parcelaAtual = parcelaAtualIndex + 1;
+    const restantes = Math.max(0, p.numParcelas - parcelaAtual);
+    const restanteValor = restantes * (p.valorParcela||0);
+    const progressPercent = pct(parcelaAtual, p.numParcelas);
+
+    // Determina o status do parcelado
+    let status = 'ativo';
+    let statusClass = 'parcelado-ativo';
+    if (parcelaAtual >= p.numParcelas) {
+      status = 'finalizado';
+      statusClass = 'parcelado-finalizado';
+    } else if (monthDiff(inicio, refDate) < 0) {
+      status = 'futuro';
+      statusClass = 'parcelado-futuro';
+    }
+
+    totalMes += (p.valorParcela||0);
+    countAtivos++; 
+    totalRestante += restanteValor; 
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="td">${p.descricao||''}</td>
+      <td class="td">R$ ${moeda(p.valorParcela)}</td>
+      <td class="td">
+        <div class="flex items-center gap-2">
+          <span class="text-sm font-semibold">${parcelaAtual}/${p.numParcelas}</span>
+          <div class="flex-1">
+            <div class="progress-parcelado">
+              <div class="progress-parcelado-fill ${status === 'finalizado' ? 'progress-finalizado' : 'progress-ativo'}" style="width:${progressPercent}%"></div>
+            </div>
+          </div>
+        </div>
+      </td>
+      <td class="td">
+        <span class="parcelado-status ${statusClass}">
+          ${status === 'ativo' ? 'Em andamento' : status === 'finalizado' ? 'Finalizado' : 'Futuro'}
+        </span>
+      </td>
+      <td class="td">${p.cartao||''}</td>
+      <td class="td">${mmYYYY(yyyymm(inicio))}</td>
+      <td class="td">${mmYYYY(yyyymm(fim))}</td>
+      <td class="td">
+        <button class="text-blue-600 dark:text-blue-400 mr-2 hover:text-blue-800 dark:hover:text-blue-200" onclick="editarParceladoPrompt('${id}')" title="Editar">
+          <i class="fa fa-edit"></i>
+        </button>
+        <button class="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-200" onclick="removerParcelado('${id}')" title="Remover">
+          <i class="fa fa-trash"></i>
+        </button>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+
+  document.getElementById('p-total-mes').textContent = moeda(totalMes);
+  document.getElementById('p-total-restante').textContent = moeda(totalRestante);
+  document.getElementById('p-ativos').textContent = String(countAtivos);
+
+  atualizarBarra('parcelado', totalMes);
+  resumo.parcelasMes = totalMes;
+}
+
+function fecharTodosOsModais() {
+  document.getElementById('modal-add-gasto').classList.add('hidden');
+  document.getElementById('modal-fixo').classList.add('hidden');
+  document.getElementById('modal-parcelado').classList.add('hidden');
+  document.getElementById('modal-graficos').classList.add('hidden');
+  document.getElementById('modal-graficos-fixos').classList.add('hidden');
+  document.getElementById('modal-gerenciar-cartoes').classList.add('hidden');
+}
+
+function updateFloatingMenuVisibility() {
+  const floatingMenu = document.getElementById('floating-menu');
+  const isModalOpen = !document.getElementById('modal-add-gasto').classList.contains('hidden') ||
+                     !document.getElementById('modal-graficos').classList.contains('hidden') ||
+                     !document.getElementById('modal-fixo').classList.contains('hidden') ||
+                     !document.getElementById('modal-parcelado').classList.contains('hidden') ||
+                     !document.getElementById('modal-graficos-fixos').classList.contains('hidden') ||
+                     !document.getElementById('modal-confirmacao').classList.contains('hidden') ||
+                     !document.getElementById('modal-gerenciar-cartoes').classList.contains('hidden') 
+                     
+  
+  if (isModalOpen) {
+    floatingMenu.classList.add('invisible');
+    floatingMenu.style.display = 'none';
+    if (menuExpanded) toggleFloatingMenu();
+  } else {
+    floatingMenu.classList.remove('invisible');
+    floatingMenu.style.display = 'block';
+  }
+}
+
+
+
+function editarParceladoPrompt(id){
+  db.collection('parcelados').doc(id).get().then(doc=>{
+    if(!doc.exists) {
+      showToast('Parcelado não encontrado', 'error');
+      return;
+    }
+    const p = doc.data();
+    
+    // Abre o modal com os dados para edição
+    abrirModalParcelado({
+      id: id,
+      descricao: p.descricao,
+      valorParcela: p.valorParcela,
+      numParcelas: p.numParcelas,
+      cartao: p.cartao,
+      dataInicio: p.dataInicio && p.dataInicio.toDate ? p.dataInicio.toDate() : new Date(p.dataInicio)
+    });
+  });
+}
+
+
+
+        function removerParcelado(id){ 
+          abrirModalConfirmacao(
+            'Remover Parcelado',
+            'Tem certeza que deseja remover este parcelado? Esta ação é irreversível.',
+            () => { // Callback de confirmação
+              db.collection('parcelados').doc(id).delete()
+                .then(() => showToast('Parcelado removido com sucesso!'))
+                .catch(err => showToast('Erro ao remover parcelado.', 'error'));
+            }
+          );
+        }
+        
+
+/* ===========================
+   CARTÕES (compact sidebar + edit fechamento)
+   =========================== */
+function renderCartoes(totaisPorCartao){
+  const container=document.getElementById('cartoes-container'); container.innerHTML='';
+  const hoje=new Date();
+  
+  const cartoesOrdenados = Object.keys(cartoesCfg).filter(k => k !== 'pix').sort((a, b) => {
+    const labelA = (cartoesCfg[a]?.label || a).toLowerCase();
+    const labelB = (cartoesCfg[b]?.label || b).toLowerCase();
+    return labelA.localeCompare(labelB);
+  });
+  if (cartoesOrdenados.length === 0) {
+    container.innerHTML = '<div class="text-center text-gray-500 dark:text-gray-400 col-span-full py-4">Nenhum cartão configurado.</div>';
+    return;
+  }
+  cartoesOrdenados.forEach(k=>{
+    const cfg = cartoesCfg[k]||cartoesCfgDefault[k]||{label:k, fechamento:null};
+    const tot = moeda(totaisPorCartao[k]||0);
+    const fechamento = cfg.fechamento;
+    
+    let diasParaFechamento = null;
+    let textoFechamento = 'Sem fechamento';
+    let alertaClass = '';
+    if (fechamento !== null && fechamento !== undefined) {
+      const diaAtual = hoje.getDate();
+      let dataFechamento = new Date(hoje.getFullYear(), hoje.getMonth(), fechamento);
+      
+      if (diaAtual > fechamento) {
+        dataFechamento.setMonth(dataFechamento.getMonth() + 1);
+      }
+      
+      const diffTime = Math.abs(dataFechamento.getTime() - hoje.getTime());
+      diasParaFechamento = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      textoFechamento = `Fecha dia ${fechamento}`;
+      if (diasParaFechamento <= 3 && diasParaFechamento >= 0) {
+        textoFechamento += ` (em ${diasParaFechamento}d)`;
+        alertaClass = 'text-red-600 dark:text-red-400 font-bold';
+      } else if (diasParaFechamento < 0) {
+        textoFechamento = `Fechou dia ${fechamento} (atrasado)`;
+        alertaClass = 'text-red-600 dark:text-red-400 font-bold';
+      }
+    }
+    
+    const card = document.createElement('div');
+    card.className = 'section-card p-3 border-l-4 border-blue-500 dark:border-blue-400';
+    card.innerHTML = `
+      <div class="flex justify-between items-center mb-1">
+        <div class="text-gray-800 dark:text-gray-100 font-semibold">${cfg.label}</div>
+        <div class="text-sm text-gray-500 dark:text-gray-400">${textoFechamento}</div>
+      </div>
+      <div class="text-lg font-bold ${alertaClass}">R$ ${tot}</div>
+      <div class="mt-2 flex justify-end">
+        <!-- MODIFICADO AQUI: O botão "Editar" agora abre o modal de gerenciamento de cartões -->
+        <button class="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200" onclick="abrirModalGerenciarCartoes()" title="Gerenciar este cartão">Editar</button>
+      </div>`;
+    container.appendChild(card);
+  });
+}
+
+function editarFechamentoPrompt(key){
+   if (key === 'pix') { // <- ADICIONE ESTA LINHA: Impede edição de fechamento para PIX
+        showToast('PIX não possui dia de fechamento.', 'info');
+        return;
+      }
+  const cfg = cartoesCfg[key] || cartoesCfgDefault[key] || {fechamento:null};
+  const novo = prompt('Dia de fechamento (número, ex: 15) — deixe vazio para remover:', cfg.fechamento!==null? String(cfg.fechamento):'');
+  if(novo === null) return;
+  const val = novo.trim()==='' ? null : parseInt(novo);
+  if (val !== null && (isNaN(val) || val < 1 || val > 31)) {
+    showToast('Dia de fechamento inválido. Use um número entre 1 e 31 ou deixe vazio.', 'error');
+    return;
+  }
+  cartoesCfg[key] = {...(cartoesCfg[key]||{}), fechamento: val, label: (cartoesCfg[key] && cartoesCfg[key].label) || cartoesCfgDefault[key].label};
+  db.collection('config').doc('cartoes').set(cartoesCfg, {merge:true})
+    .then(() => showToast('Configurações de cartões atualizadas!'))
+    .catch(err => showToast('Erro ao atualizar configurações de cartões.', 'error'));
+}
+
+/* ===========================
+   HISTÓRICO (gastos normais) + edição inline
+   =========================== */
+// REMOVIDO: renderHistorico (substituído por renderHistoricoWithFilters)
+
+function editarGasto(id, campo, valor){
+  const update = {}; update[campo] = campo==='valor' ? (parseFloat(valor)||0) : valor;
+  db.collection('gastos').doc(id).update(update)
+    .then(() => showToast('Gasto atualizado!'))
+    .catch(err => showToast('Erro ao atualizar gasto.', 'error'));
+}
+
+/* ===========================
+   EXPORT CSV
+   =========================== */
+function exportarCSVmes(){
+  const mesSel = document.getElementById('filtro-mes').value;
+  db.collection('gastos').orderBy('data','desc').get().then(snap=>{
+    const linhas=[['Data Transação','Mês Fatura','Tipo','Cartão/PIX','Descrição','Valor','Categoria']];
+    snap.forEach(doc=>{
+      const d=doc.data();
+      if(!d.data) return;
+      const dt = d.data.toDate ? d.data.toDate() : new Date(d.data);
+      const keyTransacao = yyyymm(dt);
+      const keyFatura = d.mesFatura || keyTransacao; // Usa mesFatura para filtragem
+
+      if(mesSel!=='all' && keyFatura!==mesSel) return; // Filtra por mesFatura
+      linhas.push([dt.toLocaleDateString('pt-BR'), mmYYYY(keyFatura), d.tipo||'', d.cartao||'', (d.descricao||'').replace(/"/g,'""'), String(d.valor||0), d.categoria||'']);
+    });
+    const csv = linhas.map(r=>r.map(v=>`"${v}"`).join(',')).join('\n');
+    const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'}); const url = URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url; a.download = (mesSel==='all' ? 'gastos_todos.csv' : `gastos_${mesSel}.csv`); a.click(); URL.revokeObjectURL(url);
+    showToast('CSV do mês exportado!');
+  }).catch(err => showToast('Erro ao exportar CSV do mês.', 'error'));
+}
+function exportarCSVtudo(){
+  Promise.all([
+    db.collection('gastos').orderBy('data','desc').get(),
+    db.collection('parcelados').orderBy('dataInicio','desc').get(),
+  ]).then(([gastoSnap, parcSnap])=>{ 
+    let csv = 'Tipo,Data Transação,Mês Fatura,Cartão/PIX,Descrição,Valor,Parcelas,Observação,Categoria\n'; // MODIFICADO HEADER
+    gastoSnap.forEach(doc=>{
+      const d=doc.data(); 
+      const dt = d.data.toDate? d.data.toDate() : new Date(d.data);
+      const keyTransacao = yyyymm(dt);
+      const keyFatura = d.mesFatura || keyTransacao;
+      csv += `gasto,"${dt.toLocaleDateString('pt-BR')}","${mmYYYY(keyFatura)}","${d.cartao||''}","${(d.descricao||'').replace(/"/g,'""')}",${d.valor||0},1,,"${d.categoria||''}"\n`;
+    });
+    parcSnap.forEach(doc=>{
+      const p=doc.data();
+      csv += `parcelado,"${mmYYYY(yyyymm(p.dataInicio.toDate ? p.dataInicio.toDate() : new Date(p.dataInicio)))}","${mmYYYY(yyyymm(p.dataInicio.toDate ? p.dataInicio.toDate() : new Date(p.dataInicio)))}","${p.cartao||''}","${(p.descricao||'').replace(/"/g,'""')}",${p.valorParcela||0},${p.numParcelas},parcelado,\n`;
+    });
+
+    const blob=new Blob([csv],{type:'text/csv'}); const url=URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url; a.download='dados_financeiros_completos.csv'; a.click(); URL.revokeObjectURL(url); // MODIFICADO NOME DO ARQUIVO
+    showToast('Todos os dados exportados para CSV!');
+  }).catch(err => showToast('Erro ao exportar todos os dados para CSV.', 'error'));
+}
+
+
+/* ===========================
+   ATUALIZAÇÕES & SNAPSHOTS
+   =========================== */
+function atualizarBarrasVisuais(){
+  document.getElementById('gasto-fixo').textContent=moeda(0);
+  document.getElementById('gasto-parcelado').textContent=moeda(0);
+  document.getElementById('gasto-variavel').textContent=moeda(0);
+}
+
+let unsubLimits, unsubFixos, unsubGastos, unsubParcelados, unsubConfig;
+let allParceladosDocs = [];
+let allGastosDocs = [];
+
+// Funções para mostrar/ocultar spinners
+function showSpinner(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.remove('spinner-hidden');
+}
+function hideSpinner(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.add('spinner-hidden');
+}
+
+function startObservers(){
+  // Desinscrever observers antigos para evitar múltiplos listeners
+  if (unsubLimits) unsubLimits();
+  if (unsubConfig) unsubConfig();
+  if (unsubFixos) unsubFixos();
+  if (unsubGastos) unsubGastos();
+  if (unsubParcelados) unsubParcelados();
+
+  // Mostrar spinners antes de carregar os dados
+  showSpinner('historico-loading-spinner');
+  showSpinner('fixos-loading-spinner');
+  showSpinner('parcelados-loading-spinner');
+  showSpinner('cartoes-loading-spinner'); // Adicionado spinner para cartões
+
+  unsubLimits = db.collection('limites').doc('conta_unica').onSnapshot(doc=>{
+    if(doc.exists) { limites = {...limites, ...doc.data()}; document.getElementById('limite-fixo-input').value=limites.fixo; document.getElementById('limite-parcelado-input').value=limites.parcelado; document.getElementById('limite-variavel-input').value=limites.variavel; }
+    atualizarBarrasVisuais(); // Garante que as barras sejam atualizadas com os novos limites
+  }, err => {
+    console.error("Erro ao carregar limites:", err);
+    showToast('Erro ao carregar limites.', 'error');
+  });
+
+  unsubConfig = db.collection('config').doc('cartoes').onSnapshot(snap=>{
+    if(snap.exists) cartoesCfg = {...cartoesCfgDefault, ...snap.data()};
+    renderCartoes(window._totaisPorCartaoHistorico || {});
+    popularSelectCartoes(); // <--- NOVO: Chama para atualizar os selects
+    hideSpinner('cartoes-loading-spinner'); // Oculta spinner de cartões
+  }, err => {
+    console.error("Erro ao carregar configurações de cartões:", err);
+    showToast('Erro ao carregar configurações de cartões.', 'error');
+    hideSpinner('cartoes-loading-spinner');
+  });
+     
+
+  unsubFixos = db.collection('fixos').orderBy('nome','asc').onSnapshot(snap=>{
+    hideSpinner('fixos-loading-spinner'); // Oculta spinner de fixos
+    allFixosDocs = snap.docs; // Garante que allFixosDocs seja atualizado
+    renderFixos(snap.docs);
+    atualizarTudoComParcelados(); // Recalcula totais após fixos serem carregados
+  }, err => {
+    console.error("Erro ao carregar fixos:", err);
+    hideSpinner('fixos-loading-spinner'); // Oculta spinner de fixos em caso de erro
+    showToast('Erro ao carregar fixos.', 'error');
+  });
+  
+
+
+  // === SEÇÃO CORRIGIDA: OBSERVER DE GASTOS ===
+  unsubGastos = db.collection('gastos').orderBy('data','desc').onSnapshot(snap=>{
+    hideSpinner('historico-loading-spinner'); // Oculta spinner de histórico
+    allGastosDocs = snap.docs; // ATUALIZA allGastosDocs AQUI
+
+    const mesSel = document.getElementById('filtro-mes').value || yyyymm(new Date());
+    
+    let somaVariavel = 0;
+    let somaFixoAvulso = 0;
+    let totaisPorCartaoHist = {};
+    let totaisPorCategoria = {}; // Objeto para armazenar totais por categoria
+
+    mesesDisponiveis = new Set();
+    const docsToProcessForMonth = [];
+    allGastosDocs.forEach(doc=>{
+      const d = doc.data();
+      if(!d.data) return;
+      const dt = d.data.toDate? d.data.toDate() : new Date(d.data);
+      const keyTransacao = yyyymm(dt); // Mês da transação
+      const keyFatura = d.mesFatura || keyTransacao; // Usa mesFatura se existir, senão usa mês da transação
+
+      mesesDisponiveis.add(keyFatura); // Adiciona o mês da fatura aos meses disponíveis
+
+      if(mesSel === 'all' || keyFatura === mesSel) { // FILTRA POR mesFatura
+        docsToProcessForMonth.push(doc);
+        const tipo = (d.tipo || '').toLowerCase();
+        if(tipo === 'variavel') somaVariavel += (d.valor || 0);
+        if(tipo === 'fixo') somaFixoAvulso += (d.valor || 0);
+        if(d.cartao) totaisPorCartaoHist[d.cartao] = (totaisPorCartaoHist[d.cartao]||0) + (d.valor||0);
+        
+        // Soma por categoria para o mês selecionado
+        if(d.categoria) totaisPorCategoria[d.categoria] = (totaisPorCategoria[d.categoria]||0) + (d.valor||0);
+      }
+    });
+
+    renderHistoricoWithFilters(); // Chama a função de renderização com filtros
+    renderCategorias(totaisPorCategoria);
+
+    resumo.historicoMes = somaVariavel + somaFixoAvulso;
+    resumo.pixMes = (docsToProcessForMonth.filter(d=>d.data().cartao==='pix').reduce((a,b)=>a + (b.data().valor||0),0) || 0);
+    window._totaisPorCartaoHistorico = totaisPorCartaoHist || {};
+    
+    // ATRIBUIÇÃO DA VARIÁVEL GLOBAL PARA O GRÁFICO (mantido para compatibilidade, mas o novo modal usa allGastosDocs diretamente)
+    window._totaisPorCategoriaAtual = totaisPorCategoria; 
+    
+    atualizarBarra('variavel', somaVariavel + somaFixoAvulso); 
+
+    // Salva soma de variáveis para uso no banner de alertas
+    window._somaVariavelAtual = somaVariavel + somaFixoAvulso;
+
+    atualizarTudoComParcelados();
+    atualizarFiltroMeses();
+    
+    // NOVO: Gera insights inteligentes
+    setTimeout(() => gerarInsights(), 500);
+
+    // NOVO: Chama aplicarFiltros() aqui para garantir que os gráficos sejam renderizados
+    // com os dados mais recentes assim que o modal for aberto.
+    // Isso é importante porque allGastosDocs é populado aqui.
+    if (!modalGraficos.classList.contains('hidden')) { // Apenas se o modal já estiver aberto
+        aplicarFiltros();
+    }
+
+  }, err => {
+    console.error("Erro ao carregar gastos:", err);
+    hideSpinner('historico-loading-spinner'); // Oculta spinner de histórico em caso de erro
+    showToast('Erro ao carregar histórico de gastos.', 'error');
+  });
+
+  unsubParcelados = db.collection('parcelados').orderBy('dataInicio','desc').onSnapshot(snap=>{
+    hideSpinner('parcelados-loading-spinner'); // Oculta spinner de parcelados
+    allParceladosDocs = snap.docs;
+    
+    mesesParceladosColetados = new Set();
+    snap.docs.forEach(doc=>{
+      const p = doc.data();
+      const inicio = p.dataInicio && p.dataInicio.toDate ? p.dataInicio.toDate() : new Date(p.dataInicio);
+      for(let i=0;i<p.numParcelas;i++){
+        mesesParceladosColetados.add( yyyymm(addMonths(inicio,i)) );
+      }
+    });
+
+    renderParcelados(allParceladosDocs);
+    atualizarTudoComParcelados();
+    atualizarFiltroMeses();
+  }, err => {
+    console.error("Erro ao carregar parcelados:", err);
+    hideSpinner('parcelados-loading-spinner'); // Oculta spinner de parcelados em caso de erro
+    showToast('Erro ao carregar parcelados.', 'error');
+  });
+}
+
+function atualizarTudoComParcelados(){
+  // referência ao mês selecionado (mantém compatibilidade com 'all')
+  const mesSel = document.getElementById('filtro-mes').value || yyyymm(new Date());
+  const targetKey = mesSel==='all' ? yyyymm(new Date()) : mesSel;
+  const [ty,tm] = targetKey.split('-'); 
+  const refDate = new Date(parseInt(ty), parseInt(tm)-1,1);
+
+  const parcSnapDocs = allParceladosDocs || []; 
+  let parcelasMesTotal = 0;
+  let totaisPorCartao = {...(window._totaisPorCartaoHistorico || {})};
+  let totalRestanteParcelados = 0;
+
+  parcSnapDocs.forEach(doc=>{
+    const p = (typeof doc.data === 'function') ? doc.data() : doc;
+    const inicio = p.dataInicio && p.dataInicio.toDate ? p.dataInicio.toDate() : new Date(p.dataInicio);
+    
+    // conta parcelas que caem no mês de referência (para 'parcelas no mês')
+    const diff = monthDiff(inicio, refDate);
+    if(diff>=0 && diff < (p.numParcelas||0)){
+      parcelasMesTotal += (p.valorParcela||0);
+      if(p.cartao) totaisPorCartao[p.cartao] = (totaisPorCartao[p.cartao]||0) + (p.valorParcela||0);
+    }
+    
+    // --- CORREÇÃO IMPORTANTE ---
+    // usa refDate (mês selecionado) para calcular quantas parcelas RESTAM a partir desse mês
+   const parcelaAtualIndex = Math.max(0, Math.min((p.numParcelas||1)-1, monthDiff(inicio, refDate)));
+const parcelaAtual = parcelaAtualIndex + 1;
+// calcula o total comprometido a partir do mês selecionado (inclui o mês atual)
+const restantesIncluindoAtual = Math.max(0, (p.numParcelas || 0) - diff);
+totalRestanteParcelados += restantesIncluindoAtual * (p.valorParcela || 0);
+
+  });
+
+  resumo.parcelasMes = parcelasMesTotal;
+  renderCartoes(totaisPorCartao);
+
+  resumo.cartoesMes = Object.entries(totaisPorCartao).filter(([k])=>k!=='pix').reduce((acc,[,v])=> acc + (v||0), 0);
+  resumo.pixMes = (window._totaisPorCartaoHistorico && window._totaisPorCartaoHistorico['pix']) || resumo.pixMes || 0;
+
+  document.getElementById('p-total-restante').textContent = moeda(totalRestanteParcelados);
+
+  // === FIXOS ===
+    db.collection('fixos').get().then(fixSnap=>{
+      const somaFixosAtivos = fixSnap.docs.reduce((a,d)=> 
+        a + ((d.data().ativo && d.data().valor) ? d.data().valor : 0), 0);
+
+      // salva no resumo para entrar no total geral
+      resumo.fixosMes = somaFixosAtivos;
+
+let totalGastosAcumulado = 0;
+// Gastos variáveis (todos realizados)
+allGastosDocs.forEach(doc => totalGastosAcumulado += (doc.data().valor || 0));
+// Parcelados: Somar apenas parcelas pagas até agora (não o total futuro)
+const hoje = new Date();
+allParceladosDocs.forEach(doc => {
+  const p = doc.data();
+  const inicio = p.dataInicio && p.dataInicio.toDate ? p.dataInicio.toDate() : new Date(p.dataInicio);
+  const parcelasPagas = Math.max(0, monthDiff(inicio, hoje) + 1); // Parcelas pagas até agora
+  const valorPagas = Math.min(parcelasPagas, p.numParcelas || 1) * (p.valorParcela || 0);
+  totalGastosAcumulado += valorPagas;
+});
+// Fixos: Somar valor mensal * número de meses com dados (aproximação)
+const mesesComDados = new Set([...mesesDisponiveis, ...mesesParceladosColetados]);
+allFixosDocs.forEach(doc => {
+  if (doc.data().ativo !== false) {
+    totalGastosAcumulado += (doc.data().valor || 0) * mesesComDados.size; // Multiplica pelo número de meses únicos
+  }
+});
+
+
+      // Verifica todos os tipos de gastos que ultrapassam o limite
+      const triggerParcelado = parcelasMesTotal > (limites.parcelado || 0);
+      const triggerFixo = somaFixosAtivos > (limites.fixo || 0);
+      const somaVariavel = window._somaVariavelAtual || 0;
+      const triggerVariavel = somaVariavel > (limites.variavel || 0);
+      
+      const banner = document.getElementById('danger-banner');
+      const alertas = [];
+
+      if(triggerFixo) {
+        alertas.push(`<strong>Fixos:</strong> R$ ${moeda(somaFixosAtivos)} / R$ ${moeda(limites.fixo)} (${((somaFixosAtivos/limites.fixo)*100).toFixed(1)}%)`);
+      }
+      
+      if(triggerParcelado) {
+        alertas.push(`<strong>Parcelados:</strong> R$ ${moeda(parcelasMesTotal)} / R$ ${moeda(limites.parcelado)} (${((parcelasMesTotal/limites.parcelado)*100).toFixed(1)}%)`);
+      }
+      
+      if(triggerVariavel) {
+        alertas.push(`<strong>Variáveis:</strong> R$ ${moeda(somaVariavel)} / R$ ${moeda(limites.variavel)} (${((somaVariavel/limites.variavel)*100).toFixed(1)}%)`);
+      }
+
+      if(alertas.length > 0) {
+        banner.style.display = 'block';
+        banner.innerHTML = `
+          <div class="flex items-start gap-2">
+            <span class="text-xl">🚨</span>
+            <div class="flex-1">
+              <div class="font-bold mb-2">Atenção: Limite(s) ultrapassado(s)!</div>
+              <div class="space-y-1">
+                ${alertas.map(alerta => `<div class="text-sm">• ${alerta}</div>`).join('')}
+              </div>
+              <div class="text-xs mt-2 text-red-800 dark:text-red-300">
+                💡 <strong>Dica:</strong> Considere revisar gastos desnecessários ou ajustar seus limites.
+              </div>
+            </div>
+          </div>
+        `;
+      } else {
+        banner.style.display = 'none';
+      }
+
+      document.getElementById('gasto-fixo').textContent = moeda(somaFixosAtivos);
+      atualizarBarra('fixo', somaFixosAtivos);
+
+      // agora que já temos fixos, atualiza resumo
+      atualizarResumoUI();
+    });
+}
+
+
+function atualizarResumoUI(){
+
+  const totalGastosPrevistosMes = (resumo.historicoMes || 0) + (resumo.parcelasMes || 0) + (resumo.fixosMes || 0);
+  document.getElementById('resumo-total-mes').textContent = moeda(totalGastosPrevistosMes); // Agora mostra a soma dos gastos
+
+  document.getElementById('resumo-cartoes').textContent = moeda(resumo.cartoesMes||0);
+  document.getElementById('resumo-pix').textContent = moeda(resumo.pixMes||0);
+  document.getElementById('resumo-parcelas-mes').textContent = moeda(resumo.parcelasMes||0);
+}
+
+
+
+
+function atualizarBarra(tipo, gasto){
+  const limite = limites[tipo] || 0;
+  const restante = Math.max(0, limite - (gasto||0));
+  const percent = limite ? Math.max(0, Math.min(100, (gasto/limite)*100)) : 0; 
+  document.getElementById(`progress-${tipo}`).style.width = percent + '%';
+  document.getElementById(`gasto-${tipo}`).textContent = moeda(gasto||0);
+  document.getElementById(`restante-${tipo}`).textContent = moeda(restante);
+}
+
+/* ===========================
+   RENDER CATEGORIAS
+   =========================== */
+function renderCategorias(totaisPorCategoria){
+  const container = document.getElementById('categorias-list');
+  container.innerHTML = '';
+
+  const categoriasOrdenadas = Object.keys(totaisPorCategoria).sort((a, b) => totaisPorCategoria[b] - totaisPorCategoria[a]);
+
+  if (categoriasOrdenadas.length === 0) {
+    container.innerHTML = '<div class="text-gray-500 dark:text-gray-400">Nenhum gasto categorizado no mês.</div>';
+    return;
+  }
+
+  const totalGastosVariaveisMes = Object.values(totaisPorCategoria).reduce((sum, val) => sum + val, 0);
+
+  categoriasOrdenadas.forEach(categoriaKey => {
+    const totalGasto = totaisPorCategoria[categoriaKey];
+    const percent = totalGastosVariaveisMes ? (totalGasto / totalGastosVariaveisMes) * 100 : 0;
+    
+    const categoriaNome = categoriaKey.charAt(0).toUpperCase() + categoriaKey.slice(1);
+
+    const categoriaDiv = document.createElement('div');
+    categoriaDiv.className = 'mb-2';
+    categoriaDiv.innerHTML = `
+      <div class="flex justify-between items-center mb-1">
+        <div class="font-semibold">${categoriaNome}</div>
+        <div class="text-sm text-gray-500 dark:text-gray-400">R$ ${moeda(totalGasto)}</div>
+      </div>
+      <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+        <div class="progress-bar bg-blue-400 h-2 rounded-full" style="width:${percent}%"></div>
+      </div>
+    `;
+    container.appendChild(categoriaDiv);
+  });
+}
+
+
+/* ===========================
+   UI EVENTS: forms, export, edits
+   =========================== */
+document.getElementById('parcelado-form').addEventListener('submit', e=>{
+  e.preventDefault();
+  const desc = document.getElementById('p-desc').value.trim();
+  const valorParcela = parseFloat(document.getElementById('p-valor').value)||0;
+  const numParcelas = parseInt(document.getElementById('p-num').value)||1;
+  const cartao = document.getElementById('p-cartao').value||'';
+  const inicio = document.getElementById('p-inicio').value;
+  if(!desc || valorParcela<=0 || numParcelas<1 || !inicio) {
+    showToast('Preencha todos os campos do parcelado corretamente.', 'error');
+    return;
+  }
+  const [y,m] = inicio.split('-');
+  const dataInicio = new Date(parseInt(y), parseInt(m)-1, 1);
+  db.collection('parcelados').add({descricao:desc, valorParcela, numParcelas, cartao, dataInicio})
+    .then(()=> {
+      e.target.reset();
+      showToast('Parcelado adicionado com sucesso!');
+      gerarInsights(); // NOVO: Atualiza insights após adicionar parcelado
+    })
+    .catch(err => showToast('Erro ao adicionar parcelado: ' + err.message, 'error'));
+});
+
+document.getElementById('exportar-csv').addEventListener('click', exportarCSVmes);
+document.getElementById('exportar-tudo').addEventListener('click', exportarCSVtudo);
+
+document.getElementById('limite-fixo-input').addEventListener('change', e=> salvarLimite('fixo', e.target.value));
+document.getElementById('limite-parcelado-input').addEventListener('change', e=> salvarLimite('parcelado', e.target.value));
+document.getElementById('limite-variavel-input').addEventListener('change', e=> salvarLimite('variavel', e.target.value));
+
+/* ===========================
+   FILTRO MESES POPULATION helper (GERAL)
+   =========================== */
+function atualizarFiltroMeses(){
+  const select = document.getElementById('filtro-mes');
+  const atual = select.value; 
+
+  select.innerHTML = '<option value="all">Todos</option>';
+
+ const setAllDataMonths = new Set([...(mesesDisponiveis||[]), ...(mesesParceladosColetados||[])]);
+  
+  Array.from(setAllDataMonths).sort().reverse().forEach(k=>{
+    const opt = document.createElement('option');
+    opt.value = k;
+    opt.textContent = mmYYYY(k);
+    select.appendChild(opt);
+  });
+
+  if(atual && Array.from(select.options).some(o=>o.value===atual)) {
+      select.value = atual;
+  } else {
+      select.value = yyyymm(new Date());
+  }
+}
+
+
+document.getElementById('filtro-mes').addEventListener('change', ()=>{
+  // Ao mudar o filtro de mês, reinicia os observers para carregar os dados do novo mês
+  startObservers(); 
+});
+
+
+/* ===========================
+   NOVO: MENU FLUTUANTE EXPANSÍVEL PARA MOBILE
+   =========================== */
+let isFloatingMenuExpanded = false;
+
+function initFloatingMenu() {
+  const btnMainFloat = document.getElementById('btn-main-float');
+  const secondaryButtons = document.getElementById('secondary-buttons');
+  const mainIcon = document.getElementById('main-icon');
+  const btnAddFixoFloat = document.getElementById('btn-add-fixo-float');
+
+  // Toggle do menu principal
+  btnMainFloat.addEventListener('click', () => {
+    isFloatingMenuExpanded = !isFloatingMenuExpanded;
+    
+    if (isFloatingMenuExpanded) {
+      // Expande o menu
+      secondaryButtons.classList.remove('opacity-0', 'translate-y-4');
+      secondaryButtons.classList.add('opacity-100', 'translate-y-0');
+      mainIcon.className = 'fa fa-times text-xl';
+      btnMainFloat.style.transform = 'rotate(45deg)'; // Efeito de rotação
+    } else {
+      // Recolhe o menu
+      secondaryButtons.classList.add('opacity-0', 'translate-y-4');
+      secondaryButtons.classList.remove('opacity-100', 'translate-y-0');
+      mainIcon.className = 'fa fa-plus text-xl';
+      btnMainFloat.style.transform = 'rotate(0deg)'; // Volta à posição original
+    }
+  });
+
+  // Event listener para o novo botão de adicionar fixo
+  btnAddFixoFloat.addEventListener('click', () => {
+    abrirModalFixo();
+    // Recolhe o menu após ação
+    if (isFloatingMenuExpanded) { // Verifica se está expandido antes de recolher
+      isFloatingMenuExpanded = false;
+      secondaryButtons.classList.add('opacity-0', 'translate-y-4');
+      secondaryButtons.classList.remove('opacity-100', 'translate-y-0');
+      mainIcon.className = 'fa fa-plus text-xl';
+      btnMainFloat.style.transform = 'rotate(0deg)';
+    }
+  });
+
+  // Fecha menu ao clicar fora
+  document.addEventListener('click', (e) => {
+    const floatingMenu = document.getElementById('floating-menu');
+    if (!floatingMenu.contains(e.target) && isFloatingMenuExpanded) {
+      isFloatingMenuExpanded = false;
+      secondaryButtons.classList.add('opacity-0', 'translate-y-4');
+      secondaryButtons.classList.remove('opacity-100', 'translate-y-0');
+      mainIcon.className = 'fa fa-plus text-xl';
+      btnMainFloat.style.transform = 'rotate(0deg)';
+    }
+  });
+}
+
+/* ===========================
+   MODAL DE ADICIONAR GASTOS
+   =========================== */
+const btnOpenAddGasto = document.getElementById('btn-open-add-gasto');
+const btnAddGastoFloat = document.getElementById('btn-add-gasto-float');
+const modalAddGasto = document.getElementById('modal-add-gasto');
+const modalClose = document.getElementById('modal-close');
+const modalCancel = document.getElementById('modal-cancel');
+const formAddGastoModal = document.getElementById('form-add-gasto-modal');
+const modalCartaoSelect = document.getElementById('modal-cartao'); // NOVO
+const mesFaturaEstimadoSpan = document.getElementById('mes-fatura-estimado').querySelector('span'); // NOVO
+
+function atualizarMesFaturaEstimado() {
+  const cartaoSelecionado = modalCartaoSelect.value;
+  const hoje = new Date();
+  let mesFaturaDisplay = 'Mês Atual';
+
+  if (cartaoSelecionado && cartaoSelecionado !== 'pix' && cartaoSelecionado !== '') {
+    const configCartao = cartoesCfg[cartaoSelecionado];
+    if (configCartao && configCartao.fechamento !== null && configCartao.fechamento !== undefined) {
+      const mesFatura = calcularMesFatura(hoje, configCartao.fechamento);
+      mesFaturaDisplay = mmYYYY(mesFatura);
+    }
+  } else if (cartaoSelecionado === 'pix' || cartaoSelecionado === '') {
+    mesFaturaDisplay = mmYYYY(yyyymm(hoje));
+  }
+  mesFaturaEstimadoSpan.textContent = mesFaturaDisplay;
+}
+
+modalCartaoSelect.addEventListener('change', atualizarMesFaturaEstimado); // NOVO: Atualiza ao mudar o cartão
+
+function abrirModal() {
+  modalAddGasto.classList.remove('hidden');
+  atualizarMesFaturaEstimado(); // NOVO: Atualiza ao abrir o modal
+  setTimeout(() => {
+    document.getElementById('modal-cartao').focus();
+  }, 100);
+}
+
+function fecharModal() {
+  modalAddGasto.classList.add('hidden');
+  formAddGastoModal.reset();
+  document.getElementById('modal-valor').classList.remove('border-red-500');
+  document.getElementById('error-modal-valor').classList.add('hidden');
+  selectedTagsArray = []; // Limpa tags selecionadas
+  renderSelectedTags();
+}
+
+btnOpenAddGasto.addEventListener('click', abrirModal);
+btnAddGastoFloat.addEventListener('click', () => {
+  abrirModal();
+  // Recolhe o menu flutuante se estiver expandido
+  if (isFloatingMenuExpanded) {
+    const secondaryButtons = document.getElementById('secondary-buttons');
+    const mainIcon = document.getElementById('main-icon');
+    const btnMainFloat = document.getElementById('btn-main-float');
+    
+    isFloatingMenuExpanded = false;
+    secondaryButtons.classList.add('opacity-0', 'translate-y-4');
+    secondaryButtons.classList.remove('opacity-100', 'translate-y-0');
+    mainIcon.className = 'fa fa-plus text-xl';
+    btnMainFloat.style.transform = 'rotate(0deg)';
+  }
+});
+
+// REMOVIDO: fecharTodosOsModais() duplicado aqui, já existe no topo do script
+
+modalClose.addEventListener('click', fecharModal);
+modalCancel.addEventListener('click', fecharModal);
+
+modalAddGasto.addEventListener('click', e => {
+  if (e.target === modalAddGasto) fecharModal();
+});
+
+formAddGastoModal.addEventListener('submit', e => {
+  e.preventDefault();
+  const cartaoSelecionado = document.getElementById('modal-cartao').value || '';
+  const categoria = document.getElementById('modal-categoria').value || ''; 
+  const valorInput = document.getElementById('modal-valor');
+  const valor = parseFloat(valorInput.value) || 0;
+  const desc = document.getElementById('modal-desc').value || '';
+  
+  const errorValor = document.getElementById('error-modal-valor');
+  valorInput.classList.remove('border-red-500');
+  errorValor.classList.add('hidden');
+
+  if (valor <= 0) { 
+    valorInput.classList.add('border-red-500');
+    errorValor.classList.remove('hidden');
+    showToast('Valor é obrigatório e deve ser maior que zero.', 'error');
+    return;
+  }
+  
+  // NOVO: Calcula mesFatura
+  const hoje = new Date();
+  let mesFaturaCalculado;
+  if (cartaoSelecionado === 'pix' || cartaoSelecionado === '') { // PIX ou Nenhum
+    mesFaturaCalculado = yyyymm(hoje); // Mês atual da transação
+  } else {
+    const configCartao = cartoesCfg[cartaoSelecionado];
+    if (configCartao && configCartao.fechamento !== null && configCartao.fechamento !== undefined) {
+      mesFaturaCalculado = calcularMesFatura(hoje, configCartao.fechamento);
+    } else {
+      mesFaturaCalculado = yyyymm(hoje); // Fallback para mês atual se não houver fechamento
+    }
+  }
+
+  db.collection('gastos').add({
+    tipo: 'variavel',
+    cartao: cartaoSelecionado,
+    categoria,
+    valor,
+    descricao: desc,
+    tags: selectedTagsArray, // NOVO: Adiciona as tags selecionadas
+    data: firebase.firestore.Timestamp.now(),
+    mesFatura: mesFaturaCalculado // NOVO CAMPO
+  }).then(() => {
+    // Limpa tags selecionadas
+    selectedTagsArray = [];
+    renderSelectedTags();
+    fecharModal();
+    showToast('Gasto variável adicionado com sucesso!');
+    gerarInsights(); // NOVO: Atualiza insights após adicionar gasto
+  }).catch(err => {
+    showToast('Erro ao adicionar gasto: ' + err.message, 'error');
+  });
+});
+
+    
+// Variáveis do modal e formulário
+const modalFixo = document.getElementById('modal-fixo');
+const formFixo = document.getElementById('form-fixo');
+const selectCategoria = document.getElementById('fixo-categoria');
+const selectSubcategoria = document.getElementById('fixo-subcategoria');
+const btnCancelarFixo = document.getElementById('btn-cancelar-fixo');
+
+const subcategoriasPorCategoria = {
+  'Assinaturas': ['Netflix', 'Spotify', 'Amazon Prime', 'Disney+'],
+  'Contas': ['Luz', 'Água', 'Internet', 'Telefone'],
+  'Seguros': ['Carro', 'Casa', 'Vida'],
+  'Outros': []
+};
+
+// Abrir modal para adicionar fixo
+function abrirModalFixo(dados = null) {
+  modalFixo.classList.remove('hidden');
+  formFixo.reset();
+  selectSubcategoria.innerHTML = '<option value="">Selecione uma categoria primeiro</option>';
+  selectSubcategoria.disabled = true;
+
+  if (dados) {
+    document.getElementById('modal-fixo-title').textContent = 'Editar Gasto Fixo';
+    formFixo.nome.value = dados.nome || '';
+    formFixo.categoria.value = dados.categoria || '';
+    atualizarSubcategorias(dados.categoria);
+    formFixo.subcategoria.value = dados.subcategoria || '';
+    formFixo.valor.value = dados.valor || '';
+    formFixo.ativo.checked = dados.ativo ?? true;
+    formFixo.dataset.docId = dados.id; // para edição
+  } else {
+    document.getElementById('modal-fixo-title').textContent = 'Adicionar Gasto Fixo';
+    delete formFixo.dataset.docId;
+  }
+}
+
+// Atualiza opções de subcategoria conforme categoria selecionada
+function atualizarSubcategorias(categoria) {
+  const subcats = subcategoriasPorCategoria[categoria] || [];
+  selectSubcategoria.innerHTML = '';
+  if (subcats.length === 0) {
+    selectSubcategoria.innerHTML = '<option value="">Sem subcategorias</option>';
+    selectSubcategoria.disabled = true;
+  } else {
+    selectSubcategoria.disabled = false;
+    selectSubcategoria.innerHTML = '<option value="">Selecione uma subcategoria</option>';
+    subcats.forEach(sub => {
+      const option = document.createElement('option');
+      option.value = sub;
+      option.textContent = sub;
+      selectSubcategoria.appendChild(option);
+    });
+  }
+}
+
+selectCategoria.addEventListener('change', e => {
+  atualizarSubcategorias(e.target.value);
+});
+
+btnCancelarFixo.addEventListener('click', () => {
+  modalFixo.classList.add('hidden');
+});
+
+// Submissão do formulário para adicionar ou editar fixo
+formFixo.addEventListener('submit', e => {
+  e.preventDefault();
+
+  const novoFixo = {
+    nome: formFixo.nome.value.trim(),
+    categoria: formFixo.categoria.value,
+    subcategoria: formFixo.subcategoria.value || '',
+    valor: parseFloat(formFixo.valor.value),
+    ativo: formFixo.ativo.checked
+  };
+
+  if (!novoFixo.nome || !novoFixo.categoria || isNaN(novoFixo.valor)) {
+    showToast('Por favor, preencha todos os campos obrigatórios corretamente.', 'error');
+    return;
+  }
+
+  const docId = formFixo.dataset.docId;
+
+  if (docId) {
+    // Editar gasto fixo existente
+    db.collection('fixos').doc(docId).update(novoFixo)
+      .then(() => {
+        showToast('Gasto fixo atualizado com sucesso!');
+        modalFixo.classList.add('hidden');
+        gerarInsights(); // NOVO: Atualiza insights após editar fixo
+      })
+      .catch(() => {
+        showToast('Erro ao atualizar gasto fixo.', 'error');
+      });
+  } else {
+    // Adicionar novo gasto fixo
+    db.collection('fixos').add(novoFixo)
+      .then(() => {
+        showToast('Gasto fixo adicionado com sucesso!');
+        modalFixo.classList.add('hidden');
+        gerarInsights(); // NOVO: Atualiza insights após adicionar fixo
+      })
+      .catch(() => {
+        showToast('Erro ao adicionar gasto fixo.', 'error');
+      });
+  }
+});
+
+/* ===========================
+   PWA & NOTIFICAÇÕES
+   =========================== */
+async function solicitarPermissaoNotificacoes() {
+  try {
+    const permission = await Notification.requestPermission();
+    if (permission === 'granted') {
+      console.log('Permissão concedida para notificações');
+      // Substitua 'SUA_VAPID_KEY' pela sua chave VAPID do Firebase
+      const token = await messaging.getToken({ vapidKey: 'SUA_VAPID_KEY' }); 
+      console.log('Token FCM:', token);
+      // Envie o token para seu backend para enviar notificações
+    } else {
+      console.log('Permissão para notificações negada');
+    }
+  } catch (error) {
+    console.error('Erro ao solicitar permissão:', error);
+  }
+}
+
+// Registrar service worker APENAS para PWA (sem Firebase por agora)
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js')
+    .then(registration => {
+      console.log('✅ Service Worker registrado para PWA:', registration.scope);
+      // Comentei as partes do Firebase para evitar erros - volte depois se quiser notificações
+      // messaging.useServiceWorker(registration);
+      // solicitarPermissaoNotificacoes();
+    })
+    .catch(err => {
+      console.error('❌ Erro ao registrar Service Worker:', err);
+    });
+}
+
+/* ===========================
+   NOVO: MODAL DE GRÁFICOS INTERATIVOS COM FILTROS
+   =========================== */
+// Variáveis globais para os gráficos e filtros
+let chartCategorias = null;
+let chartCartoes = null;
+let chartTendenciaCategorias = null; // NOVO: Variável para o gráfico de tendência
+const modalGraficos = document.getElementById('modal-graficos');
+const modalGraficosClose = document.getElementById('modal-graficos-close');
+const btnOpenGraficos = document.getElementById('btn-open-graficos');
+const filtroCartoesContainer = document.getElementById('filtro-cartoes-container');
+const filtroCategoriasContainer = document.getElementById('filtro-categorias-container');
+const filtroPeriodoGraficos = document.getElementById('filtro-periodo-graficos'); // NOVO
+const filtroPeriodoStart = document.getElementById('filtro-periodo-start');     // NOVO
+const filtroPeriodoEnd = document.getElementById('filtro-periodo-end');       // NOVO
+const btnAplicarFiltros = document.getElementById('btn-aplicar-filtros');
+const btnLimparFiltros = document.getElementById('btn-limpar-filtros');
+
+// Função para criar checkboxes dinamicamente
+function criarCheckboxes(container, items, prefix, checkedAll = true) {
+  container.innerHTML = '';
+  items.forEach(item => {
+    const id = `${prefix}-${item}`;
+    const label = document.createElement('label');
+    label.className = 'inline-flex items-center gap-1 cursor-pointer select-none text-gray-700 dark:text-gray-300';
+    label.innerHTML = `
+      <input type="checkbox" id="${id}" value="${item}" ${checkedAll ? 'checked' : ''} class="checkbox-filtro form-checkbox h-4 w-4 text-blue-600 dark:text-blue-400 border-gray-300 dark:border-gray-600 rounded" />
+      <span class="text-gray-700 dark:text-gray-300">${item.charAt(0).toUpperCase() + item.slice(1)}</span>
+    `;
+    container.appendChild(label);
+  });
+}
+
+// Função para obter valores dos checkboxes selecionados
+function obterSelecionados(prefix) {
+  const checkboxes = document.querySelectorAll(`input.checkbox-filtro[id^="${prefix}-"]:checked`);
+  return Array.from(checkboxes).map(cb => cb.value);
+}
+
+// NOVO: Função auxiliar para obter o intervalo de datas do filtro de período
+function getPeriodoDatas() {
+  const hoje = new Date();
+  let startDate = new Date(hoje.getFullYear(), hoje.getMonth(), 1); // Padrão: início do mês atual
+  let endDate = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0); // Padrão: fim do mês atual
+
+  const periodoSelecionado = filtroPeriodoGraficos.value;
+
+  if (periodoSelecionado === 'last_3_months') {
+    startDate = new Date(hoje.getFullYear(), hoje.getMonth() - 2, 1);
+  } else if (periodoSelecionado === 'last_6_months') {
+    startDate = new Date(hoje.getFullYear(), hoje.getMonth() - 5, 1);
+  } else if (periodoSelecionado === 'current_year') {
+    startDate = new Date(hoje.getFullYear(), 0, 1);
+  } else if (periodoSelecionado === 'custom') {
+    if (filtroPeriodoStart.value) {
+      const [y, m] = filtroPeriodoStart.value.split('-');
+      startDate = new Date(parseInt(y), parseInt(m) - 1, 1);
+    }
+    if (filtroPeriodoEnd.value) {
+      const [y, m] = filtroPeriodoEnd.value.split('-');
+      endDate = new Date(parseInt(y), parseInt(m), 0); // Último dia do mês
+    }
+  }
+  // Para 'current_month', os padrões já estão corretos
+
+  return { startDate, endDate };
+}
+
+// Função para filtrar gastos por cartões e categorias (MODIFICADA)
+function filtrarGastosPorFiltros(cartoesSelecionados, categoriasSelecionadas) {
+  const { startDate, endDate } = getPeriodoDatas(); // NOVO: Obtém o período selecionado
+  const gastosFiltrados = allGastosDocs.filter(doc => {
+    const d = doc.data();
+    if (!d.data) return false;
+    
+    const keyTransacao = yyyymm(d.data.toDate ? d.data.toDate() : new Date(d.data));
+    const keyFatura = d.mesFatura || keyTransacao; // Usa mesFatura para filtragem
+
+    // Converte keyFatura para Date para comparação com startDate/endDate
+    const [faturaAno, faturaMes] = keyFatura.split('-');
+    const dataFatura = new Date(parseInt(faturaAno), parseInt(faturaMes) - 1, 1);
+
+    // NOVO: Filtra por período usando mesFatura
+    if (dataFatura < startDate || dataFatura > endDate) return false;
+    
+    // Filtra por cartão
+    if (cartoesSelecionados.length > 0 && !cartoesSelecionados.includes((d.cartao || '').toLowerCase())) return false;
+    // Filtra por categoria
+    if (categoriasSelecionadas.length > 0 && !categoriasSelecionadas.includes((d.categoria || '').toLowerCase())) return false;
+    return true;
+  });
+  return gastosFiltrados;
+}
+
+// Função para calcular totais por categoria e cartão a partir dos gastos filtrados (MODIFICADA)
+function calcularTotais(gastos) {
+  const totaisPorCategoria = {};
+  const totaisPorCartao = {};
+  const totaisPorCategoriaMes = {}; // NOVO: Para o gráfico de tendência
+
+  gastos.forEach(doc => {
+    const d = doc.data();
+    if (!d.valor) return;
+
+    // Categoria
+    if (d.categoria) {
+      const cat = d.categoria.toLowerCase();
+      totaisPorCategoria[cat] = (totaisPorCategoria[cat] || 0) + d.valor;
+
+      // NOVO: Para o gráfico de tendência
+      const mesAno = d.mesFatura || yyyymm(d.data.toDate ? d.data.toDate() : new Date(d.data)); // Usa mesFatura
+      if (!totaisPorCategoriaMes[mesAno]) {
+        totaisPorCategoriaMes[mesAno] = {};
+      }
+      totaisPorCategoriaMes[mesAno][cat] = (totaisPorCategoriaMes[mesAno][cat] || 0) + d.valor;
+    }
+
+    // Cartão
+    if (d.cartao) {
+      const cartao = d.cartao.toLowerCase();
+      totaisPorCartao[cartao] = (totaisPorCartao[cartao] || 0) + d.valor;
+    }
+  });
+
+  return { totaisPorCategoria, totaisPorCartao, totaisPorCategoriaMes }; // NOVO: Retorna totaisPorCategoriaMes
+}
+
+
+// Função para renderizar gráfico de pizza por categoria
+function renderGraficoCategorias(totaisPorCategoria) {
+  const labels = [];
+  const data = [];
+
+  for (const cat in totaisPorCategoria) {
+    labels.push(cat.charAt(0).toUpperCase() + cat.slice(1));
+    data.push(totaisPorCategoria[cat]);
+  }
+
+  const ctx = document.getElementById('grafico-categorias').getContext('2d');
+  if (chartCategorias) chartCategorias.destroy();
+  chartCategorias = new Chart(ctx, {
+    type: 'pie',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Gastos por Categoria',
+        data,
+        backgroundColor: [
+          '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'
+        ],
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { 
+          position: 'bottom',
+          labels: {
+            color: html.classList.contains('dark') ? '#d1d5db' : '#374151' // Cor da legenda
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label: ctx => {
+              const label = ctx.label || '';
+              const value = ctx.parsed || 0;
+              const total = ctx.dataset.data.reduce((a,b) => a+b, 0);
+              const pct = total ? ((value / total) * 100).toFixed(2) : 0;
+              return `${label}: R$ ${moeda(value)} (${pct}%)`;
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
+// Função para renderizar gráfico de barras por cartão
+function renderGraficoCartoes(totaisPorCartao) {
+  const labels = [];
+  const data = [];
+
+  for (const cartao in totaisPorCartao) {
+    labels.push(cartao.charAt(0).toUpperCase() + cartao.slice(1));
+    data.push(totaisPorCartao[cartao]);
+  }
+
+  const ctx = document.getElementById('grafico-cartoes').getContext('2d');
+  if (chartCartoes) chartCartoes.destroy(); // CORRIGIDO: Agora destrói chartCartoes
+  chartCartoes = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Gastos por Cartão',
+        data,
+        backgroundColor: '#3b82f6',
+      }]
+    },
+    options: {
+      responsive: true,
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            callback: val => `R$ ${moeda(val)}`,
+            color: html.classList.contains('dark') ? '#d1d5db' : '#374151' // Cor dos ticks
+          },
+          grid: {
+            color: html.classList.contains('dark') ? '#4b5563' : '#e5e7eb' // Cor da grid
+          }
+        },
+        x: {
+          ticks: {
+            color: html.classList.contains('dark') ? '#d1d5db' : '#374151' // Cor dos ticks
+          },
+          grid: {
+            color: html.classList.contains('dark') ? '#4b5563' : '#e5e7eb' // Cor da grid
+          }
+        }
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => `R$ ${moeda(ctx.parsed.y)}`
+          }
+        }
+      }
+    }
+  });
+}
+
+// MELHORADO: Função para renderizar gráfico de tendência por categoria com controles avançados
+function renderGraficoTendenciaCategorias(totaisPorCategoriaMes) {
+  const ctx = document.getElementById('grafico-tendencia-categorias').getContext('2d');
+  if (chartTendenciaCategorias) chartTendenciaCategorias.destroy();
+
+  // Se não há dados, renderiza gráfico vazio
+  if (!totaisPorCategoriaMes || Object.keys(totaisPorCategoriaMes).length === 0) {
+    chartTendenciaCategorias = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: ['Sem dados'],
+        datasets: []
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: false }
+        }
+      }
+    });
+    
+    // Limpa estatísticas
+    document.getElementById('tendencia-total').textContent = 'R$ 0,00';
+    document.getElementById('tendencia-maior-mes').textContent = '-';
+    document.getElementById('tendencia-menor-mes').textContent = '-';
+    document.getElementById('tendencia-media').textContent = 'R$ 0,00';
+    return;
+  }
+
+  // Organiza os dados por mês
+  const mesesOrdenados = Object.keys(totaisPorCategoriaMes).sort();
+  const todasCategorias = new Set();
+  
+  // Coleta todas as categorias únicas
+  Object.values(totaisPorCategoriaMes).forEach(mesData => {
+    Object.keys(mesData).forEach(cat => todasCategorias.add(cat));
+  });
+
+  // Calcula estatísticas para exibir
+  const totaisPorMes = mesesOrdenados.map(mes => 
+    Object.values(totaisPorCategoriaMes[mes] || {}).reduce((sum, val) => sum + val, 0)
+  );
+  
+  const totalPeriodo = totaisPorMes.reduce((sum, val) => sum + val, 0);
+  const maiorMes = Math.max(...totaisPorMes);
+  const menorMes = Math.min(...totaisPorMes);
+  const mediaMensal = totaisPorMes.length > 0 ? totalPeriodo / totaisPorMes.length : 0;
+  
+  const indiceMaiorMes = totaisPorMes.indexOf(maiorMes);
+  const indiceMenorMes = totaisPorMes.indexOf(menorMes);
+  
+  // Atualiza estatísticas na interface
+  document.getElementById('tendencia-total').textContent = `R$ ${moeda(totalPeriodo)}`;
+  document.getElementById('tendencia-maior-mes').textContent = `${mmYYYY(mesesOrdenados[indiceMaiorMes])} (R$ ${moeda(maiorMes)})`;
+  document.getElementById('tendencia-menor-mes').textContent = `${mmYYYY(mesesOrdenados[indiceMenorMes])} (R$ ${moeda(menorMes)})`;
+  document.getElementById('tendencia-media').textContent = `R$ ${moeda(mediaMensal)}`;
+
+  // Obtém tipo de gráfico selecionado
+  const tipoGrafico = document.getElementById('tendencia-tipo-grafico').value;
+
+  const datasets = Array.from(todasCategorias).map((categoria, index) => {
+    const cores = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
+    const cor = cores[index % cores.length];
+    
+    const dataset = {
+      label: categoria.charAt(0).toUpperCase() + categoria.slice(1),
+      data: mesesOrdenados.map(mes => totaisPorCategoriaMes[mes][categoria] || 0),
+      borderColor: cor,
+      backgroundColor: tipoGrafico === 'area' ? cor + '40' : cor + '20',
+      borderWidth: 2,
+      pointRadius: 4,
+      pointHoverRadius: 6,
+      tension: tipoGrafico === 'line' ? 0.4 : 0
+    };
+
+    if (tipoGrafico === 'area') {
+      dataset.fill = true;
+    }
+
+    return dataset;
+  });
+
+  chartTendenciaCategorias = new Chart(ctx, {
+    type: tipoGrafico === 'area' ? 'line' : tipoGrafico,
+    data: {
+      labels: mesesOrdenados.map(mes => mmYYYY(mes)),
+      datasets
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: {
+        intersect: false,
+        mode: 'index'
+      },
+      scales: {
+        x: {
+          grid: {
+            display: true,
+            color: html.classList.contains('dark') ? '#4b5563' : '#f3f4f6'
+          },
+          ticks: {
+            color: html.classList.contains('dark') ? '#d1d5db' : '#374151'
+          }
+        },
+        y: {
+          beginAtZero: true,
+          grid: {
+            display: true,
+            color: html.classList.contains('dark') ? '#4b5563' : '#f3f4f6'
+          },
+          ticks: {
+            callback: val => `R$ ${moeda(val)}`,
+            color: html.classList.contains('dark') ? '#d1d5db' : '#374151'
+          }
+        }
+      },
+      plugins: {
+        legend: { 
+          position: 'bottom',
+          labels: {
+            color: html.classList.contains('dark') ? '#d1d5db' : '#374151',
+            onClick: (e, legendItem) => {
+              const index = legendItem.datasetIndex;
+              const chart = chartTendenciaCategorias;
+              const meta = chart.getDatasetMeta(index);
+              meta.hidden = meta.hidden === null ? !chart.data.datasets[index].hidden : null;
+              chart.update();
+            }
+          }
+        },
+        tooltip: {
+          backgroundColor: html.classList.contains('dark') ? 'rgba(55,65,81,0.9)' : 'rgba(0,0,0,0.8)',
+          titleColor: html.classList.contains('dark') ? '#f9fafb' : 'white',
+          bodyColor: html.classList.contains('dark') ? '#f9fafb' : 'white',
+          borderColor: '#3b82f6',
+          borderWidth: 1,
+          callbacks: {
+            title: (tooltipItems) => {
+              return `${tooltipItems[0].label}`;
+            },
+            label: ctx => `${ctx.dataset.label}: R$ ${moeda(ctx.parsed.y)}`,
+            footer: (tooltipItems) => {
+              const total = tooltipItems.reduce((sum, item) => sum + item.parsed.y, 0);
+              return `Total do mês: R$ ${moeda(total)}`;
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
+// NOVO: Event listeners para controles do gráfico de tendência
+document.getElementById('tendencia-tipo-grafico').addEventListener('change', () => {
+  aplicarFiltros(); // Re-renderiza o gráfico com o novo tipo
+});
+
+document.getElementById('btn-toggle-todas-categorias').addEventListener('click', () => {
+  if (!chartTendenciaCategorias) return;
+  
+  const chart = chartTendenciaCategorias;
+  const allHidden = chart.data.datasets.every(dataset => {
+    const meta = chart.getDatasetMeta(chart.data.datasets.indexOf(dataset));
+    return meta.hidden === true;
+  });
+  
+  // Se todas estão ocultas, mostra todas. Caso contrário, oculta todas.
+  chart.data.datasets.forEach((dataset, index) => {
+    const meta = chart.getDatasetMeta(index);
+    meta.hidden = !allHidden;
+  });
+  
+  chart.update();
+  
+  const btn = document.getElementById('btn-toggle-todas-categorias');
+  btn.textContent = allHidden ? 'Ocultar Todas' : 'Mostrar Todas';
+});
+
+// Função para aplicar filtros e atualizar gráficos (MODIFICADA)
+function aplicarFiltros() {
+  const cartoesSelecionados = obterSelecionados('filtro-cartoes').map(c => c.toLowerCase());
+  const categoriasSelecionadas = obterSelecionados('filtro-categorias').map(c => c.toLowerCase());
+
+  const gastosFiltrados = allGastosDocs.filter(doc => {
+    const d = doc.data();
+    if (!d.data) return false;
+    
+    const keyTransacao = yyyymm(d.data.toDate ? d.data.toDate() : new Date(d.data));
+    const keyFatura = d.mesFatura || keyTransacao; // Usa mesFatura para filtragem
+
+    const { startDate, endDate } = getPeriodoDatas();
+    // Converte keyFatura para Date para comparação com startDate/endDate
+    const [faturaAno, faturaMes] = keyFatura.split('-');
+    const dataFatura = new Date(parseInt(faturaAno), parseInt(faturaMes) - 1, 1);
+
+    if (dataFatura < startDate || dataFatura > endDate) return false;
+    if (cartoesSelecionados.length > 0 && !cartoesSelecionados.includes((d.cartao || '').toLowerCase())) return false;
+    if (categoriasSelecionadas.length > 0 && !categoriasSelecionadas.includes((d.categoria || '').toLowerCase())) return false;
+    return true;
+  });
+
+  const { totaisPorCategoria, totaisPorCartao, totaisPorCategoriaMes } = calcularTotais(gastosFiltrados); // NOVO: Pega totaisPorCategoriaMes
+
+  renderGraficoCategorias(totaisPorCategoria);
+  renderGraficoCartoes(totaisPorCartao);
+  renderGraficoTendenciaCategorias(totaisPorCategoriaMes); // NOVO: Renderiza o gráfico de tendência
+
+  // NOVO: Atualiza o resumo de totais no modal
+  const totalFiltrado = gastosFiltrados.reduce((sum, doc) => sum + (doc.data().valor || 0), 0);
+  document.getElementById('graficos-total-filtrado').textContent = `R$ ${moeda(totalFiltrado)}`;
+
+  const { startDate, endDate } = getPeriodoDatas();
+  // Calcula a diferença em meses de forma mais precisa para a média
+  const diffYears = endDate.getFullYear() - startDate.getFullYear();
+  const diffMonths = endDate.getMonth() - startDate.getMonth();
+  const numMeses = diffYears * 12 + diffMonths + 1; // +1 para incluir o mês final
+  
+  const mediaMensal = numMeses > 0 ? totalFiltrado / numMeses : 0;
+  document.getElementById('graficos-media-mensal').textContent = `R$ ${moeda(mediaMensal)}`;
+}
+
+// Função para limpar filtros (marca todos)
+function limparFiltros() {
+  document.querySelectorAll('#filtro-cartoes-container input[type=checkbox]').forEach(cb => cb.checked = true);
+  document.querySelectorAll('#filtro-categorias-container input[type=checkbox]').forEach(cb => cb.checked = true);
+  filtroPeriodoGraficos.value = 'current_month'; // NOVO: Reseta o filtro de período
+  filtroPeriodoStart.classList.add('hidden');    // NOVO
+  filtroPeriodoEnd.classList.add('hidden');      // NOVO
+  aplicarFiltros();
+}
+
+// Inicializa filtros e gráficos ao abrir modal (MODIFICADA)
+btnOpenGraficos.addEventListener('click', () => {
+  modalGraficos.classList.remove('hidden');
+
+  // Pega cartões únicos dos gastos atuais
+  const cartoesUnicos = Array.from(new Set(allGastosDocs.map(doc => (doc.data().cartao || '').toLowerCase()).filter(c => c)));
+  // Pega categorias únicas dos gastos atuais
+  const categoriasUnicas = Array.from(new Set(allGastosDocs.map(doc => (doc.data().categoria || '').toLowerCase()).filter(c => c)));
+
+  criarCheckboxes(filtroCartoesContainer, cartoesUnicos, 'filtro-cartoes', true);
+  criarCheckboxes(filtroCategoriasContainer, categoriasUnicas, 'filtro-categorias', true);
+
+  // NOVO: Garante que o filtro de período esteja no mês atual ao abrir
+  filtroPeriodoGraficos.value = 'current_month';
+  filtroPeriodoStart.classList.add('hidden');
+  filtroPeriodoEnd.classList.add('hidden');
+
+  aplicarFiltros();
+});
+
+modalGraficosClose.addEventListener('click', () => {
+  modalGraficos.classList.add('hidden');
+  if (chartCategorias) {
+    chartCategorias.destroy();
+    chartCategorias = null;
+  }
+  if (chartCartoes) {
+    chartCartoes.destroy();
+    chartCartoes = null;
+  }
+  if (chartTendenciaCategorias) { // NOVO: Destrói o gráfico de tendência
+    chartTendenciaCategorias.destroy();
+    chartTendenciaCategorias = null;
+  }
+});
+
+btnAplicarFiltros.addEventListener('click', aplicarFiltros);
+btnLimparFiltros.addEventListener('click', limparFiltros);
+
+// NOVO: Event listener para o filtro de período
+filtroPeriodoGraficos.addEventListener('change', () => {
+  if (filtroPeriodoGraficos.value === 'custom') {
+    filtroPeriodoStart.classList.remove('hidden');
+    filtroPeriodoEnd.classList.remove('hidden');
+    // Define valores padrão para o mês atual se estiver vazio
+    const hoje = new Date();
+    if (!filtroPeriodoStart.value) filtroPeriodoStart.value = yyyymm(hoje);
+    if (!filtroPeriodoEnd.value) filtroPeriodoEnd.value = yyyymm(hoje);
+  } else {
+    filtroPeriodoStart.classList.add('hidden');
+    filtroPeriodoEnd.classList.add('hidden');
+  }
+  aplicarFiltros(); // Aplica filtros imediatamente após mudar o período
+});
+
+// NOVO: Event listeners para os inputs de data personalizados
+filtroPeriodoStart.addEventListener('change', aplicarFiltros);
+filtroPeriodoEnd.addEventListener('change', aplicarFiltros);
+
+
+/* ===========================
+   BOOTSTRAP: start observers and initial load
+   =========================== */
+function boot(){
+  carregarLimites();
+  // initial empty UI
+  atualizarBarrasVisuais();
+  // start observing everything
+  startObservers();
+  // 🔥 Força o filtro de mês para o mês atual
+  const filtroMes = document.getElementById('filtro-mes');
+  const mesAtual = yyyymm(new Date());
+  filtroMes.value = mesAtual;
+  // NOVO: Popula os selects de cartão na inicialização
+  popularSelectCartoes(); 
+  
+  // NOVO: Inicializa sistemas de melhorias
+  initTagsSystem();
+  initHistoricoSearch();
+  initHistoricoCollapsible(); // Inicializa a funcionalidade de colapsar/expandir
+  initHistoricoActions();     // Inicializa os botões de ação
+  initFloatingMenu(); // NOVO: Inicializa o menu flutuante
+}
+
+
+/* ===========================
+   INSIGHTS INTELIGENTES
+   =========================== */
+function gerarInsights() {
+  const container = document.getElementById('insights-container');
+  container.innerHTML = '';
+  
+  const insights = [];
+  const hoje = new Date();
+
+  // Insight: Categoria que mais consome (do mês atual)
+  if (window._totaisPorCategoriaAtual && Object.keys(window._totaisPorCategoriaAtual).length > 0) {
+    const categoriaMax = Object.entries(window._totaisPorCategoriaAtual)
+      .sort(([,a], [,b]) => b - a)[0];
+    if (categoriaMax) {
+      insights.push({
+        icon: '📊',
+        title: 'Categoria Dominante (Mês)',
+        description: `${categoriaMax[0].charAt(0).toUpperCase() + categoriaMax[0].slice(1)} é sua maior categoria de gastos com R$ ${moeda(categoriaMax[1])} este mês.`,
+        type: 'info'
+      });
+    }
+  }
+  
+  // Insight: Alerta: Orçamento Estourado!
+  const totalGasto = (resumo.historicoMes || 0) + (resumo.parcelasMes || 0) + (resumo.fixosMes || 0);
+  const totalLimite = limites.fixo + limites.parcelado + limites.variavel;
+  const economia = totalLimite - totalGasto;
+  if (economia < 0) {
+    insights.push({
+      icon: '🚨',
+      title: 'Alerta: Orçamento Estourado!',
+      description: `Você já ultrapassou seu orçamento em R$ ${moeda(Math.abs(economia))} este mês.`,
+      type: 'error'
+    });
+  }
+
+  // Insight: Maior Parcelamento
+  if (allParceladosDocs && allParceladosDocs.length > 0) {
+    let maiorParcelado = { nome: '', valor: 0 };
+
+    allParceladosDocs.forEach(doc => {
+      const p = doc.data();
+      if (p.valorParcela > maiorParcelado.valor) {
+        maiorParcelado = { nome: p.descricao, valor: p.valorParcela };
+      }
+    });
+    
+    if (maiorParcelado.valor > 0) {
+      insights.push({
+        icon: '💸',
+        title: 'Maior Parcelamento',
+        description: `Seu maior parcelamento é "${maiorParcelado.nome}" com R$ ${moeda(maiorParcelado.valor)} por mês.`,
+        type: 'info'
+      });
+    }
+  }
+
+  // Insight: Atenção: Gastos Fixos Elevados
+  const fixoPercent = ((resumo.fixosMes || 0) / limites.fixo * 100);
+  if (fixoPercent > 80) {
+    insights.push({
+      icon: '⚠️',
+      title: 'Atenção: Gastos Fixos Elevados',
+      description: `Seus gastos fixos estão em ${fixoPercent.toFixed(1)}% do limite. Considere revisar assinaturas não utilizadas.`,
+      type: 'warning'
+    });
+  }
+  
+  // Renderiza insights
+  if (insights.length === 0) {
+    container.innerHTML = '<div class="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-gray-500 dark:text-gray-400 text-sm">Aguardando dados para gerar insights...</div>';
+    return;
+  }
+  
+  insights.forEach(insight => {
+    const div = document.createElement('div');
+    div.className = `p-3 rounded-lg border-l-4 ${
+      insight.type === 'success' ? 'bg-green-50 dark:bg-green-900/20 border-green-500' :
+      insight.type === 'warning' ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-500' :
+      insight.type === 'error' ? 'bg-red-50 dark:bg-red-900/20 border-red-500' :
+      'bg-blue-50 dark:bg-blue-900/20 border-blue-500'
+    }`;
+    div.innerHTML = `
+      <div class="flex items-start gap-2">
+        <span class="text-lg">${insight.icon}</span>
+        <div class="flex-1">
+          <h4 class="font-semibold text-sm ${
+            insight.type === 'success' ? 'text-green-800 dark:text-green-200' :
+            insight.type === 'warning' ? 'text-yellow-800 dark:text-yellow-200' :
+            insight.type === 'error' ? 'text-red-800 dark:text-red-300' :
+            'text-blue-800 dark:text-blue-200'
+          }">${insight.title}</h4>
+          <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">${insight.description}</p>
+        </div>
+      </div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+
+
+/* ===========================
+   NOVO: MENU FLUTUANTE EXPANSÍVEL PARA MOBILE
+   =========================== */
+let menuExpanded = false;
+function toggleFloatingMenu() {
+  const secondaryButtons = document.getElementById('secondary-buttons');
+  const mainIcon = document.getElementById('main-icon');
+  const btnMainFloat = document.getElementById('btn-main-float');
+  menuExpanded = !menuExpanded;
+  if (menuExpanded) {
+    secondaryButtons.classList.remove('opacity-0', 'translate-y-4');
+    secondaryButtons.classList.add('opacity-100', 'translate-y-0');
+    mainIcon.className = 'fa fa-times text-xl';
+    btnMainFloat.style.transform = 'rotate(45deg)';
+    // Certifica-se de que os botões secundários podem ser clicados
+    secondaryButtons.style.pointerEvents = 'auto';
+  } else {
+    secondaryButtons.classList.add('opacity-0', 'translate-y-4');
+    secondaryButtons.classList.remove('opacity-100', 'translate-y-0');
+    mainIcon.className = 'fa fa-plus text-xl';
+    btnMainFloat.style.transform = 'rotate(0deg)';
+    // Impede cliques nos botões secundários quando recolhido
+    secondaryButtons.style.pointerEvents = 'none';
+  }
+}
+
+// Event listeners para o menu flutuante
+document.getElementById('btn-main-float').addEventListener('click', toggleFloatingMenu);
+
+// Event listener para botão de adicionar fixo no menu flutuante
+document.getElementById('btn-add-fixo-float').addEventListener('click', () => {
+  abrirModalFixo();
+  if (isFloatingMenuExpanded) toggleFloatingMenu(); // Fecha o menu se estiver aberto
+});
+
+// Event listener para botão de adicionar parcelado no menu flutuante
+document.getElementById('btn-add-parcelado-float').addEventListener('click', () => {
+  abrirModalParcelado(); // Chama sem argumentos para ADICIONAR
+  if (isFloatingMenuExpanded) toggleFloatingMenu(); // Fecha o menu se estiver aberto
+});
+
+
+// Fecha o menu quando clica fora
+document.addEventListener('click', (e) => {
+  const floatingMenu = document.getElementById('floating-menu');
+  if (menuExpanded && !floatingMenu.contains(e.target)) {
+    toggleFloatingMenu();
+  }
+});
+
+// Melhoria no scroll para esconder/mostrar o menu flutuante
+window.addEventListener('scroll', () => {
+  const st = window.pageYOffset || document.documentElement.scrollTop;
+  const floatingMenu = document.getElementById('floating-menu');
+  // Verifica se algum modal está aberto
+  const isModalOpen = !document.getElementById('modal-add-gasto').classList.contains('hidden') ||
+                     !document.getElementById('modal-graficos').classList.contains('hidden') ||
+                     !document.getElementById('modal-fixo').classList.contains('hidden') ||
+                     !document.getElementById('modal-parcelado').classList.contains('hidden') ||
+                     !document.getElementById('modal-graficos-fixos').classList.contains('hidden') ||
+                     !document.getElementById('modal-confirmacao').classList.contains('hidden') ||
+                     !document.getElementById('modal-gerenciar-cartoes').classList.contains('hidden'); // NOVO: Adicionado modal de gerenciar cartões
+  if (isModalOpen) {
+    // Se algum modal estiver aberto, esconde completamente o menu e o torna não clicável
+    floatingMenu.classList.add('invisible');
+    floatingMenu.style.display = 'none'; // Garante que não ocupe espaço
+    return;
+  } else {
+    // Se nenhum modal estiver aberto, mostra o menu e o torna clicável
+    floatingMenu.classList.remove('invisible');
+    floatingMenu.style.display = 'block'; // Garante que esteja visível
+  }
+  if (st > lastScrollTop && st > 100) {
+    // Scrolling down - esconde o menu
+    floatingMenu.style.transform = 'translateY(100px)';
+    floatingMenu.style.opacity = '0';
+    floatingMenu.classList.add('invisible'); // Torna não clicável
+    floatingMenu.style.display = 'none'; // Garante que não ocupe espaço
+    if (menuExpanded) toggleFloatingMenu(); // Fecha se estiver expandido
+  } else {
+    // Scrolling up - mostra o menu
+    floatingMenu.style.transform = 'translateY(0)';
+    floatingMenu.style.opacity = '1';
+    floatingMenu.classList.remove('invisible'); // Torna clicável
+    floatingMenu.style.display = 'block'; // Garante que esteja visível
+  }
+  lastScrollTop = st <= 0 ? 0 : st;
+});
+// Função para esconder/mostrar menu quando modals abrem/fecham
+function updateFloatingMenuVisibility() {
+  const floatingMenu = document.getElementById('floating-menu');
+  const isModalOpen = !document.getElementById('modal-add-gasto').classList.contains('hidden') ||
+                     !document.getElementById('modal-graficos').classList.contains('hidden') ||
+                     !document.getElementById('modal-fixo').classList.contains('hidden') ||
+                     !document.getElementById('modal-parcelado').classList.contains('hidden') ||
+                     !document.getElementById('modal-graficos-fixos').classList.contains('hidden') ||
+                     !document.getElementById('modal-confirmacao').classList.contains('hidden') ||
+                     !document.getElementById('modal-gerenciar-cartoes').classList.contains('hidden'); // NOVO: Adicionado modal de gerenciar cartões
+  if (isModalOpen) {
+    floatingMenu.classList.add('invisible'); // Torna não clicável
+    floatingMenu.style.display = 'none'; // Garante que não ocupe espaço
+    if (menuExpanded) toggleFloatingMenu(); // Fecha se estiver expandido
+  } else {
+    floatingMenu.classList.remove('invisible'); // Torna clicável
+    floatingMenu.style.display = 'block'; // Garante que esteja visível
+  }
+}
+
+    /* ===========================
+       NOVO: BUSCA E AGRUPAMENTO NO HISTÓRICO
+       =========================== */
+    // Mantido como estava, mas a função renderHistoricoWithFilters será atualizada
+    function initHistoricoSearch() {
+      const searchInput = document.getElementById('search-historico');
+      const groupBySelect = document.getElementById('group-by-historico');
+      const clearButton = document.getElementById('clear-search');
+
+      searchInput.addEventListener('input', (e) => {
+        currentSearchTerm = e.target.value.toLowerCase().trim();
+        renderHistoricoWithFilters();
+      });
+
+      groupBySelect.addEventListener('change', (e) => {
+        currentGroupBy = e.target.value;
+        renderHistoricoWithFilters();
+      });
+
+      clearButton.addEventListener('click', () => {
+        searchInput.value = '';
+        groupBySelect.value = '';
+        currentSearchTerm = '';
+        currentGroupBy = '';
+        renderHistoricoWithFilters();
+      });
+    }
+
+    // Variável para armazenar o estado de colapso dos grupos
+    let collapsedGroups = JSON.parse(localStorage.getItem('historicoCollapsedGroups')) || {};
+
+    /* ===========================
+       NOVO: FUNÇÕES PARA COLAPSAR/EXPANDIR GRUPOS NO HISTÓRICO
+       =========================== */
+    function initHistoricoCollapsible() {
+      document.getElementById('transactions-list').addEventListener('click', (e) => {
+        const header = e.target.closest('.group-header');
+        if (header) {
+          const groupKey = header.dataset.groupKey;
+          toggleGroupVisibility(groupKey);
+        }
+      });
+    }
+
+    function toggleGroupVisibility(groupKey) {
+      const items = document.querySelectorAll(`.group-item[data-group-key="${groupKey}"]`);
+      const headerIcon = document.querySelector(`.group-header[data-group-key="${groupKey}"] .group-toggle-icon`);
+
+      if (!items.length || !headerIcon) return;
+
+      const isCollapsed = items[0].classList.contains('hidden');
+
+      items.forEach(item => {
+        if (isCollapsed) {
+          item.classList.remove('hidden');
+        } else {
+          item.classList.add('hidden');
+        }
+      });
+
+      if (isCollapsed) {
+        headerIcon.classList.remove('fa-chevron-right');
+        headerIcon.classList.add('fa-chevron-down');
+        collapsedGroups[groupKey] = false;
+      } else {
+        headerIcon.classList.remove('fa-chevron-down');
+        headerIcon.classList.add('fa-chevron-right');
+        collapsedGroups[groupKey] = true;
+      }
+      localStorage.setItem('historicoCollapsedGroups', JSON.stringify(collapsedGroups));
+    }
+
+    /* ===========================
+       NOVO: FUNÇÕES PARA AÇÕES DE EDITAR/REMOVER NO HISTÓRICO
+       =========================== */
+    function initHistoricoActions() {
+      document.getElementById('transactions-list').addEventListener('click', (e) => {
+        const editBtn = e.target.closest('.edit-gasto');
+        const deleteBtn = e.target.closest('.delete-gasto');
+
+        if (editBtn) {
+          const id = editBtn.dataset.id;
+          editarGastoModal(id);
+        } else if (deleteBtn) {
+          const id = deleteBtn.dataset.id;
+          removerGasto(id);
+        }
+      });
+    }
+
+    /* ===========================
+       FUNÇÃO PARA REMOVER GASTO DO HISTÓRICO
+       =========================== */
+    function removerGasto(id) {
+      abrirModalConfirmacao(
+        'Excluir Gasto',
+        'Deseja realmente excluir este gasto? Esta ação é irreversível.',
+        () => { // Callback de confirmação
+          db.collection('gastos').doc(id).delete()
+            .then(() => {
+              showToast('Gasto removido com sucesso!', 'success');
+              // Re-renderiza o histórico para refletir a mudança
+              renderHistoricoWithFilters();
+              // Opcional: Atualiza outros resumos se necessário
+              gerarInsights();
+            })
+            .catch(err => {
+              showToast('Erro ao remover gasto: ' + err.message, 'error');
+            });
+        }
+      );
+    }
+    
+
+    function editarGastoModal(id) {
+      const gastoDoc = allGastosDocs.find(doc => doc.id === id);
+      if (!gastoDoc) {
+        showToast('Gasto não encontrado para edição.', 'error');
+        return;
+      }
+      const d = gastoDoc.data();
+
+      // Preencher o modal de adicionar gasto com os dados do gasto a ser editado
+      document.getElementById('modal-add-gasto').classList.remove('hidden');
+      document.getElementById('modal-add-gasto').dataset.editId = id; // Armazena o ID para saber que é edição
+      document.getElementById('modal-add-gasto').querySelector('h2').textContent = 'Editar Gasto Variável';
+
+      document.getElementById('modal-cartao').value = d.cartao || '';
+      document.getElementById('modal-categoria').value = d.categoria || '';
+      document.getElementById('modal-valor').value = d.valor || '';
+      document.getElementById('modal-desc').value = d.descricao || '';
+
+      // Preencher tags
+      selectedTagsArray = d.tags || [];
+      renderSelectedTags();
+
+      // Atualizar mês de fatura estimado
+      atualizarMesFaturaEstimado();
+
+      // Mudar o texto do botão de submissão
+      document.querySelector('#form-add-gasto-modal button[type="submit"]').textContent = 'Salvar Alterações';
+
+      // Remover o listener antigo do form e adicionar um novo para edição
+      formAddGastoModal.removeEventListener('submit', handleAddGastoSubmit);
+      formAddGastoModal.addEventListener('submit', handleEditGastoSubmit);
+    }
+
+    // Função auxiliar para lidar com a submissão de adição (original)
+    function handleAddGastoSubmit(e) {
+      e.preventDefault();
+      const cartaoSelecionado = document.getElementById('modal-cartao').value || '';
+      const categoria = document.getElementById('modal-categoria').value || '';
+      const valorInput = document.getElementById('modal-valor');
+      const valor = parseFloat(valorInput.value) || 0;
+      const desc = document.getElementById('modal-desc').value || '';
+
+      const errorValor = document.getElementById('error-modal-valor');
+      valorInput.classList.remove('border-red-500');
+      errorValor.classList.add('hidden');
+
+      if (valor <= 0) {
+        valorInput.classList.add('border-red-500');
+        errorValor.classList.remove('hidden');
+        showToast('Valor é obrigatório e deve ser maior que zero.', 'error');
+        return;
+      }
+
+      const hoje = new Date();
+      let mesFaturaCalculado;
+      if (cartaoSelecionado === 'pix' || cartaoSelecionado === '') {
+        mesFaturaCalculado = yyyymm(hoje);
+      } else {
+        const configCartao = cartoesCfg[cartaoSelecionado];
+        if (configCartao && configCartao.fechamento !== null && configCartao.fechamento !== undefined) {
+          mesFaturaCalculado = calcularMesFatura(hoje, configCartao.fechamento);
+        } else {
+          mesFaturaCalculado = yyyymm(hoje);
+        }
+      }
+
+      db.collection('gastos').add({
+        tipo: 'variavel',
+        cartao: cartaoSelecionado,
+        categoria,
+        valor,
+        descricao: desc,
+        tags: selectedTagsArray,
+        data: firebase.firestore.Timestamp.now(),
+        mesFatura: mesFaturaCalculado
+      }).then(() => {
+        selectedTagsArray = [];
+        renderSelectedTags();
+        fecharModal();
+        showToast('Gasto variável adicionado com sucesso!');
+        gerarInsights();
+      }).catch(err => {
+        showToast('Erro ao adicionar gasto: ' + err.message, 'error');
+      });
+    }
+
+    // Função auxiliar para lidar com a submissão de edição
+    function handleEditGastoSubmit(e) {
+      e.preventDefault();
+      const id = document.getElementById('modal-add-gasto').dataset.editId;
+      if (!id) {
+        showToast('Erro: ID do gasto não encontrado para edição.', 'error');
+        return;
+      }
+
+      const cartaoSelecionado = document.getElementById('modal-cartao').value || '';
+      const categoria = document.getElementById('modal-categoria').value || '';
+      const valorInput = document.getElementById('modal-valor');
+      const valor = parseFloat(valorInput.value) || 0;
+      const desc = document.getElementById('modal-desc').value || '';
+
+      const errorValor = document.getElementById('error-modal-valor');
+      valorInput.classList.remove('border-red-500');
+      errorValor.classList.add('hidden');
+
+      if (valor <= 0) {
+        valorInput.classList.add('border-red-500');
+        errorValor.classList.remove('hidden');
+        showToast('Valor é obrigatório e deve ser maior que zero.', 'error');
+        return;
+      }
+
+      // Recalcular mesFatura para o caso de o cartão ter sido alterado
+     const hoje = new Date();
+let mesFaturaCalculado;
+if (cartaoSelecionado === 'pix' || cartaoSelecionado === '') {
+  mesFaturaCalculado = yyyymm(hoje);  // PIX: sempre atual
+} else {
+  const configCartao = cartoesCfg[cartaoSelecionado];
+  const fechamento = configCartao ? configCartao.fechamento : null;
+  const offset = configCartao ? (configCartao.mesVencimentoOffset || 0) : 0;  // <-- NOVO: Pega o offset
+  if (fechamento !== null && fechamento !== undefined) {
+    mesFaturaCalculado = calcularMesFatura(hoje, fechamento, offset);  // <-- NOVO: Passa offset
+  } else {
+    mesFaturaCalculado = yyyymm(hoje);  // Fallback
+  }
+}
+
+      db.collection('gastos').doc(id).update({
+        cartao: cartaoSelecionado,
+        categoria,
+        valor,
+        descricao: desc,
+        tags: selectedTagsArray,
+        mesFatura: mesFaturaCalculado
+      }).then(() => {
+        selectedTagsArray = [];
+        renderSelectedTags();
+        fecharModal();
+        showToast('Gasto atualizado com sucesso!');
+        gerarInsights();
+      }).catch(err => {
+        showToast('Erro ao atualizar gasto: ' + err.message, 'error');
+      }).finally(() => {
+        // Resetar o formulário e o botão para o estado de "adicionar"
+        document.getElementById('modal-add-gasto').querySelector('h2').textContent = 'Adicionar Gasto Variável';
+        document.querySelector('#form-add-gasto-modal button[type="submit"]').textContent = 'Adicionar';
+        delete document.getElementById('modal-add-gasto').dataset.editId;
+        formAddGastoModal.removeEventListener('submit', handleEditGastoSubmit);
+        formAddGastoModal.addEventListener('submit', handleAddGastoSubmit);
+      });
+    }
+
+    
+
+    /* ===========================
+       ATUALIZAÇÃO DA FUNÇÃO renderHistoricoWithFilters
+       =========================== */
+    // Esta função já foi atualizada acima, mas a deixamos aqui para referência
+    // function renderHistoricoWithFilters() { ... }
+
+    function renderHistoricoGroupedByCartao(docs) {
+      const tbody = document.getElementById('transactions-list');
+      const groups = {};
+
+      docs.forEach(doc => {
+        const d = doc.data();
+        const cartaoKey = d.cartao || 'sem_cartao';
+        if (!groups[cartaoKey]) {
+          groups[cartaoKey] = [];
+        }
+        groups[cartaoKey].push(doc);
+      });
+
+      Object.keys(groups).sort().forEach(cartaoKey => {
+        const cartaoLabel = (cartoesCfg[cartaoKey] && cartoesCfg[cartaoKey].label) || cartaoKey.replace('_', ' ').toUpperCase();
+        const totalGroup = groups[cartaoKey].reduce((sum, doc) => sum + (doc.data().valor || 0), 0);
+        const isCollapsed = collapsedGroups[cartaoKey] || false;
+        const iconClass = isCollapsed ? 'fa-chevron-right' : 'fa-chevron-down';
+
+        const groupHeader = document.createElement('tr');
+        groupHeader.className = 'group-header cursor-pointer bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors';
+        groupHeader.dataset.groupKey = cartaoKey;
+        groupHeader.setAttribute('role', 'button');
+        groupHeader.setAttribute('tabindex', '0');
+        groupHeader.setAttribute('aria-expanded', !isCollapsed);
+        groupHeader.innerHTML = `
+          <td colspan="8" class="td font-semibold text-gray-800 dark:text-gray-100">
+            <i class="fa ${iconClass} mr-2 group-toggle-icon"></i>
+            ${cartaoLabel} — Total: R$ ${moeda(totalGroup)}
+          </td>
+        `;
+        tbody.appendChild(groupHeader);
+
+        groups[cartaoKey].forEach(doc => {
+          const d = doc.data();
+          const id = doc.id;
+          const dt = d.data.toDate ? d.data.toDate() : new Date(d.data);
+          const mesFaturaDisplay = d.mesFatura ? mmYYYY(d.mesFatura) : '-';
+
+          const tagsHtml = (d.tags || []).map(tag =>
+            `<span class="tag-pill" style="font-size: 0.6rem; padding: 0.125rem 0.25rem;">${tag}</span>`
+          ).join('');
+
+          let descricao = d.descricao || '';
+          if (currentSearchTerm) {
+            const regex = new RegExp(`(${currentSearchTerm})`, 'gi');
+            descricao = descricao.replace(regex, '<span class="search-highlight">$1</span>');
+          }
+
+          const tr = document.createElement('tr');
+          tr.className = `group-item ${isCollapsed ? 'hidden' : ''}`;
+          tr.dataset.groupKey = cartaoKey;
+           tr.innerHTML = `
+            <td class="td">${(cartoesCfg[d.cartao] && cartoesCfg[d.cartao].label) || d.cartao || ''}</td>
+            <td class="td">${descricao}</td>
+            <td class="td">R$ ${moeda(d.valor)}</td>
+            <td class="td">${dt.toLocaleDateString('pt-BR')}</td>
+            <td class="td">${mesFaturaDisplay}</td>
+            <td class="td">${d.tipo}</td>
+            <td class="td">
+        <div class="flex flex-wrap gap-1">${tagsHtml}</div>
+      </td>
+      <td class="td">
+        <button class="text-blue-600 dark:text-blue-400 edit-gasto mr-2 hover:text-blue-800 dark:hover:text-blue-200" data-id="${id}" aria-label="Editar gasto">
+          <i class="fa fa-edit"></i>
+        </button>
+        <button class="text-red-600 dark:text-red-400 delete-gasto hover:text-red-800 dark:hover:text-red-200" data-id="${id}" aria-label="Remover gasto">
+          <i class="fa fa-trash"></i>
+        </button>
+      </td>
+    `;
+    
+          tbody.appendChild(tr);
+        });
+      });
+    }
+
+    /* ===========================
+       BOOTSTRAP: start observers and initial load
+       =========================== */
+  function boot(){
+  carregarLimites();
+  atualizarBarrasVisuais();
+  startObservers();
+  const filtroMes = document.getElementById('filtro-mes');
+  const mesAtual = yyyymm(new Date());
+  filtroMes.value = mesAtual;
+  popularSelectCartoes(); 
+  
+  initTagsSystem();
+  initHistoricoSearch();
+  initHistoricoCollapsible();
+  initHistoricoActions();
+}
+
+/* ===========================
+   MODAL DE PARCELADOS
+   =========================== */
+// Variáveis do modal de parcelado
+const modalParcelado = document.getElementById('modal-parcelado');
+const formParcelado = document.getElementById('form-parcelado');
+const btnCancelarParcelado = document.getElementById('btn-cancelar-parcelado');
+// Abrir modal para adicionar/editar parcelado
+function abrirModalParcelado(dados = null) { // Adicionado = null para default
+  modalParcelado.classList.remove('hidden');
+  formParcelado.reset(); // Sempre reseta o formulário ao abrir
+  if (dados) {
+    document.getElementById('modal-parcelado-title').textContent = 'Editar Parcelado';
+    formParcelado.descricao.value = dados.descricao || '';
+    formParcelado.valorParcela.value = dados.valorParcela || '';
+    formParcelado.numParcelas.value = dados.numParcelas || '';
+    formParcelado.cartao.value = dados.cartao || '';
+    // Formatar data para input month (YYYY-MM)
+    if (dados.dataInicio) {
+      const data = dados.dataInicio;
+      const year = data.getFullYear();
+      const month = String(data.getMonth() + 1).padStart(2, '0');
+      formParcelado.dataInicio.value = `${year}-${month}`;
+    }
+    formParcelado.dataset.docId = dados.id; // para edição
+    // Mudar o texto do botão de submissão para "Salvar"
+    formParcelado.querySelector('button[type="submit"]').textContent = 'Salvar';
+  } else {
+    document.getElementById('modal-parcelado-title').textContent = 'Adicionar Parcelado'; // Título para adicionar
+    delete formParcelado.dataset.docId; // Garante que não há ID de edição
+    // Mudar o texto do botão de submissão para "Adicionar"
+    formParcelado.querySelector('button[type="submit"]').textContent = 'Adicionar';
+  }
+}
+btnCancelarParcelado.addEventListener('click', () => {
+  modalParcelado.classList.add('hidden');
+});
+// Submissão do formulário para adicionar ou editar parcelado
+formParcelado.addEventListener('submit', e => {
+  e.preventDefault();
+  const parceladoData = { // Renomeado para evitar conflito com parceladoAtualizado
+    descricao: formParcelado.descricao.value.trim(),
+    valorParcela: parseFloat(formParcelado.valorParcela.value),
+    numParcelas: parseInt(formParcelado.numParcelas.value),
+    cartao: formParcelado.cartao.value || '',
+  };
+  // Converte a data de volta para Date object
+  if (formParcelado.dataInicio.value) {
+    const [year, month] = formParcelado.dataInicio.value.split('-');
+    parceladoData.dataInicio = new Date(parseInt(year), parseInt(month) - 1, 1);
+  }
+  if (!parceladoData.descricao || isNaN(parceladoData.valorParcela) || isNaN(parceladoData.numParcelas) || parceladoData.valorParcela <= 0 || parceladoData.numParcelas < 1) {
+    showToast('Por favor, preencha todos os campos obrigatórios corretamente.', 'error');
+    return;
+  }
+  const docId = formParcelado.dataset.docId;
+  if (docId) {
+    // Editar parcelado existente
+    db.collection('parcelados').doc(docId).update(parceladoData)
+      .then(() => {
+        showToast('Parcelado atualizado com sucesso!');
+        modalParcelado.classList.add('hidden');
+        gerarInsights(); // NOVO: Atualiza insights após editar parcelado
+      })
+      .catch(() => {
+        showToast('Erro ao atualizar parcelado.', 'error');
+      });
+  } else {
+    // Adicionar novo parcelado
+    db.collection('parcelados').add(parceladoData) // Usa parceladoData para adicionar
+      .then(() => {
+        showToast('Parcelado adicionado com sucesso!');
+        modalParcelado.classList.add('hidden');
+        gerarInsights(); // NOVO: Atualiza insights após adicionar parcelado
+      })
+      .catch(() => {
+        showToast('Erro ao adicionar parcelado.', 'error');
+      });
+  }
+});
+
+
+// NOVO: Atalhos de teclado
+document.addEventListener('keydown', (e) => {
+  // Ctrl/Cmd + N = Novo gasto
+  if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+    e.preventDefault();
+    abrirModal();
+    showToast('Atalho: Ctrl+N para novo gasto', 'info');
+  }
+  
+  // Ctrl/Cmd + F = Novo fixo
+  if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+    e.preventDefault();
+    abrirModalFixo();
+    showToast('Atalho: Ctrl+F para novo fixo', 'info');
+  }
+  
+  // Ctrl/Cmd + G = Abrir gráficos
+  if ((e.ctrlKey || e.metaKey) && e.key === 'g') {
+    e.preventDefault();
+    if (window.innerWidth > 768) {
+      document.getElementById('modal-graficos').classList.remove('hidden');
+      showToast('Atalho: Ctrl+G para gráficos', 'info');
+    }
+  }
+  
+// ESC = Fechar modals
+if (e.key === 'Escape') {
+  document.getElementById('modal-add-gasto').classList.add('hidden');
+  document.getElementById('modal-fixo').classList.add('hidden');
+  document.getElementById('modal-parcelado').classList.add('hidden');
+  document.getElementById('modal-graficos').classList.add('hidden');
+  document.getElementById('modal-graficos-fixos').classList.add('hidden');
+  document.getElementById('modal-confirmacao').classList.add('hidden');
+  document.getElementById('modal-gerenciar-cartoes').classList.add('hidden');
+}
+
+});
+
+/* start */
+boot();
+
+</script>
