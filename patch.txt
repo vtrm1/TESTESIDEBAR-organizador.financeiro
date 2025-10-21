@@ -1,0 +1,2980 @@
+ (cd "$(git rev-parse --show-toplevel)" && git apply --3way <<'EOF' 
+diff --git a/v0old.html b/v0old.html
+index 0a41258c06fa6810e5147f053e23aa8115712fd8..507f2c51259c66d4643c46eaa74446ae130af743 100644
+--- a/v0old.html
++++ b/v0old.html
+@@ -136,90 +136,171 @@
+     </div>
+ 
+     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+       <div>
+         <h3 class="font-semibold mb-2 text-gray-800 dark:text-gray-100">Distribuição por Categoria</h3>
+         <canvas id="grafico-fixos-categoria" width="400" height="300"></canvas>
+       </div>
+       <div>
+         <h3 class="font-semibold mb-2 text-gray-800 dark:text-gray-100">Impacto no Orçamento</h3>
+         <canvas id="grafico-fixos-impacto" width="400" height="300"></canvas>
+       </div>
+     </div>
+ 
+     <div class="mt-6">
+       <h3 class="font-semibold mb-3 text-gray-800 dark:text-gray-100">Detalhamento por Item</h3>
+       <div id="detalhes-fixos" class="space-y-2">
+         <!-- Detalhes serão inseridos via JS -->
+       </div>
+     </div>
+   </div>
+ </div>
+ 
+ <style>
+   .progress-bar{transition:width .4s ease}
+   .badge-alert{color:#b91c1c;font-weight:700;margin-left:.4rem}
+-  .section-card{background:white;border-radius:.75rem;box-shadow:0 1px 2px rgba(0,0,0,.06);padding:1rem}
+-  .th{font-weight:600;color:#374151;font-size:.85rem;text-align:left;padding:.5rem .75rem;border-bottom:1px solid #e5e7eb}
++  .section-card{background:white;border-radius:.75rem;box-shadow:0 1px 2px rgba(0,0,0,.06);padding:1rem}
++  .resumo-slider{position:relative;overflow:hidden;touch-action:pan-y}
++  .resumo-slider-track{display:flex;gap:0;transition:transform .4s ease}
++  .resumo-slide{flex:0 0 100%;min-width:100%}
++  .resumo-slider-nav{display:flex;align-items:center;gap:.5rem;margin-bottom:1rem}
++  .resumo-slider-dot{padding:.4rem .9rem;border-radius:9999px;background:#f3f4f6;color:#4b5563;font-weight:600;font-size:.85rem;transition:all .25s ease;outline:0}
++  .resumo-slider-dot:focus-visible{box-shadow:0 0 0 3px rgba(37,99,235,.35)}
++  .resumo-slider-dot.is-active{background:#2563eb;color:white;box-shadow:0 8px 16px rgba(37,99,235,.25)}
++  .resumo-slide-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}
++  .resumo-slide-grid .resumo-item{padding:.75rem;border-radius:.75rem;background:#f9fafb;display:flex;flex-direction:column;gap:.35rem}
++  .resumo-item .label{font-size:.8rem;color:#6b7280;text-transform:uppercase;letter-spacing:.05em}
++  .resumo-item .value{font-size:1.5rem;font-weight:700;color:#111827}
++  .resumo-item .hint{font-size:.75rem;color:#9ca3af}
++  .resumo-item.positivo{background:rgba(16,185,129,.1);color:#047857}
++  .resumo-item.positivo .value{color:#047857}
++  .resumo-item.alerta{background:rgba(248,113,113,.12);color:#b91c1c}
++  .resumo-item.alerta .value{color:#b91c1c}
++  .resumo-item.neutro{background:rgba(59,130,246,.08);color:#1d4ed8}
++  .resumo-item.neutro .value{color:#1d4ed8}
++  .dark .resumo-slide-grid .resumo-item{background:rgba(55,65,81,.6);color:#e5e7eb}
++  .dark .resumo-item .value{color:#f3f4f6}
++  .dark .resumo-item .label{color:#9ca3af}
++  .dark .resumo-item .hint{color:#6b7280}
++  .dark .resumo-item.positivo{background:rgba(16,185,129,.18);color:#bbf7d0}
++  .dark .resumo-item.positivo .value{color:#86efac}
++  .dark .resumo-item.alerta{background:rgba(248,113,113,.2);color:#fecaca}
++  .dark .resumo-item.alerta .value{color:#fca5a5}
++  .dark .resumo-item.neutro{background:rgba(59,130,246,.18);color:#bfdbfe}
++  .dark .resumo-item.neutro .value{color:#93c5fd}
++  .resumo-slider-dots{display:flex;gap:.4rem}
++  .resumo-slider-dots button{width:.5rem;height:.5rem;border-radius:9999px;background:#e5e7eb;border:none;padding:0;transition:transform .25s ease,background .25s ease}
++  .resumo-slider-dots button:focus-visible{outline:0;box-shadow:0 0 0 3px rgba(37,99,235,.35)}
++  .resumo-slider-dots button.is-active{background:#2563eb;transform:scale(1.1)}
++  @media (prefers-reduced-motion: reduce){
++    .resumo-slider-track{transition:none}
++  }
++  .gradient-shadow{position:relative}
++  .gradient-shadow::after{content:"";position:absolute;inset:0;border-radius:.75rem;pointer-events:none;box-shadow:0 10px 35px rgba(15,23,42,.1)}
++  @media (max-width:767px){
++    .resumo-slide-grid{grid-template-columns:repeat(1,minmax(0,1fr))}
++  }
++  @media (min-width:1024px){
++    .resumo-slide-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
++  }
++  .envelope-grid{display:grid;gap:1rem}
++  @media (min-width:768px){
++    .envelope-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
++  }
++  .envelope-card{position:relative;border-radius:1rem;padding:1.1rem;background:linear-gradient(135deg,#f8fafc 0%,#eef2ff 100%);overflow:hidden;border:1px solid rgba(148,163,184,.25)}
++  .dark .envelope-card{background:linear-gradient(135deg,rgba(30,41,59,.95) 0%,rgba(15,23,42,.95) 100%);border-color:rgba(71,85,105,.4)}
++  .envelope-card::before{content:"";position:absolute;inset:-40% auto auto -20%;width:180px;height:180px;background:radial-gradient(circle at center,rgba(59,130,246,.22),transparent 65%);transform:rotate(25deg);pointer-events:none}
++  .envelope-card-header{position:relative;display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.85rem}
++  .envelope-card-title{font-weight:700;font-size:1rem;color:#1e293b;display:flex;align-items:center;gap:.5rem}
++  .dark .envelope-card-title{color:#e2e8f0}
++  .envelope-meta{display:flex;flex-direction:column;align-items:flex-end;gap:.25rem;font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;color:#475569}
++  .dark .envelope-meta{color:#94a3b8}
++  .envelope-meta input{width:6rem;text-align:right;font-size:.85rem;border-radius:.5rem;border:1px solid rgba(148,163,184,.5);padding:.2rem .45rem;background:rgba(255,255,255,.85)}
++  .dark .envelope-meta input{background:rgba(15,23,42,.7);border-color:rgba(148,163,184,.35);color:#e2e8f0}
++  .envelope-amount{position:relative;font-size:1.6rem;font-weight:700;color:#0f172a}
++  .dark .envelope-amount{color:#f8fafc}
++  .envelope-progress{position:relative;height:.55rem;border-radius:9999px;background:rgba(148,163,184,.25);overflow:hidden;margin:.65rem 0}
++  .envelope-progress-fill{position:absolute;inset:0;border-radius:9999px;transition:width .4s ease,background-color .4s ease}
++  .envelope-progress-fill.is-safe{background:linear-gradient(90deg,#22c55e,#16a34a)}
++  .envelope-progress-fill.is-alert{background:linear-gradient(90deg,#f97316,#f59e0b)}
++  .envelope-progress-fill.is-critical{background:linear-gradient(90deg,#ef4444,#dc2626)}
++  .envelope-stats{position:relative;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.5rem;font-size:.75rem;color:#475569}
++  .envelope-stats span{display:block}
++  .envelope-status{margin-top:.75rem;font-size:.8rem;font-weight:600;display:flex;align-items:center;gap:.35rem;color:#2563eb}
++  .envelope-status.is-safe{color:#16a34a}
++  .envelope-status.is-alert{color:#f97316}
++  .envelope-status.is-critical{color:#dc2626}
++  .envelope-actions{margin-top:.85rem;display:flex;flex-wrap:wrap;gap:.5rem}
++  .envelope-actions button{font-size:.75rem;font-weight:600;padding:.45rem .85rem;border-radius:.75rem;border:1px solid rgba(37,99,235,.35);color:#1d4ed8;background:rgba(219,234,254,.6);transition:all .2s ease}
++  .envelope-actions button:hover{background:rgba(191,219,254,.9)}
++  .dark .envelope-actions button{border-color:rgba(96,165,250,.35);color:#bfdbfe;background:rgba(30,64,175,.35)}
++  .dark .envelope-actions button:hover{background:rgba(30,64,175,.55)}
++  .simulador-card{background:linear-gradient(135deg,#f5f3ff,#eef2ff);border-radius:1rem;padding:1.25rem;border:1px solid rgba(99,102,241,.25)}
++  .dark .simulador-card{background:linear-gradient(135deg,rgba(49,46,129,.85),rgba(30,27,75,.95));border-color:rgba(129,140,248,.35)}
++  .simulador-result{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem;margin-top:1rem;font-size:.85rem}
++  @media (max-width:639px){
++    .simulador-result{grid-template-columns:1fr}
++  }
++  .th{font-weight:600;color:#374151;font-size:.85rem;text-align:left;padding:.5rem .75rem;border-bottom:1px solid #e5e7eb}
+   .td{padding:.45rem .75rem;border-bottom:1px solid #f3f4f6;font-size:.95rem;vertical-align:middle}
+   .pill{font-size:.75rem;border-radius:9999px;padding:.15rem .5rem;background:#f3f4f6}
+    .danger-banner{background:#fee2e2;border:1px solid #fca5a5;color:#991b1b;padding:1rem;border-radius:.5rem;margin-bottom:1rem;border-left:4px solid #dc2626}
+   
+   /* Transições suaves para o botão flutuante */
+   .floating-btn-transition {
+     transition: transform 0.3s ease, opacity 0.3s ease, bottom 0.3s ease; /* Adicionado bottom */
+   }
+   
+   /* Melhorias visuais para o modal */
+   .modal-content {
+     animation: modalFadeIn 0.3s ease-out;
+   }
+   
+   @keyframes modalFadeIn {
+     from { opacity: 0; transform: translateY(-20px); }
+     to { opacity: 1; transform: translateY(0); }
+   }
+ 
+   /* NOVO: Estilo para o histórico de variáveis com scroll */
+   #historico-variavel-scroll-container {
+     max-height: 400px; /* Ajuste a altura máxima conforme sua preferência */
+     overflow-y: auto;
+     border: 1px solid #e5e7eb; /* Borda sutil */
+     border-radius: .5rem;
+     margin-top: 1rem;
+   }
+   /* Ajuste para a tabela dentro do container de scroll */
+   #historico-variavel-scroll-container table {
+     width: 100%; /* Garante que a tabela ocupe a largura total do container */
+     border-collapse: collapse; /* Remove espaçamento entre as bordas das células */
+   }
+   #historico-variavel-scroll-container .th,
+   #historico-variavel-scroll-container .td {
+     white-space: nowrap; /* Evita que o texto quebre em várias linhas */
+   }
+   /* Estilo para o spinner de carregamento */
+-  .loading-spinner {
++  .loading-spinner {
+     display: flex;
+     align-items: center;
+     justify-content: center;
+     color: #6b7280; /* gray-500 */
+     font-size: 0.9rem;
+     padding: 1rem;
+   }
+   .loading-spinner i {
+     margin-right: 0.5rem;
+   }
+   /* Classe específica para ocultar spinners, para evitar conflito com o 'hidden' do Tailwind */
+   .spinner-hidden {
+     display: none !important;
+   }
+ 
+   /* NOVO: Estilo para o Toast de feedback */
+   #toast-message {
+     position: fixed;
+     bottom: 20px;
+     left: 50%;
+     transform: translateX(-50%);
+     background-color: #333;
+     color: white;
+     padding: 10px 20px;
+     border-radius: 5px;
+@@ -313,57 +394,100 @@
+ }
+ .tag-pill .remove-tag {
+   position: absolute;
+   right: 0.25rem;
+   top: 50%;
+   transform: translateY(-50%);
+   cursor: pointer;
+   font-weight: bold;
+ }
+ .tag-suggestion {
+   padding: 0.5rem;
+   cursor: pointer;
+   border-bottom: 1px solid #e5e7eb;
+   transition: background-color 0.2s ease;
+ }
+ .tag-suggestion:hover {
+   background-color: #f3f4f6;
+ }
+ .tag-suggestion:last-child {
+   border-bottom: none;
+ }
+ /* Dark mode para tag suggestions */
+ html.dark .tag-suggestion {
+   border-bottom-color: #374151; /* dark:border-b-gray-600 */
+ }
+-html.dark .tag-suggestion:hover {
+-  background-color: #374151; /* dark:bg-gray-600 */
+-}
+-
+-  /* NOVO: Estilos para filtro de busca no histórico */
+-  .search-highlight {
+-    background-color: #fef3c7;
++html.dark .tag-suggestion:hover {
++  background-color: #374151; /* dark:bg-gray-600 */
++}
++
++.mobile-tab-button {
++  display: inline-flex;
++  align-items: center;
++  justify-content: center;
++  padding: 0.55rem 1rem;
++  border-radius: 9999px;
++  font-weight: 600;
++  font-size: 0.85rem;
++  border: 1px solid rgba(148, 163, 184, 0.45);
++  color: #1f2937;
++  background: rgba(255, 255, 255, 0.78);
++  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease, color 0.2s ease;
++  white-space: nowrap;
++}
++
++html.dark .mobile-tab-button {
++  border-color: rgba(148, 163, 184, 0.35);
++  background: rgba(15, 23, 42, 0.82);
++  color: #e2e8f0;
++}
++
++.mobile-tab-button.active {
++  background: linear-gradient(135deg, #2563eb, #4f46e5);
++  color: #ffffff;
++  border-color: transparent;
++  box-shadow: 0 12px 22px rgba(37, 99, 235, 0.35);
++  transform: translateY(-1px);
++}
++
++.mobile-tab-button:focus {
++  outline: none;
++  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.35);
++}
++
++.no-scrollbar::-webkit-scrollbar {
++  display: none;
++}
++
++.no-scrollbar {
++  -ms-overflow-style: none;
++  scrollbar-width: none;
++}
++
++/* NOVO: Estilos para filtro de busca no histórico */
++.search-highlight {
++  background-color: #fef3c7;
+     padding: 0.125rem 0.25rem;
+     border-radius: 0.25rem;
+   }
+ 
+   /* NOVO: Estilos para modo escuro (mantendo padrão original) */
+   .dark {
+     background-color: #1f2937;
+     color: #f9fafb;
+   }
+   .dark .section-card {
+     background-color: #374151;
+     color: #f9fafb;
+   }
+   .dark .bg-white {
+     background-color: #374151 !important;
+   }
+   .dark .text-gray-800 {
+     color: #f9fafb !important;
+   }
+   .dark .text-gray-600 {
+     color: #d1d5db !important;
+   }
+   .dark .text-gray-500 {
+     color: #9ca3af !important;
+   }
+@@ -455,54 +579,73 @@ html.dark .tag-suggestion:hover {
+     <!-- Ajuste para mobile: text-xl no mobile, text-2xl no desktop -->
+     <div class="text-xl md:text-2xl font-bold text-blue-600 dark:text-blue-400">Org. Financeiro</div>
+     <!-- Esconde o subtítulo no mobile -->
+     <div class="text-sm text-gray-500 dark:text-gray-400 hidden md:block">Controle familiar</div>
+   </div>
+   <div class="flex items-center gap-4">
+   <div class="flex items-center gap-4">
+     <!-- Filtro de mês GERAL (para histórico e resumo) -->
+     <select id="filtro-mes" class="px-3 py-1 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600 text-sm">
+       <option value="all">Todos</option>
+     </select>
+     
+     <!-- Botão visível só no desktop -->
+     <button id="btn-open-add-gasto" 
+       class="hidden md:flex bg-blue-600 dark:bg-blue-700 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700 dark:hover:bg-blue-800 flex items-center gap-2 transition-colors"
+       aria-label="Adicionar gasto">
+       <i class="fa fa-plus"></i> <span class="hidden md:inline">Adicionar gasto</span>
+     </button>
+     <!-- NOVO: Botão Toggle Dark Mode -->
+     <button id="toggleDark" class="p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-100 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
+       <span class="dark:hidden">🌙</span>
+       <span class="hidden dark:inline">☀️</span>
+     </button>
+   </div>
+ 
+-</header>
+-
+-<!-- LOADING SCREEN -->
+-<div id="loading-screen" class="fixed inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-900 dark:to-gray-800 z-[9999]">
++</header>
++
++<!-- MOBILE QUICK SUMMARY + NAV -->
++<section id="mobile-quickbar" class="lg:hidden sticky top-16 z-30 px-4 py-3 space-y-2 bg-white/90 dark:bg-gray-900/90 backdrop-blur border-b border-gray-200/70 dark:border-gray-700/60 shadow-sm">
++  <div class="flex items-center justify-between text-[0.7rem] uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
++    <span>Visão geral</span>
++    <span class="font-semibold text-blue-600 dark:text-blue-300">Mobile</span>
++  </div>
++  <nav id="mobile-panels-nav" class="text-sm font-medium">
++    <div class="flex gap-2 overflow-x-auto no-scrollbar">
++      <button type="button" class="mobile-tab-button" data-panel-target="painel-gastos">Gastos</button>
++      <button type="button" class="mobile-tab-button" data-panel-target="painel-saidas">Saídas</button>
++      <button type="button" class="mobile-tab-button" data-panel-target="painel-entradas">Entradas</button>
++      <button type="button" class="mobile-tab-button" data-panel-target="painel-investimentos">Invest.</button>
++      <button type="button" class="mobile-tab-button" data-panel-target="painel-saude-financeira">Saúde</button>
++      <button type="button" class="mobile-tab-button" data-panel-target="painel-fixos">Fixos</button>
++      <button type="button" class="mobile-tab-button" data-panel-target="painel-cartoes">Cartões</button>
++    </div>
++  </nav>
++</section>
++
++<!-- LOADING SCREEN -->
++<div id="loading-screen" class="fixed inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-900 dark:to-gray-800 z-[9999]">
+   <h1 class="text-2xl font-bold text-blue-600 dark:text-blue-400 mb-8">Organizador Financeiro</h1>
+   
+   <!-- Animação de gráfico -->
+   <div class="flex space-x-2 mb-6">
+     <div class="w-3 h-8 bg-green-500 rounded animate-bounce" style="animation-delay: -0.3s"></div>
+     <div class="w-3 h-12 bg-green-400 rounded animate-bounce" style="animation-delay: -0.15s"></div>
+     <div class="w-3 h-6 bg-green-600 rounded animate-bounce"></div>
+   </div>
+ 
+   <p class="text-gray-600 dark:text-gray-300">Organizando suas finanças…</p>
+ </div>
+ 
+ 
+ <!-- Modal para adicionar/editar parcelado -->
+ <div id="modal-parcelado" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+   <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg w-96 p-6 relative">
+     <h2 class="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-100" id="modal-parcelado-title">Editar Parcelado</h2>
+     <form id="form-parcelado" class="space-y-4">
+       <div>
+         <label for="parcelado-desc" class="block font-medium mb-1 text-gray-800 dark:text-gray-100">Descrição</label>
+         <input type="text" id="parcelado-desc" name="descricao" required class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600"/>
+       </div>
+       <div>
+         <label for="parcelado-valor" class="block font-medium mb-1 text-gray-800 dark:text-gray-100">Valor da Parcela (R$)</label>
+         <input type="number" id="parcelado-valor" name="valorParcela" min="0" step="0.01" required class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600"/>
+@@ -615,112 +758,228 @@ html.dark .tag-suggestion:hover {
+         <option value="educacao">Educação</option>
+         <option value="contas">Contas</option>
+         <option value="outros">Outros</option>
+       </select>
+       <input id="modal-valor" type="number" step="0.01" min="0.01" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" placeholder="Valor (R$)" required />
+       <p id="error-modal-valor" class="text-red-500 dark:text-red-400 text-xs mt-1 hidden">Por favor, insira um valor válido maior que zero.</p>
+       <input id="modal-desc" type="text" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" placeholder="Descrição (opcional)" />
+       
+       <!-- NOVO: Sistema de Tags Inteligente -->
+       <div class="relative">
+         <input id="modal-tags" type="text" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" placeholder="Tags (ex: padaria, supermercado)" />
+         <div id="tags-suggestions" class="absolute z-10 w-full bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg mt-1 hidden max-h-32 overflow-y-auto"></div>
+         <div id="selected-tags" class="flex flex-wrap gap-1 mt-2"></div>
+       </div>
+       <div class="flex justify-end gap-3">
+         <button type="button" id="modal-cancel" class="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-gray-700 dark:text-gray-100">Cancelar</button>
+         <button type="submit" class="bg-blue-600 dark:bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-700 dark:hover:bg-blue-800 transition-colors">Adicionar</button>
+       </div>
+     </form>
+   </div>
+ </div>
+ 
+ <main class="container mx-auto px-4 py-6 grid grid-cols-1 lg:grid-cols-4 gap-6">
+ 
+   <!-- LEFT: main (resumo + histórico + parcelados) -->
+-  <section class="lg:col-span-3 space-y-6">
++  <section id="painel-gastos" class="mobile-panel hidden lg:block lg:col-span-3 space-y-6">
+ 
+     <!-- danger banner (strong visual alert) -->
+     <div id="danger-banner" class="hidden danger-banner">⚠️ Atenção — fixos + parcelas do mês ultrapassam o limite! Verifique.</div>
+ 
+-    <!-- RESUMO -->
+-    <div class="section-card grid grid-cols-1 md:grid-cols-4 gap-4">
+-      <div>
+-        <div class="text-sm text-gray-500 dark:text-gray-400">Total previsto (mês)</div>
+-        <div class="text-2xl font-bold">R$ <span id="resumo-total-mes">0,00</span></div>
+-        <div class="text-xs text-gray-400 dark:text-gray-500">Histórico + Parcelas do mês</div>
+-      </div>
+-      <div>
+-        <div class="text-sm text-gray-500 dark:text-gray-400">Cartões</div>
+-        <div class="text-2xl font-bold">R$ <span id="resumo-cartoes">0,00</span></div>
+-        <div class="text-xs text-gray-400 dark:text-gray-500">Inclui parcelas do mês</div>
+-      </div>
+-      <div>
+-        <div class="text-sm text-gray-500 dark:text-gray-400">PIX</div>
+-        <div class="text-2xl font-bold">R$ <span id="resumo-pix">0,00</span></div>
+-      </div>
+-      <div>
+-        <div class="text-sm text-gray-500 dark:text-gray-400">Parcelas (mês)</div>
+-        <div class="text-2xl font-bold">R$ <span id="resumo-parcelas-mes">0,00</span></div>
+-      </div>
+-    </div>
+-
+-    <!-- LIMITES (barras) -->
+-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+-      <div class="section-card border-l-4 border-blue-500">
+-        <div class="flex justify-between items-center mb-1">
+-          <div class="font-semibold">Custo Fixo</div>
+-          <div class="text-sm text-gray-500 dark:text-gray-400">Teto: R$ <input id="limite-fixo-input" type="number" class="w-24 inline-block border px-1 py-0.5 rounded text-right bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" value="1300"/></div>
+-        </div>
+-        <div class="text-lg font-bold">R$ <span id="gasto-fixo">0,00</span></div>
+-        <div class="text-xs text-gray-400 dark:text-gray-500">Restante: R$ <span id="restante-fixo">0,00</span></div>
+-        <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mt-2"><div id="progress-fixo" class="progress-bar bg-blue-500 h-2 rounded-full" style="width:100%"></div></div>
+-      </div>
+-
+-      <div class="section-card border-l-4 border-green-500">
+-        <div class="flex justify-between items-center mb-1">
+-          <div class="font-semibold">Parcelado (mês)</div>
+-          <div class="text-sm text-gray-500 dark:text-gray-400">Teto: R$ <input id="limite-parcelado-input" type="number" class="w-24 inline-block border px-1 py-0.5 rounded text-right bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" value="1400"/></div>
+-        </div>
+-        <div class="text-lg font-bold">R$ <span id="gasto-parcelado">0,00</span></div>
+-        <div class="text-xs text-gray-400 dark:text-gray-500">Restante: R$ <span id="restante-parcelado">0,00</span></div>
+-        <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mt-2"><div id="progress-parcelado" class="progress-bar bg-green-500 h-2 rounded-full" style="width:100%"></div></div>
+-      </div>
+-
+-      <div class="section-card border-l-4 border-orange-500">
+-        <div class="flex justify-between items-center mb-1">
+-          <div class="font-semibold">Variável</div>
+-          <div class="text-sm text-gray-500 dark:text-gray-400">Teto: R$ <input id="limite-variavel-input" type="number" class="w-24 inline-block border px-1 py-0.5 rounded text-right bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" value="2000"/></div>
+-        </div>
+-        <div class="text-lg font-bold">R$ <span id="gasto-variavel">0,00</span></div>
+-        <div class="text-xs text-gray-400 dark:text-gray-500">Restante: R$ <span id="restante-variavel">0,00</span></div>
+-        <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mt-2"><div id="progress-variavel" class="progress-bar bg-orange-500 h-2 rounded-full" style="width:100%"></div></div>
+-      </div>
+-    </div>
+-
+-<!-- NOVA SEÇÃO: GASTOS POR CATEGORIA -->
+-    <div class="section-card">
++    <!-- RESUMO COM SLIDER -->
++    <div class="section-card gradient-shadow">
++      <div class="resumo-slider-nav" role="tablist" aria-label="Indicadores financeiros">
++        <button type="button" id="resumo-tab-gastos" class="resumo-slider-dot is-active" data-slide="0" role="tab" aria-selected="true" aria-controls="resumo-slide-gastos">Gastos</button>
++        <button type="button" id="resumo-tab-fluxo" class="resumo-slider-dot" data-slide="1" role="tab" aria-selected="false" aria-controls="resumo-slide-fluxo">Fluxo</button>
++        <div class="flex-1"></div>
++        <div class="resumo-slider-dots md:hidden">
++          <button type="button" class="is-active" data-slide="0" aria-label="Ver indicadores de gastos"></button>
++          <button type="button" data-slide="1" aria-label="Ver indicadores de fluxo"></button>
++        </div>
++      </div>
++      <div class="resumo-slider" id="resumo-slider">
++        <div class="resumo-slider-track" id="resumo-slider-track">
++          <section class="resumo-slide" id="resumo-slide-gastos" data-key="gastos" role="tabpanel" aria-labelledby="resumo-tab-gastos">
++            <div class="resumo-slide-grid">
++              <div class="resumo-item alerta">
++                <span class="label">Total previsto (mês)</span>
++                <span class="value">R$ <span id="resumo-total-mes">0,00</span></span>
++                <span class="hint">Histórico + Parcelas + Fixos</span>
++              </div>
++              <div class="resumo-item neutro">
++                <span class="label">Cartões</span>
++                <span class="value">R$ <span id="resumo-cartoes">0,00</span></span>
++                <span class="hint">Inclui parcelas do mês</span>
++              </div>
++              <div class="resumo-item">
++                <span class="label">PIX</span>
++                <span class="value">R$ <span id="resumo-pix">0,00</span></span>
++                <span class="hint">Pagamentos instantâneos</span>
++              </div>
++              <div class="resumo-item">
++                <span class="label">Parcelas (mês)</span>
++                <span class="value">R$ <span id="resumo-parcelas-mes">0,00</span></span>
++                <span class="hint">Compromissos do mês atual</span>
++              </div>
++            </div>
++          </section>
++          <section class="resumo-slide" id="resumo-slide-fluxo" data-key="fluxo" role="tabpanel" aria-labelledby="resumo-tab-fluxo" aria-hidden="true">
++            <div class="resumo-slide-grid">
++              <div class="resumo-item positivo">
++                <span class="label">Entradas do mês</span>
++                <span class="value">R$ <span id="resumo-entradas-mes">0,00</span></span>
++                <span class="hint">Salários, vendas e extras</span>
++              </div>
++              <div class="resumo-item alerta">
++                <span class="label">Saídas totais</span>
++                <span class="value">R$ <span id="resumo-saidas-mes">0,00</span></span>
++                <span class="hint">Todos os gastos do mês</span>
++              </div>
++              <div class="resumo-item neutro">
++                <span class="label">Saldo projetado</span>
++                <span class="value">R$ <span id="resumo-saldo-projetado">0,00</span></span>
++                <span class="hint">Após rendimento de 1% a.m.</span>
++              </div>
++              <div class="resumo-item">
++                <span class="label">Ganho em investimentos</span>
++                <span class="value">R$ <span id="resumo-ganho-invest">0,00</span></span>
++                <span class="hint">Comparado ao aporte total</span>
++              </div>
++            </div>
++          </section>
++        </div>
++      </div>
++    </div>
++
++    <!-- LIMITES (ENVELOPES) -->
++    <div class="section-card" id="painel-envelopes">
++      <div class="flex flex-col gap-4 md:flex-row md:items-start md:justify-between mb-4">
++        <div>
++          <h3 class="text-lg font-bold mb-1">Envelopes do orçamento</h3>
++          <p class="text-sm text-gray-500 dark:text-gray-400">Defina tetos, acompanhe o ritmo de uso e ajuste rapidamente cada envelope do mês.</p>
++        </div>
++        <div class="flex flex-wrap gap-2">
++          <button id="btn-envelopes-distribuir" type="button" class="text-xs font-semibold uppercase tracking-wide px-3 py-2 rounded-lg border border-blue-200 dark:border-blue-700 text-blue-600 dark:text-blue-300 bg-blue-50/70 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition">Distribuir sobras</button>
++          <button id="btn-envelopes-reset" type="button" class="text-xs font-semibold uppercase tracking-wide px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 bg-white/70 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-700/60 transition">Restaurar limites base</button>
++        </div>
++      </div>
++      <div class="envelope-grid">
++        <article class="envelope-card" data-envelope="fixo">
++          <div class="envelope-card-header">
++            <div class="envelope-card-title"><i class="fa fa-house"></i>Envelope de fixos</div>
++            <div class="envelope-meta">
++              <span>Teto mensal</span>
++              <input id="limite-fixo-input" type="number" value="1300" min="0" step="10" />
++            </div>
++          </div>
++          <div>
++            <div class="envelope-amount">R$ <span id="envelope-fixo-valor">0,00</span></div>
++            <div class="text-xs text-slate-500 dark:text-slate-400">Restante do envelope: R$ <span id="envelope-fixo-restante">0,00</span></div>
++            <div class="envelope-progress mt-3">
++              <div id="envelope-progress-fixo" class="envelope-progress-fill is-safe" style="width:0%"></div>
++            </div>
++            <div class="envelope-stats mt-3">
++              <span>Uso: <strong><span id="envelope-fixo-percent">0%</span></strong></span>
++              <span>Diário disponível: <strong>R$ <span id="envelope-fixo-dia">0,00</span></strong></span>
++              <span>Meta sugerida: <strong>R$ <span id="envelope-fixo-meta-sugerida">0,00</span></strong></span>
++              <span>Classificação: <strong><span id="envelope-fixo-status-text">Equilibrado</span></strong></span>
++            </div>
++            <div class="envelope-status is-safe" id="envelope-fixo-status">
++              <i class="fa fa-leaf"></i>
++              <span id="envelope-fixo-status-label">Dentro do limite planejado</span>
++            </div>
++            <div class="envelope-actions">
++              <button type="button" data-envelope-auto="fixo"><i class="fa fa-wand-magic-sparkles mr-1"></i>Ajuste inteligente</button>
++              <button type="button" data-envelope-meta="fixo"><i class="fa fa-bullseye mr-1"></i>Usar meta sugerida</button>
++            </div>
++          </div>
++        </article>
++        <article class="envelope-card" data-envelope="parcelado">
++          <div class="envelope-card-header">
++            <div class="envelope-card-title"><i class="fa fa-credit-card"></i>Envelope de parcelados</div>
++            <div class="envelope-meta">
++              <span>Teto mensal</span>
++              <input id="limite-parcelado-input" type="number" value="1400" min="0" step="10" />
++            </div>
++          </div>
++          <div>
++            <div class="envelope-amount">R$ <span id="envelope-parcelado-valor">0,00</span></div>
++            <div class="text-xs text-slate-500 dark:text-slate-400">Restante do envelope: R$ <span id="envelope-parcelado-restante">0,00</span></div>
++            <div class="envelope-progress mt-3">
++              <div id="envelope-progress-parcelado" class="envelope-progress-fill is-safe" style="width:0%"></div>
++            </div>
++            <div class="envelope-stats mt-3">
++              <span>Uso: <strong><span id="envelope-parcelado-percent">0%</span></strong></span>
++              <span>Diário disponível: <strong>R$ <span id="envelope-parcelado-dia">0,00</span></strong></span>
++              <span>Meta sugerida: <strong>R$ <span id="envelope-parcelado-meta-sugerida">0,00</span></strong></span>
++              <span>Classificação: <strong><span id="envelope-parcelado-status-text">Equilibrado</span></strong></span>
++            </div>
++            <div class="envelope-status is-safe" id="envelope-parcelado-status">
++              <i class="fa fa-gauge"></i>
++              <span id="envelope-parcelado-status-label">Planejado para caber no orçamento</span>
++            </div>
++            <div class="envelope-actions">
++              <button type="button" data-envelope-auto="parcelado"><i class="fa fa-wand-magic-sparkles mr-1"></i>Ajuste inteligente</button>
++              <button type="button" data-envelope-meta="parcelado"><i class="fa fa-bullseye mr-1"></i>Usar meta sugerida</button>
++            </div>
++          </div>
++        </article>
++        <article class="envelope-card" data-envelope="variavel">
++          <div class="envelope-card-header">
++            <div class="envelope-card-title"><i class="fa fa-basket-shopping"></i>Envelope de variáveis</div>
++            <div class="envelope-meta">
++              <span>Teto mensal</span>
++              <input id="limite-variavel-input" type="number" value="2000" min="0" step="10" />
++            </div>
++          </div>
++          <div>
++            <div class="envelope-amount">R$ <span id="envelope-variavel-valor">0,00</span></div>
++            <div class="text-xs text-slate-500 dark:text-slate-400">Restante do envelope: R$ <span id="envelope-variavel-restante">0,00</span></div>
++            <div class="envelope-progress mt-3">
++              <div id="envelope-progress-variavel" class="envelope-progress-fill is-safe" style="width:0%"></div>
++            </div>
++            <div class="envelope-stats mt-3">
++              <span>Uso: <strong><span id="envelope-variavel-percent">0%</span></strong></span>
++              <span>Diário disponível: <strong>R$ <span id="envelope-variavel-dia">0,00</span></strong></span>
++              <span>Meta sugerida: <strong>R$ <span id="envelope-variavel-meta-sugerida">0,00</span></strong></span>
++              <span>Classificação: <strong><span id="envelope-variavel-status-text">Equilibrado</span></strong></span>
++            </div>
++            <div class="envelope-status is-safe" id="envelope-variavel-status">
++              <i class="fa fa-compass"></i>
++              <span id="envelope-variavel-status-label">Controlado para o restante do mês</span>
++            </div>
++            <div class="envelope-actions">
++              <button type="button" data-envelope-auto="variavel"><i class="fa fa-wand-magic-sparkles mr-1"></i>Ajuste inteligente</button>
++              <button type="button" data-envelope-meta="variavel"><i class="fa fa-bullseye mr-1"></i>Usar meta sugerida</button>
++            </div>
++          </div>
++        </article>
++      </div>
++    </div>
++
++<!-- NOVA SEÇÃO: GASTOS POR CATEGORIA -->
++    <div class="section-card">
+       <h3 class="text-lg font-bold mb-3">Gastos por Categoria (mês)</h3>
+       <div id="categorias-list" class="space-y-3">
+         <!-- Categorias serão renderizadas aqui pelo JS -->
+         <div class="text-gray-500 dark:text-gray-400">Nenhum gasto categorizado no mês.</div>
+       </div>
+     </div>
+ 
+     <!-- NOVO: Dashboard de Insights Inteligentes -->
+     <div class="section-card">
+       <h3 class="text-lg font-bold mb-3">💡 Insights Financeiros</h3>
+       <div id="insights-container" class="space-y-3">
+         <!-- Insights serão gerados automaticamente aqui -->
+         <div class="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg text-green-800 dark:text-green-200">Carregando insights...</div>
+       </div>
+     </div>
+ 
+     <!-- HISTÓRICO (variáveis + fixos avulsos) -->
+       <div class="section-card">
+       <div class="flex items-center justify-between mb-3">
+         <h3 class="text-lg font-bold">Histórico (mês)</h3>
+         <div class="flex items-center gap-2">
+           <button id="exportar-csv" class="bg-green-600 dark:bg-green-700 text-white px-3 py-1 rounded hover:bg-green-700 dark:hover:bg-green-800 transition-colors">Exportar CSV (mês)</button>
+         </div>
+       </div>
+ 
+@@ -792,89 +1051,285 @@ html.dark .tag-suggestion:hover {
+           <div class="text-2xl font-bold">R$ <span id="p-total-restante">0,00</span></div>
+         </div>
+         <div class="section-card">
+           <div class="text-sm text-gray-500 dark:text-gray-400">Parcelados ativos</div>
+           <div class="text-2xl font-bold"><span id="p-ativos">0</span></div>
+         </div>
+       </div>
+ 
+       <div class="overflow-x-auto">
+         <div id="parcelados-loading-spinner" class="loading-spinner spinner-hidden">
+           <i class="fa fa-spinner fa-spin"></i> Carregando parcelados...
+         </div>
+         <table class="w-full">
+           <thead>
+             <tr><th class="th">Descrição</th><th class="th">Parcela (R$)</th><th class="th">Progresso</th><th class="th">Status</th><th class="th">Cartão</th><th class="th">Início</th><th class="th">Fim</th><th class="th">Ações</th></tr>
+           </thead>
+           <tbody id="parcelados-list">
+             <tr><td class="td" colspan="8">Nenhum parcelado para o mês selecionado</td></tr>
+           </tbody>
+         </table>
+       </div>
+     </div>
+ 
+   </section>
+ 
+-  <!-- RIGHT: sidebar (fixos list + cartões compact + ações) - MELHORADO -->
+-  <aside class="space-y-6">
+-
+-    <!-- FIXOS recorrentes LIST - MELHORADO -->
+-    <div class="section-card">
++  <!-- RIGHT: sidebar (fixos list + cartões compact + ações) - MELHORADO -->
++  <aside class="space-y-6">
++
++    <!-- NOVO: Entradas de dinheiro -->
++    <div class="mobile-panel hidden lg:block section-card space-y-4" id="painel-entradas">
++      <div>
++        <h3 class="font-semibold text-lg flex items-center gap-2"><i class="fa fa-arrow-down text-green-500"></i>Entradas de Dinheiro</h3>
++        <p class="text-sm text-gray-500 dark:text-gray-400">Registre salários, vendas e rendas extras e acompanhe o fluxo mensal.</p>
++      </div>
++      <div class="grid grid-cols-2 gap-2 text-sm">
++        <div class="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
++          <div class="text-xs text-green-700 dark:text-green-200 uppercase tracking-wide">Mês selecionado</div>
++          <div class="text-lg font-bold text-green-800 dark:text-green-300">R$ <span id="entradas-total-mes">0,00</span></div>
++        </div>
++        <div class="p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg">
++          <div class="text-xs text-emerald-700 dark:text-emerald-200 uppercase tracking-wide">Total acumulado</div>
++          <div class="text-lg font-bold text-emerald-800 dark:text-emerald-300">R$ <span id="entradas-total-geral">0,00</span></div>
++        </div>
++      </div>
++      <form id="form-entrada" class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
++        <select id="entrada-tipo" class="px-3 py-2 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" required>
++          <option value="salario">Salário</option>
++          <option value="venda">Venda</option>
++          <option value="renda_extra">Renda extra</option>
++          <option value="outros">Outros</option>
++        </select>
++        <input id="entrada-valor" type="number" step="0.01" min="0.01" class="px-3 py-2 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" placeholder="Valor (R$)" required />
++        <input id="entrada-data" type="date" class="px-3 py-2 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" required />
++        <input id="entrada-desc" type="text" class="px-3 py-2 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" placeholder="Descrição (opcional)" />
++        <button type="submit" class="sm:col-span-2 bg-green-600 dark:bg-green-700 text-white px-3 py-2 rounded hover:bg-green-700 dark:hover:bg-green-800 transition">Adicionar entrada</button>
++      </form>
++      <div>
++        <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-200">Distribuição por tipo</h4>
++        <div id="entradas-tipos-resumo" class="grid grid-cols-2 gap-2 text-xs text-gray-500 dark:text-gray-400">
++          <div class="col-span-2 text-gray-500 dark:text-gray-400">Cadastre entradas para ver a distribuição.</div>
++        </div>
++      </div>
++      <div>
++        <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-200">Entradas recentes</h4>
++        <div id="entradas-lista" class="space-y-2 max-h-48 overflow-y-auto text-sm">
++          <div class="text-gray-500 dark:text-gray-400">Nenhuma entrada registrada.</div>
++        </div>
++      </div>
++    </div>
++
++    <!-- NOVO: Resumo das saídas -->
++    <div class="mobile-panel hidden lg:block section-card space-y-3" id="painel-saidas">
++      <div class="flex items-center justify-between">
++        <h3 class="font-semibold text-lg flex items-center gap-2"><i class="fa fa-arrow-up text-red-500"></i>Saídas do Mês</h3>
++        <span class="text-sm font-semibold text-gray-700 dark:text-gray-200">R$ <span id="saidas-total-card">0,00</span></span>
++      </div>
++      <p class="text-xs text-gray-500 dark:text-gray-400">Acompanhe o total previsto para o mês selecionado considerando gastos fixos, variáveis e parcelas.</p>
++      <div class="space-y-3 text-sm">
++        <div>
++          <div class="flex justify-between mb-1">
++            <span>Gastos fixos</span>
++            <span>R$ <span id="saidas-fixos">0,00</span></span>
++          </div>
++          <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
++            <div id="saidas-fixos-bar" class="h-2 rounded-full bg-blue-500" style="width:0%"></div>
++          </div>
++        </div>
++        <div>
++          <div class="flex justify-between mb-1">
++            <span>Variáveis</span>
++            <span>R$ <span id="saidas-variavel">0,00</span></span>
++          </div>
++          <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
++            <div id="saidas-variavel-bar" class="h-2 rounded-full bg-orange-500" style="width:0%"></div>
++          </div>
++        </div>
++        <div>
++          <div class="flex justify-between mb-1">
++            <span>Parcelas</span>
++            <span>R$ <span id="saidas-parcelado">0,00</span></span>
++          </div>
++          <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
++            <div id="saidas-parcelado-bar" class="h-2 rounded-full bg-green-500" style="width:0%"></div>
++          </div>
++        </div>
++      </div>
++    </div>
++
++    <!-- NOVO: Investimentos -->
++    <div class="mobile-panel hidden lg:block section-card space-y-4" id="painel-investimentos">
++      <div class="flex items-center justify-between">
++        <h3 class="font-semibold text-lg flex items-center gap-2"><i class="fa fa-chart-line text-indigo-500"></i>Investimentos</h3>
++        <span class="text-xs text-gray-500 dark:text-gray-400">Projeção com 1% ao mês</span>
++      </div>
++      <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-sm">
++        <div class="p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg">
++          <div class="text-xs text-indigo-700 dark:text-indigo-200 uppercase tracking-wide">Investido no mês</div>
++          <div class="text-lg font-bold text-indigo-800 dark:text-indigo-200">R$ <span id="investimento-total-mes">0,00</span></div>
++        </div>
++        <div class="p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg">
++          <div class="text-xs text-indigo-700 dark:text-indigo-200 uppercase tracking-wide">Total investido</div>
++          <div class="text-lg font-bold text-indigo-800 dark:text-indigo-200">R$ <span id="investimento-total-geral">0,00</span></div>
++        </div>
++        <div class="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
++          <div class="text-xs text-purple-700 dark:text-purple-200 uppercase tracking-wide">Projeção futura</div>
++          <div class="text-lg font-bold text-purple-800 dark:text-purple-200">R$ <span id="investimento-projecao">0,00</span></div>
++        </div>
++      </div>
++      <form id="form-investimento" class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
++        <select id="investimento-tipo" class="px-3 py-2 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" required>
++          <option value="reserva">Reserva de emergência</option>
++          <option value="renda_fixa">Renda fixa</option>
++          <option value="acoes">Ações/Fundos</option>
++          <option value="cripto">Cripto</option>
++          <option value="outros">Outros</option>
++        </select>
++        <input id="investimento-valor" type="number" step="0.01" min="0.01" class="px-3 py-2 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" placeholder="Valor aplicado (R$)" required />
++        <input id="investimento-data" type="date" class="px-3 py-2 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" required />
++        <input id="investimento-desc" type="text" class="px-3 py-2 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" placeholder="Observação (opcional)" />
++        <button type="submit" class="sm:col-span-2 bg-indigo-600 dark:bg-indigo-700 text-white px-3 py-2 rounded hover:bg-indigo-700 dark:hover:bg-indigo-800 transition">Adicionar investimento</button>
++      </form>
++      <div>
++        <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">Aplicações recentes</h4>
++        <div id="investimentos-lista" class="space-y-2 max-h-48 overflow-y-auto text-sm">
++          <div class="text-gray-500 dark:text-gray-400">Nenhum investimento registrado.</div>
++        </div>
++      </div>
++
++      <div class="simulador-card">
++        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
++          <div>
++            <h4 class="text-base font-semibold text-indigo-900 dark:text-indigo-200">Simulador de juros compostos</h4>
++            <p class="text-xs text-indigo-700/80 dark:text-indigo-200/70">Projete resultados com aportes extras e compare cenários de rendimento.</p>
++          </div>
++          <div id="simulador-juros-meta" class="text-xs font-semibold uppercase tracking-wide text-indigo-600 dark:text-indigo-300"></div>
++        </div>
++        <form id="simulador-juros-form" class="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-sm">
++          <label class="flex flex-col gap-1 text-indigo-900/80 dark:text-indigo-100">
++            <span>Valor inicial (R$)</span>
++            <input id="simulador-valor-inicial" type="number" min="0" step="0.01" class="px-3 py-2 rounded-lg border border-indigo-200 dark:border-indigo-600 bg-white/80 dark:bg-slate-900/50 text-indigo-900 dark:text-indigo-100" placeholder="Ex: 1500" />
++          </label>
++          <label class="flex flex-col gap-1 text-indigo-900/80 dark:text-indigo-100">
++            <span>Aporte mensal (R$)</span>
++            <input id="simulador-aporte" type="number" min="0" step="0.01" class="px-3 py-2 rounded-lg border border-indigo-200 dark:border-indigo-600 bg-white/80 dark:bg-slate-900/50 text-indigo-900 dark:text-indigo-100" placeholder="Ex: 500" />
++          </label>
++          <label class="flex flex-col gap-1 text-indigo-900/80 dark:text-indigo-100">
++            <span>Taxa mensal (%)</span>
++            <input id="simulador-taxa" type="number" min="0" step="0.01" class="px-3 py-2 rounded-lg border border-indigo-200 dark:border-indigo-600 bg-white/80 dark:bg-slate-900/50 text-indigo-900 dark:text-indigo-100" value="1" />
++          </label>
++          <label class="flex flex-col gap-1 text-indigo-900/80 dark:text-indigo-100">
++            <span>Duração (meses)</span>
++            <input id="simulador-periodo" type="number" min="1" max="360" step="1" class="px-3 py-2 rounded-lg border border-indigo-200 dark:border-indigo-600 bg-white/80 dark:bg-slate-900/50 text-indigo-900 dark:text-indigo-100" value="12" />
++          </label>
++        </form>
++        <div class="simulador-result mt-4" id="simulador-juros-resultado">
++          <div class="bg-white/70 dark:bg-slate-900/40 rounded-lg p-3">
++            <div class="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wide">Saldo projetado</div>
++            <div class="text-lg font-bold text-indigo-900 dark:text-indigo-200" id="simulador-saldo-final">R$ 0,00</div>
++          </div>
++          <div class="bg-white/70 dark:bg-slate-900/40 rounded-lg p-3">
++            <div class="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wide">Total aportado</div>
++            <div class="text-lg font-bold text-indigo-900 dark:text-indigo-200" id="simulador-total-aportes">R$ 0,00</div>
++          </div>
++          <div class="bg-white/70 dark:bg-slate-900/40 rounded-lg p-3">
++            <div class="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wide">Rendimento</div>
++            <div class="text-lg font-bold text-emerald-600 dark:text-emerald-300" id="simulador-rendimento">R$ 0,00</div>
++          </div>
++          <div class="bg-white/70 dark:bg-slate-900/40 rounded-lg p-3">
++            <div class="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wide">Meta sugerida</div>
++            <div class="text-lg font-bold text-indigo-900 dark:text-indigo-200" id="simulador-meta-alvo">R$ 0,00</div>
++          </div>
++        </div>
++        <canvas id="simulador-juros-chart" class="mt-4 w-full h-48"></canvas>
++      </div>
++    </div>
++
++    <!-- NOVO: Indicador de saúde financeira -->
++    <div class="mobile-panel hidden lg:block section-card space-y-4" id="painel-saude-financeira">
++      <div class="flex items-center justify-between">
++        <h3 class="font-semibold text-lg flex items-center gap-2"><i class="fa fa-heartbeat text-rose-500"></i>Saúde Financeira</h3>
++        <span class="text-sm font-semibold text-rose-600 dark:text-rose-300" id="saude-score">--</span>
++      </div>
++      <div>
++        <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
++          <div id="saude-progress" class="h-3 rounded-full bg-rose-500 transition-all duration-300" style="width:0%"></div>
++        </div>
++        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1" id="saude-status">Cadastre entradas e gastos para calcular sua saúde financeira.</p>
++      </div>
++      <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-sm">
++        <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded">
++          <div class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Saldo projetado</div>
++          <div class="text-lg font-bold text-gray-800 dark:text-gray-100" id="saude-detalhes-saldo">R$ 0,00</div>
++        </div>
++        <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded">
++          <div class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Entradas do mês</div>
++          <div class="text-lg font-bold text-gray-800 dark:text-gray-100" id="saude-detalhes-renda">R$ 0,00</div>
++        </div>
++        <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded">
++          <div class="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide">Projeção investimentos</div>
++          <div class="text-lg font-bold text-gray-800 dark:text-gray-100" id="saude-investimento-extra">R$ 0,00</div>
++        </div>
++      </div>
++    </div>
++
++    <!-- FIXOS recorrentes LIST - MELHORADO -->
++    <div class="mobile-panel hidden lg:block section-card" id="painel-fixos">
+       <div class="flex items-center justify-between mb-3">
+         <h3 class="font-semibold">Fixos recorrentes</h3>
+         <div class="flex gap-2">
+           <button id="btn-graficos-fixos" class="text-sm bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-200 px-2 py-1 rounded hover:bg-blue-200 dark:hover:bg-blue-900/40 transition-colors">
+             <i class="fa fa-chart-pie mr-1"></i>Gráficos
+           </button>
+           <button id="add-fixo-open" class="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 transition-colors">Novo fixo</button>
+         </div>
+       </div>
+ 
+       <!-- Resumo visual dos fixos -->
+       <div class="grid grid-cols-2 gap-2 mb-4">
+         <div class="bg-green-50 dark:bg-green-900/20 p-3 rounded">
+           <div class="text-xs text-green-700 dark:text-green-200">Ativos</div>
+           <div class="font-bold text-green-800 dark:text-green-400" id="resumo-fixos-ativos">R$ 0,00</div>
+         </div>
+         <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded">
+           <div class="text-xs text-gray-700 dark:text-gray-300">Inativos</div>
+           <div class="font-bold text-gray-800 dark:text-gray-100" id="resumo-fixos-inativos">R$ 0,00</div>
+         </div>
+       </div>
+ 
+       <div class="overflow-y-auto max-h-80">
+         <div id="fixos-loading-spinner" class="loading-spinner spinner-hidden">
+           <i class="fa fa-spinner fa-spin"></i> Carregando fixos...
+         </div>
+         <div id="fixos-cards-container" class="space-y-2">
+           <!-- Cards de fixos serão inseridos aqui -->
+         </div>
+       </div>
+     </div>
+ 
+-    <!-- CARTÕES compact - MOVIDO PARA DEPOIS DOS FIXOS -->
+-    <div class="section-card">
++    <!-- CARTÕES compact - MOVIDO PARA DEPOIS DOS FIXOS -->
++    <div class="mobile-panel hidden lg:block section-card" id="painel-cartoes">
+       <div class="flex items-center justify-between mb-2">
+         <h3 class="font-semibold">Cartões</h3>
+         <button id="btn-gerenciar-cartoes" class="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 transition-colors">Gerenciar Cartões</button>
+       </div>
+       <div id="cartoes-container" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+         <div id="cartoes-loading-spinner" class="loading-spinner spinner-hidden col-span-full">
+           <i class="fa fa-spinner fa-spin"></i> Carregando cartões...
+         </div>
+         <!-- Cards de cartão serão inseridos aqui -->
+       </div>
+     </div>
+ 
+     <!-- NOVO: Modal para Gerenciar Cartões -->
+ <div id="modal-gerenciar-cartoes" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+   <div class="bg-white dark:bg-gray-800 rounded-lg p-6 w-11/12 max-w-md mx-auto relative shadow-lg modal-content max-h-[90vh] overflow-y-auto">
+     <button id="modal-gerenciar-cartoes-close" class="absolute top-3 right-3 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 text-2xl font-bold" aria-label="Fechar modal">&times;</button>
+     <h2 class="text-xl font-bold mb-4 text-gray-800 dark:text-gray-100">Gerenciar Cartões</h2>
+ 
+     <!-- Formulário para Adicionar Novo Cartão -->
+     <div class="mb-6 p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+       <h3 class="font-semibold mb-3 text-gray-800 dark:text-gray-100">Adicionar Novo Cartão</h3>
+       <form id="form-add-cartao" class="space-y-3">
+         <div>
+           <label for="novo-cartao-label" class="block font-medium mb-1 text-gray-800 dark:text-gray-100">Nome de Exibição (ex: Nubank, Itaú)</label>
+           <input type="text" id="novo-cartao-label" name="label" required class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" placeholder="Nome amigável"/>
+@@ -959,101 +1414,101 @@ html.dark .tag-suggestion:hover {
+ const html = document.documentElement;
+ const toggleBtn = document.getElementById('toggleDark');
+ 
+ function initDarkMode() {
+   if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+     html.classList.add('dark');
+   } else {
+     html.classList.remove('dark');
+   }
+   // Atualiza ícone do botão
+   if (toggleBtn) {
+     toggleBtn.innerHTML = html.classList.contains('dark') ? '☀️' : '🌙';
+   }
+ }
+ 
+ if (toggleBtn) {
+   toggleBtn.addEventListener('click', () => {
+     html.classList.toggle('dark');
+     localStorage.theme = html.classList.contains('dark') ? 'dark' : 'light';
+     toggleBtn.innerHTML = html.classList.contains('dark') ? '☀️' : '🌙';
+   });
+ }
+ 
+ initDarkMode(); // Inicializa ao carregar
+ 
+-// Registro SW (limpo, como antes)
+-if ("serviceWorker" in navigator) {
+-  navigator.serviceWorker.register("/sw.js")
+-    .then((registration) => {
+-      console.log("✅ Service Worker registrado com sucesso:", registration.scope);
+-    })
+-    .catch((err) => {
+-      console.error("❌ Erro ao registrar SW:", err);
+-    });
+-} else {
+-  console.log("❌ Service Workers não suportados neste navegador.");
+-}
+ </script>
+ 
+ <!-- NOVO: Toast Message para feedback -->
+ <div id="toast-message" class="hidden"></div>
+ 
+ <footer class="text-center text-sm text-gray-500 dark:text-gray-400 py-6">© 2025 Organizador Financeiro <br> Vitor Barbosa</br></footer>
+ 
+ <!-- Firebase compat scripts -->
+ <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+ <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+ <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
+ 
+ <script>
+ /* ===========================
+    CONFIG FIREBASE (sua config)
+    =========================== */
+ const firebaseConfig = {
+   apiKey: "AIzaSyCpBfq801WlkxgHhWwORDvnKWpXGXz3k4c",
+   authDomain: "organizacao-financeira1.firebaseapp.com",
+   projectId: "organizacao-financeira1",
+   storageBucket: "organizacao-financeira1.firebasestorage.app",
+   messagingSenderId: "896359450111",
+   appId: "1:896359450111:web:bd8d7c2f2e35d4f27a93ca",
+   measurementId: "G-58ZVECNK3B"
+ };
+ firebase.initializeApp(firebaseConfig);
+ const db = firebase.firestore();
+ 
+ const messaging = firebase.messaging(); // Inicializa o Messaging
+ 
+ /* ===========================
+    UTIL
+    =========================== */
+ const moeda = v => (Number(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+-const pct = (a,b)=> b? Math.max(0,Math.min(100,(a/b)*100)) : 0;
+-const yyyymm = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+-const mmYYYY = key => { const [y,m]=key.split('-'); return `${m}/${y}`; };
+-const addMonths = (d,n) => new Date(d.getFullYear(), d.getMonth()+n, 1);
+-const monthDiff = (dStart,dEnd) => (dEnd.getFullYear()-dStart.getFullYear())*12 + (dEnd.getMonth()-dStart.getMonth());
++const pct = (a,b)=> b? Math.max(0,Math.min(100,(a/b)*100)) : 0;
++const yyyymm = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
++const mmYYYY = key => { const [y,m]=key.split('-'); return `${m}/${y}`; };
++const addMonths = (d,n) => new Date(d.getFullYear(), d.getMonth()+n, 1);
++const monthDiff = (dStart,dEnd) => (dEnd.getFullYear()-dStart.getFullYear())*12 + (dEnd.getMonth()-dStart.getMonth());
++const formatDate = value => {
++  const date = value instanceof Date ? value : new Date(value);
++  if (Number.isNaN(date.getTime())) return '-';
++  return date.toLocaleDateString('pt-BR');
++};
++const formatDateInputValue = (value = new Date()) => {
++  const date = value instanceof Date ? value : new Date(value);
++  if (Number.isNaN(date.getTime())) return '';
++  const month = String(date.getMonth() + 1).padStart(2, '0');
++  const day = String(date.getDate()).padStart(2, '0');
++  return `${date.getFullYear()}-${month}-${day}`;
++};
+ 
+ // NOVO: Função para calcular o mês de referência da fatura
+ function calcularMesFatura(dataTransacao, diaFechamento, offset = 0) {  // Adicionado offset com default 0
+   const data = new Date(dataTransacao);
+   const ano = data.getFullYear();
+   const mes = data.getMonth(); // 0-11
+   if (diaFechamento === null || diaFechamento === undefined) {
+     // Para PIX ou sem fechamento: sempre mês atual
+     return yyyymm(new Date(ano, mes, 1));
+   }
+   if (data.getDate() > diaFechamento) {
+     // Após fechamento: adiciona o offset (0 = mesmo mês; 1 = próximo)
+     return yyyymm(new Date(ano, mes + offset, 1));
+   } else {
+     // Antes/na data de fechamento: mês atual
+     return yyyymm(new Date(ano, mes, 1));
+   }
+ }
+ 
+ // Função para mostrar toast message
+ function showToast(message, type = 'success') {
+   const toast = document.getElementById('toast-message');
+   
+   // Define ícone baseado no tipo
+   let icon = '';
+@@ -1125,65 +1580,87 @@ btnCancelarConfirmacao.addEventListener('click', fecharModalConfirmacao);
+ btnConfirmarAcao.addEventListener('click', () => {
+   if (confirmCallback) {
+     confirmCallback(); // Executa a função de confirmação
+   }
+   fecharModalConfirmacao();
+ });
+ 
+ // Fechar modal ao clicar fora
+ modalConfirmacao.addEventListener('click', (e) => {
+   if (e.target === modalConfirmacao) {
+     fecharModalConfirmacao();
+   }
+ });
+ 
+ // Fechar modal com ESC
+ document.addEventListener('keydown', (e) => {
+   if (e.key === 'Escape' && !modalConfirmacao.classList.contains('hidden')) {
+     fecharModalConfirmacao();
+   }
+ });
+ 
+ 
+ /* ===========================
+    ESTADO/CONFIGURAÇÕES
+    =========================== */
+-let limites = {fixo:1300, parcelado:1400, variavel:2000}; // persisted in Firestore
++const limitesPadrao = {fixo:1300, parcelado:1400, variavel:2000};
++let limites = {...limitesPadrao}; // persisted em Firestore
+ const cartoesCfgDefault = {
+   nubank: { fechamento: 15, label: 'Nubank', mesVencimentoOffset: 0 },  // Mesmo mês
+   itau: { fechamento: 2, label: 'Itaú', mesVencimentoOffset: 0 },       // Mesmo mês
+   univ: { fechamento: 27, label: 'Univ', mesVencimentoOffset: 1 },      // Próximo mês
+   amazon: { fechamento: 25, label: 'Amazon', mesVencimentoOffset: 1 },  // Próximo mês
+   mercado: { fechamento: 4, label: 'Mercado Pago', mesVencimentoOffset: 0 },  // Mesmo mês
+   pix: { fechamento: null, label: 'PIX', mesVencimentoOffset: 0 }       // Sempre mesmo mês
+ };
+ let cartoesCfg = {...cartoesCfgDefault};
+ 
+-/* caches */
+-let mesesDisponiveis = new Set(); // Meses com gastos (para filtro geral)
+-let mesesParceladosColetados = new Set(); // Meses que contêm parcelados (do início ao fim, para filtro geral)
+-let allFixosDocs = []; // NOVO: Cache global dos documentos de fixos
++/* caches */
++let mesesDisponiveis = new Set(); // Meses com gastos (para filtro geral)
++let mesesParceladosColetados = new Set(); // Meses que contêm parcelados (do início ao fim, para filtro geral)
++let allFixosDocs = []; // NOVO: Cache global dos documentos de fixos
++let mesesEntradasDisponiveis = new Set();
++let mesesInvestimentosDisponiveis = new Set();
++let allEntradasDocs = [];
++let allInvestimentosDocs = [];
++let simuladorChart = null;
++
++const painelFinanceiroState = {
++  entradasMes: 0,
++  entradasTotais: 0,
++  investimentosMes: 0,
++  investimentosTotais: 0,
++  investimentosProjetados: 0,
++  totalGastosMes: 0,
++  envelopes: {
++    fixo: { gasto: 0, limite: limites.fixo, restante: limites.fixo, percent: 0, metaSugerida: limites.fixo },
++    parcelado: { gasto: 0, limite: limites.parcelado, restante: limites.parcelado, percent: 0, metaSugerida: limites.parcelado },
++    variavel: { gasto: 0, limite: limites.variavel, restante: limites.variavel, percent: 0, metaSugerida: limites.variavel },
++  },
++  simuladorJuros: null,
++  diasRestantes: null,
++};
+ 
+ /* resumo */
+ const resumo = {historicoMes:0, cartoesMes:0, pixMes:0, parcelasMes:0, fixosMes:0}; // MODIFICADO: Renomeado caixaAcumulado para saldoTotalAcumulado
+ 
+ /* NOVO: Sistema de Tags Inteligente */
+ let allTags = new Set(); // Cache de todas as tags existentes
+ let selectedTagsArray = []; // Tags selecionadas no modal
+ let currentSearchTerm = ''; // Termo de busca atual
+ let currentGroupBy = ''; // Agrupamento atual
+ 
+ /* NOVO: Variável para controle de scroll */
+ let lastScrollTop = 0;
+ 
+ /* ===========================
+    NOVO: SISTEMA DE TAGS INTELIGENTE
+    =========================== */
+ function initTagsSystem() {
+   const tagsInput = document.getElementById('modal-tags');
+   const tagsSuggestions = document.getElementById('tags-suggestions');
+   const selectedTagsContainer = document.getElementById('selected-tags');
+ 
+   // Carrega tags existentes do Firestore
+   loadExistingTags();
+ 
+   // Event listeners para o sistema de tags
+@@ -1487,68 +1964,284 @@ function renderHistoricoGrouped(docs, groupBy) {
+         <td class="td">${d.tipo}</td>
+         <td class="td">
+           <div class="flex flex-wrap gap-1">${tagsHtml}</div>
+         </td>
+         <td class="td">
+           <button class="text-blue-600 dark:text-blue-400 edit-gasto mr-2 hover:text-blue-800 dark:hover:text-blue-200" data-id="${id}" aria-label="Editar gasto">
+             <i class="fa fa-edit"></i>
+           </button>
+           <button class="text-red-600 dark:text-red-400 delete-gasto hover:text-red-800 dark:hover:text-red-200" data-id="${id}" aria-label="Remover gasto">
+             <i class="fa fa-trash"></i>
+           </button>
+         </td>
+       `;
+       tbody.appendChild(tr);
+     });
+   });
+ }
+ 
+ // Variáveis para o modal de gerenciamento de cartões
+ const modalGerenciarCartoes = document.getElementById('modal-gerenciar-cartoes');
+ const modalGerenciarCartoesClose = document.getElementById('modal-gerenciar-cartoes-close');
+ const btnGerenciarCartoes = document.getElementById('btn-gerenciar-cartoes');
+ const formAddCartao = document.getElementById('form-add-cartao');
+ const listaCartoesExistentes = document.getElementById('lista-cartoes-existentes');
+ 
+-/* ===========================
+-   PERSISTÊNCIA: LIMITES
+-   =========================== */
+-function carregarLimites(){
+-  db.collection('limites').doc('conta_unica').get().then(doc=>{
+-    if(doc.exists) limites = {...limites, ...doc.data()};
+-    document.getElementById('limite-fixo-input').value = limites.fixo;
+-    document.getElementById('limite-parcelado-input').value = limites.parcelado;
+-    document.getElementById('limite-variavel-input').value = limites.variavel;
+-    atualizarBarrasVisuais();
+-  });
+-}
+-function salvarLimite(key,val){ 
+-  limites[key]=parseFloat(val)||0; 
+-  db.collection('limites').doc('conta_unica').set(limites,{merge:true})
+-    .then(() => showToast('Limite atualizado com sucesso!'))
+-    .catch(err => showToast('Erro ao salvar limite.', 'error'));
+-}
++/* ===========================
++   ENVELOPES DO ORÇAMENTO
++   =========================== */
++function getDiasRestantesDoPeriodo() {
++  const filtroMes = document.getElementById('filtro-mes');
++  const hoje = new Date();
++  if (!filtroMes || !filtroMes.value || filtroMes.value === 'all') {
++    const totalDias = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0).getDate();
++    const restantes = Math.max(1, totalDias - hoje.getDate() + 1);
++    return { totalDias, restantes, referencia: hoje };
++  }
++
++  const [ano, mes] = filtroMes.value.split('-').map(Number);
++  const base = new Date(ano, (mes || 1) - 1, 1);
++  const totalDias = new Date(base.getFullYear(), base.getMonth() + 1, 0).getDate();
++  let diaReferencia;
++  const inicioMesAtual = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
++
++  if (base.getTime() === inicioMesAtual.getTime()) {
++    diaReferencia = hoje.getDate();
++  } else if (base < inicioMesAtual) {
++    diaReferencia = totalDias; // mês passado: considerar envelope concluído
++  } else {
++    diaReferencia = 1; // mês futuro: considerar período inteiro disponível
++  }
++
++  const restantes = Math.max(1, totalDias - diaReferencia + 1);
++  return { totalDias, restantes, referencia: base };
++}
++
++function arredondarMeta(valor) {
++  if (!isFinite(valor) || valor <= 0) return 0;
++  return Math.round(valor / 10) * 10;
++}
++
++function calcularMetaSugerida(tipo, gasto, limiteAtual = 0) {
++  const uso = Number(gasto) || 0;
++  const buffers = {
++    fixo: { percentual: 0.12, reserva: 80 },
++    parcelado: { percentual: 0.18, reserva: 120 },
++    variavel: { percentual: 0.28, reserva: 150 },
++  };
++  const cfg = buffers[tipo] || buffers.variavel;
++  const base = uso * (1 + cfg.percentual) + cfg.reserva;
++  const meta = Math.max(uso, base, limiteAtual * 0.75);
++  return arredondarMeta(meta);
++}
++
++function atualizarEnvelopeCard(tipo, overrides = {}) {
++  const dadosAtuais = painelFinanceiroState.envelopes?.[tipo] || {};
++  const limiteAtual = overrides.limite ?? limites[tipo] ?? dadosAtuais.limite ?? 0;
++  const gastoAtual = overrides.gasto ?? dadosAtuais.gasto ?? 0;
++  const restanteCalc = overrides.restante ?? (limiteAtual - gastoAtual);
++  const restante = Number.isFinite(restanteCalc) ? restanteCalc : 0;
++  const percent = limiteAtual ? Math.min(999, Math.max(0, (gastoAtual / limiteAtual) * 100)) : (gastoAtual > 0 ? 100 : 0);
++  const metaSugerida = calcularMetaSugerida(tipo, gastoAtual, limiteAtual);
++  const periodo = getDiasRestantesDoPeriodo();
++  painelFinanceiroState.diasRestantes = periodo;
++  const diarioDisponivel = periodo.restantes ? Math.max(0, restante) / periodo.restantes : 0;
++
++  const valorEl = document.getElementById(`envelope-${tipo}-valor`);
++  const restanteEl = document.getElementById(`envelope-${tipo}-restante`);
++  const percentEl = document.getElementById(`envelope-${tipo}-percent`);
++  const diarioEl = document.getElementById(`envelope-${tipo}-dia`);
++  const metaEl = document.getElementById(`envelope-${tipo}-meta-sugerida`);
++  const statusTextEl = document.getElementById(`envelope-${tipo}-status-text`);
++  const statusLabelEl = document.getElementById(`envelope-${tipo}-status-label`);
++  const statusWrap = document.getElementById(`envelope-${tipo}-status`);
++  const progressEl = document.getElementById(`envelope-progress-${tipo}`);
++
++  if (valorEl) valorEl.textContent = moeda(gastoAtual);
++  if (restanteEl) restanteEl.textContent = moeda(restante);
++  if (percentEl) percentEl.textContent = `${percent.toFixed(0)}%`;
++  if (diarioEl) diarioEl.textContent = moeda(diarioDisponivel);
++  if (metaEl) metaEl.textContent = moeda(metaSugerida);
++
++  if (progressEl) {
++    progressEl.style.width = `${Math.min(percent, 120)}%`;
++    progressEl.classList.remove('is-safe', 'is-alert', 'is-critical');
++  }
++
++  let statusClass = 'is-safe';
++  let statusTexto = 'Equilibrado';
++  let statusLabel = 'Dentro do limite planejado';
++
++  if (percent >= 100) {
++    statusClass = 'is-critical';
++    statusTexto = 'Revise agora';
++    statusLabel = 'Limite ultrapassado — priorize cortes';
++  } else if (percent >= 85) {
++    statusClass = 'is-alert';
++    statusTexto = 'Atenção';
++    statusLabel = 'Apenas uma margem pequena restante';
++  } else if (percent <= 55 && limiteAtual > 0) {
++    statusClass = 'is-safe';
++    statusTexto = 'Folga saudável';
++    statusLabel = 'Há espaço para economizar ou realocar verbas';
++  }
++
++  if (progressEl) {
++    progressEl.classList.add(statusClass);
++  }
++  if (statusWrap) {
++    statusWrap.classList.remove('is-safe', 'is-alert', 'is-critical');
++    statusWrap.classList.add(statusClass);
++  }
++  if (statusTextEl) statusTextEl.textContent = statusTexto;
++  if (statusLabelEl) statusLabelEl.textContent = statusLabel;
++
++  painelFinanceiroState.envelopes = painelFinanceiroState.envelopes || {};
++  painelFinanceiroState.envelopes[tipo] = {
++    gasto: gastoAtual,
++    limite: limiteAtual,
++    restante,
++    percent,
++    metaSugerida,
++    diarioDisponivel,
++    statusClass,
++  };
++}
++
++function atualizarResumoEnvelopes() {
++  ['fixo', 'parcelado', 'variavel'].forEach(tipo => atualizarEnvelopeCard(tipo));
++}
++
++function autoBalancearEnvelope(tipo) {
++  const dados = painelFinanceiroState.envelopes?.[tipo];
++  if (!dados) return;
++  const targetPercent = tipo === 'variavel' ? 0.75 : 0.85;
++  const gasto = dados.gasto || 0;
++  if (gasto === 0) {
++    showToast('Cadastre gastos para que o ajuste inteligente funcione.', 'info');
++    return;
++  }
++  const novoLimite = arredondarMeta(gasto / targetPercent);
++  const input = document.getElementById(`limite-${tipo}-input`);
++  if (input) input.value = novoLimite;
++  salvarLimite(tipo, novoLimite, true);
++  showToast(`Envelope de ${tipo} ajustado para R$ ${moeda(novoLimite)} visando ${Math.round(targetPercent * 100)}% de uso.`, 'success');
++}
++
++function aplicarMetaEnvelope(tipo) {
++  const dados = painelFinanceiroState.envelopes?.[tipo];
++  if (!dados) return;
++  const meta = dados.metaSugerida;
++  const input = document.getElementById(`limite-${tipo}-input`);
++  if (input) input.value = meta;
++  salvarLimite(tipo, meta, true);
++  showToast(`Meta sugerida aplicada no envelope de ${tipo}: R$ ${moeda(meta)}.`, 'success');
++}
++
++function distribuirSobrasEntreEnvelopes() {
++  const entradas = painelFinanceiroState.entradasMes || 0;
++  const gastos = painelFinanceiroState.totalGastosMes || 0;
++  const sobra = Math.max(0, entradas - gastos);
++  if (sobra <= 0) {
++    showToast('Sem sobras para distribuir neste mês. Controle os gastos primeiro.', 'info');
++    return;
++  }
++
++  const distribuicao = {
++    variavel: sobra * 0.5,
++    parcelado: sobra * 0.3,
++    fixo: sobra * 0.2,
++  };
++
++  const novosLimites = {};
++  Object.keys(distribuicao).forEach(tipo => {
++    const atual = limites[tipo] || 0;
++    novosLimites[tipo] = arredondarMeta(atual + distribuicao[tipo]);
++    const input = document.getElementById(`limite-${tipo}-input`);
++    if (input) input.value = novosLimites[tipo];
++  });
++
++  aplicarNovosLimites(novosLimites, 'Sobras distribuídas entre os envelopes.');
++}
++
++function resetarLimitesPadrao() {
++  const confirmacao = confirm('Deseja realmente restaurar os limites para os valores base?');
++  if (!confirmacao) return;
++  Object.keys(limitesPadrao).forEach(tipo => {
++    const input = document.getElementById(`limite-${tipo}-input`);
++    if (input) input.value = limitesPadrao[tipo];
++  });
++  aplicarNovosLimites(limitesPadrao, 'Limites restaurados para os valores padrão.');
++}
++
++function initEnvelopeActions() {
++  document.querySelectorAll('[data-envelope-auto]').forEach(btn => {
++    btn.addEventListener('click', () => autoBalancearEnvelope(btn.dataset.envelopeAuto));
++  });
++  document.querySelectorAll('[data-envelope-meta]').forEach(btn => {
++    btn.addEventListener('click', () => aplicarMetaEnvelope(btn.dataset.envelopeMeta));
++  });
++  const distribuirBtn = document.getElementById('btn-envelopes-distribuir');
++  if (distribuirBtn) distribuirBtn.addEventListener('click', distribuirSobrasEntreEnvelopes);
++  const resetBtn = document.getElementById('btn-envelopes-reset');
++  if (resetBtn) resetBtn.addEventListener('click', resetarLimitesPadrao);
++}
++
++/* ===========================
++   PERSISTÊNCIA: LIMITES
++   =========================== */
++function carregarLimites(){
++  db.collection('limites').doc('conta_unica').get().then(doc=>{
++    if(doc.exists) limites = {...limites, ...doc.data()};
++    document.getElementById('limite-fixo-input').value = limites.fixo;
++    document.getElementById('limite-parcelado-input').value = limites.parcelado;
++    document.getElementById('limite-variavel-input').value = limites.variavel;
++    atualizarResumoEnvelopes();
++  });
++}
++function aplicarNovosLimites(novosLimites, mensagem = 'Limites atualizados com sucesso!') {
++  limites = {...limites, ...novosLimites};
++  db.collection('limites').doc('conta_unica').set(novosLimites,{merge:true})
++    .then(() => {
++      atualizarResumoEnvelopes();
++      gerarInsights();
++      if (mensagem) showToast(mensagem);
++    })
++    .catch(() => showToast('Erro ao salvar limites.', 'error'));
++}
++
++function salvarLimite(key,val, silent = false){
++  const parsed = parseFloat(val)||0;
++  limites[key]=parsed;
++  atualizarEnvelopeCard(key, { limite: parsed });
++  db.collection('limites').doc('conta_unica').set({ [key]: parsed },{merge:true})
++    .then(() => {
++      if (!silent) showToast('Limite atualizado com sucesso!');
++      gerarInsights();
++    })
++    .catch(() => showToast('Erro ao salvar limite.', 'error'));
++}
+ 
+ function abrirModalGerenciarCartoes() {
+   modalGerenciarCartoes.classList.remove('hidden');
+   renderListaCartoesExistentes(); // Renderiza a lista de cartões ao abrir
+   updateFloatingMenuVisibility(); // Esconde o menu flutuante
+ }
+ function fecharModalGerenciarCartoes() {
+   modalGerenciarCartoes.classList.add('hidden');
+   formAddCartao.reset(); // Limpa o formulário
+   updateFloatingMenuVisibility(); // Mostra o menu flutuante
+ }
+ 
+ function renderListaCartoesExistentes() {
+   listaCartoesExistentes.innerHTML = '';
+   const cartoesAtuais = Object.keys(cartoesCfg).filter(key => key !== 'pix'); 
+   if (cartoesAtuais.length === 0) {
+     listaCartoesExistentes.innerHTML = '<div class="text-gray-500 dark:text-gray-400">Nenhum cartão adicionado ainda.</div>';
+     return;
+   }
+   cartoesAtuais.forEach(key => {
+     const cfg = cartoesCfg[key];
+     const cardItem = document.createElement('div');
+     cardItem.className = 'flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg';
+     cardItem.innerHTML = `
+       <div>
+@@ -2316,108 +3009,122 @@ function exportarCSVtudo(){
+     db.collection('parcelados').orderBy('dataInicio','desc').get(),
+   ]).then(([gastoSnap, parcSnap])=>{ 
+     let csv = 'Tipo,Data Transação,Mês Fatura,Cartão/PIX,Descrição,Valor,Parcelas,Observação,Categoria\n'; // MODIFICADO HEADER
+     gastoSnap.forEach(doc=>{
+       const d=doc.data(); 
+       const dt = d.data.toDate? d.data.toDate() : new Date(d.data);
+       const keyTransacao = yyyymm(dt);
+       const keyFatura = d.mesFatura || keyTransacao;
+       csv += `gasto,"${dt.toLocaleDateString('pt-BR')}","${mmYYYY(keyFatura)}","${d.cartao||''}","${(d.descricao||'').replace(/"/g,'""')}",${d.valor||0},1,,"${d.categoria||''}"\n`;
+     });
+     parcSnap.forEach(doc=>{
+       const p=doc.data();
+       csv += `parcelado,"${mmYYYY(yyyymm(p.dataInicio.toDate ? p.dataInicio.toDate() : new Date(p.dataInicio)))}","${mmYYYY(yyyymm(p.dataInicio.toDate ? p.dataInicio.toDate() : new Date(p.dataInicio)))}","${p.cartao||''}","${(p.descricao||'').replace(/"/g,'""')}",${p.valorParcela||0},${p.numParcelas},parcelado,\n`;
+     });
+ 
+     const blob=new Blob([csv],{type:'text/csv'}); const url=URL.createObjectURL(blob);
+     const a=document.createElement('a'); a.href=url; a.download='dados_financeiros_completos.csv'; a.click(); URL.revokeObjectURL(url); // MODIFICADO NOME DO ARQUIVO
+     showToast('Todos os dados exportados para CSV!');
+   }).catch(err => showToast('Erro ao exportar todos os dados para CSV.', 'error'));
+ }
+ 
+ 
+ /* ===========================
+    ATUALIZAÇÕES & SNAPSHOTS
+    =========================== */
+-function atualizarBarrasVisuais(){
+-  document.getElementById('gasto-fixo').textContent=moeda(0);
+-  document.getElementById('gasto-parcelado').textContent=moeda(0);
+-  document.getElementById('gasto-variavel').textContent=moeda(0);
+-}
++function atualizarBarrasVisuais(){
++  atualizarResumoEnvelopes();
++}
+ 
+-let unsubLimits, unsubFixos, unsubGastos, unsubParcelados, unsubConfig;
+-let allParceladosDocs = [];
+-let allGastosDocs = [];
++let unsubLimits, unsubFixos, unsubGastos, unsubParcelados, unsubConfig, unsubEntradas, unsubInvestimentos;
++let allParceladosDocs = [];
++let allGastosDocs = [];
+ 
+ // Funções para mostrar/ocultar spinners
+ function showSpinner(id) {
+   const el = document.getElementById(id);
+   if (el) el.classList.remove('spinner-hidden');
+ }
+ function hideSpinner(id) {
+   const el = document.getElementById(id);
+   if (el) el.classList.add('spinner-hidden');
+ }
+ 
+-function startObservers(){
+-  // Desinscrever observers antigos para evitar múltiplos listeners
+-  if (unsubLimits) unsubLimits();
+-  if (unsubConfig) unsubConfig();
+-  if (unsubFixos) unsubFixos();
+-  if (unsubGastos) unsubGastos();
+-  if (unsubParcelados) unsubParcelados();
+-
+-  // Mostrar spinners antes de carregar os dados
+-  showSpinner('historico-loading-spinner');
+-  showSpinner('fixos-loading-spinner');
+-  showSpinner('parcelados-loading-spinner');
++function startObservers(){
++  // Desinscrever observers antigos para evitar múltiplos listeners
++  if (unsubLimits) unsubLimits();
++  if (unsubConfig) unsubConfig();
++  if (unsubFixos) unsubFixos();
++  if (unsubGastos) unsubGastos();
++  if (unsubParcelados) unsubParcelados();
++  if (unsubEntradas) unsubEntradas();
++  if (unsubInvestimentos) unsubInvestimentos();
++
++  // Mostrar spinners antes de carregar os dados
++  showSpinner('historico-loading-spinner');
++  showSpinner('fixos-loading-spinner');
++  showSpinner('parcelados-loading-spinner');
+   showSpinner('cartoes-loading-spinner'); // Adicionado spinner para cartões
+ 
+   unsubLimits = db.collection('limites').doc('conta_unica').onSnapshot(doc=>{
+     if(doc.exists) { limites = {...limites, ...doc.data()}; document.getElementById('limite-fixo-input').value=limites.fixo; document.getElementById('limite-parcelado-input').value=limites.parcelado; document.getElementById('limite-variavel-input').value=limites.variavel; }
+     atualizarBarrasVisuais(); // Garante que as barras sejam atualizadas com os novos limites
+   }, err => {
+     console.error("Erro ao carregar limites:", err);
+     showToast('Erro ao carregar limites.', 'error');
+   });
+ 
+-  unsubConfig = db.collection('config').doc('cartoes').onSnapshot(snap=>{
+-    if(snap.exists) cartoesCfg = {...cartoesCfgDefault, ...snap.data()};
+-    renderCartoes(window._totaisPorCartaoHistorico || {});
+-    popularSelectCartoes(); // <--- NOVO: Chama para atualizar os selects
+-    hideSpinner('cartoes-loading-spinner'); // Oculta spinner de cartões
+-  }, err => {
+-    console.error("Erro ao carregar configurações de cartões:", err);
+-    showToast('Erro ao carregar configurações de cartões.', 'error');
+-    hideSpinner('cartoes-loading-spinner');
+-  });
+-     
+-
+-  unsubFixos = db.collection('fixos').orderBy('nome','asc').onSnapshot(snap=>{
+-    hideSpinner('fixos-loading-spinner'); // Oculta spinner de fixos
+-    allFixosDocs = snap.docs; // Garante que allFixosDocs seja atualizado
+-    renderFixos(snap.docs);
++  unsubConfig = db.collection('config').doc('cartoes').onSnapshot(snap=>{
++    if(snap.exists) cartoesCfg = {...cartoesCfgDefault, ...snap.data()};
++    renderCartoes(window._totaisPorCartaoHistorico || {});
++    popularSelectCartoes(); // <--- NOVO: Chama para atualizar os selects
++    hideSpinner('cartoes-loading-spinner'); // Oculta spinner de cartões
++  }, err => {
++    console.error("Erro ao carregar configurações de cartões:", err);
++    showToast('Erro ao carregar configurações de cartões.', 'error');
++    hideSpinner('cartoes-loading-spinner');
++  });
++
++  unsubEntradas = db.collection('entradas').orderBy('data','desc').onSnapshot(snap => {
++    renderEntradasSidebar(snap.docs);
++  }, err => {
++    console.error('Erro ao carregar entradas:', err);
++    showToast('Erro ao carregar entradas.', 'error');
++  });
++
++  unsubInvestimentos = db.collection('investimentos').orderBy('data','desc').onSnapshot(snap => {
++    renderInvestimentosSidebar(snap.docs);
++  }, err => {
++    console.error('Erro ao carregar investimentos:', err);
++    showToast('Erro ao carregar investimentos.', 'error');
++  });
++
++
++  unsubFixos = db.collection('fixos').orderBy('nome','asc').onSnapshot(snap=>{
++    hideSpinner('fixos-loading-spinner'); // Oculta spinner de fixos
++    allFixosDocs = snap.docs; // Garante que allFixosDocs seja atualizado
++    renderFixos(snap.docs);
+     atualizarTudoComParcelados(); // Recalcula totais após fixos serem carregados
+   }, err => {
+     console.error("Erro ao carregar fixos:", err);
+     hideSpinner('fixos-loading-spinner'); // Oculta spinner de fixos em caso de erro
+     showToast('Erro ao carregar fixos.', 'error');
+   });
+   
+ 
+ 
+   // === SEÇÃO CORRIGIDA: OBSERVER DE GASTOS ===
+   unsubGastos = db.collection('gastos').orderBy('data','desc').onSnapshot(snap=>{
+     hideSpinner('historico-loading-spinner'); // Oculta spinner de histórico
+     allGastosDocs = snap.docs; // ATUALIZA allGastosDocs AQUI
+ 
+     const mesSel = document.getElementById('filtro-mes').value || yyyymm(new Date());
+     
+     let somaVariavel = 0;
+     let somaFixoAvulso = 0;
+     let totaisPorCartaoHist = {};
+     let totaisPorCategoria = {}; // Objeto para armazenar totais por categoria
+ 
+     mesesDisponiveis = new Set();
+     const docsToProcessForMonth = [];
+     allGastosDocs.forEach(doc=>{
+       const d = doc.data();
+@@ -2586,161 +3293,941 @@ allFixosDocs.forEach(doc => {
+       
+       if(triggerVariavel) {
+         alertas.push(`<strong>Variáveis:</strong> R$ ${moeda(somaVariavel)} / R$ ${moeda(limites.variavel)} (${((somaVariavel/limites.variavel)*100).toFixed(1)}%)`);
+       }
+ 
+       if(alertas.length > 0) {
+         banner.style.display = 'block';
+         banner.innerHTML = `
+           <div class="flex items-start gap-2">
+             <span class="text-xl">🚨</span>
+             <div class="flex-1">
+               <div class="font-bold mb-2">Atenção: Limite(s) ultrapassado(s)!</div>
+               <div class="space-y-1">
+                 ${alertas.map(alerta => `<div class="text-sm">• ${alerta}</div>`).join('')}
+               </div>
+               <div class="text-xs mt-2 text-red-800 dark:text-red-300">
+                 💡 <strong>Dica:</strong> Considere revisar gastos desnecessários ou ajustar seus limites.
+               </div>
+             </div>
+           </div>
+         `;
+       } else {
+         banner.style.display = 'none';
+       }
+ 
+-      document.getElementById('gasto-fixo').textContent = moeda(somaFixosAtivos);
+-      atualizarBarra('fixo', somaFixosAtivos);
++      atualizarBarra('fixo', somaFixosAtivos);
+ 
+       // agora que já temos fixos, atualiza resumo
+       atualizarResumoUI();
+     });
+ }
+ 
+ 
+-function atualizarResumoUI(){
+-
+-  const totalGastosPrevistosMes = (resumo.historicoMes || 0) + (resumo.parcelasMes || 0) + (resumo.fixosMes || 0);
+-  document.getElementById('resumo-total-mes').textContent = moeda(totalGastosPrevistosMes); // Agora mostra a soma dos gastos
+-
+-  document.getElementById('resumo-cartoes').textContent = moeda(resumo.cartoesMes||0);
+-  document.getElementById('resumo-pix').textContent = moeda(resumo.pixMes||0);
+-  document.getElementById('resumo-parcelas-mes').textContent = moeda(resumo.parcelasMes||0);
+-}
++function atualizarResumoUI(){
++
++  const totalGastosPrevistosMes = (resumo.historicoMes || 0) + (resumo.parcelasMes || 0) + (resumo.fixosMes || 0);
++  document.getElementById('resumo-total-mes').textContent = moeda(totalGastosPrevistosMes); // Agora mostra a soma dos gastos
++
++  document.getElementById('resumo-cartoes').textContent = moeda(resumo.cartoesMes||0);
++  document.getElementById('resumo-pix').textContent = moeda(resumo.pixMes||0);
++  document.getElementById('resumo-parcelas-mes').textContent = moeda(resumo.parcelasMes||0);
++
++  painelFinanceiroState.totalGastosMes = totalGastosPrevistosMes;
++  atualizarResumoRapido();
++  atualizarResumoSaidasCard(totalGastosPrevistosMes);
++  atualizarSaudeFinanceira();
++}
+ 
+ 
+ 
+ 
+-function atualizarBarra(tipo, gasto){
+-  const limite = limites[tipo] || 0;
+-  const restante = Math.max(0, limite - (gasto||0));
+-  const percent = limite ? Math.max(0, Math.min(100, (gasto/limite)*100)) : 0; 
+-  document.getElementById(`progress-${tipo}`).style.width = percent + '%';
+-  document.getElementById(`gasto-${tipo}`).textContent = moeda(gasto||0);
+-  document.getElementById(`restante-${tipo}`).textContent = moeda(restante);
+-}
++function atualizarBarra(tipo, gasto){
++  const limite = limites[tipo] || 0;
++  const gastoFinal = Number(gasto) || 0;
++  const restante = limite - gastoFinal;
++  atualizarEnvelopeCard(tipo, { gasto: gastoFinal, limite, restante });
++}
+ 
+ /* ===========================
+    RENDER CATEGORIAS
+    =========================== */
+-function renderCategorias(totaisPorCategoria){
+-  const container = document.getElementById('categorias-list');
+-  container.innerHTML = '';
+-
+-  const categoriasOrdenadas = Object.keys(totaisPorCategoria).sort((a, b) => totaisPorCategoria[b] - totaisPorCategoria[a]);
++function renderCategorias(totaisPorCategoria){
++  const container = document.getElementById('categorias-list');
++  container.innerHTML = '';
++
++  const categoriasOrdenadas = Object.keys(totaisPorCategoria).sort((a, b) => totaisPorCategoria[b] - totaisPorCategoria[a]);
+ 
+   if (categoriasOrdenadas.length === 0) {
+     container.innerHTML = '<div class="text-gray-500 dark:text-gray-400">Nenhum gasto categorizado no mês.</div>';
+     return;
+   }
+ 
+   const totalGastosVariaveisMes = Object.values(totaisPorCategoria).reduce((sum, val) => sum + val, 0);
+ 
+   categoriasOrdenadas.forEach(categoriaKey => {
+     const totalGasto = totaisPorCategoria[categoriaKey];
+     const percent = totalGastosVariaveisMes ? (totalGasto / totalGastosVariaveisMes) * 100 : 0;
+     
+     const categoriaNome = categoriaKey.charAt(0).toUpperCase() + categoriaKey.slice(1);
+ 
+     const categoriaDiv = document.createElement('div');
+     categoriaDiv.className = 'mb-2';
+     categoriaDiv.innerHTML = `
+       <div class="flex justify-between items-center mb-1">
+         <div class="font-semibold">${categoriaNome}</div>
+         <div class="text-sm text-gray-500 dark:text-gray-400">R$ ${moeda(totalGasto)}</div>
+       </div>
+       <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+         <div class="progress-bar bg-blue-400 h-2 rounded-full" style="width:${percent}%"></div>
+       </div>
+     `;
+     container.appendChild(categoriaDiv);
+-  });
+-}
+-
+-
+-/* ===========================
+-   UI EVENTS: forms, export, edits
+-   =========================== */
+-document.getElementById('parcelado-form').addEventListener('submit', e=>{
++  });
++}
++
++
++const entradaTipoLabels = {
++  salario: 'Salário',
++  venda: 'Venda',
++  renda_extra: 'Renda extra',
++  outros: 'Outros',
++};
++
++const investimentoTipoLabels = {
++  reserva: 'Reserva de emergência',
++  renda_fixa: 'Renda fixa',
++  acoes: 'Ações/Fundos',
++  cripto: 'Cripto',
++  outros: 'Outros',
++};
++
++function renderEntradasSidebar(docs = []) {
++  const lista = document.getElementById('entradas-lista');
++  const totalMesEl = document.getElementById('entradas-total-mes');
++  const totalGeralEl = document.getElementById('entradas-total-geral');
++  const tiposContainer = document.getElementById('entradas-tipos-resumo');
++  if (!lista || !totalMesEl || !totalGeralEl || !tiposContainer) return;
++
++  mesesEntradasDisponiveis = new Set();
++  allEntradasDocs = docs;
++
++  lista.innerHTML = '';
++  tiposContainer.innerHTML = '';
++
++  const mesSel = document.getElementById('filtro-mes').value || yyyymm(new Date());
++  const mostrarTodos = mesSel === 'all';
++
++  let totalMes = 0;
++  let totalGeral = 0;
++  const totaisPorTipo = {};
++
++  docs.forEach(doc => {
++    const data = doc.data();
++    if (!data || !data.data) return;
++    const dt = data.data.toDate ? data.data.toDate() : new Date(data.data);
++    if (Number.isNaN(dt.getTime())) return;
++    const key = yyyymm(dt);
++    mesesEntradasDisponiveis.add(key);
++
++    const valor = Number(data.valor) || 0;
++    const tipo = data.tipo || 'outros';
++    const descricao = (data.descricao || '').trim();
++
++    totalGeral += valor;
++    totaisPorTipo[tipo] = (totaisPorTipo[tipo] || 0) + valor;
++
++    if (mostrarTodos || key === mesSel) {
++      totalMes += valor;
++      const item = document.createElement('div');
++      item.className = 'flex items-center gap-3 p-2 bg-gray-50 dark:bg-gray-700 rounded';
++      item.innerHTML = `
++        <div class="flex-1">
++          <div class="font-semibold text-gray-700 dark:text-gray-100">${entradaTipoLabels[tipo] || tipo}</div>
++          <div class="text-xs text-gray-500 dark:text-gray-400">${formatDate(dt)}${descricao ? ` • ${descricao}` : ''}</div>
++        </div>
++        <div class="text-right">
++          <div class="font-semibold text-green-600 dark:text-green-300">R$ ${moeda(valor)}</div>
++        </div>
++        <button class="text-gray-400 hover:text-red-500 transition" data-remove-entrada="${doc.id}" aria-label="Remover entrada">
++          <i class="fa fa-times"></i>
++        </button>
++      `;
++      lista.appendChild(item);
++    }
++  });
++
++  if (!lista.children.length) {
++    const empty = document.createElement('div');
++    empty.className = 'text-gray-500 dark:text-gray-400';
++    empty.textContent = 'Nenhuma entrada registrada para o período selecionado.';
++    lista.appendChild(empty);
++  }
++
++  if (Object.keys(totaisPorTipo).length === 0) {
++    const emptyTipos = document.createElement('div');
++    emptyTipos.className = 'col-span-2 text-gray-500 dark:text-gray-400';
++    emptyTipos.textContent = 'Cadastre entradas para ver a distribuição.';
++    tiposContainer.appendChild(emptyTipos);
++  } else {
++    Object.entries(totaisPorTipo).forEach(([tipo, valor]) => {
++      const card = document.createElement('div');
++      card.className = 'p-2 bg-green-50 dark:bg-green-900/10 rounded';
++      card.innerHTML = `
++        <div class="text-xs uppercase text-green-700 dark:text-green-200">${entradaTipoLabels[tipo] || tipo}</div>
++        <div class="text-sm font-semibold text-green-800 dark:text-green-300">R$ ${moeda(valor)}</div>
++      `;
++      tiposContainer.appendChild(card);
++    });
++  }
++
++  totalMesEl.textContent = moeda(totalMes);
++  totalGeralEl.textContent = moeda(totalGeral);
++
++  painelFinanceiroState.entradasMes = totalMes;
++  painelFinanceiroState.entradasTotais = totalGeral;
++  atualizarResumoRapido();
++  atualizarSaudeFinanceira();
++  atualizarFiltroMeses();
++}
++
++function atualizarSimuladorJuros(apenasSugestoes = false) {
++  const valorInicialInput = document.getElementById('simulador-valor-inicial');
++  const aporteInput = document.getElementById('simulador-aporte');
++  const taxaInput = document.getElementById('simulador-taxa');
++  const periodoInput = document.getElementById('simulador-periodo');
++  const saldoEl = document.getElementById('simulador-saldo-final');
++  const aportesEl = document.getElementById('simulador-total-aportes');
++  const rendimentoEl = document.getElementById('simulador-rendimento');
++  const metaAlvoEl = document.getElementById('simulador-meta-alvo');
++  const metaTextoEl = document.getElementById('simulador-juros-meta');
++  const canvas = document.getElementById('simulador-juros-chart');
++
++  if (!valorInicialInput || !aporteInput || !taxaInput || !periodoInput || !saldoEl || !aportesEl || !rendimentoEl || !metaAlvoEl) {
++    return;
++  }
++
++  const sugestaoInicial = painelFinanceiroState.investimentosTotais || 0;
++  const sugestaoAporte = painelFinanceiroState.investimentosMes || 0;
++
++  if (apenasSugestoes) {
++    if (!valorInicialInput.value && !valorInicialInput.dataset.userEdited && sugestaoInicial) {
++      valorInicialInput.value = sugestaoInicial.toFixed(2);
++    }
++    if (!aporteInput.value && !aporteInput.dataset.userEdited && sugestaoAporte) {
++      aporteInput.value = sugestaoAporte.toFixed(2);
++    }
++  }
++
++  const valorInicial = parseFloat(valorInicialInput.value) || 0;
++  const aporteMensal = parseFloat(aporteInput.value) || 0;
++  const taxaMensal = parseFloat(taxaInput.value) || 0;
++  let meses = parseInt(periodoInput.value, 10);
++  if (!Number.isFinite(meses) || meses <= 0) meses = 12;
++  meses = Math.max(1, Math.min(360, meses));
++  periodoInput.value = meses;
++
++  const taxaDecimal = Math.max(0, taxaMensal) / 100;
++  let saldo = valorInicial;
++  let totalAportes = valorInicial;
++  const pontosSaldo = [];
++  const pontosAportes = [];
++
++  for (let mes = 0; mes <= meses; mes += 1) {
++    if (mes > 0) {
++      saldo = (saldo + aporteMensal) * (1 + taxaDecimal);
++      totalAportes += aporteMensal;
++    }
++    pontosSaldo.push(saldo);
++    pontosAportes.push(totalAportes);
++  }
++
++  const rendimento = saldo - totalAportes;
++  const metaReserva = Math.max(0, (painelFinanceiroState.totalGastosMes || 0) * 6);
++
++  saldoEl.textContent = `R$ ${moeda(saldo)}`;
++  aportesEl.textContent = `R$ ${moeda(totalAportes)}`;
++  rendimentoEl.textContent = `R$ ${moeda(rendimento)}`;
++  metaAlvoEl.textContent = `R$ ${moeda(metaReserva)}`;
++  if (metaTextoEl) {
++    metaTextoEl.textContent = metaReserva ? `Reserva ideal de 6 meses: R$ ${moeda(metaReserva)}` : '';
++  }
++
++  if (canvas) {
++    const ctx = canvas.getContext('2d');
++    const isDark = document.documentElement.classList.contains('dark');
++    const tickColor = isDark ? '#cbd5f5' : '#6b7280';
++    const legendColor = isDark ? '#e2e8f0' : '#111827';
++    const gridColorX = isDark ? 'rgba(148,163,184,0.3)' : 'rgba(148,163,184,0.2)';
++    const gridColorY = isDark ? 'rgba(148,163,184,0.25)' : 'rgba(148,163,184,0.15)';
++    if (simuladorChart) simuladorChart.destroy();
++    simuladorChart = new Chart(ctx, {
++      type: 'line',
++      data: {
++        labels: Array.from({ length: meses + 1 }, (_, i) => `${i}º mês`),
++        datasets: [
++          {
++            label: 'Saldo projetado',
++            data: pontosSaldo,
++            borderColor: '#4f46e5',
++            backgroundColor: 'rgba(99,102,241,0.15)',
++            borderWidth: 2,
++            tension: 0.25,
++            fill: true,
++          },
++          {
++            label: 'Total aportado',
++            data: pontosAportes,
++            borderColor: '#10b981',
++            backgroundColor: 'rgba(16,185,129,0.1)',
++            borderWidth: 2,
++            borderDash: [6, 6],
++            tension: 0.15,
++            fill: false,
++          },
++        ],
++      },
++      options: {
++        responsive: true,
++        maintainAspectRatio: false,
++        plugins: {
++          legend: {
++            labels: {
++              color: legendColor,
++              font: { size: 12 },
++            },
++          },
++          tooltip: {
++            callbacks: {
++              label: context => `${context.dataset.label}: R$ ${moeda(context.parsed.y)}`,
++            },
++          },
++        },
++        scales: {
++          x: {
++            ticks: { color: tickColor },
++            grid: { color: gridColorX },
++          },
++          y: {
++            ticks: { color: tickColor },
++            grid: { color: gridColorY },
++          },
++        },
++      },
++    });
++  }
++
++  painelFinanceiroState.simuladorJuros = {
++    saldoFinal: saldo,
++    totalAportes,
++    rendimento,
++    meses,
++    taxaMensal,
++    aporteMensal,
++    metaReserva,
++  };
++
++  if (!apenasSugestoes) {
++    gerarInsights();
++  }
++}
++
++function renderInvestimentosSidebar(docs = []) {
++  const lista = document.getElementById('investimentos-lista');
++  const totalMesEl = document.getElementById('investimento-total-mes');
++  const totalGeralEl = document.getElementById('investimento-total-geral');
++  const projEl = document.getElementById('investimento-projecao');
++  if (!lista || !totalMesEl || !totalGeralEl || !projEl) return;
++
++  mesesInvestimentosDisponiveis = new Set();
++  allInvestimentosDocs = docs;
++
++  lista.innerHTML = '';
++
++  const mesSel = document.getElementById('filtro-mes').value || yyyymm(new Date());
++  const mostrarTodos = mesSel === 'all';
++  const hoje = new Date();
++
++  let totalMes = 0;
++  let totalGeral = 0;
++  let totalProjetado = 0;
++
++  docs.forEach(doc => {
++    const data = doc.data();
++    if (!data || !data.data) return;
++    const dt = data.data.toDate ? data.data.toDate() : new Date(data.data);
++    if (Number.isNaN(dt.getTime())) return;
++    const key = yyyymm(dt);
++    mesesInvestimentosDisponiveis.add(key);
++
++    const valor = Number(data.valor) || 0;
++    const tipo = data.tipo || 'outros';
++    const descricao = (data.descricao || '').trim();
++
++    totalGeral += valor;
++    const mesesPassados = Math.max(0, monthDiff(dt, hoje));
++    const valorProjetado = valor * Math.pow(1.01, mesesPassados);
++    totalProjetado += valorProjetado;
++
++    if (mostrarTodos || key === mesSel) {
++      totalMes += valor;
++      const item = document.createElement('div');
++      item.className = 'flex items-center gap-3 p-2 bg-indigo-50 dark:bg-indigo-900/20 rounded';
++      item.innerHTML = `
++        <div class="flex-1">
++          <div class="flex items-center gap-2">
++            <span class="text-xs uppercase tracking-wide bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-200 px-2 py-0.5 rounded">${investimentoTipoLabels[tipo] || tipo}</span>
++            ${descricao ? `<span class="text-sm font-medium text-gray-700 dark:text-gray-200">${descricao}</span>` : ''}
++          </div>
++          <div class="text-xs text-gray-500 dark:text-gray-400">${formatDate(dt)}</div>
++        </div>
++        <div class="text-right">
++          <div class="font-semibold text-indigo-700 dark:text-indigo-200">R$ ${moeda(valor)}</div>
++          <div class="text-xs text-gray-500 dark:text-gray-400">Proj.: R$ ${moeda(valorProjetado)}</div>
++        </div>
++        <button class="text-gray-400 hover:text-red-500 transition" data-remove-investimento="${doc.id}" aria-label="Remover investimento">
++          <i class="fa fa-times"></i>
++        </button>
++      `;
++      lista.appendChild(item);
++    }
++  });
++
++  if (!lista.children.length) {
++    const empty = document.createElement('div');
++    empty.className = 'text-gray-500 dark:text-gray-400';
++    empty.textContent = 'Nenhum investimento registrado para o período selecionado.';
++    lista.appendChild(empty);
++  }
++
++  totalMesEl.textContent = moeda(totalMes);
++  totalGeralEl.textContent = moeda(totalGeral);
++  projEl.textContent = moeda(totalProjetado);
++
++  painelFinanceiroState.investimentosMes = totalMes;
++  painelFinanceiroState.investimentosTotais = totalGeral;
++  painelFinanceiroState.investimentosProjetados = totalProjetado;
++  atualizarResumoRapido();
++  atualizarSaudeFinanceira();
++  atualizarFiltroMeses();
++  atualizarSimuladorJuros(true);
++}
++
++function initSimuladorJuros() {
++  const form = document.getElementById('simulador-juros-form');
++  if (!form) return;
++
++  form.addEventListener('submit', (event) => event.preventDefault());
++  const inputs = Array.from(form.querySelectorAll('input'));
++  inputs.forEach(input => {
++    input.addEventListener('input', () => {
++      input.dataset.userEdited = 'true';
++      atualizarSimuladorJuros();
++    });
++    input.addEventListener('change', () => {
++      input.dataset.userEdited = 'true';
++      atualizarSimuladorJuros();
++    });
++  });
++
++  atualizarSimuladorJuros(true);
++}
++
++function atualizarResumoSaidasCard(totalGastosPrevistosMes) {
++  const totalEl = document.getElementById('saidas-total-card');
++  const fixosEl = document.getElementById('saidas-fixos');
++  const variavelEl = document.getElementById('saidas-variavel');
++  const parceladoEl = document.getElementById('saidas-parcelado');
++  const fixosBar = document.getElementById('saidas-fixos-bar');
++  const variavelBar = document.getElementById('saidas-variavel-bar');
++  const parceladoBar = document.getElementById('saidas-parcelado-bar');
++
++  if (!totalEl || !fixosEl || !variavelEl || !parceladoEl || !fixosBar || !variavelBar || !parceladoBar) return;
++
++  const fixoVal = resumo.fixosMes || 0;
++  const variavelVal = resumo.historicoMes || 0;
++  const parceladoVal = resumo.parcelasMes || 0;
++  const total = fixoVal + variavelVal + parceladoVal;
++
++  totalEl.textContent = moeda(totalGastosPrevistosMes);
++  fixosEl.textContent = moeda(fixoVal);
++  variavelEl.textContent = moeda(variavelVal);
++  parceladoEl.textContent = moeda(parceladoVal);
++
++  const calcPercent = valor => total ? Math.max(0, Math.min(100, (valor / total) * 100)) : 0;
++  fixosBar.style.width = `${calcPercent(fixoVal)}%`;
++  variavelBar.style.width = `${calcPercent(variavelVal)}%`;
++  parceladoBar.style.width = `${calcPercent(parceladoVal)}%`;
++}
++
++function atualizarResumoRapido() {
++  const entradasMes = painelFinanceiroState.entradasMes || 0;
++  const totalGastosMes = painelFinanceiroState.totalGastosMes || 0;
++  const projInvest = painelFinanceiroState.investimentosProjetados || 0;
++  const totalInvest = painelFinanceiroState.investimentosTotais || 0;
++  const ganhoInvest = Math.max(0, projInvest - totalInvest);
++  const saldo = entradasMes - totalGastosMes;
++  const saldoProjetado = saldo + ganhoInvest;
++
++  atualizarResumoIndicadoresFinanceiros({ entradasMes, totalGastosMes, saldoProjetado, ganhoInvest });
++
++  return { entradasMes, totalGastosMes, saldoProjetado, ganhoInvest };
++}
++
++function atualizarResumoIndicadoresFinanceiros({ entradasMes, totalGastosMes, saldoProjetado, ganhoInvest }) {
++  const entradasMesEl = document.getElementById('resumo-entradas-mes');
++  const saidasMesEl = document.getElementById('resumo-saidas-mes');
++  const saldoProjetadoEl = document.getElementById('resumo-saldo-projetado');
++  const ganhoInvestEl = document.getElementById('resumo-ganho-invest');
++
++  if (!entradasMesEl || !saidasMesEl || !saldoProjetadoEl || !ganhoInvestEl) return;
++
++  entradasMesEl.textContent = moeda(entradasMes);
++  saidasMesEl.textContent = moeda(totalGastosMes);
++  saldoProjetadoEl.textContent = moeda(saldoProjetado);
++  ganhoInvestEl.textContent = moeda(Math.max(0, ganhoInvest));
++
++  const saldoItem = saldoProjetadoEl.closest('.resumo-item');
++  if (saldoItem) {
++    saldoItem.classList.remove('positivo', 'alerta', 'neutro');
++    if (saldoProjetado > 50) {
++      saldoItem.classList.add('positivo');
++    } else if (saldoProjetado < -50) {
++      saldoItem.classList.add('alerta');
++    } else {
++      saldoItem.classList.add('neutro');
++    }
++  }
++
++  const ganhoItem = ganhoInvestEl.closest('.resumo-item');
++  if (ganhoItem) {
++    ganhoItem.classList.remove('positivo', 'alerta', 'neutro');
++    if (ganhoInvest > 0) {
++      ganhoItem.classList.add('positivo');
++    } else {
++      ganhoItem.classList.add('neutro');
++    }
++  }
++
++  const saidasItem = saidasMesEl.closest('.resumo-item');
++  if (saidasItem) {
++    const excedeu = totalGastosMes > entradasMes;
++    saidasItem.classList.remove('positivo', 'alerta', 'neutro');
++    saidasItem.classList.add(excedeu ? 'alerta' : 'neutro');
++  }
++}
++
++function atualizarSaudeFinanceira() {
++  const scoreEl = document.getElementById('saude-score');
++  const statusEl = document.getElementById('saude-status');
++  const progressEl = document.getElementById('saude-progress');
++  const saldoEl = document.getElementById('saude-detalhes-saldo');
++  const rendaEl = document.getElementById('saude-detalhes-renda');
++  const investimentoEl = document.getElementById('saude-investimento-extra');
++  if (!scoreEl || !statusEl || !progressEl || !saldoEl || !rendaEl || !investimentoEl) return;
++
++  const entradasMes = painelFinanceiroState.entradasMes || 0;
++  const totalGastosMes = painelFinanceiroState.totalGastosMes || 0;
++  const projInvest = painelFinanceiroState.investimentosProjetados || 0;
++  const totalInvest = painelFinanceiroState.investimentosTotais || 0;
++  const ganhoInvest = Math.max(0, projInvest - totalInvest);
++  const saldo = entradasMes - totalGastosMes;
++  const saldoProjetado = saldo + ganhoInvest;
++
++  rendaEl.textContent = `R$ ${moeda(entradasMes)}`;
++  investimentoEl.textContent = `R$ ${moeda(Math.max(projInvest, 0))}`;
++  saldoEl.textContent = `R$ ${moeda(saldoProjetado)}`;
++
++  if (entradasMes === 0 && totalGastosMes === 0 && projInvest === 0) {
++    scoreEl.textContent = '--';
++    progressEl.style.width = '0%';
++    progressEl.style.backgroundColor = '#f43f5e';
++    statusEl.textContent = 'Cadastre entradas e gastos para calcular sua saúde financeira.';
++    return;
++  }
++
++  let score;
++  if (entradasMes <= 0) {
++    score = totalGastosMes > 0 ? 5 : 50;
++  } else {
++    const uso = totalGastosMes / entradasMes;
++    score = Math.round(Math.max(0, Math.min(100, (1 - Math.min(uso, 1.5) / 1.5) * 100)));
++  }
++
++  const mensagem = score >= 80
++    ? 'Excelente! Você está gastando menos do que ganha e aproveitando os investimentos.'
++    : score >= 55
++      ? 'Atenção: ajuste alguns gastos ou aumente suas entradas para melhorar o saldo.'
++      : 'Crítico: reveja gastos urgentes ou busque novas entradas para equilibrar as finanças.';
++
++  const cor = score >= 80 ? '#16a34a' : score >= 55 ? '#f97316' : '#dc2626';
++
++  scoreEl.textContent = `${score} pts`;
++  progressEl.style.width = `${score}%`;
++  progressEl.style.backgroundColor = cor;
++  statusEl.textContent = mensagem;
++}
++
++function initMobilePanels() {
++  const nav = document.getElementById('mobile-panels-nav');
++  const panels = Array.from(document.querySelectorAll('.mobile-panel'));
++  if (!nav || panels.length === 0) return;
++
++  const buttons = Array.from(nav.querySelectorAll('[data-panel-target]')).filter(btn => btn.dataset.panelTarget);
++  if (!buttons.length) return;
++
++  const firstAvailable = buttons.find(btn => panels.some(panel => panel.id === btn.dataset.panelTarget));
++  let activeId = firstAvailable ? firstAvailable.dataset.panelTarget : panels[0]?.id;
++  if (!activeId) return;
++
++  const applyState = (id) => {
++    if (!id) return;
++    activeId = id;
++    const isDesktop = window.innerWidth >= 1024;
++    panels.forEach(panel => {
++      if (isDesktop) {
++        panel.classList.remove('hidden');
++      } else {
++        panel.classList.toggle('hidden', panel.id !== id);
++      }
++    });
++    buttons.forEach(btn => btn.classList.toggle('active', btn.dataset.panelTarget === id));
++  };
++
++  buttons.forEach(btn => {
++    btn.addEventListener('click', () => {
++      const target = btn.dataset.panelTarget;
++      if (!target || target === activeId) return;
++      applyState(target);
++    });
++  });
++
++  const handleResize = () => {
++    if (window.innerWidth >= 1024) {
++      panels.forEach(panel => panel.classList.remove('hidden'));
++    } else {
++      applyState(activeId);
++    }
++  };
++
++  applyState(activeId);
++  window.addEventListener('resize', handleResize);
++  handleResize();
++}
++
++function initResumoSlider() {
++  const slider = document.getElementById('resumo-slider');
++  const track = document.getElementById('resumo-slider-track');
++  if (!slider || !track) return;
++
++  const slides = Array.from(track.children);
++  if (slides.length <= 1) return;
++
++  const mainButtons = Array.from(document.querySelectorAll('.resumo-slider-dot[data-slide]'));
++  const dotButtons = Array.from(document.querySelectorAll('.resumo-slider-dots button[data-slide]'));
++  let activeIndex = 0;
++  let pointerActive = false;
++  let startX = 0;
++  let pointerId = null;
++
++  const getClientX = (event) => (typeof event.clientX === 'number' ? event.clientX : startX);
++
++  const clampIndex = (index) => Math.max(0, Math.min(slides.length - 1, index));
++
++  const applyTransform = () => {
++    track.style.transform = `translateX(-${activeIndex * 100}%)`;
++  };
++
++  const updateButtons = () => {
++    const check = btn => Number(btn.dataset.slide) === activeIndex;
++    mainButtons.forEach(btn => {
++      const isActive = check(btn);
++      btn.classList.toggle('is-active', isActive);
++      btn.setAttribute('aria-selected', String(isActive));
++      btn.tabIndex = isActive ? 0 : -1;
++    });
++    dotButtons.forEach(btn => {
++      const isActive = check(btn);
++      btn.classList.toggle('is-active', isActive);
++      btn.tabIndex = isActive ? 0 : -1;
++      btn.setAttribute('aria-pressed', String(isActive));
++    });
++  };
++
++  const updateSlidesAccessibility = () => {
++    slides.forEach((slide, index) => {
++      const isActive = index === activeIndex;
++      slide.setAttribute('aria-hidden', String(!isActive));
++      slide.tabIndex = isActive ? 0 : -1;
++    });
++  };
++
++  const goTo = (index) => {
++    const nextIndex = clampIndex(index);
++    if (nextIndex === activeIndex) {
++      applyTransform();
++      return;
++    }
++    activeIndex = nextIndex;
++    applyTransform();
++    updateButtons();
++    updateSlidesAccessibility();
++  };
++
++  const finishPointer = (event) => {
++    if (!pointerActive) return;
++    const deltaX = getClientX(event) - startX;
++    if (Math.abs(deltaX) > 50) {
++      goTo(activeIndex + (deltaX < 0 ? 1 : -1));
++    } else {
++      goTo(activeIndex);
++    }
++    if (pointerId !== null) {
++      try { slider.releasePointerCapture(pointerId); } catch (err) { /* ignore */ }
++    }
++    pointerActive = false;
++    pointerId = null;
++  };
++
++  mainButtons.forEach(btn => {
++    btn.addEventListener('click', () => {
++      const index = Number(btn.dataset.slide) || 0;
++      goTo(index);
++    });
++    btn.addEventListener('keydown', (event) => {
++      if (event.key === 'ArrowRight') {
++        event.preventDefault();
++        goTo(activeIndex + 1);
++        mainButtons[activeIndex]?.focus();
++      } else if (event.key === 'ArrowLeft') {
++        event.preventDefault();
++        goTo(activeIndex - 1);
++        mainButtons[activeIndex]?.focus();
++      } else if (event.key === 'Home') {
++        event.preventDefault();
++        goTo(0);
++        mainButtons[0]?.focus();
++      } else if (event.key === 'End') {
++        event.preventDefault();
++        goTo(slides.length - 1);
++        mainButtons[slides.length - 1]?.focus();
++      }
++    });
++  });
++
++  dotButtons.forEach(btn => {
++    btn.addEventListener('click', () => {
++      const index = Number(btn.dataset.slide) || 0;
++      goTo(index);
++    });
++  });
++
++  slider.addEventListener('pointerdown', (event) => {
++    if (event.pointerType === 'mouse' && event.button !== 0) return;
++    pointerActive = true;
++    startX = event.clientX;
++    pointerId = event.pointerId;
++    try { slider.setPointerCapture(pointerId); } catch (err) { /* ignore */ }
++  });
++
++  slider.addEventListener('pointerup', finishPointer);
++  slider.addEventListener('pointercancel', finishPointer);
++  slider.addEventListener('pointerleave', (event) => {
++    if (!pointerActive) return;
++    finishPointer(event);
++  });
++
++  window.addEventListener('resize', () => {
++    applyTransform();
++    updateButtons();
++    updateSlidesAccessibility();
++  });
++
++  goTo(0);
++  updateButtons();
++  updateSlidesAccessibility();
++}
++
++/* ===========================
++   UI EVENTS: forms, export, edits
++   =========================== */
++document.getElementById('parcelado-form').addEventListener('submit', e=>{
+   e.preventDefault();
+   const desc = document.getElementById('p-desc').value.trim();
+   const valorParcela = parseFloat(document.getElementById('p-valor').value)||0;
+   const numParcelas = parseInt(document.getElementById('p-num').value)||1;
+   const cartao = document.getElementById('p-cartao').value||'';
+   const inicio = document.getElementById('p-inicio').value;
+   if(!desc || valorParcela<=0 || numParcelas<1 || !inicio) {
+     showToast('Preencha todos os campos do parcelado corretamente.', 'error');
+     return;
+   }
+   const [y,m] = inicio.split('-');
+   const dataInicio = new Date(parseInt(y), parseInt(m)-1, 1);
+   db.collection('parcelados').add({descricao:desc, valorParcela, numParcelas, cartao, dataInicio})
+     .then(()=> {
+       e.target.reset();
+       showToast('Parcelado adicionado com sucesso!');
+       gerarInsights(); // NOVO: Atualiza insights após adicionar parcelado
+     })
+     .catch(err => showToast('Erro ao adicionar parcelado: ' + err.message, 'error'));
+ });
+ 
+-document.getElementById('exportar-csv').addEventListener('click', exportarCSVmes);
+-document.getElementById('exportar-tudo').addEventListener('click', exportarCSVtudo);
++/* ===========================
++   ENTRADAS & INVESTIMENTOS SIDEBAR
++   =========================== */
++const formEntrada = document.getElementById('form-entrada');
++const entradaDataInput = document.getElementById('entrada-data');
++const entradaValorInput = document.getElementById('entrada-valor');
++const formInvestimento = document.getElementById('form-investimento');
++const investimentoDataInput = document.getElementById('investimento-data');
++const investimentoValorInput = document.getElementById('investimento-valor');
++
++const hojeIso = formatDateInputValue(new Date());
++if (entradaDataInput && !entradaDataInput.value) entradaDataInput.value = hojeIso;
++if (investimentoDataInput && !investimentoDataInput.value) investimentoDataInput.value = hojeIso;
++
++if (formEntrada) {
++  formEntrada.addEventListener('submit', e => {
++    e.preventDefault();
++    const tipo = document.getElementById('entrada-tipo')?.value || 'outros';
++    const valor = parseFloat((entradaValorInput && entradaValorInput.value) || '0');
++    const dataValor = entradaDataInput ? entradaDataInput.value : '';
++    const descricao = (document.getElementById('entrada-desc')?.value || '').trim();
++
++    if (!dataValor || valor <= 0) {
++      showToast('Informe um valor e uma data válidos para a entrada.', 'error');
++      return;
++    }
++
++    const data = new Date(`${dataValor}T12:00:00`);
++    db.collection('entradas').add({
++      tipo,
++      valor,
++      descricao,
++      data: firebase.firestore.Timestamp.fromDate(data),
++      createdAt: firebase.firestore.Timestamp.now(),
++    }).then(() => {
++      showToast('Entrada registrada com sucesso!', 'success');
++      formEntrada.reset();
++      if (entradaDataInput) entradaDataInput.value = formatDateInputValue(new Date());
++    }).catch(err => {
++      console.error('Erro ao adicionar entrada:', err);
++      showToast('Erro ao adicionar entrada.', 'error');
++    });
++  });
++
++  const entradasLista = document.getElementById('entradas-lista');
++  if (entradasLista) {
++    entradasLista.addEventListener('click', e => {
++      const btn = e.target.closest('[data-remove-entrada]');
++      if (!btn) return;
++      const id = btn.getAttribute('data-remove-entrada');
++      if (!id) return;
++      abrirModalConfirmacao('Remover entrada', 'Deseja remover esta entrada de dinheiro?', () => {
++        db.collection('entradas').doc(id).delete()
++          .then(() => showToast('Entrada removida!', 'success'))
++          .catch(err => {
++            console.error('Erro ao remover entrada:', err);
++            showToast('Erro ao remover entrada.', 'error');
++          });
++      });
++    });
++  }
++}
++
++if (formInvestimento) {
++  formInvestimento.addEventListener('submit', e => {
++    e.preventDefault();
++    const tipo = document.getElementById('investimento-tipo')?.value || 'outros';
++    const valor = parseFloat((investimentoValorInput && investimentoValorInput.value) || '0');
++    const dataValor = investimentoDataInput ? investimentoDataInput.value : '';
++    const descricao = (document.getElementById('investimento-desc')?.value || '').trim();
++
++    if (!dataValor || valor <= 0) {
++      showToast('Informe um valor e uma data válidos para o investimento.', 'error');
++      return;
++    }
++
++    const data = new Date(`${dataValor}T12:00:00`);
++    db.collection('investimentos').add({
++      tipo,
++      valor,
++      descricao,
++      data: firebase.firestore.Timestamp.fromDate(data),
++      createdAt: firebase.firestore.Timestamp.now(),
++    }).then(() => {
++      showToast('Investimento registrado!', 'success');
++      formInvestimento.reset();
++      if (investimentoDataInput) investimentoDataInput.value = formatDateInputValue(new Date());
++    }).catch(err => {
++      console.error('Erro ao adicionar investimento:', err);
++      showToast('Erro ao adicionar investimento.', 'error');
++    });
++  });
++
++  const investimentosLista = document.getElementById('investimentos-lista');
++  if (investimentosLista) {
++    investimentosLista.addEventListener('click', e => {
++      const btn = e.target.closest('[data-remove-investimento]');
++      if (!btn) return;
++      const id = btn.getAttribute('data-remove-investimento');
++      if (!id) return;
++      abrirModalConfirmacao('Remover investimento', 'Deseja remover este lançamento de investimento?', () => {
++        db.collection('investimentos').doc(id).delete()
++          .then(() => showToast('Investimento removido!', 'success'))
++          .catch(err => {
++            console.error('Erro ao remover investimento:', err);
++            showToast('Erro ao remover investimento.', 'error');
++          });
++      });
++    });
++  }
++}
++
++document.getElementById('exportar-csv').addEventListener('click', exportarCSVmes);
++document.getElementById('exportar-tudo').addEventListener('click', exportarCSVtudo);
+ 
+ document.getElementById('limite-fixo-input').addEventListener('change', e=> salvarLimite('fixo', e.target.value));
+ document.getElementById('limite-parcelado-input').addEventListener('change', e=> salvarLimite('parcelado', e.target.value));
+ document.getElementById('limite-variavel-input').addEventListener('change', e=> salvarLimite('variavel', e.target.value));
+ 
+ /* ===========================
+    FILTRO MESES POPULATION helper (GERAL)
+    =========================== */
+ function atualizarFiltroMeses(){
+   const select = document.getElementById('filtro-mes');
+   const atual = select.value; 
+ 
+   select.innerHTML = '<option value="all">Todos</option>';
+ 
+- const setAllDataMonths = new Set([...(mesesDisponiveis||[]), ...(mesesParceladosColetados||[])]);
++ const setAllDataMonths = new Set([
++   ...(mesesDisponiveis||[]),
++   ...(mesesParceladosColetados||[]),
++   ...(mesesEntradasDisponiveis||[]),
++   ...(mesesInvestimentosDisponiveis||[])
++ ]);
+   
+   Array.from(setAllDataMonths).sort().reverse().forEach(k=>{
+     const opt = document.createElement('option');
+     opt.value = k;
+     opt.textContent = mmYYYY(k);
+     select.appendChild(opt);
+   });
+ 
+   if(atual && Array.from(select.options).some(o=>o.value===atual)) {
+       select.value = atual;
+   } else {
+       select.value = yyyymm(new Date());
+   }
+ }
+ 
+ 
+ document.getElementById('filtro-mes').addEventListener('change', ()=>{
+   // Ao mudar o filtro de mês, reinicia os observers para carregar os dados do novo mês
+   startObservers(); 
+ });
+ 
+ 
+ /* ===========================
+    NOVO: MENU FLUTUANTE EXPANSÍVEL PARA MOBILE
+    =========================== */
+@@ -3031,63 +4518,92 @@ formFixo.addEventListener('submit', e => {
+         showToast('Erro ao adicionar gasto fixo.', 'error');
+       });
+   }
+ });
+ 
+ /* ===========================
+    PWA & NOTIFICAÇÕES
+    =========================== */
+ async function solicitarPermissaoNotificacoes() {
+   try {
+     const permission = await Notification.requestPermission();
+     if (permission === 'granted') {
+       console.log('Permissão concedida para notificações');
+       // Substitua 'SUA_VAPID_KEY' pela sua chave VAPID do Firebase
+       const token = await messaging.getToken({ vapidKey: 'SUA_VAPID_KEY' }); 
+       console.log('Token FCM:', token);
+       // Envie o token para seu backend para enviar notificações
+     } else {
+       console.log('Permissão para notificações negada');
+     }
+   } catch (error) {
+     console.error('Erro ao solicitar permissão:', error);
+   }
+ }
+ 
+-// Registrar service worker APENAS para PWA (sem Firebase por agora)
+-if ('serviceWorker' in navigator) {
+-  navigator.serviceWorker.register('/sw.js')
+-    .then(registration => {
+-      console.log('✅ Service Worker registrado para PWA:', registration.scope);
+-      // Comentei as partes do Firebase para evitar erros - volte depois se quiser notificações
+-      // messaging.useServiceWorker(registration);
+-      // solicitarPermissaoNotificacoes();
+-    })
+-    .catch(err => {
+-      console.error('❌ Erro ao registrar Service Worker:', err);
+-    });
+-}
++let swReloadScheduled = false;
++
++function signalServiceWorkerUpdate(worker) {
++  if (!worker) return;
++  showToast('Atualização disponível! Recarregando para aplicar novidades.', 'info');
++  worker.postMessage({ type: 'SKIP_WAITING' });
++}
++
++function registerAppServiceWorker() {
++  if (!('serviceWorker' in navigator)) {
++    console.log('❌ Service Workers não suportados neste navegador.');
++    return;
++  }
++
++  const swUrl = new URL('sw.js', window.location.href);
++
++  navigator.serviceWorker.register(swUrl.href)
++    .then(registration => {
++      console.log('✅ Service Worker pronto:', registration.scope);
++      if (registration.waiting) {
++        signalServiceWorkerUpdate(registration.waiting);
++      }
++      registration.addEventListener('updatefound', () => {
++        const newWorker = registration.installing;
++        if (!newWorker) return;
++        newWorker.addEventListener('statechange', () => {
++          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
++            signalServiceWorkerUpdate(newWorker);
++          }
++        });
++      });
++    })
++    .catch(err => {
++      console.error('❌ Erro ao registrar Service Worker:', err);
++    });
++
++  navigator.serviceWorker.addEventListener('controllerchange', () => {
++    if (swReloadScheduled) return;
++    swReloadScheduled = true;
++    window.location.reload();
++  });
++}
+ 
+ /* ===========================
+    NOVO: MODAL DE GRÁFICOS INTERATIVOS COM FILTROS
+    =========================== */
+ // Variáveis globais para os gráficos e filtros
+ let chartCategorias = null;
+ let chartCartoes = null;
+ let chartTendenciaCategorias = null; // NOVO: Variável para o gráfico de tendência
+ const modalGraficos = document.getElementById('modal-graficos');
+ const modalGraficosClose = document.getElementById('modal-graficos-close');
+ const btnOpenGraficos = document.getElementById('btn-open-graficos');
+ const filtroCartoesContainer = document.getElementById('filtro-cartoes-container');
+ const filtroCategoriasContainer = document.getElementById('filtro-categorias-container');
+ const filtroPeriodoGraficos = document.getElementById('filtro-periodo-graficos'); // NOVO
+ const filtroPeriodoStart = document.getElementById('filtro-periodo-start');     // NOVO
+ const filtroPeriodoEnd = document.getElementById('filtro-periodo-end');       // NOVO
+ const btnAplicarFiltros = document.getElementById('btn-aplicar-filtros');
+ const btnLimparFiltros = document.getElementById('btn-limpar-filtros');
+ 
+ // Função para criar checkboxes dinamicamente
+ function criarCheckboxes(container, items, prefix, checkedAll = true) {
+   container.innerHTML = '';
+   items.forEach(item => {
+     const id = `${prefix}-${item}`;
+     const label = document.createElement('label');
+@@ -3602,116 +5118,207 @@ function boot(){
+   // start observing everything
+   startObservers();
+   // 🔥 Força o filtro de mês para o mês atual
+   const filtroMes = document.getElementById('filtro-mes');
+   const mesAtual = yyyymm(new Date());
+   filtroMes.value = mesAtual;
+   // NOVO: Popula os selects de cartão na inicialização
+   popularSelectCartoes(); 
+   
+   // NOVO: Inicializa sistemas de melhorias
+   initTagsSystem();
+   initHistoricoSearch();
+   initHistoricoCollapsible(); // Inicializa a funcionalidade de colapsar/expandir
+   initHistoricoActions();     // Inicializa os botões de ação
+   initFloatingMenu(); // NOVO: Inicializa o menu flutuante
+ }
+ 
+ 
+ /* ===========================
+    INSIGHTS INTELIGENTES
+    =========================== */
+ function gerarInsights() {
+   const container = document.getElementById('insights-container');
+   container.innerHTML = '';
+   
+-  const insights = [];
+-  const hoje = new Date();
+-
+-  // Insight: Categoria que mais consome (do mês atual)
+-  if (window._totaisPorCategoriaAtual && Object.keys(window._totaisPorCategoriaAtual).length > 0) {
+-    const categoriaMax = Object.entries(window._totaisPorCategoriaAtual)
+-      .sort(([,a], [,b]) => b - a)[0];
+-    if (categoriaMax) {
++  const insights = [];
++  const hoje = new Date();
++
++  const diasRestantesInfo = painelFinanceiroState.diasRestantes || null;
++  const envelopesEstado = painelFinanceiroState.envelopes || {};
++  const envelopeLabels = { fixo: 'Fixos', parcelado: 'Parcelados', variavel: 'Variáveis' };
++
++  const envelopeCritico = Object.entries(envelopesEstado).find(([, dados]) => (dados?.percent || 0) >= 100);
++  if (envelopeCritico) {
++    const [tipo, dados] = envelopeCritico;
++    const excedente = Math.max(0, (dados.gasto || 0) - (dados.limite || 0));
++    insights.push({
++      icon: '🧨',
++      title: `Envelope de ${envelopeLabels[tipo] || tipo} estourado`,
++      description: `Você ultrapassou o limite desse envelope em R$ ${moeda(excedente)}. Realoque sobras ou use o ajuste inteligente.`,
++      type: 'error',
++    });
++  }
++
++  const envelopeQuase = Object.entries(envelopesEstado).find(([, dados]) => {
++    const pct = dados?.percent || 0;
++    return pct >= 85 && pct < 100;
++  });
++  if (envelopeQuase) {
++    const [tipo, dados] = envelopeQuase;
++    const falta = Math.max(0, (dados.limite || 0) - (dados.gasto || 0));
++    insights.push({
++      icon: '⚠️',
++      title: `Envelope de ${envelopeLabels[tipo] || tipo} quase no limite`,
++      description: `Restam R$ ${moeda(falta)} para o mês. Priorize despesas essenciais e considere aplicar a meta sugerida.`,
++      type: 'warning',
++    });
++  }
++
++  const envelopeFolga = Object.entries(envelopesEstado)
++    .filter(([, dados]) => (dados?.percent || 0) > 0 && (dados?.percent || 0) <= 55 && (dados?.limite || 0) > 0)
++    .sort(([, a], [, b]) => (a.percent || 0) - (b.percent || 0))[0];
++  if (envelopeFolga) {
++    const [tipo, dados] = envelopeFolga;
++    insights.push({
++      icon: '🌱',
++      title: `Folga em ${envelopeLabels[tipo] || tipo}`,
++      description: `Você está utilizando apenas ${Math.round(dados.percent || 0)}% do envelope. Pode reduzir o limite ou transferir R$ ${moeda(Math.max(0, dados.restante || 0))} para outros objetivos.`,
++      type: 'success',
++    });
++  }
++
++  if (diasRestantesInfo && diasRestantesInfo.restantes <= 7) {
++    const maiorConsumo = Object.entries(envelopesEstado)
++      .sort(([, a], [, b]) => (b?.percent || 0) - (a?.percent || 0))[0];
++    if (maiorConsumo && maiorConsumo[1]) {
++      const [tipo, dados] = maiorConsumo;
++      const diario = dados.diarioDisponivel || 0;
++      insights.push({
++        icon: '⏳',
++        title: `Últimos ${diasRestantesInfo.restantes} dias do mês`,
++        description: `Para permanecer no plano, limite seus gastos diários em ${envelopeLabels[tipo] || tipo} a R$ ${moeda(diario)} até o fim do mês.`,
++        type: 'info',
++      });
++    }
++  }
++
++  // Insight: Categoria que mais consome (do mês atual)
++  if (window._totaisPorCategoriaAtual && Object.keys(window._totaisPorCategoriaAtual).length > 0) {
++    const categoriaMax = Object.entries(window._totaisPorCategoriaAtual)
++      .sort(([,a], [,b]) => b - a)[0];
++    if (categoriaMax) {
+       insights.push({
+         icon: '📊',
+         title: 'Categoria Dominante (Mês)',
+         description: `${categoriaMax[0].charAt(0).toUpperCase() + categoriaMax[0].slice(1)} é sua maior categoria de gastos com R$ ${moeda(categoriaMax[1])} este mês.`,
+         type: 'info'
+       });
+     }
+   }
+   
+   // Insight: Alerta: Orçamento Estourado!
+   const totalGasto = (resumo.historicoMes || 0) + (resumo.parcelasMes || 0) + (resumo.fixosMes || 0);
+   const totalLimite = limites.fixo + limites.parcelado + limites.variavel;
+   const economia = totalLimite - totalGasto;
+   if (economia < 0) {
+     insights.push({
+       icon: '🚨',
+       title: 'Alerta: Orçamento Estourado!',
+       description: `Você já ultrapassou seu orçamento em R$ ${moeda(Math.abs(economia))} este mês.`,
+       type: 'error'
+     });
+   }
+ 
+   // Insight: Maior Parcelamento
+   if (allParceladosDocs && allParceladosDocs.length > 0) {
+     let maiorParcelado = { nome: '', valor: 0 };
+ 
+     allParceladosDocs.forEach(doc => {
+       const p = doc.data();
+       if (p.valorParcela > maiorParcelado.valor) {
+         maiorParcelado = { nome: p.descricao, valor: p.valorParcela };
+       }
+     });
+     
+     if (maiorParcelado.valor > 0) {
+       insights.push({
+         icon: '💸',
+         title: 'Maior Parcelamento',
+         description: `Seu maior parcelamento é "${maiorParcelado.nome}" com R$ ${moeda(maiorParcelado.valor)} por mês.`,
+         type: 'info'
+       });
+     }
+   }
+ 
+   // Insight: Atenção: Gastos Fixos Elevados
+   const fixoPercent = ((resumo.fixosMes || 0) / limites.fixo * 100);
+-  if (fixoPercent > 80) {
+-    insights.push({
+-      icon: '⚠️',
+-      title: 'Atenção: Gastos Fixos Elevados',
+-      description: `Seus gastos fixos estão em ${fixoPercent.toFixed(1)}% do limite. Considere revisar assinaturas não utilizadas.`,
+-      type: 'warning'
+-    });
+-  }
+-  
+-  // Renderiza insights
+-  if (insights.length === 0) {
+-    container.innerHTML = '<div class="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-gray-500 dark:text-gray-400 text-sm">Aguardando dados para gerar insights...</div>';
+-    return;
++  if (fixoPercent > 80) {
++    insights.push({
++      icon: '⚠️',
++      title: 'Atenção: Gastos Fixos Elevados',
++      description: `Seus gastos fixos estão em ${fixoPercent.toFixed(1)}% do limite. Considere revisar assinaturas não utilizadas.`,
++      type: 'warning'
++    });
++  }
++
++  const simulador = painelFinanceiroState.simuladorJuros;
++  if (simulador) {
++    if (simulador.metaReserva && simulador.saldoFinal >= simulador.metaReserva && simulador.metaReserva > 0) {
++      insights.push({
++        icon: '🏁',
++        title: 'Reserva de emergência atingida',
++        description: `Seu cenário projetado já cobre a reserva ideal de 6 meses com R$ ${moeda(simulador.saldoFinal)}. Pode direcionar os aportes para novos objetivos.`,
++        type: 'success',
++      });
++    } else if (simulador.metaReserva && simulador.metaReserva > 0) {
++      const faltante = simulador.metaReserva - (simulador.saldoFinal || 0);
++      insights.push({
++        icon: '🎯',
++        title: 'Ajuste o simulador para alcançar a meta',
++        description: `Faltam R$ ${moeda(Math.max(0, faltante))} para atingir a reserva ideal. Aumente o aporte mensal ou a taxa para encurtar o prazo.`,
++        type: 'info',
++      });
++    }
++
++    if (simulador.totalAportes > 0 && simulador.meses >= 12) {
++      const rendimentoPercent = (simulador.rendimento / simulador.totalAportes) * 100;
++      if (rendimentoPercent < 5) {
++        insights.push({
++          icon: '📈',
++          title: 'Rendimento projetado tímido',
++          description: 'Considere testar cenários com taxa superior a 1% ou aportes extras para acelerar o ganho composto.',
++          type: 'info',
++        });
++      }
++    }
++  }
++
++  // Renderiza insights
++  if (insights.length === 0) {
++    container.innerHTML = '<div class="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-gray-500 dark:text-gray-400 text-sm">Aguardando dados para gerar insights...</div>';
++    return;
+   }
+   
+   insights.forEach(insight => {
+     const div = document.createElement('div');
+     div.className = `p-3 rounded-lg border-l-4 ${
+       insight.type === 'success' ? 'bg-green-50 dark:bg-green-900/20 border-green-500' :
+       insight.type === 'warning' ? 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-500' :
+       insight.type === 'error' ? 'bg-red-50 dark:bg-red-900/20 border-red-500' :
+       'bg-blue-50 dark:bg-blue-900/20 border-blue-500'
+     }`;
+     div.innerHTML = `
+       <div class="flex items-start gap-2">
+         <span class="text-lg">${insight.icon}</span>
+         <div class="flex-1">
+           <h4 class="font-semibold text-sm ${
+             insight.type === 'success' ? 'text-green-800 dark:text-green-200' :
+             insight.type === 'warning' ? 'text-yellow-800 dark:text-yellow-200' :
+             insight.type === 'error' ? 'text-red-800 dark:text-red-300' :
+             'text-blue-800 dark:text-blue-200'
+           }">${insight.title}</h4>
+           <p class="text-xs text-gray-600 dark:text-gray-400 mt-1">${insight.description}</p>
+         </div>
+       </div>
+     `;
+     container.appendChild(div);
+@@ -4295,30 +5902,40 @@ document.addEventListener('keydown', (e) => {
+     abrirModalFixo();
+     showToast('Atalho: Ctrl+F para novo fixo', 'info');
+   }
+   
+   // Ctrl/Cmd + G = Abrir gráficos
+   if ((e.ctrlKey || e.metaKey) && e.key === 'g') {
+     e.preventDefault();
+     if (window.innerWidth > 768) {
+       document.getElementById('modal-graficos').classList.remove('hidden');
+       showToast('Atalho: Ctrl+G para gráficos', 'info');
+     }
+   }
+   
+ // ESC = Fechar modals
+ if (e.key === 'Escape') {
+   document.getElementById('modal-add-gasto').classList.add('hidden');
+   document.getElementById('modal-fixo').classList.add('hidden');
+   document.getElementById('modal-parcelado').classList.add('hidden');
+   document.getElementById('modal-graficos').classList.add('hidden');
+   document.getElementById('modal-graficos-fixos').classList.add('hidden');
+   document.getElementById('modal-confirmacao').classList.add('hidden');
+   document.getElementById('modal-gerenciar-cartoes').classList.add('hidden');
+ }
+ 
+ });
+-
+-/* start */
+-boot();
+-
+-</script>
++
++/* start */
++initEnvelopeActions();
++initSimuladorJuros();
++initResumoSlider();
++initMobilePanels();
++atualizarResumoRapido();
++boot();
++if (document.readyState === 'complete') {
++  registerAppServiceWorker();
++} else {
++  window.addEventListener('load', registerAppServiceWorker, { once: true });
++}
++
++</script> 
+EOF
+)
