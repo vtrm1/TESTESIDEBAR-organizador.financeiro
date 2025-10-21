@@ -159,6 +159,47 @@
   .progress-bar{transition:width .4s ease}
   .badge-alert{color:#b91c1c;font-weight:700;margin-left:.4rem}
   .section-card{background:white;border-radius:.75rem;box-shadow:0 1px 2px rgba(0,0,0,.06);padding:1rem}
+  .resumo-slider{position:relative;overflow:hidden}
+  .resumo-slider-track{display:flex;gap:0;transition:transform .4s ease}
+  .resumo-slide{flex:0 0 100%;min-width:100%}
+  .resumo-slider-nav{display:flex;align-items:center;gap:.5rem;margin-bottom:1rem}
+  .resumo-slider-dot{padding:.4rem .9rem;border-radius:9999px;background:#f3f4f6;color:#4b5563;font-weight:600;font-size:.85rem;transition:all .25s ease}
+  .resumo-slider-dot.is-active{background:#2563eb;color:white;box-shadow:0 8px 16px rgba(37,99,235,.25)}
+  .resumo-slide-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}
+  .resumo-slide-grid .resumo-item{padding:.75rem;border-radius:.75rem;background:#f9fafb;display:flex;flex-direction:column;gap:.35rem}
+  .resumo-item .label{font-size:.8rem;color:#6b7280;text-transform:uppercase;letter-spacing:.05em}
+  .resumo-item .value{font-size:1.5rem;font-weight:700;color:#111827}
+  .resumo-item .hint{font-size:.75rem;color:#9ca3af}
+  .resumo-item.positivo{background:rgba(16,185,129,.1);color:#047857}
+  .resumo-item.positivo .value{color:#047857}
+  .resumo-item.alerta{background:rgba(248,113,113,.12);color:#b91c1c}
+  .resumo-item.alerta .value{color:#b91c1c}
+  .resumo-item.neutro{background:rgba(59,130,246,.08);color:#1d4ed8}
+  .resumo-item.neutro .value{color:#1d4ed8}
+  .dark .resumo-slide-grid .resumo-item{background:rgba(55,65,81,.6);color:#e5e7eb}
+  .dark .resumo-item .value{color:#f3f4f6}
+  .dark .resumo-item .label{color:#9ca3af}
+  .dark .resumo-item .hint{color:#6b7280}
+  .dark .resumo-item.positivo{background:rgba(16,185,129,.18);color:#bbf7d0}
+  .dark .resumo-item.positivo .value{color:#86efac}
+  .dark .resumo-item.alerta{background:rgba(248,113,113,.2);color:#fecaca}
+  .dark .resumo-item.alerta .value{color:#fca5a5}
+  .dark .resumo-item.neutro{background:rgba(59,130,246,.18);color:#bfdbfe}
+  .dark .resumo-item.neutro .value{color:#93c5fd}
+  .resumo-slider-dots{display:flex;gap:.4rem}
+  .resumo-slider-dots button{width:.5rem;height:.5rem;border-radius:9999px;background:#e5e7eb;border:none;padding:0;transition:transform .25s ease,background .25s ease}
+  .resumo-slider-dots button.is-active{background:#2563eb;transform:scale(1.1)}
+  .gradient-shadow{position:relative}
+  .gradient-shadow::after{content:"";position:absolute;inset:0;border-radius:.75rem;pointer-events:none;box-shadow:0 10px 35px rgba(15,23,42,.1)}
+  @media (min-width:768px){
+    .resumo-slider{overflow:visible}
+    .resumo-slider-track{transform:none!important;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1.5rem}
+    .resumo-slide{flex:1 1 auto;min-width:0}
+    .resumo-slider-nav{display:none}
+  }
+  @media (max-width:767px){
+    .resumo-slide-grid{grid-template-columns:repeat(1,minmax(0,1fr))}
+  }
   .th{font-weight:600;color:#374151;font-size:.85rem;text-align:left;padding:.5rem .75rem;border-bottom:1px solid #e5e7eb}
   .td{padding:.45rem .75rem;border-bottom:1px solid #f3f4f6;font-size:.95rem;vertical-align:middle}
   .pill{font-size:.75rem;border-radius:9999px;padding:.15rem .5rem;background:#f3f4f6}
@@ -774,25 +815,68 @@ html.dark .mobile-tab-button {
     <!-- danger banner (strong visual alert) -->
     <div id="danger-banner" class="hidden danger-banner">⚠️ Atenção — fixos + parcelas do mês ultrapassam o limite! Verifique.</div>
 
-    <!-- RESUMO -->
-    <div class="section-card grid grid-cols-1 md:grid-cols-4 gap-4">
-      <div>
-        <div class="text-sm text-gray-500 dark:text-gray-400">Total previsto (mês)</div>
-        <div class="text-2xl font-bold">R$ <span id="resumo-total-mes">0,00</span></div>
-        <div class="text-xs text-gray-400 dark:text-gray-500">Histórico + Parcelas do mês</div>
+    <!-- RESUMO COM SLIDER -->
+    <div class="section-card gradient-shadow">
+      <div class="resumo-slider-nav">
+        <button type="button" class="resumo-slider-dot is-active" data-slide="0">Gastos</button>
+        <button type="button" class="resumo-slider-dot" data-slide="1">Fluxo</button>
+        <div class="flex-1"></div>
+        <div class="resumo-slider-dots md:hidden">
+          <button type="button" class="is-active" data-slide="0" aria-label="Ver indicadores de gastos"></button>
+          <button type="button" data-slide="1" aria-label="Ver indicadores de fluxo"></button>
+        </div>
       </div>
-      <div>
-        <div class="text-sm text-gray-500 dark:text-gray-400">Cartões</div>
-        <div class="text-2xl font-bold">R$ <span id="resumo-cartoes">0,00</span></div>
-        <div class="text-xs text-gray-400 dark:text-gray-500">Inclui parcelas do mês</div>
-      </div>
-      <div>
-        <div class="text-sm text-gray-500 dark:text-gray-400">PIX</div>
-        <div class="text-2xl font-bold">R$ <span id="resumo-pix">0,00</span></div>
-      </div>
-      <div>
-        <div class="text-sm text-gray-500 dark:text-gray-400">Parcelas (mês)</div>
-        <div class="text-2xl font-bold">R$ <span id="resumo-parcelas-mes">0,00</span></div>
+      <div class="resumo-slider" id="resumo-slider">
+        <div class="resumo-slider-track" id="resumo-slider-track">
+          <section class="resumo-slide" data-key="gastos">
+            <div class="resumo-slide-grid">
+              <div class="resumo-item alerta">
+                <span class="label">Total previsto (mês)</span>
+                <span class="value">R$ <span id="resumo-total-mes">0,00</span></span>
+                <span class="hint">Histórico + Parcelas + Fixos</span>
+              </div>
+              <div class="resumo-item neutro">
+                <span class="label">Cartões</span>
+                <span class="value">R$ <span id="resumo-cartoes">0,00</span></span>
+                <span class="hint">Inclui parcelas do mês</span>
+              </div>
+              <div class="resumo-item">
+                <span class="label">PIX</span>
+                <span class="value">R$ <span id="resumo-pix">0,00</span></span>
+                <span class="hint">Pagamentos instantâneos</span>
+              </div>
+              <div class="resumo-item">
+                <span class="label">Parcelas (mês)</span>
+                <span class="value">R$ <span id="resumo-parcelas-mes">0,00</span></span>
+                <span class="hint">Compromissos do mês atual</span>
+              </div>
+            </div>
+          </section>
+          <section class="resumo-slide" data-key="fluxo">
+            <div class="resumo-slide-grid">
+              <div class="resumo-item positivo">
+                <span class="label">Entradas do mês</span>
+                <span class="value">R$ <span id="resumo-entradas-mes">0,00</span></span>
+                <span class="hint">Salários, vendas e extras</span>
+              </div>
+              <div class="resumo-item alerta">
+                <span class="label">Saídas totais</span>
+                <span class="value">R$ <span id="resumo-saidas-mes">0,00</span></span>
+                <span class="hint">Todos os gastos do mês</span>
+              </div>
+              <div class="resumo-item neutro">
+                <span class="label">Saldo projetado</span>
+                <span class="value">R$ <span id="resumo-saldo-projetado">0,00</span></span>
+                <span class="hint">Após rendimento de 1% a.m.</span>
+              </div>
+              <div class="resumo-item">
+                <span class="label">Ganho em investimentos</span>
+                <span class="value">R$ <span id="resumo-ganho-invest">0,00</span></span>
+                <span class="hint">Comparado ao aporte total</span>
+              </div>
+            </div>
+          </section>
+        </div>
       </div>
     </div>
 
@@ -3243,6 +3327,51 @@ function atualizarResumoRapido() {
   } else {
     saldoCard.classList.add('saldo-neutro');
   }
+
+  atualizarResumoIndicadoresFinanceiros({ entradasMes, totalGastosMes, saldoProjetado, ganhoInvest });
+}
+
+function atualizarResumoIndicadoresFinanceiros({ entradasMes, totalGastosMes, saldoProjetado, ganhoInvest }) {
+  const entradasMesEl = document.getElementById('resumo-entradas-mes');
+  const saidasMesEl = document.getElementById('resumo-saidas-mes');
+  const saldoProjetadoEl = document.getElementById('resumo-saldo-projetado');
+  const ganhoInvestEl = document.getElementById('resumo-ganho-invest');
+
+  if (!entradasMesEl || !saidasMesEl || !saldoProjetadoEl || !ganhoInvestEl) return;
+
+  entradasMesEl.textContent = moeda(entradasMes);
+  saidasMesEl.textContent = moeda(totalGastosMes);
+  saldoProjetadoEl.textContent = moeda(saldoProjetado);
+  ganhoInvestEl.textContent = moeda(Math.max(0, ganhoInvest));
+
+  const saldoItem = saldoProjetadoEl.closest('.resumo-item');
+  if (saldoItem) {
+    saldoItem.classList.remove('positivo', 'alerta', 'neutro');
+    if (saldoProjetado > 50) {
+      saldoItem.classList.add('positivo');
+    } else if (saldoProjetado < -50) {
+      saldoItem.classList.add('alerta');
+    } else {
+      saldoItem.classList.add('neutro');
+    }
+  }
+
+  const ganhoItem = ganhoInvestEl.closest('.resumo-item');
+  if (ganhoItem) {
+    ganhoItem.classList.remove('positivo', 'alerta', 'neutro');
+    if (ganhoInvest > 0) {
+      ganhoItem.classList.add('positivo');
+    } else {
+      ganhoItem.classList.add('neutro');
+    }
+  }
+
+  const saidasItem = saidasMesEl.closest('.resumo-item');
+  if (saidasItem) {
+    const excedeu = totalGastosMes > entradasMes;
+    saidasItem.classList.remove('positivo', 'alerta', 'neutro');
+    saidasItem.classList.add(excedeu ? 'alerta' : 'neutro');
+  }
 }
 
 function atualizarSaudeFinanceira() {
@@ -3341,6 +3470,103 @@ function initMobilePanels() {
   applyState(activeId);
   window.addEventListener('resize', handleResize);
   handleResize();
+}
+
+function initResumoSlider() {
+  const slider = document.getElementById('resumo-slider');
+  const track = document.getElementById('resumo-slider-track');
+  if (!slider || !track) return;
+
+  const slides = Array.from(track.children);
+  if (slides.length <= 1) return;
+
+  const mainButtons = Array.from(document.querySelectorAll('.resumo-slider-dot[data-slide]'));
+  const dotButtons = Array.from(document.querySelectorAll('.resumo-slider-dots button[data-slide]'));
+  let activeIndex = 0;
+  let pointerActive = false;
+  let startX = 0;
+  let pointerId = null;
+
+  const getClientX = (event) => (typeof event.clientX === 'number' ? event.clientX : startX);
+
+  const clampIndex = (index) => Math.max(0, Math.min(slides.length - 1, index));
+
+  const applyTransform = () => {
+    if (window.innerWidth >= 768) {
+      track.style.transform = '';
+      return;
+    }
+    track.style.transform = `translateX(-${activeIndex * 100}%)`;
+  };
+
+  const updateButtons = () => {
+    const check = btn => Number(btn.dataset.slide) === activeIndex;
+    mainButtons.forEach(btn => btn.classList.toggle('is-active', check(btn)));
+    dotButtons.forEach(btn => btn.classList.toggle('is-active', check(btn)));
+  };
+
+  const goTo = (index) => {
+    const nextIndex = clampIndex(index);
+    if (nextIndex === activeIndex && window.innerWidth < 768) {
+      applyTransform();
+      return;
+    }
+    activeIndex = nextIndex;
+    applyTransform();
+    updateButtons();
+  };
+
+  const finishPointer = (event) => {
+    if (!pointerActive) return;
+    const deltaX = getClientX(event) - startX;
+    if (Math.abs(deltaX) > 50) {
+      goTo(activeIndex + (deltaX < 0 ? 1 : -1));
+    } else {
+      goTo(activeIndex);
+    }
+    if (pointerId !== null) {
+      try { slider.releasePointerCapture(pointerId); } catch (err) { /* ignore */ }
+    }
+    pointerActive = false;
+    pointerId = null;
+  };
+
+  mainButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const index = Number(btn.dataset.slide) || 0;
+      goTo(index);
+    });
+  });
+
+  dotButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const index = Number(btn.dataset.slide) || 0;
+      goTo(index);
+    });
+  });
+
+  slider.addEventListener('pointerdown', (event) => {
+    if (window.innerWidth >= 768) return;
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
+    pointerActive = true;
+    startX = event.clientX;
+    pointerId = event.pointerId;
+    try { slider.setPointerCapture(pointerId); } catch (err) { /* ignore */ }
+  });
+
+  slider.addEventListener('pointerup', finishPointer);
+  slider.addEventListener('pointercancel', finishPointer);
+  slider.addEventListener('pointerleave', (event) => {
+    if (!pointerActive) return;
+    finishPointer(event);
+  });
+
+  window.addEventListener('resize', () => {
+    applyTransform();
+    updateButtons();
+  });
+
+  goTo(0);
 }
 
 /* ===========================
@@ -5102,6 +5328,7 @@ if (e.key === 'Escape') {
 });
 
 /* start */
+initResumoSlider();
 initMobilePanels();
 atualizarResumoRapido();
 boot();
