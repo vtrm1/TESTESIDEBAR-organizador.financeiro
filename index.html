@@ -31,7 +31,7 @@
     <h2 class="text-xl font-bold mb-4 text-gray-800 dark:text-gray-100">Gráficos Interativos</h2>
 
     <!-- NOVO: Resumo de Totais no Modal -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-4 bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
       <div>
         <h4 class="font-semibold text-blue-800 dark:text-blue-200 mb-1">Total de Gastos Filtrados</h4>
         <div class="text-xl font-bold text-blue-600 dark:text-blue-400" id="graficos-total-filtrado">R$ 0,00</div>
@@ -39,6 +39,36 @@
       <div>
         <h4 class="font-semibold text-blue-800 dark:text-blue-200 mb-1">Média Mensal (Período)</h4>
         <div class="text-xl font-bold text-blue-600 dark:text-blue-400" id="graficos-media-mensal">R$ 0,00</div>
+      </div>
+      <div>
+        <h4 class="font-semibold text-blue-800 dark:text-blue-200 mb-1">Transações analisadas</h4>
+        <div class="text-xl font-bold text-blue-600 dark:text-blue-400" id="graficos-total-transacoes">0</div>
+      </div>
+      <div>
+        <h4 class="font-semibold text-blue-800 dark:text-blue-200 mb-1">Ticket médio</h4>
+        <div class="text-xl font-bold text-blue-600 dark:text-blue-400" id="graficos-ticket-medio">R$ 0,00</div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 text-sm">
+      <div class="p-3 rounded-lg bg-white dark:bg-gray-700/60 border border-blue-100 dark:border-blue-900/40">
+        <h4 class="font-semibold text-blue-800 dark:text-blue-200 mb-1">Categoria que mais pesa</h4>
+        <p class="text-gray-600 dark:text-gray-300" id="graficos-top-categoria">Nenhuma categoria filtrada.</p>
+      </div>
+      <div class="p-3 rounded-lg bg-white dark:bg-gray-700/60 border border-blue-100 dark:border-blue-900/40">
+        <h4 class="font-semibold text-blue-800 dark:text-blue-200 mb-1">Cartão/PIX com maior gasto</h4>
+        <p class="text-gray-600 dark:text-gray-300" id="graficos-top-cartao">Nenhum cartão filtrado.</p>
+      </div>
+    </div>
+
+    <div class="mb-6">
+      <div class="flex items-center justify-between mb-2">
+        <h3 class="font-semibold text-gray-800 dark:text-gray-100">Resumo mensal do histórico</h3>
+        <span class="text-xs text-gray-500 dark:text-gray-400">Últimos meses considerados pelo filtro</span>
+      </div>
+      <div class="relative h-56">
+        <canvas id="grafico-historico-mensal" class="w-full h-full"></canvas>
+        <div id="historico-mensal-empty" class="absolute inset-0 flex items-center justify-center text-xs text-gray-500 dark:text-gray-400">Selecione um período com gastos para visualizar o resumo.</div>
       </div>
     </div>
 
@@ -191,6 +221,13 @@
   .resumo-slider-dots button.is-active{background:#2563eb;transform:scale(1.1)}
   .gradient-shadow{position:relative}
   .gradient-shadow::after{content:"";position:absolute;inset:0;border-radius:.75rem;pointer-events:none;box-shadow:0 10px 35px rgba(15,23,42,.1)}
+  .compact-resumo{padding:1rem 1.2rem 1.25rem}
+  .compact-resumo .resumo-slider-nav{margin-bottom:.75rem}
+  .compact-resumo .resumo-slide-grid{gap:.75rem}
+  .compact-resumo .resumo-slide-grid .resumo-item{padding:.6rem}
+  .compact-resumo .resumo-item .label{font-size:.72rem}
+  .compact-resumo .resumo-item .value{font-size:1.25rem}
+  .compact-resumo .resumo-item .hint{font-size:.68rem}
   @media (max-width:767px){
     .resumo-slide-grid{grid-template-columns:repeat(1,minmax(0,1fr))}
   }
@@ -743,7 +780,7 @@ html.dark .mobile-tab-button {
     <div id="danger-banner" class="hidden danger-banner">⚠️ Atenção — fixos + parcelas do mês ultrapassam o limite! Verifique.</div>
 
     <!-- RESUMO COM SLIDER -->
-    <div class="section-card gradient-shadow">
+    <div class="section-card gradient-shadow compact-resumo">
       <div class="resumo-slider-nav">
         <button type="button" class="resumo-slider-dot is-active" data-slide="0">Gastos</button>
         <button type="button" class="resumo-slider-dot" data-slide="1">Fluxo</button>
@@ -812,7 +849,7 @@ html.dark .mobile-tab-button {
       <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h3 class="text-lg font-bold flex items-center gap-2">🎯 Envelopes do Mês</h3>
-          <p class="text-xs text-gray-500 dark:text-gray-400">Defina metas mensais, veja quanto falta e direcione sobras para reservas futuras.</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400">Defina limites mensais de gastos, acompanhe a margem disponível e direcione sobras para reservas futuras.</p>
         </div>
         <div class="flex items-center gap-2 text-xs">
           <button id="btn-envelopes-reservar-todos" type="button" class="px-3 py-1 rounded bg-emerald-600 dark:bg-emerald-700 text-white hover:bg-emerald-700 dark:hover:bg-emerald-800 transition">Reservar sobras</button>
@@ -825,15 +862,17 @@ html.dark .mobile-tab-button {
             <div class="flex items-start justify-between gap-3">
               <div class="space-y-1">
                 <div class="font-semibold text-blue-700 dark:text-blue-200 flex items-center gap-2"><i class="fa fa-house"></i><span>Custo Fixo</span></div>
-                <div class="text-lg font-bold text-slate-900 dark:text-slate-100">R$ <span id="gasto-fixo">0,00</span></div>
-                <div class="text-xs text-slate-500 dark:text-slate-400">Falta para meta: R$ <span id="restante-fixo">0,00</span></div>
-                <div class="text-xs text-slate-500 dark:text-slate-400">Reserva futura: R$ <span id="reserva-fixo">0,00</span></div>
+                <div class="text-xs text-slate-500 dark:text-slate-400">Limite mensal: R$ <span id="meta-fixo">0,00</span></div>
+                <div class="text-lg font-bold text-slate-900 dark:text-slate-100">Gasto no mês: R$ <span id="gasto-fixo">0,00</span></div>
+                <div class="text-xs text-slate-500 dark:text-slate-400">Margem disponível: R$ <span id="limite-livre-fixo">0,00</span></div>
+                <div class="text-xs text-slate-500 dark:text-slate-400">Reserva planejada: R$ <span id="reserva-fixo">0,00</span></div>
+                <div class="text-xs text-red-600 dark:text-red-300 hidden" id="excedente-fixo-wrapper">Acima do limite: R$ <span id="excedente-fixo">0,00</span></div>
               </div>
               <div class="space-y-2 text-xs w-32">
-                <label class="block font-semibold text-slate-600 dark:text-slate-300">Meta mensal
+                <label class="block font-semibold text-slate-600 dark:text-slate-300">Limite mensal
                   <input id="envelope-fixo-meta" type="number" min="0" step="0.01" class="mt-1 w-full border px-2 py-1 rounded text-right bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" />
                 </label>
-                <label class="block font-semibold text-slate-600 dark:text-slate-300">Reserva
+                <label class="block font-semibold text-slate-600 dark:text-slate-300">Reserva planejada
                   <input id="envelope-fixo-reserva" type="number" min="0" step="0.01" class="mt-1 w-full border px-2 py-1 rounded text-right bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" />
                 </label>
               </div>
@@ -844,11 +883,11 @@ html.dark .mobile-tab-button {
               </div>
               <div class="flex justify-between text-[0.7rem] text-slate-500 dark:text-slate-400 mt-1">
                 <span>Comprometido: <strong id="percentual-fixo">0%</strong></span>
-                <span>Disponível p/ reservar: R$ <span id="disponivel-fixo">0,00</span></span>
+                <span>Margem disponível: R$ <span id="disponivel-fixo">0,00</span></span>
               </div>
             </div>
             <div class="grid grid-cols-1 gap-2 text-xs">
-              <button data-envelope-action="reservar" data-envelope="fixo" type="button" class="px-3 py-1 rounded bg-emerald-600 dark:bg-emerald-700 text-white hover:bg-emerald-700 dark:hover:bg-emerald-800 transition">Reservar saldo disponível</button>
+              <button data-envelope-action="reservar" data-envelope="fixo" type="button" class="px-3 py-1 rounded bg-emerald-600 dark:bg-emerald-700 text-white hover:bg-emerald-700 dark:hover:bg-emerald-800 transition">Reservar margem disponível</button>
               <button data-envelope-action="liberar" data-envelope="fixo" type="button" class="px-3 py-1 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-100 hover:bg-gray-300 dark:hover:bg-gray-600 transition">Liberar reserva</button>
             </div>
           </div>
@@ -859,15 +898,17 @@ html.dark .mobile-tab-button {
             <div class="flex items-start justify-between gap-3">
               <div class="space-y-1">
                 <div class="font-semibold text-emerald-700 dark:text-emerald-200 flex items-center gap-2"><i class="fa fa-receipt"></i><span>Parcelados do mês</span></div>
-                <div class="text-lg font-bold text-slate-900 dark:text-slate-100">R$ <span id="gasto-parcelado">0,00</span></div>
-                <div class="text-xs text-slate-500 dark:text-slate-400">Falta para meta: R$ <span id="restante-parcelado">0,00</span></div>
-                <div class="text-xs text-slate-500 dark:text-slate-400">Reserva futura: R$ <span id="reserva-parcelado">0,00</span></div>
+                <div class="text-xs text-slate-500 dark:text-slate-400">Limite mensal: R$ <span id="meta-parcelado">0,00</span></div>
+                <div class="text-lg font-bold text-slate-900 dark:text-slate-100">Gasto no mês: R$ <span id="gasto-parcelado">0,00</span></div>
+                <div class="text-xs text-slate-500 dark:text-slate-400">Margem disponível: R$ <span id="limite-livre-parcelado">0,00</span></div>
+                <div class="text-xs text-slate-500 dark:text-slate-400">Reserva planejada: R$ <span id="reserva-parcelado">0,00</span></div>
+                <div class="text-xs text-red-600 dark:text-red-300 hidden" id="excedente-parcelado-wrapper">Acima do limite: R$ <span id="excedente-parcelado">0,00</span></div>
               </div>
               <div class="space-y-2 text-xs w-32">
-                <label class="block font-semibold text-slate-600 dark:text-slate-300">Meta mensal
+                <label class="block font-semibold text-slate-600 dark:text-slate-300">Limite mensal
                   <input id="envelope-parcelado-meta" type="number" min="0" step="0.01" class="mt-1 w-full border px-2 py-1 rounded text-right bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" />
                 </label>
-                <label class="block font-semibold text-slate-600 dark:text-slate-300">Reserva
+                <label class="block font-semibold text-slate-600 dark:text-slate-300">Reserva planejada
                   <input id="envelope-parcelado-reserva" type="number" min="0" step="0.01" class="mt-1 w-full border px-2 py-1 rounded text-right bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" />
                 </label>
               </div>
@@ -878,11 +919,11 @@ html.dark .mobile-tab-button {
               </div>
               <div class="flex justify-between text-[0.7rem] text-slate-500 dark:text-slate-400 mt-1">
                 <span>Comprometido: <strong id="percentual-parcelado">0%</strong></span>
-                <span>Disponível p/ reservar: R$ <span id="disponivel-parcelado">0,00</span></span>
+                <span>Margem disponível: R$ <span id="disponivel-parcelado">0,00</span></span>
               </div>
             </div>
             <div class="grid grid-cols-1 gap-2 text-xs">
-              <button data-envelope-action="reservar" data-envelope="parcelado" type="button" class="px-3 py-1 rounded bg-emerald-600 dark:bg-emerald-700 text-white hover:bg-emerald-700 dark:hover:bg-emerald-800 transition">Reservar saldo disponível</button>
+              <button data-envelope-action="reservar" data-envelope="parcelado" type="button" class="px-3 py-1 rounded bg-emerald-600 dark:bg-emerald-700 text-white hover:bg-emerald-700 dark:hover:bg-emerald-800 transition">Reservar margem disponível</button>
               <button data-envelope-action="liberar" data-envelope="parcelado" type="button" class="px-3 py-1 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-100 hover:bg-gray-300 dark:hover:bg-gray-600 transition">Liberar reserva</button>
             </div>
           </div>
@@ -893,15 +934,17 @@ html.dark .mobile-tab-button {
             <div class="flex items-start justify-between gap-3">
               <div class="space-y-1">
                 <div class="font-semibold text-amber-700 dark:text-amber-200 flex items-center gap-2"><i class="fa fa-basket-shopping"></i><span>Variáveis</span></div>
-                <div class="text-lg font-bold text-slate-900 dark:text-slate-100">R$ <span id="gasto-variavel">0,00</span></div>
-                <div class="text-xs text-slate-500 dark:text-slate-400">Falta para meta: R$ <span id="restante-variavel">0,00</span></div>
-                <div class="text-xs text-slate-500 dark:text-slate-400">Reserva futura: R$ <span id="reserva-variavel">0,00</span></div>
+                <div class="text-xs text-slate-500 dark:text-slate-400">Limite mensal: R$ <span id="meta-variavel">0,00</span></div>
+                <div class="text-lg font-bold text-slate-900 dark:text-slate-100">Gasto no mês: R$ <span id="gasto-variavel">0,00</span></div>
+                <div class="text-xs text-slate-500 dark:text-slate-400">Margem disponível: R$ <span id="limite-livre-variavel">0,00</span></div>
+                <div class="text-xs text-slate-500 dark:text-slate-400">Reserva planejada: R$ <span id="reserva-variavel">0,00</span></div>
+                <div class="text-xs text-red-600 dark:text-red-300 hidden" id="excedente-variavel-wrapper">Acima do limite: R$ <span id="excedente-variavel">0,00</span></div>
               </div>
               <div class="space-y-2 text-xs w-32">
-                <label class="block font-semibold text-slate-600 dark:text-slate-300">Meta mensal
+                <label class="block font-semibold text-slate-600 dark:text-slate-300">Limite mensal
                   <input id="envelope-variavel-meta" type="number" min="0" step="0.01" class="mt-1 w-full border px-2 py-1 rounded text-right bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" />
                 </label>
-                <label class="block font-semibold text-slate-600 dark:text-slate-300">Reserva
+                <label class="block font-semibold text-slate-600 dark:text-slate-300">Reserva planejada
                   <input id="envelope-variavel-reserva" type="number" min="0" step="0.01" class="mt-1 w-full border px-2 py-1 rounded text-right bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" />
                 </label>
               </div>
@@ -912,33 +955,15 @@ html.dark .mobile-tab-button {
               </div>
               <div class="flex justify-between text-[0.7rem] text-slate-500 dark:text-slate-400 mt-1">
                 <span>Comprometido: <strong id="percentual-variavel">0%</strong></span>
-                <span>Disponível p/ reservar: R$ <span id="disponivel-variavel">0,00</span></span>
+                <span>Margem disponível: R$ <span id="disponivel-variavel">0,00</span></span>
               </div>
             </div>
             <div class="grid grid-cols-1 gap-2 text-xs">
-              <button data-envelope-action="reservar" data-envelope="variavel" type="button" class="px-3 py-1 rounded bg-emerald-600 dark:bg-emerald-700 text-white hover:bg-emerald-700 dark:hover:bg-emerald-800 transition">Reservar saldo disponível</button>
+              <button data-envelope-action="reservar" data-envelope="variavel" type="button" class="px-3 py-1 rounded bg-emerald-600 dark:bg-emerald-700 text-white hover:bg-emerald-700 dark:hover:bg-emerald-800 transition">Reservar margem disponível</button>
               <button data-envelope-action="liberar" data-envelope="variavel" type="button" class="px-3 py-1 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-100 hover:bg-gray-300 dark:hover:bg-gray-600 transition">Liberar reserva</button>
             </div>
           </div>
         </div>
-      </div>
-    </div>
-
-<!-- NOVA SEÇÃO: GASTOS POR CATEGORIA -->
-    <div class="section-card">
-      <h3 class="text-lg font-bold mb-3">Gastos por Categoria (mês)</h3>
-      <div id="categorias-list" class="space-y-3">
-        <!-- Categorias serão renderizadas aqui pelo JS -->
-        <div class="text-gray-500 dark:text-gray-400">Nenhum gasto categorizado no mês.</div>
-      </div>
-    </div>
-
-    <!-- NOVO: Dashboard de Insights Inteligentes -->
-    <div class="section-card">
-      <h3 class="text-lg font-bold mb-3">💡 Insights Financeiros</h3>
-      <div id="insights-container" class="space-y-3">
-        <!-- Insights serão gerados automaticamente aqui -->
-        <div class="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg text-green-800 dark:text-green-200">Carregando insights...</div>
       </div>
     </div>
 
@@ -947,6 +972,9 @@ html.dark .mobile-tab-button {
       <div class="flex items-center justify-between mb-3">
         <h3 class="text-lg font-bold">Histórico (mês)</h3>
         <div class="flex items-center gap-2">
+          <button id="btn-historico-graficos" class="bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-200 px-3 py-1 rounded text-sm hover:bg-blue-200 dark:hover:bg-blue-900/40 transition-colors">
+            <i class="fa fa-chart-pie mr-1"></i>Gráficos
+          </button>
           <button id="exportar-csv" class="bg-green-600 dark:bg-green-700 text-white px-3 py-1 rounded hover:bg-green-700 dark:hover:bg-green-800 transition-colors">Exportar CSV (mês)</button>
         </div>
       </div>
@@ -1024,6 +1052,22 @@ html.dark .mobile-tab-button {
         </div>
       </div>
 
+      <div class="mt-6">
+        <button type="button" id="toggle-parcelados-projecao" class="w-full flex items-center justify-between text-sm font-semibold text-purple-700 dark:text-purple-200 bg-purple-50 dark:bg-purple-900/20 px-3 py-2 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-900/30 transition" aria-expanded="true" aria-controls="parcelados-projecao-container">
+          <span class="flex items-center gap-2"><i class="fa fa-chart-column text-purple-500"></i><span>Projeção de parcelas</span></span>
+          <span class="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+            <span id="parcelados-projecao-janela">Próximos meses</span>
+            <i id="parcelados-projecao-toggle-icon" class="fa fa-chevron-down transition-transform duration-200"></i>
+          </span>
+        </button>
+        <div id="parcelados-projecao-container" class="mt-3 space-y-2" role="region" aria-live="polite" aria-hidden="false">
+          <div class="relative h-48">
+            <canvas id="grafico-parcelados-projecao" class="w-full h-full"></canvas>
+            <div id="parcelados-projecao-empty" class="absolute inset-0 flex items-center justify-center text-xs text-gray-500 dark:text-gray-400">Cadastre parcelados ativos para visualizar a projeção.</div>
+          </div>
+        </div>
+      </div>
+
       <div class="overflow-x-auto">
         <div id="parcelados-loading-spinner" class="loading-spinner spinner-hidden">
           <i class="fa fa-spinner fa-spin"></i> Carregando parcelados...
@@ -1039,6 +1083,24 @@ html.dark .mobile-tab-button {
       </div>
     </div>
 
+    <!-- NOVA SEÇÃO: GASTOS POR CATEGORIA -->
+    <div class="section-card">
+      <h3 class="text-lg font-bold mb-3">Gastos por Categoria (mês)</h3>
+      <div id="categorias-list" class="space-y-3">
+        <!-- Categorias serão renderizadas aqui pelo JS -->
+        <div class="text-gray-500 dark:text-gray-400">Nenhum gasto categorizado no mês.</div>
+      </div>
+    </div>
+
+    <!-- NOVO: Dashboard de Insights Inteligentes -->
+    <div class="section-card">
+      <h3 class="text-lg font-bold mb-3">💡 Insights Financeiros</h3>
+      <div id="insights-container" class="space-y-3">
+        <!-- Insights serão gerados automaticamente aqui -->
+        <div class="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg text-green-800 dark:text-green-200">Carregando insights...</div>
+      </div>
+    </div>
+
   </section>
 
   <!-- RIGHT: sidebar (fixos list + cartões compact + ações) - MELHORADO -->
@@ -1050,14 +1112,20 @@ html.dark .mobile-tab-button {
         <h3 class="font-semibold text-lg flex items-center gap-2"><i class="fa fa-arrow-down text-green-500"></i>Entradas de Dinheiro</h3>
         <p class="text-sm text-gray-500 dark:text-gray-400">Registre salários, vendas e rendas extras e acompanhe o fluxo mensal.</p>
       </div>
-      <div class="grid grid-cols-2 gap-2 text-sm">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
         <div class="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
           <div class="text-xs text-green-700 dark:text-green-200 uppercase tracking-wide">Mês selecionado</div>
           <div class="text-lg font-bold text-green-800 dark:text-green-300">R$ <span id="entradas-total-mes">0,00</span></div>
         </div>
         <div class="p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg">
-          <div class="text-xs text-emerald-700 dark:text-emerald-200 uppercase tracking-wide">Total acumulado</div>
-          <div class="text-lg font-bold text-emerald-800 dark:text-emerald-300">R$ <span id="entradas-total-geral">0,00</span></div>
+          <div class="text-xs text-emerald-700 dark:text-emerald-200 uppercase tracking-wide">Saldo líquido do mês</div>
+          <div class="text-lg font-bold text-emerald-800 dark:text-emerald-300">R$ <span id="entradas-saldo-mes">0,00</span></div>
+          <div id="entradas-saldo-hint" class="text-[11px] text-emerald-700/80 dark:text-emerald-200/80 mt-1">Entradas menos saídas previstas do período selecionado.</div>
+        </div>
+        <div class="p-3 bg-green-100 dark:bg-green-900/10 rounded-lg sm:col-span-2">
+          <div class="text-xs text-green-700 dark:text-green-200 uppercase tracking-wide">Entradas registradas</div>
+          <div class="text-lg font-bold text-green-900 dark:text-green-200">R$ <span id="entradas-total-geral">0,00</span></div>
+          <div class="text-[11px] text-green-700/80 dark:text-green-200/80 mt-1">Total acumulado de receitas cadastradas no sistema.</div>
         </div>
       </div>
       <form id="form-entrada" class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
@@ -1144,66 +1212,75 @@ html.dark .mobile-tab-button {
           <div class="text-lg font-bold text-purple-800 dark:text-purple-200">R$ <span id="investimento-projecao">0,00</span></div>
         </div>
       </div>
-      <div id="simulador-juros-compostos" class="bg-white/70 dark:bg-gray-800/60 border border-indigo-100 dark:border-indigo-900 rounded-lg p-4 space-y-4 text-sm">
-        <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
-          <div class="space-y-1">
-            <h4 class="text-sm font-semibold text-indigo-700 dark:text-indigo-200 flex items-center gap-2"><i class="fa fa-calculator"></i><span>Simulador de juros compostos</span></h4>
-            <p class="text-xs text-gray-500 dark:text-gray-400">Reaproveite os totais atuais para projetar rendimentos e compare com um cenário alternativo de aportes ou taxas diferentes.</p>
-          </div>
-          <div class="text-xs text-gray-500 dark:text-gray-400">
-            Atualizado automaticamente com o resumo rápido.
-          </div>
+      <div class="pt-3 border-t border-indigo-100 dark:border-indigo-900/40">
+        <div class="flex items-center justify-between mb-2">
+          <h4 class="text-sm font-semibold text-indigo-800 dark:text-indigo-200 flex items-center gap-2"><i class="fa fa-chart-area"></i>Evolução dos aportes</h4>
+          <span class="text-xs text-gray-500 dark:text-gray-400">Últimos 12 meses</span>
         </div>
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div class="space-y-3">
-            <h5 class="text-xs font-semibold text-gray-600 dark:text-gray-200 uppercase tracking-wide">Cenário atual</h5>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 flex flex-col gap-1">Valor inicial (R$)
-                <input id="simulador-valor-inicial" data-simulador="base" type="number" step="0.01" min="0" class="px-2 py-1 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600 text-right" />
-              </label>
-              <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 flex flex-col gap-1">Aporte mensal (R$)
-                <input id="simulador-aporte-mensal" data-simulador="base" type="number" step="0.01" min="0" class="px-2 py-1 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600 text-right" />
-              </label>
-              <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 flex flex-col gap-1">Taxa mensal (%)
-                <input id="simulador-taxa" data-simulador="base" type="number" step="0.01" class="px-2 py-1 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600 text-right" />
-              </label>
-              <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 flex flex-col gap-1">Período (meses)
-                <input id="simulador-periodo" data-simulador="base" type="number" step="1" min="1" class="px-2 py-1 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600 text-right" />
-              </label>
+        <div class="relative h-48">
+          <canvas id="grafico-investimentos" class="w-full h-full"></canvas>
+          <div id="investimentos-grafico-empty" class="absolute inset-0 flex items-center justify-center text-xs text-gray-500 dark:text-gray-400">Cadastre investimentos para visualizar o gráfico.</div>
+        </div>
+      </div>
+      <div id="simulador-juros-compostos" class="bg-white/70 dark:bg-gray-800/60 border border-indigo-100 dark:border-indigo-900 rounded-lg p-4 space-y-3 text-sm">
+        <button type="button" class="w-full flex items-center justify-between text-left font-semibold text-indigo-700 dark:text-indigo-200 px-3 py-2 rounded-md bg-indigo-50/80 dark:bg-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition" data-simulador-toggle aria-expanded="false">
+          <span class="flex items-center gap-2"><i class="fa fa-calculator"></i><span>Simulador de juros compostos</span></span>
+          <i class="fa fa-chevron-down text-xs" data-simulador-icon></i>
+        </button>
+        <p class="text-xs text-gray-500 dark:text-gray-400 px-3">Atualizado automaticamente com o resumo rápido.</p>
+        <div data-simulador-content class="space-y-4 hidden px-3 pb-1">
+          <p class="text-xs text-gray-500 dark:text-gray-400">Reaproveite os totais atuais para projetar rendimentos e compare com um cenário alternativo de aportes ou taxas diferentes.</p>
+          <div class="flex flex-col gap-4">
+            <div class="space-y-3 border-l-4 border-indigo-100 dark:border-indigo-900/40 pl-4">
+              <h5 class="text-xs font-semibold text-gray-600 dark:text-gray-200 uppercase tracking-wide">Cenário atual</h5>
+              <div class="grid grid-cols-1 gap-3">
+                <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 flex flex-col gap-1 h-full">Valor inicial (R$)
+                  <input id="simulador-valor-inicial" data-simulador="base" type="number" step="0.01" min="0" class="px-2 py-1 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600 text-right" />
+                </label>
+                <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 flex flex-col gap-1 h-full">Aporte mensal (R$)
+                  <input id="simulador-aporte-mensal" data-simulador="base" type="number" step="0.01" min="0" class="px-2 py-1 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600 text-right" />
+                </label>
+                <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 flex flex-col gap-1 h-full">Taxa mensal (%)
+                  <input id="simulador-taxa" data-simulador="base" type="number" step="0.01" class="px-2 py-1 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600 text-right" />
+                </label>
+                <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 flex flex-col gap-1 h-full">Período (meses)
+                  <input id="simulador-periodo" data-simulador="base" type="number" step="1" min="1" class="px-2 py-1 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600 text-right" />
+                </label>
+              </div>
+            </div>
+            <div class="space-y-3 border-l-4 border-indigo-100 dark:border-indigo-900/40 pl-4">
+              <h5 class="text-xs font-semibold text-gray-600 dark:text-gray-200 uppercase tracking-wide">Comparar cenário</h5>
+              <div class="grid grid-cols-1 gap-3">
+                <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 flex flex-col gap-1 h-full">Aporte mensal alternativo (R$)
+                  <input id="simulador-aporte-alternativo" data-simulador="alternativo" type="number" step="0.01" min="0" class="px-2 py-1 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600 text-right" />
+                </label>
+                <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 flex flex-col gap-1 h-full">Taxa mensal alternativa (%)
+                  <input id="simulador-taxa-alternativa" data-simulador="alternativo" type="number" step="0.01" class="px-2 py-1 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600 text-right" />
+                </label>
+                <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 flex flex-col gap-1 h-full">Aporte único extra (R$)
+                  <input id="simulador-aporte-extra" data-simulador="alternativo" type="number" step="0.01" min="0" class="px-2 py-1 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600 text-right" />
+                </label>
+                <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 flex flex-col gap-1 h-full">Meses adicionais
+                  <input id="simulador-periodo-alternativo" data-simulador="alternativo" type="number" step="1" min="0" class="px-2 py-1 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600 text-right" />
+                </label>
+              </div>
             </div>
           </div>
-          <div class="space-y-3">
-            <h5 class="text-xs font-semibold text-gray-600 dark:text-gray-200 uppercase tracking-wide">Comparar cenário</h5>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 flex flex-col gap-1">Aporte mensal alternativo (R$)
-                <input id="simulador-aporte-alternativo" data-simulador="alternativo" type="number" step="0.01" min="0" class="px-2 py-1 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600 text-right" />
-              </label>
-              <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 flex flex-col gap-1">Taxa mensal alternativa (%)
-                <input id="simulador-taxa-alternativa" data-simulador="alternativo" type="number" step="0.01" class="px-2 py-1 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600 text-right" />
-              </label>
-              <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 flex flex-col gap-1">Aporte único extra (R$)
-                <input id="simulador-aporte-extra" data-simulador="alternativo" type="number" step="0.01" min="0" class="px-2 py-1 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600 text-right" />
-              </label>
-              <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 flex flex-col gap-1">Meses adicionais
-                <input id="simulador-periodo-alternativo" data-simulador="alternativo" type="number" step="1" min="0" class="px-2 py-1 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600 text-right" />
-              </label>
+          <div class="flex flex-col gap-3 text-xs">
+            <div class="rounded-lg bg-indigo-100/80 dark:bg-indigo-900/30 p-3 border-l-4 border-indigo-300 dark:border-indigo-700/60">
+              <h6 class="font-semibold text-indigo-800 dark:text-indigo-200 mb-1">Resultado cenário atual</h6>
+              <p class="text-gray-600 dark:text-gray-300">Valor projetado: <strong id="simulador-base-total">R$ 0,00</strong></p>
+              <p class="text-gray-600 dark:text-gray-300">Ganho sobre aportes: <strong id="simulador-base-ganho">R$ 0,00</strong></p>
+            </div>
+            <div class="rounded-lg bg-purple-100/80 dark:bg-purple-900/30 p-3 border-l-4 border-purple-300 dark:border-purple-700/60">
+              <h6 class="font-semibold text-purple-800 dark:text-purple-200 mb-1">Resultado cenário alternativo</h6>
+              <p class="text-gray-600 dark:text-gray-300">Valor projetado: <strong id="simulador-alt-total">R$ 0,00</strong></p>
+              <p class="text-gray-600 dark:text-gray-300">Ganho sobre aportes: <strong id="simulador-alt-ganho">R$ 0,00</strong></p>
             </div>
           </div>
-        </div>
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 text-xs">
-          <div class="rounded-lg bg-indigo-100/80 dark:bg-indigo-900/30 p-3">
-            <h6 class="font-semibold text-indigo-800 dark:text-indigo-200 mb-1">Resultado cenário atual</h6>
-            <p class="text-gray-600 dark:text-gray-300">Valor projetado: <strong id="simulador-base-total">R$ 0,00</strong></p>
-            <p class="text-gray-600 dark:text-gray-300">Ganho sobre aportes: <strong id="simulador-base-ganho">R$ 0,00</strong></p>
+          <div class="text-xs text-indigo-700 dark:text-indigo-300">
+            Diferença entre cenários: <strong id="simulador-diferenca-valor">R$ 0,00</strong> em valor acumulado e <strong id="simulador-diferenca-ganho">R$ 0,00</strong> em ganhos.
           </div>
-          <div class="rounded-lg bg-purple-100/80 dark:bg-purple-900/30 p-3">
-            <h6 class="font-semibold text-purple-800 dark:text-purple-200 mb-1">Resultado cenário alternativo</h6>
-            <p class="text-gray-600 dark:text-gray-300">Valor projetado: <strong id="simulador-alt-total">R$ 0,00</strong></p>
-            <p class="text-gray-600 dark:text-gray-300">Ganho sobre aportes: <strong id="simulador-alt-ganho">R$ 0,00</strong></p>
-          </div>
-        </div>
-        <div class="text-xs text-indigo-700 dark:text-indigo-300">
-          Diferença entre cenários: <strong id="simulador-diferenca-valor">R$ 0,00</strong> em valor acumulado e <strong id="simulador-diferenca-ganho">R$ 0,00</strong> em ganhos.
         </div>
       </div>
       <form id="form-investimento" class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
@@ -1373,13 +1450,7 @@ html.dark .mobile-tab-button {
       <i class="fa fa-shopping-cart text-lg"></i>
     </button>
     
-    <button id="btn-open-graficos" 
-      class="bg-green-600 dark:bg-green-700 text-white p-3 rounded-full shadow-lg floating-btn-transition block"
-      aria-label="Abrir gráficos">
-      <i class="fa fa-chart-pie text-lg"></i>
-    </button>
-    
-    <button id="btn-add-fixo-float" 
+    <button id="btn-add-fixo-float"
       class="bg-purple-600 dark:bg-purple-700 text-white p-3 rounded-full shadow-lg floating-btn-transition block"
       aria-label="Adicionar fixo">
       <i class="fa fa-calendar text-lg"></i>
@@ -1482,6 +1553,81 @@ const formatDateInputValue = (value = new Date()) => {
   const day = String(date.getDate()).padStart(2, '0');
   return `${date.getFullYear()}-${month}-${day}`;
 };
+
+const capitalize = (str = '') => str ? str.charAt(0).toUpperCase() + str.slice(1) : '';
+const isPlainObject = value => value && typeof value === 'object' && !Array.isArray(value);
+const deepMerge = (target = {}, source = {}) => {
+  const output = { ...target };
+  if (!isPlainObject(source)) {
+    return { ...target, ...(source || {}) };
+  }
+  Object.keys(source).forEach(key => {
+    const sourceValue = source[key];
+    if (isPlainObject(sourceValue)) {
+      output[key] = deepMerge(isPlainObject(target[key]) ? target[key] : {}, sourceValue);
+    } else {
+      output[key] = sourceValue;
+    }
+  });
+  return output;
+};
+
+// Para personalizar rapidamente sem editar este arquivo, defina window.__APP_CONFIG__
+// antes deste script ser carregado (ex.: em um arquivo config.js) e sobrescreva apenas
+// os campos desejados. O objeto abaixo contém os valores padrão utilizados na aplicação.
+const baseAppConfig = {
+  envelopes: {
+    fixo: { chaveResumo: 'fixosMes', meta: 1300, reservado: 0, titulo: 'Custo fixo' },
+    parcelado: { chaveResumo: 'parcelasMes', meta: 1400, reservado: 0, titulo: 'Parcelados do mês' },
+    variavel: { chaveResumo: 'historicoMes', meta: 2000, reservado: 0, titulo: 'Variáveis' },
+  },
+  cartoes: {
+    nubank: { fechamento: 15, label: 'Nubank', mesVencimentoOffset: 0 },
+    itau: { fechamento: 2, label: 'Itaú', mesVencimentoOffset: 0 },
+    univ: { fechamento: 27, label: 'Univ', mesVencimentoOffset: 1 },
+    amazon: { fechamento: 25, label: 'Amazon', mesVencimentoOffset: 1 },
+    mercado: { fechamento: 4, label: 'Mercado Pago', mesVencimentoOffset: 0 },
+    pix: { fechamento: null, label: 'PIX', mesVencimentoOffset: 0 },
+  },
+  insights: {
+    maxVisible: 5,
+    toggleLabels: {
+      showMore: 'Mostrar mais insights',
+      showLess: 'Ocultar insights extras',
+    },
+  },
+  investimentos: {
+    simulador: {
+      defaultTaxaMensalPercent: 1,
+      defaultPeriodoMeses: 12,
+    },
+  },
+  charts: {
+    historicoMensal: {
+      monthsWindow: 12,
+      barColorStops: ['rgba(56, 189, 248, 0.65)', 'rgba(14, 165, 233, 0.25)'],
+      barBorderColor: '#0ea5e9',
+      acumuladoColor: '#6366f1',
+      mediaColor: '#f97316',
+    },
+    parceladosProjecao: {
+      monthsWindow: 6,
+      barColor: 'rgba(129, 140, 248, 0.55)',
+      borderColor: '#7c3aed',
+    },
+  },
+};
+
+const appConfig = deepMerge(baseAppConfig, window.__APP_CONFIG__ || {});
+const MAX_INSIGHTS_VISIBLE = appConfig.insights?.maxVisible ?? 5;
+const INSIGHTS_TOGGLE_LABELS = {
+  showMore: appConfig.insights?.toggleLabels?.showMore || 'Mostrar mais insights',
+  showLess: appConfig.insights?.toggleLabels?.showLess || 'Ocultar insights extras',
+};
+const SIMULADOR_DEFAULT_TAXA = appConfig.investimentos?.simulador?.defaultTaxaMensalPercent ?? 1;
+const SIMULADOR_DEFAULT_PERIODO = appConfig.investimentos?.simulador?.defaultPeriodoMeses ?? 12;
+const HISTORICO_MENSAL_CHART_CFG = appConfig.charts?.historicoMensal || {};
+const PARCELADOS_PROJECAO_CHART_CFG = appConfig.charts?.parceladosProjecao || {};
 
 // NOVO: Função para calcular o mês de referência da fatura
 function calcularMesFatura(dataTransacao, diaFechamento, offset = 0) {  // Adicionado offset com default 0
@@ -1598,23 +1744,16 @@ document.addEventListener('keydown', (e) => {
    ESTADO/CONFIGURAÇÕES
    =========================== */
 const envelopeConfig = {
-  fixo: { chaveResumo: 'fixosMes', meta: 1300, reservado: 0, titulo: 'Custo fixo' },
-  parcelado: { chaveResumo: 'parcelasMes', meta: 1400, reservado: 0, titulo: 'Parcelados do mês' },
-  variavel: { chaveResumo: 'historicoMes', meta: 2000, reservado: 0, titulo: 'Variáveis' },
+  fixo: { ...baseAppConfig.envelopes.fixo, ...(appConfig.envelopes?.fixo || {}) },
+  parcelado: { ...baseAppConfig.envelopes.parcelado, ...(appConfig.envelopes?.parcelado || {}) },
+  variavel: { ...baseAppConfig.envelopes.variavel, ...(appConfig.envelopes?.variavel || {}) },
 };
 let envelopes = {
   fixo: { ...envelopeConfig.fixo },
   parcelado: { ...envelopeConfig.parcelado },
   variavel: { ...envelopeConfig.variavel },
 }; // persisted in Firestore
-const cartoesCfgDefault = {
-  nubank: { fechamento: 15, label: 'Nubank', mesVencimentoOffset: 0 },  // Mesmo mês
-  itau: { fechamento: 2, label: 'Itaú', mesVencimentoOffset: 0 },       // Mesmo mês
-  univ: { fechamento: 27, label: 'Univ', mesVencimentoOffset: 1 },      // Próximo mês
-  amazon: { fechamento: 25, label: 'Amazon', mesVencimentoOffset: 1 },  // Próximo mês
-  mercado: { fechamento: 4, label: 'Mercado Pago', mesVencimentoOffset: 0 },  // Mesmo mês
-  pix: { fechamento: null, label: 'PIX', mesVencimentoOffset: 0 }       // Sempre mesmo mês
-};
+const cartoesCfgDefault = { ...baseAppConfig.cartoes, ...(appConfig.cartoes || {}) };
 let cartoesCfg = {...cartoesCfgDefault};
 
 /* caches */
@@ -2617,9 +2756,14 @@ function renderParcelados(docs){
   
   const mesKey = document.getElementById('filtro-mes').value;
   const hoje = new Date();
-  const alvoKey = (mesKey === 'all' || !mesKey) ? yyyymm(hoje) : mesKey; 
-  const [ay,am] = alvoKey.split('-'); 
-  const refDate = new Date(parseInt(ay), parseInt(am)-1, 1); // Data de referência para o mês selecionado
+  const alvoKey = (mesKey === 'all' || !mesKey) ? yyyymm(hoje) : mesKey;
+  const [ay,am] = alvoKey.split('-');
+  let refDate = new Date(parseInt(ay), parseInt(am)-1, 1); // Data de referência para o mês selecionado
+  if (Number.isNaN(refDate.getTime())) {
+    refDate = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+  }
+
+  renderGraficoParceladosProjecao(docs, refDate);
 
   let totalMes=0, totalRestante=0, countAtivos=0;
 
@@ -3239,28 +3383,43 @@ function atualizarBarra(tipo, gasto){
   const reservado = Number(envelope.reservado) || 0;
   const gastoAtual = Number(gasto) || 0;
   const comprometido = gastoAtual + reservado;
-  const restante = Math.max(0, meta - gastoAtual);
-  const disponivelParaReserva = Math.max(0, meta - gastoAtual - reservado);
-  const percent = meta ? Math.max(0, Math.min(100, (comprometido / meta) * 100)) : 0;
+  const limiteLivre = Math.max(0, meta - comprometido);
+  const excedente = comprometido > meta ? comprometido - meta : 0;
+  const percentual = meta ? (comprometido / meta) * 100 : 0;
+  const percentBar = Math.max(0, Math.min(100, percentual));
 
   const progressEl = document.getElementById(`progress-${tipo}`);
   const gastoEl = document.getElementById(`gasto-${tipo}`);
-  const restanteEl = document.getElementById(`restante-${tipo}`);
+  const limiteLivreEl = document.getElementById(`limite-livre-${tipo}`);
   const reservaEl = document.getElementById(`reserva-${tipo}`);
   const disponivelEl = document.getElementById(`disponivel-${tipo}`);
   const percentualEl = document.getElementById(`percentual-${tipo}`);
+  const metaEl = document.getElementById(`meta-${tipo}`);
+  const excedenteWrapper = document.getElementById(`excedente-${tipo}-wrapper`);
+  const excedenteEl = document.getElementById(`excedente-${tipo}`);
   const card = document.querySelector(`[data-envelope-card="${tipo}"]`);
 
-  if (progressEl) progressEl.style.width = `${percent}%`;
+  if (progressEl) progressEl.style.width = `${percentBar}%`;
   if (gastoEl) gastoEl.textContent = moeda(gastoAtual);
-  if (restanteEl) restanteEl.textContent = moeda(restante);
+  if (metaEl) metaEl.textContent = moeda(meta);
+  if (limiteLivreEl) limiteLivreEl.textContent = moeda(limiteLivre);
   if (reservaEl) reservaEl.textContent = moeda(reservado);
-  if (disponivelEl) disponivelEl.textContent = moeda(disponivelParaReserva);
-  if (percentualEl) percentualEl.textContent = `${percent.toFixed(1)}%`;
+  if (disponivelEl) disponivelEl.textContent = moeda(limiteLivre);
+  if (percentualEl) percentualEl.textContent = `${percentual.toFixed(1)}%`;
+  if (excedenteWrapper && excedenteEl) {
+    if (excedente > 0) {
+      excedenteWrapper.classList.remove('hidden');
+      excedenteEl.textContent = moeda(excedente);
+    } else {
+      excedenteWrapper.classList.add('hidden');
+    }
+  }
 
   if (card) {
-    card.classList.toggle('ring-2', comprometido > meta && meta > 0);
-    card.classList.toggle('ring-red-400', comprometido > meta && meta > 0);
+    const estourado = excedente > 0 && meta > 0;
+    card.classList.toggle('ring-2', estourado);
+    card.classList.toggle('ring-red-400', estourado);
+    card.classList.toggle('ring-offset-2', estourado);
   }
 }
 
@@ -3334,8 +3493,9 @@ function renderEntradasSidebar(docs = []) {
   const mostrarTodos = mesSel === 'all';
 
   let totalMes = 0;
-  let totalGeral = 0;
-  const totaisPorTipo = {};
+  let totalRegistrado = 0;
+  const totaisPorTipoPeriodo = {};
+  let itensPeriodo = 0;
 
   docs.forEach(doc => {
     const data = doc.data();
@@ -3349,11 +3509,12 @@ function renderEntradasSidebar(docs = []) {
     const tipo = data.tipo || 'outros';
     const descricao = (data.descricao || '').trim();
 
-    totalGeral += valor;
-    totaisPorTipo[tipo] = (totaisPorTipo[tipo] || 0) + valor;
+    totalRegistrado += valor;
 
     if (mostrarTodos || key === mesSel) {
       totalMes += valor;
+      itensPeriodo += 1;
+      totaisPorTipoPeriodo[tipo] = (totaisPorTipoPeriodo[tipo] || 0) + valor;
       const item = document.createElement('div');
       item.className = 'flex items-center gap-3 p-2 bg-gray-50 dark:bg-gray-700 rounded';
       item.innerHTML = `
@@ -3372,20 +3533,20 @@ function renderEntradasSidebar(docs = []) {
     }
   });
 
-  if (!lista.children.length) {
+  if (itensPeriodo === 0) {
     const empty = document.createElement('div');
     empty.className = 'text-gray-500 dark:text-gray-400';
     empty.textContent = 'Nenhuma entrada registrada para o período selecionado.';
     lista.appendChild(empty);
   }
 
-  if (Object.keys(totaisPorTipo).length === 0) {
+  if (Object.keys(totaisPorTipoPeriodo).length === 0) {
     const emptyTipos = document.createElement('div');
     emptyTipos.className = 'col-span-2 text-gray-500 dark:text-gray-400';
     emptyTipos.textContent = 'Cadastre entradas para ver a distribuição.';
     tiposContainer.appendChild(emptyTipos);
   } else {
-    Object.entries(totaisPorTipo).forEach(([tipo, valor]) => {
+    Object.entries(totaisPorTipoPeriodo).sort((a, b) => b[1] - a[1]).forEach(([tipo, valor]) => {
       const card = document.createElement('div');
       card.className = 'p-2 bg-green-50 dark:bg-green-900/10 rounded';
       card.innerHTML = `
@@ -3397,10 +3558,23 @@ function renderEntradasSidebar(docs = []) {
   }
 
   totalMesEl.textContent = moeda(totalMes);
-  totalGeralEl.textContent = moeda(totalGeral);
+  totalGeralEl.textContent = moeda(totalRegistrado);
+
+  const saldoMesEl = document.getElementById('entradas-saldo-mes');
+  const saldoHintEl = document.getElementById('entradas-saldo-hint');
+  if (saldoMesEl) {
+    if (mostrarTodos) {
+      saldoMesEl.textContent = '--';
+      if (saldoHintEl) saldoHintEl.textContent = 'Selecione um mês específico para calcular o saldo líquido.';
+    } else {
+      const gastosPeriodo = painelFinanceiroState.totalGastosMes || 0;
+      saldoMesEl.textContent = moeda(totalMes - gastosPeriodo);
+      if (saldoHintEl) saldoHintEl.textContent = 'Entradas menos saídas previstas do período selecionado.';
+    }
+  }
 
   painelFinanceiroState.entradasMes = totalMes;
-  painelFinanceiroState.entradasTotais = totalGeral;
+  painelFinanceiroState.entradasTotais = totalRegistrado;
   atualizarResumoRapido();
   atualizarSaudeFinanceira();
   atualizarFiltroMeses();
@@ -3425,6 +3599,7 @@ function renderInvestimentosSidebar(docs = []) {
   let totalMes = 0;
   let totalGeral = 0;
   let totalProjetado = 0;
+  const totaisPorMes = {};
 
   docs.forEach(doc => {
     const data = doc.data();
@@ -3439,6 +3614,7 @@ function renderInvestimentosSidebar(docs = []) {
     const descricao = (data.descricao || '').trim();
 
     totalGeral += valor;
+    totaisPorMes[key] = (totaisPorMes[key] || 0) + valor;
     const mesesPassados = Math.max(0, monthDiff(dt, hoje));
     const valorProjetado = valor * Math.pow(1.01, mesesPassados);
     totalProjetado += valorProjetado;
@@ -3481,11 +3657,114 @@ function renderInvestimentosSidebar(docs = []) {
   painelFinanceiroState.investimentosMes = totalMes;
   painelFinanceiroState.investimentosTotais = totalGeral;
   painelFinanceiroState.investimentosProjetados = totalProjetado;
+  renderGraficoInvestimentos(totaisPorMes);
   atualizarResumoRapido();
   atualizarSaudeFinanceira();
   atualizarSimuladorValoresPadrao();
   atualizarSimuladorResultados();
   atualizarFiltroMeses();
+}
+
+function renderGraficoInvestimentos(totaisPorMes = {}) {
+  const canvas = document.getElementById('grafico-investimentos');
+  const emptyState = document.getElementById('investimentos-grafico-empty');
+  if (!canvas) return;
+
+  const ctx = canvas.getContext('2d');
+  if (chartInvestimentos) {
+    chartInvestimentos.destroy();
+    chartInvestimentos = null;
+  }
+
+  const mesesOrdenados = Object.keys(totaisPorMes || {}).sort();
+  if (mesesOrdenados.length === 0) {
+    if (emptyState) emptyState.classList.remove('hidden');
+    if (ctx) ctx.clearRect(0, 0, canvas.width || 0, canvas.height || 0);
+    return;
+  }
+
+  if (emptyState) emptyState.classList.add('hidden');
+
+  const mesesRecentes = mesesOrdenados.slice(-12);
+  const labels = mesesRecentes.map(mmYYYY);
+  const aportesMensais = mesesRecentes.map(mes => totaisPorMes[mes]);
+  let acumulado = 0;
+  const acumuladoSeries = mesesRecentes.map(mes => {
+    acumulado += totaisPorMes[mes];
+    return acumulado;
+  });
+
+  chartInvestimentos = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        {
+          type: 'bar',
+          label: 'Aportes mensais',
+          data: aportesMensais,
+          backgroundColor: 'rgba(99, 102, 241, 0.35)',
+          borderColor: '#6366f1',
+          borderWidth: 1,
+          borderRadius: 6,
+          yAxisID: 'y'
+        },
+        {
+          type: 'line',
+          label: 'Total acumulado',
+          data: acumuladoSeries,
+          borderColor: '#8b5cf6',
+          backgroundColor: 'rgba(139, 92, 246, 0.2)',
+          fill: false,
+          tension: 0.35,
+          pointRadius: 4,
+          pointBackgroundColor: '#8b5cf6',
+          yAxisID: 'y'
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            callback: val => `R$ ${moeda(val)}`,
+            color: html.classList.contains('dark') ? '#d1d5db' : '#1f2937'
+          },
+          grid: {
+            color: html.classList.contains('dark') ? '#4b5563' : '#e5e7eb'
+          }
+        },
+        x: {
+          ticks: {
+            color: html.classList.contains('dark') ? '#d1d5db' : '#1f2937'
+          },
+          grid: {
+            color: html.classList.contains('dark') ? '#374151' : '#f3f4f6'
+          }
+        }
+      },
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: {
+            color: html.classList.contains('dark') ? '#d1d5db' : '#1f2937'
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label: context => {
+              const label = context.dataset.label || '';
+              return `${label}: R$ ${moeda(context.parsed.y || context.parsed)}`;
+            }
+          }
+        }
+      }
+    }
+  });
 }
 
 function calcularProjecaoJurosCompostos(valorInicial, aporteMensal, taxaPercentual, meses) {
@@ -3527,12 +3806,12 @@ function atualizarSimuladorValoresPadrao(force = false) {
 
   const taxaInput = document.getElementById('simulador-taxa');
   if (taxaInput && (force || !taxaInput.dataset.userEdited) && !taxaInput.value) {
-    taxaInput.value = '1';
+    taxaInput.value = String(SIMULADOR_DEFAULT_TAXA);
   }
 
   const periodoInput = document.getElementById('simulador-periodo');
   if (periodoInput && (force || !periodoInput.dataset.userEdited) && !periodoInput.value) {
-    periodoInput.value = '12';
+    periodoInput.value = String(SIMULADOR_DEFAULT_PERIODO);
   }
 
   const aporteAltInput = document.getElementById('simulador-aporte-alternativo');
@@ -3545,7 +3824,7 @@ function atualizarSimuladorValoresPadrao(force = false) {
   const taxaAltInput = document.getElementById('simulador-taxa-alternativa');
   if (taxaAltInput && (force || !taxaAltInput.dataset.userEdited)) {
     if (taxaAltInput.value === '' || force) {
-      taxaAltInput.value = taxaInput ? taxaInput.value : '1';
+      taxaAltInput.value = taxaInput && taxaInput.value ? taxaInput.value : String(SIMULADOR_DEFAULT_TAXA);
     }
   }
 
@@ -3567,7 +3846,7 @@ function atualizarSimuladorResultados() {
   const valorInicial = parseFloat(document.getElementById('simulador-valor-inicial')?.value) || 0;
   const aporteMensal = parseFloat(document.getElementById('simulador-aporte-mensal')?.value) || 0;
   const taxaMensal = parseFloat(document.getElementById('simulador-taxa')?.value) || 0;
-  const periodoMeses = Math.max(1, parseInt(document.getElementById('simulador-periodo')?.value, 10) || 12);
+  const periodoMeses = Math.max(1, parseInt(document.getElementById('simulador-periodo')?.value, 10) || SIMULADOR_DEFAULT_PERIODO);
 
   const base = calcularProjecaoJurosCompostos(valorInicial, aporteMensal, taxaMensal, periodoMeses);
 
@@ -3601,9 +3880,40 @@ function atualizarSimuladorResultados() {
   if (diffGanhoEl) diffGanhoEl.textContent = `R$ ${moeda(diffGanho)}`;
 }
 
+function initSimuladorAccordion() {
+  const simulador = document.getElementById('simulador-juros-compostos');
+  if (!simulador) return;
+  const toggleBtn = simulador.querySelector('[data-simulador-toggle]');
+  const content = simulador.querySelector('[data-simulador-content]');
+  const icon = simulador.querySelector('[data-simulador-icon]');
+  if (!toggleBtn || !content) return;
+  if (toggleBtn.dataset.bound === 'true') return;
+  toggleBtn.dataset.bound = 'true';
+
+  toggleBtn.addEventListener('click', () => {
+    const isHidden = content.classList.contains('hidden');
+    if (isHidden) {
+      content.classList.remove('hidden');
+      toggleBtn.setAttribute('aria-expanded', 'true');
+      if (icon) {
+        icon.classList.remove('fa-chevron-down');
+        icon.classList.add('fa-chevron-up');
+      }
+    } else {
+      content.classList.add('hidden');
+      toggleBtn.setAttribute('aria-expanded', 'false');
+      if (icon) {
+        icon.classList.remove('fa-chevron-up');
+        icon.classList.add('fa-chevron-down');
+      }
+    }
+  });
+}
+
 function initSimuladorInvestimentos() {
   const simulador = document.getElementById('simulador-juros-compostos');
   if (!simulador) return;
+  initSimuladorAccordion();
   const inputs = simulador.querySelectorAll('[data-simulador]');
   inputs.forEach(input => {
     input.addEventListener('input', () => {
@@ -3916,6 +4226,28 @@ document.getElementById('parcelado-form').addEventListener('submit', e=>{
     })
     .catch(err => showToast('Erro ao adicionar parcelado: ' + err.message, 'error'));
 });
+
+const toggleParceladosBtn = document.getElementById('toggle-parcelados-projecao');
+if (toggleParceladosBtn) {
+  const parceladosContainer = document.getElementById('parcelados-projecao-container');
+  const parceladosIcon = document.getElementById('parcelados-projecao-toggle-icon');
+  toggleParceladosBtn.addEventListener('click', () => {
+    if (!parceladosContainer) return;
+    const hidden = parceladosContainer.classList.toggle('hidden');
+    toggleParceladosBtn.setAttribute('aria-expanded', (!hidden).toString());
+    parceladosContainer.setAttribute('aria-hidden', hidden ? 'true' : 'false');
+    if (parceladosIcon) {
+      parceladosIcon.classList.toggle('rotate-180', !hidden);
+    }
+    if (!hidden && chartParceladosProjecao) {
+      setTimeout(() => {
+        if (chartParceladosProjecao) {
+          chartParceladosProjecao.resize();
+        }
+      }, 120);
+    }
+  });
+}
 
 /* ===========================
    ENTRADAS & INVESTIMENTOS SIDEBAR
@@ -4453,9 +4785,12 @@ if ('serviceWorker' in navigator) {
 let chartCategorias = null;
 let chartCartoes = null;
 let chartTendenciaCategorias = null; // NOVO: Variável para o gráfico de tendência
+let chartInvestimentos = null; // NOVO: Gráfico de evolução dos investimentos
+let chartHistoricoMensal = null; // NOVO: Gráfico de resumo mensal do histórico
+let chartParceladosProjecao = null; // NOVO: Projeção de parcelados
 const modalGraficos = document.getElementById('modal-graficos');
 const modalGraficosClose = document.getElementById('modal-graficos-close');
-const btnOpenGraficos = document.getElementById('btn-open-graficos');
+const btnHistoricoGraficos = document.getElementById('btn-historico-graficos');
 const filtroCartoesContainer = document.getElementById('filtro-cartoes-container');
 const filtroCategoriasContainer = document.getElementById('filtro-categorias-container');
 const filtroPeriodoGraficos = document.getElementById('filtro-periodo-graficos'); // NOVO
@@ -4488,28 +4823,51 @@ function obterSelecionados(prefix) {
 // NOVO: Função auxiliar para obter o intervalo de datas do filtro de período
 function getPeriodoDatas() {
   const hoje = new Date();
-  let startDate = new Date(hoje.getFullYear(), hoje.getMonth(), 1); // Padrão: início do mês atual
-  let endDate = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0); // Padrão: fim do mês atual
+  const filtroMesEl = document.getElementById('filtro-mes');
+  const filtroMesVal = filtroMesEl ? filtroMesEl.value : null;
+  const possuiMesSelecionado = filtroMesVal && filtroMesVal !== 'all';
+  const baseDate = (() => {
+    if (!possuiMesSelecionado) return hoje;
+    const [anoSel, mesSel] = filtroMesVal.split('-');
+    const ano = parseInt(anoSel, 10);
+    const mes = parseInt(mesSel, 10) - 1;
+    if (Number.isNaN(ano) || Number.isNaN(mes)) return hoje;
+    return new Date(ano, mes, 1);
+  })();
 
-  const periodoSelecionado = filtroPeriodoGraficos.value;
+  let startDate = new Date(baseDate.getFullYear(), baseDate.getMonth(), 1); // Padrão: início do mês de referência
+  let endDate = new Date(baseDate.getFullYear(), baseDate.getMonth() + 1, 0); // Padrão: fim do mês de referência
+
+  const periodoSelecionado = filtroPeriodoGraficos?.value || 'current_month';
 
   if (periodoSelecionado === 'last_3_months') {
-    startDate = new Date(hoje.getFullYear(), hoje.getMonth() - 2, 1);
+    startDate = new Date(baseDate.getFullYear(), baseDate.getMonth() - 2, 1);
+    endDate = new Date(baseDate.getFullYear(), baseDate.getMonth() + 1, 0);
   } else if (periodoSelecionado === 'last_6_months') {
-    startDate = new Date(hoje.getFullYear(), hoje.getMonth() - 5, 1);
+    startDate = new Date(baseDate.getFullYear(), baseDate.getMonth() - 5, 1);
+    endDate = new Date(baseDate.getFullYear(), baseDate.getMonth() + 1, 0);
   } else if (periodoSelecionado === 'current_year') {
-    startDate = new Date(hoje.getFullYear(), 0, 1);
+    startDate = new Date(baseDate.getFullYear(), 0, 1);
+    endDate = new Date(baseDate.getFullYear(), 11, 31);
   } else if (periodoSelecionado === 'custom') {
     if (filtroPeriodoStart.value) {
       const [y, m] = filtroPeriodoStart.value.split('-');
-      startDate = new Date(parseInt(y), parseInt(m) - 1, 1);
+      const ano = parseInt(y, 10);
+      const mes = parseInt(m, 10) - 1;
+      if (!Number.isNaN(ano) && !Number.isNaN(mes)) {
+        startDate = new Date(ano, mes, 1);
+      }
     }
     if (filtroPeriodoEnd.value) {
       const [y, m] = filtroPeriodoEnd.value.split('-');
-      endDate = new Date(parseInt(y), parseInt(m), 0); // Último dia do mês
+      const ano = parseInt(y, 10);
+      const mes = parseInt(m, 10);
+      if (!Number.isNaN(ano) && !Number.isNaN(mes)) {
+        endDate = new Date(ano, mes, 0); // Último dia do mês informado
+      }
     }
   }
-  // Para 'current_month', os padrões já estão corretos
+  // Para 'current_month', os valores padrão baseados em baseDate já estão corretos
 
   return { startDate, endDate };
 }
@@ -4545,6 +4903,7 @@ function calcularTotais(gastos) {
   const totaisPorCategoria = {};
   const totaisPorCartao = {};
   const totaisPorCategoriaMes = {}; // NOVO: Para o gráfico de tendência
+  const totaisPorMes = {};
 
   gastos.forEach(doc => {
     const d = doc.data();
@@ -4568,9 +4927,12 @@ function calcularTotais(gastos) {
       const cartao = d.cartao.toLowerCase();
       totaisPorCartao[cartao] = (totaisPorCartao[cartao] || 0) + d.valor;
     }
+
+    const mesReferencia = d.mesFatura || yyyymm(d.data.toDate ? d.data.toDate() : new Date(d.data));
+    totaisPorMes[mesReferencia] = (totaisPorMes[mesReferencia] || 0) + d.valor;
   });
 
-  return { totaisPorCategoria, totaisPorCartao, totaisPorCategoriaMes }; // NOVO: Retorna totaisPorCategoriaMes
+  return { totaisPorCategoria, totaisPorCartao, totaisPorCategoriaMes, totaisPorMes }; // NOVO: Retorna totais adicionais
 }
 
 
@@ -4676,6 +5038,277 @@ function renderGraficoCartoes(totaisPorCartao) {
         }
       }
     }
+  });
+}
+
+function renderGraficoHistoricoMensal(totaisPorMes = {}) {
+  const canvas = document.getElementById('grafico-historico-mensal');
+  if (!canvas) return;
+  const emptyState = document.getElementById('historico-mensal-empty');
+  const ctx = canvas.getContext('2d');
+
+  if (chartHistoricoMensal) {
+    chartHistoricoMensal.destroy();
+    chartHistoricoMensal = null;
+  }
+
+  const mesesOrdenados = Object.keys(totaisPorMes || {}).sort();
+  if (!mesesOrdenados.length) {
+    if (emptyState) emptyState.classList.remove('hidden');
+    if (ctx) ctx.clearRect(0, 0, canvas.width || 0, canvas.height || 0);
+    return;
+  }
+
+  if (emptyState) emptyState.classList.add('hidden');
+
+  const limiteMeses = HISTORICO_MENSAL_CHART_CFG.monthsWindow || 0;
+  const mesesRecentes = limiteMeses > 0 ? mesesOrdenados.slice(-limiteMeses) : mesesOrdenados;
+  const labels = mesesRecentes.map(mmYYYY);
+  const valores = mesesRecentes.map(mes => totaisPorMes[mes]);
+
+  const acumulado = [];
+  let soma = 0;
+  valores.forEach(valor => {
+    soma += valor;
+    acumulado.push(soma);
+  });
+
+  const mediaMovel = valores.map((valor, indice) => {
+    const janela = Math.min(indice + 1, 3);
+    const start = Math.max(0, indice - janela + 1);
+    const slice = valores.slice(start, indice + 1);
+    const totalJanela = slice.reduce((acc, curr) => acc + curr, 0);
+    return slice.length ? totalJanela / slice.length : valor;
+  });
+
+  const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height || 200);
+  const [corTopo, corBase] = HISTORICO_MENSAL_CHART_CFG.barColorStops || ['rgba(56, 189, 248, 0.65)', 'rgba(14, 165, 233, 0.25)'];
+  gradient.addColorStop(0, corTopo);
+  gradient.addColorStop(1, corBase || corTopo);
+
+  const acumuladoColor = HISTORICO_MENSAL_CHART_CFG.acumuladoColor || '#6366f1';
+  const mediaColor = HISTORICO_MENSAL_CHART_CFG.mediaColor || '#f97316';
+  const barBorderColor = HISTORICO_MENSAL_CHART_CFG.barBorderColor || '#0ea5e9';
+
+  chartHistoricoMensal = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        {
+          type: 'bar',
+          label: 'Total do mês',
+          data: valores,
+          backgroundColor: gradient,
+          borderColor: barBorderColor,
+          borderWidth: 1.5,
+          borderRadius: 6,
+          order: 2,
+          yAxisID: 'y'
+        },
+        {
+          type: 'line',
+          label: 'Acumulado',
+          data: acumulado,
+          borderColor: acumuladoColor,
+          backgroundColor: 'transparent',
+          borderWidth: 2,
+          tension: 0.35,
+          pointRadius: 3,
+          pointBackgroundColor: acumuladoColor,
+          fill: false,
+          yAxisID: 'y'
+        },
+        {
+          type: 'line',
+          label: 'Média móvel (3 meses)',
+          data: mediaMovel,
+          borderColor: mediaColor,
+          backgroundColor: 'transparent',
+          borderDash: [6, 4],
+          borderWidth: 2,
+          pointRadius: 0,
+          pointHitRadius: 8,
+          tension: 0.3,
+          yAxisID: 'y'
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: {
+        intersect: false,
+        mode: 'index'
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            callback: val => `R$ ${moeda(val)}`,
+            color: html.classList.contains('dark') ? '#d1d5db' : '#1f2937'
+          },
+          grid: {
+            color: html.classList.contains('dark') ? '#374151' : '#e5e7eb'
+          }
+        },
+        x: {
+          ticks: {
+            color: html.classList.contains('dark') ? '#d1d5db' : '#1f2937'
+          },
+          grid: {
+            display: false
+          }
+        }
+      },
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: {
+            color: html.classList.contains('dark') ? '#d1d5db' : '#1f2937'
+          }
+        },
+        tooltip: {
+          backgroundColor: html.classList.contains('dark') ? 'rgba(30, 41, 59, 0.9)' : 'rgba(15, 23, 42, 0.9)',
+          borderColor: barBorderColor,
+          borderWidth: 1,
+          callbacks: {
+            title: tooltipItems => tooltipItems[0]?.label || '',
+            label: context => {
+              const label = context.dataset.label || '';
+              const value = context.parsed.y;
+              return `${label}: R$ ${moeda(value)}`;
+            },
+            afterBody: tooltipItems => {
+              if (!tooltipItems.length) return '';
+              const index = tooltipItems[0].dataIndex;
+              if (index === 0) return 'Mês inicial do período';
+              const diff = valores[index] - valores[index - 1];
+              const prev = valores[index - 1];
+              const pct = prev ? (diff / prev) * 100 : 0;
+              const sinal = diff >= 0 ? '+' : '-';
+              const textoValor = `Variação: ${sinal}R$ ${moeda(Math.abs(diff))}`;
+              const textoPct = prev ? ` (${pct >= 0 ? '+' : '-'}${Math.abs(pct).toFixed(1)}%)` : '';
+              return textoValor + textoPct;
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
+function renderGraficoParceladosProjecao(docs = [], refDate = new Date()) {
+  const canvas = document.getElementById('grafico-parcelados-projecao');
+  const emptyState = document.getElementById('parcelados-projecao-empty');
+  const janelaEl = document.getElementById('parcelados-projecao-janela');
+  if (!canvas) return;
+
+  const ctx = canvas.getContext('2d');
+
+  if (chartParceladosProjecao) {
+    chartParceladosProjecao.destroy();
+    chartParceladosProjecao = null;
+  }
+
+  const mesesJanela = Math.max(1, PARCELADOS_PROJECAO_CHART_CFG.monthsWindow || 6);
+  if (janelaEl) {
+    janelaEl.textContent = mesesJanela === 1 ? 'Próximo mês' : `Próximos ${mesesJanela} meses`;
+  }
+
+  const totaisPorMes = {};
+  const baseRef = new Date(refDate.getFullYear(), refDate.getMonth(), 1);
+
+  docs.forEach(doc => {
+    const dados = doc.data ? doc.data() : doc;
+    if (!dados) return;
+    const valorParcela = Number(dados.valorParcela) || 0;
+    const totalParcelas = parseInt(dados.numParcelas, 10) || 0;
+    if (!valorParcela || totalParcelas <= 0) return;
+    const inicio = dados.dataInicio && dados.dataInicio.toDate ? dados.dataInicio.toDate() : new Date(dados.dataInicio);
+    if (!(inicio instanceof Date) || Number.isNaN(inicio.getTime())) return;
+
+    for (let i = 0; i < totalParcelas; i++) {
+      const mesParcela = addMonths(inicio, i);
+      const key = yyyymm(mesParcela);
+      totaisPorMes[key] = (totaisPorMes[key] || 0) + valorParcela;
+    }
+  });
+
+  const labels = [];
+  const valores = [];
+  for (let i = 0; i < mesesJanela; i++) {
+    const dataMes = addMonths(baseRef, i);
+    const chave = yyyymm(dataMes);
+    labels.push(mmYYYY(chave));
+    valores.push(totaisPorMes[chave] || 0);
+  }
+
+  const possuiValores = valores.some(v => v > 0);
+  if (!possuiValores) {
+    if (emptyState) {
+      emptyState.textContent = docs && docs.length
+        ? 'Nenhuma parcela prevista para o período selecionado.'
+        : 'Cadastre parcelados ativos para visualizar a projeção.';
+      emptyState.classList.remove('hidden');
+    }
+    if (ctx) {
+      ctx.clearRect(0, 0, canvas.width || 0, canvas.height || 0);
+    }
+    return;
+  }
+
+  if (emptyState) emptyState.classList.add('hidden');
+
+  const barColor = PARCELADOS_PROJECAO_CHART_CFG.barColor
+    || (html.classList.contains('dark') ? 'rgba(167, 139, 250, 0.6)' : 'rgba(129, 140, 248, 0.55)');
+  const borderColor = PARCELADOS_PROJECAO_CHART_CFG.borderColor || '#7c3aed';
+
+  chartParceladosProjecao = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Valor mensal projetado',
+        data: valores,
+        backgroundColor: barColor,
+        borderColor,
+        borderWidth: 1.5,
+        borderRadius: 6,
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            callback: val => `R$ ${moeda(val)}`,
+            color: html.classList.contains('dark') ? '#d1d5db' : '#1f2937',
+          },
+          grid: {
+            color: html.classList.contains('dark') ? '#374151' : '#e5e7eb',
+          },
+        },
+        x: {
+          ticks: {
+            color: html.classList.contains('dark') ? '#d1d5db' : '#1f2937',
+          },
+          grid: {
+            display: false,
+          },
+        },
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctxTooltip => `R$ ${moeda(ctxTooltip.parsed.y)}`,
+          },
+        },
+      },
+    },
   });
 }
 
@@ -4881,11 +5514,12 @@ function aplicarFiltros() {
     return true;
   });
 
-  const { totaisPorCategoria, totaisPorCartao, totaisPorCategoriaMes } = calcularTotais(gastosFiltrados); // NOVO: Pega totaisPorCategoriaMes
+  const { totaisPorCategoria, totaisPorCartao, totaisPorCategoriaMes, totaisPorMes } = calcularTotais(gastosFiltrados); // NOVO: Pega totais adicionais
 
   renderGraficoCategorias(totaisPorCategoria);
   renderGraficoCartoes(totaisPorCartao);
   renderGraficoTendenciaCategorias(totaisPorCategoriaMes); // NOVO: Renderiza o gráfico de tendência
+  renderGraficoHistoricoMensal(totaisPorMes);
 
   // NOVO: Atualiza o resumo de totais no modal
   const totalFiltrado = gastosFiltrados.reduce((sum, doc) => sum + (doc.data().valor || 0), 0);
@@ -4896,9 +5530,33 @@ function aplicarFiltros() {
   const diffYears = endDate.getFullYear() - startDate.getFullYear();
   const diffMonths = endDate.getMonth() - startDate.getMonth();
   const numMeses = diffYears * 12 + diffMonths + 1; // +1 para incluir o mês final
-  
+
   const mediaMensal = numMeses > 0 ? totalFiltrado / numMeses : 0;
   document.getElementById('graficos-media-mensal').textContent = `R$ ${moeda(mediaMensal)}`;
+
+  const totalTransacoes = gastosFiltrados.length;
+  const totalTransacoesEl = document.getElementById('graficos-total-transacoes');
+  if (totalTransacoesEl) totalTransacoesEl.textContent = String(totalTransacoes);
+
+  const ticketMedio = totalTransacoes > 0 ? totalFiltrado / totalTransacoes : 0;
+  const ticketMedioEl = document.getElementById('graficos-ticket-medio');
+  if (ticketMedioEl) ticketMedioEl.textContent = `R$ ${moeda(ticketMedio)}`;
+
+  const topCategoriaEntry = Object.entries(totaisPorCategoria).sort(([,a],[,b]) => b - a)[0];
+  const topCategoriaEl = document.getElementById('graficos-top-categoria');
+  if (topCategoriaEl) {
+    topCategoriaEl.textContent = topCategoriaEntry
+      ? `${capitalize(topCategoriaEntry[0])} — R$ ${moeda(topCategoriaEntry[1])}`
+      : 'Nenhuma categoria filtrada.';
+  }
+
+  const topCartaoEntry = Object.entries(totaisPorCartao).sort(([,a],[,b]) => b - a)[0];
+  const topCartaoEl = document.getElementById('graficos-top-cartao');
+  if (topCartaoEl) {
+    topCartaoEl.textContent = topCartaoEntry
+      ? `${cartoesCfg[topCartaoEntry[0]]?.label || capitalize(topCartaoEntry[0])} — R$ ${moeda(topCartaoEntry[1])}`
+      : 'Nenhum cartão filtrado.';
+  }
 }
 
 // Função para limpar filtros (marca todos)
@@ -4912,8 +5570,9 @@ function limparFiltros() {
 }
 
 // Inicializa filtros e gráficos ao abrir modal (MODIFICADA)
-btnOpenGraficos.addEventListener('click', () => {
+btnHistoricoGraficos?.addEventListener('click', () => {
   modalGraficos.classList.remove('hidden');
+  updateFloatingMenuVisibility();
 
   // Pega cartões únicos dos gastos atuais
   const cartoesUnicos = Array.from(new Set(allGastosDocs.map(doc => (doc.data().cartao || '').toLowerCase()).filter(c => c)));
@@ -4933,6 +5592,7 @@ btnOpenGraficos.addEventListener('click', () => {
 
 modalGraficosClose.addEventListener('click', () => {
   modalGraficos.classList.add('hidden');
+  updateFloatingMenuVisibility();
   if (chartCategorias) {
     chartCategorias.destroy();
     chartCategorias = null;
@@ -4944,6 +5604,10 @@ modalGraficosClose.addEventListener('click', () => {
   if (chartTendenciaCategorias) { // NOVO: Destrói o gráfico de tendência
     chartTendenciaCategorias.destroy();
     chartTendenciaCategorias = null;
+  }
+  if (chartHistoricoMensal) {
+    chartHistoricoMensal.destroy();
+    chartHistoricoMensal = null;
   }
 });
 
@@ -5023,12 +5687,13 @@ function gerarInsights() {
   // Insight: Alerta: Orçamento Estourado!
   const totalGasto = (resumo.historicoMes || 0) + (resumo.parcelasMes || 0) + (resumo.fixosMes || 0);
   const totalLimite = ['fixo', 'parcelado', 'variavel'].reduce((acc, tipo) => acc + getEnvelopeMeta(tipo), 0);
-  const economia = totalLimite - totalGasto;
+  const reservasTotais = ['fixo', 'parcelado', 'variavel'].reduce((acc, tipo) => acc + (Number(envelopes[tipo]?.reservado || 0)), 0);
+  const economia = totalLimite - (totalGasto + reservasTotais);
   if (economia < 0) {
     insights.push({
       icon: '🚨',
-      title: 'Alerta: Orçamento Estourado!',
-      description: `Você já ultrapassou seu orçamento em R$ ${moeda(Math.abs(economia))} este mês.`,
+      title: 'Alerta: Limite mensal estourado!',
+      description: `Gastos e reservas ultrapassaram o orçamento em R$ ${moeda(Math.abs(economia))} este mês.`,
       type: 'error'
     });
   }
@@ -5036,8 +5701,8 @@ function gerarInsights() {
   if (economia > 0) {
     insights.push({
       icon: '✅',
-      title: 'Sobra positiva nas metas',
-      description: `Você ainda tem R$ ${moeda(economia)} disponível dentro das metas do mês. Considere destinar para reservas futuras ou investimentos.`,
+      title: 'Limites ainda com folga',
+      description: `Há R$ ${moeda(economia)} livres dentro dos limites definidos. Considere destinar essa folga para reservas futuras ou investimentos.`,
       type: 'success'
     });
   }
@@ -5086,25 +5751,33 @@ function gerarInsights() {
     if (!meta) return;
     const gastoAtual = getEnvelopeGastoAtual(tipo);
     const reservado = Number(envelopes[tipo]?.reservado || 0);
-    const disponivel = Math.max(0, meta - gastoAtual - reservado);
-    const faltaMeta = Math.max(0, meta - gastoAtual);
+    const comprometido = gastoAtual + reservado;
+    const limiteLivre = Math.max(0, meta - comprometido);
+    const excedente = comprometido > meta ? comprometido - meta : 0;
     const tituloEnvelope = envelopeConfig[tipo]?.titulo || tipo;
 
-    if (disponivel > 0 && saldoProjetado > 0) {
+    if (limiteLivre > 0 && saldoProjetado > 0) {
       insights.push({
         icon: '🎯',
         title: `Reserve no envelope de ${tituloEnvelope.toLowerCase()}`,
-        description: `Há R$ ${moeda(disponivel)} ainda livres nesta meta. Converta em reserva para reforçar objetivos futuros diretamente pelos envelopes.`,
+        description: `Há R$ ${moeda(limiteLivre)} ainda livres neste limite. Converta em reserva ou redirecione para objetivos futuros diretamente pelos envelopes.`,
         type: 'success'
       });
     }
 
-    if (faltaMeta > 0 && hoje.getDate() > 20) {
+    if (excedente > 0) {
+      insights.push({
+        icon: '⚠️',
+        title: `${tituloEnvelope} estourou o limite`,
+        description: `Gastos e reservas somam R$ ${moeda(comprometido)}, superando o limite em R$ ${moeda(excedente)}. Reavalie despesas ou ajuste o teto para o próximo mês.`,
+        type: 'warning'
+      });
+    } else if (limiteLivre > 0 && hoje.getDate() > 20) {
       insights.push({
         icon: '⏳',
-        title: `Meta de ${tituloEnvelope.toLowerCase()} a alcançar`,
-        description: `Ainda faltam R$ ${moeda(faltaMeta)} para atingir a meta deste envelope no mês atual. Ajuste gastos ou aumente aportes planejados.`,
-        type: 'warning'
+        title: `Folga restante em ${tituloEnvelope.toLowerCase()}`,
+        description: `Restam R$ ${moeda(limiteLivre)} de margem nos últimos dias do mês. Planeje se vale reservar essa folga ou ajustar o limite estabelecido.`,
+        type: 'info'
       });
     }
 
@@ -5159,7 +5832,8 @@ function gerarInsights() {
     return;
   }
   
-  insights.forEach(insight => {
+  const maxVisiveis = MAX_INSIGHTS_VISIBLE;
+  const criarCardInsight = (insight) => {
     const div = document.createElement('div');
     div.className = `p-3 rounded-lg border-l-4 ${
       insight.type === 'success' ? 'bg-green-50 dark:bg-green-900/20 border-green-500' :
@@ -5181,8 +5855,43 @@ function gerarInsights() {
         </div>
       </div>
     `;
-    container.appendChild(div);
+    return div;
+  };
+
+  insights.slice(0, maxVisiveis).forEach(insight => {
+    container.appendChild(criarCardInsight(insight));
   });
+
+  const extras = insights.slice(maxVisiveis);
+  if (extras.length > 0) {
+    const extrasWrapper = document.createElement('div');
+    extrasWrapper.className = 'space-y-3 hidden mt-3';
+    extrasWrapper.dataset.insightsExtra = 'true';
+    extras.forEach(insight => {
+      extrasWrapper.appendChild(criarCardInsight(insight));
+    });
+
+    const toggleBtn = document.createElement('button');
+    toggleBtn.type = 'button';
+    toggleBtn.className = 'text-xs font-semibold text-indigo-600 dark:text-indigo-300 hover:underline flex items-center gap-2 mt-3';
+    toggleBtn.setAttribute('aria-expanded', 'false');
+    const labelSpan = document.createElement('span');
+    labelSpan.textContent = INSIGHTS_TOGGLE_LABELS.showMore;
+    const icon = document.createElement('i');
+    icon.className = 'fa fa-chevron-down text-[0.7rem]';
+    toggleBtn.append(labelSpan, icon);
+    toggleBtn.addEventListener('click', () => {
+      const estavaOculto = extrasWrapper.classList.contains('hidden');
+      extrasWrapper.classList.toggle('hidden');
+      const expanded = estavaOculto;
+      toggleBtn.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+      labelSpan.textContent = expanded ? INSIGHTS_TOGGLE_LABELS.showLess : INSIGHTS_TOGGLE_LABELS.showMore;
+      icon.className = expanded ? 'fa fa-chevron-up text-[0.7rem]' : 'fa fa-chevron-down text-[0.7rem]';
+    });
+
+    container.appendChild(extrasWrapper);
+    container.appendChild(toggleBtn);
+  }
 }
 
 
