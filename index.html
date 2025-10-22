@@ -297,11 +297,11 @@
   
   /* Transições suaves para o botão flutuante */
   body {
-    padding-bottom: 5.5rem;
+    padding-bottom: 4.5rem;
   }
   @media (min-width: 768px) {
     body {
-      padding-bottom: 6rem;
+      padding-bottom: 5.25rem;
     }
   }
 
@@ -836,7 +836,7 @@ html.dark .mobile-tab-button {
   </div>
 </div>
 
-<main class="container mx-auto px-4 py-6 pb-32 md:pb-20 grid grid-cols-1 lg:grid-cols-4 gap-6">
+<main class="container mx-auto px-4 py-4 pb-24 md:pb-16 grid grid-cols-1 lg:grid-cols-4 gap-6">
 
   <!-- LEFT: main (resumo + histórico + parcelados) -->
   <section id="painel-gastos" class="mobile-panel hidden lg:block lg:col-span-3 space-y-6">
@@ -1511,14 +1511,6 @@ html.dark .mobile-tab-button {
   <div class="relative w-full max-w-md px-4 pb-4">
     <nav class="floating-btn-transition relative bg-white/95 dark:bg-gray-900/90 border border-gray-200 dark:border-gray-700 shadow-2xl rounded-full px-4 py-3 flex items-end justify-between gap-2 pointer-events-auto backdrop-blur">
       <div class="pointer-events-none absolute inset-x-12 top-2 mx-auto h-1 rounded-full bg-gradient-to-r from-blue-200 via-blue-400 to-blue-200 opacity-60 dark:from-blue-900 dark:via-blue-600 dark:to-blue-900"></div>
-      <button id="btn-quick-graficos"
-        class="group flex-1 flex flex-col items-center gap-1 text-[0.7rem] font-semibold text-blue-700 dark:text-blue-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 dark:focus-visible:ring-blue-700"
-        type="button" aria-label="Abrir gráficos">
-        <span class="flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-300 shadow-sm transition-transform group-hover:-translate-y-0.5">
-          <i class="fa fa-chart-line text-lg"></i>
-        </span>
-        Gráficos
-      </button>
       <button id="btn-add-gasto-variavel"
         class="group flex-1 flex flex-col items-center gap-1 text-[0.7rem] font-semibold text-blue-700 dark:text-blue-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 dark:focus-visible:ring-blue-700"
         type="button" aria-label="Adicionar gasto variável">
@@ -4690,7 +4682,6 @@ function initFloatingMenu() {
   const btnAddVariavel = document.getElementById('btn-add-gasto-variavel');
   const btnAddFixo = document.getElementById('btn-add-gasto-fixo');
   const btnAddParcelado = document.getElementById('btn-add-gasto-parcelado');
-  const btnQuickGraficos = document.getElementById('btn-quick-graficos');
   const btnQuickEntradas = document.getElementById('btn-quick-entradas');
   const quickIncomeMenu = document.getElementById('quick-income-menu');
 
@@ -4725,12 +4716,6 @@ function initFloatingMenu() {
     btnAddParcelado.addEventListener('click', () => {
       abrirModalParcelado();
       updateFloatingMenuVisibility();
-    });
-  }
-
-  if (btnQuickGraficos) {
-    btnQuickGraficos.addEventListener('click', () => {
-      abrirModalGraficos();
     });
   }
 
