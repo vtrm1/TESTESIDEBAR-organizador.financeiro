@@ -189,6 +189,13 @@
   .progress-bar{transition:width .4s ease}
   .badge-alert{color:#b91c1c;font-weight:700;margin-left:.4rem}
   .section-card{background:white;border-radius:.75rem;box-shadow:0 1px 2px rgba(0,0,0,.06);padding:1rem}
+  body.has-mobile-action-bar main{padding-bottom:6.5rem}
+  body.has-mobile-action-bar #toast-message{bottom:6.5rem}
+  body.hide-mobile-bar main{padding-bottom:0}
+  @supports(padding:env(safe-area-inset-bottom)){
+    body.has-mobile-action-bar main{padding-bottom:calc(6.5rem + env(safe-area-inset-bottom))}
+    body.has-mobile-action-bar #toast-message{bottom:calc(1.25rem + env(safe-area-inset-bottom))}
+  }
   .resumo-slider{position:relative;overflow:hidden;touch-action:pan-y}
   .resumo-slider-track{display:flex;gap:0;transition:transform .4s ease}
   .resumo-slide{flex:0 0 100%;min-width:100%}
@@ -197,25 +204,6 @@
   .resumo-slider-dot.is-active{background:#2563eb;color:white;box-shadow:0 8px 16px rgba(37,99,235,.25)}
   .resumo-slide-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}
   .resumo-slide-grid .resumo-item{padding:.75rem;border-radius:.75rem;background:#f9fafb;display:flex;flex-direction:column;gap:.35rem}
-  .resumo-item .label{font-size:.8rem;color:#6b7280;text-transform:uppercase;letter-spacing:.05em}
-  .resumo-item .value{font-size:1.5rem;font-weight:700;color:#111827}
-  .resumo-item .hint{font-size:.75rem;color:#9ca3af}
-  .resumo-item.positivo{background:rgba(16,185,129,.1);color:#047857}
-  .resumo-item.positivo .value{color:#047857}
-  .resumo-item.alerta{background:rgba(248,113,113,.12);color:#b91c1c}
-  .resumo-item.alerta .value{color:#b91c1c}
-  .resumo-item.neutro{background:rgba(59,130,246,.08);color:#1d4ed8}
-  .resumo-item.neutro .value{color:#1d4ed8}
-  .dark .resumo-slide-grid .resumo-item{background:rgba(55,65,81,.6);color:#e5e7eb}
-  .dark .resumo-item .value{color:#f3f4f6}
-  .dark .resumo-item .label{color:#9ca3af}
-  .dark .resumo-item .hint{color:#6b7280}
-  .dark .resumo-item.positivo{background:rgba(16,185,129,.18);color:#bbf7d0}
-  .dark .resumo-item.positivo .value{color:#86efac}
-  .dark .resumo-item.alerta{background:rgba(248,113,113,.2);color:#fecaca}
-  .dark .resumo-item.alerta .value{color:#fca5a5}
-  .dark .resumo-item.neutro{background:rgba(59,130,246,.18);color:#bfdbfe}
-  .dark .resumo-item.neutro .value{color:#93c5fd}
   .resumo-slider-dots{display:flex;gap:.4rem}
   .resumo-slider-dots button{width:.5rem;height:.5rem;border-radius:9999px;background:#e5e7eb;border:none;padding:0;transition:transform .25s ease,background .25s ease}
   .resumo-slider-dots button.is-active{background:#2563eb;transform:scale(1.1)}
@@ -237,13 +225,95 @@
   .th{font-weight:600;color:#374151;font-size:.85rem;text-align:left;padding:.5rem .75rem;border-bottom:1px solid #e5e7eb}
   .td{padding:.45rem .75rem;border-bottom:1px solid #f3f4f6;font-size:.95rem;vertical-align:middle}
   .pill{font-size:.75rem;border-radius:9999px;padding:.15rem .5rem;background:#f3f4f6}
-   .danger-banner{background:#fee2e2;border:1px solid #fca5a5;color:#991b1b;padding:1rem;border-radius:.5rem;margin-bottom:1rem;border-left:4px solid #dc2626}
-  
-  /* Transições suaves para o botão flutuante */
-  .floating-btn-transition {
-    transition: transform 0.3s ease, opacity 0.3s ease, bottom 0.3s ease; /* Adicionado bottom */
+  .danger-banner{background:#fee2e2;border:1px solid #fca5a5;color:#991b1b;padding:1rem;border-radius:.5rem;margin-bottom:1rem;border-left:4px solid #dc2626}
+
+  .resumo-hero{
+    background:linear-gradient(160deg,rgba(37,99,235,.18),rgba(79,70,229,.1) 45%,rgba(20,184,166,.18));
+    border:1px solid rgba(99,102,241,.18);
+    position:relative;
+    overflow:hidden;
   }
-  
+  .resumo-hero::before{
+    content:"";
+    position:absolute;
+    inset:-45% -25% auto;
+    height:180%;
+    background:radial-gradient(circle at 15% 20%,rgba(56,189,248,.35),transparent 55%),radial-gradient(circle at 85% 20%,rgba(45,212,191,.35),transparent 60%),linear-gradient(120deg,rgba(59,130,246,.18),rgba(79,70,229,.12));
+    z-index:0;
+    opacity:.75;
+  }
+  .resumo-hero::after{
+    content:"";
+    position:absolute;
+    inset:auto 8% -30% 8%;
+    height:55%;
+    border-radius:50%;
+    filter:blur(45px);
+    background:linear-gradient(120deg,rgba(59,130,246,.35),rgba(129,140,248,.15));
+    opacity:.65;
+  }
+  .resumo-hero > *{position:relative;z-index:1}
+  .resumo-hero-header{display:flex;flex-direction:column;gap:.75rem;margin-bottom:1rem;color:#0f172a}
+  .resumo-hero-header h2{font-size:1.05rem;font-weight:700;letter-spacing:.02em;text-transform:uppercase}
+  .resumo-hero-header p{font-size:.8rem;opacity:.75;max-width:28rem}
+  .resumo-hero-balance{display:flex;align-items:center;gap:.75rem;font-weight:700;background:rgba(15,23,42,.08);padding:.6rem .85rem;border-radius:.9rem;font-size:.85rem;color:#1f2937;box-shadow:inset 0 1px 0 rgba(255,255,255,.4);backdrop-filter:blur(6px)}
+  .resumo-hero-balance strong{font-size:1.35rem;letter-spacing:.03em}
+  .resumo-quick-stats{display:grid;grid-template-columns:repeat(1,minmax(0,1fr));gap:.65rem;margin-bottom:1.25rem}
+  @media(min-width:640px){.resumo-quick-stats{grid-template-columns:repeat(3,minmax(0,1fr))}}
+  .resumo-quick-card{padding:.75rem 1rem;border-radius:1rem;background:rgba(255,255,255,.82);backdrop-filter:blur(10px);border:1px solid rgba(148,163,184,.25);display:flex;flex-direction:column;gap:.35rem;box-shadow:0 15px 35px rgba(15,23,42,.12);position:relative;overflow:hidden}
+  .resumo-quick-card > *{position:relative;z-index:1}
+  .resumo-quick-card::after{content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(135deg,rgba(59,130,246,.16),rgba(79,70,229,.08));opacity:0;transition:opacity .25s ease;pointer-events:none;z-index:0}
+  .resumo-quick-card:hover::after{opacity:1}
+  .resumo-quick-card span{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:#475569}
+  .resumo-quick-card strong{font-size:1.35rem;color:#0f172a}
+  .resumo-quick-card small{font-size:.68rem;color:#64748b;letter-spacing:.05em;text-transform:uppercase}
+  .resumo-quick-card.positivo strong{color:#047857}
+  .resumo-quick-card.alerta strong{color:#b91c1c}
+  .resumo-quick-card.neutro strong{color:#1d4ed8}
+  .resumo-quick-chip{display:flex;align-items:center;gap:.3rem;font-size:.7rem;color:#1e293b;text-transform:uppercase;letter-spacing:.1em;font-weight:600}
+  .resumo-quick-chip i{font-size:.85rem}
+  .resumo-slide-grid{gap:1.15rem}
+  .resumo-item{position:relative;padding:1rem;border-radius:1rem;background:rgba(255,255,255,.82);backdrop-filter:blur(10px);border:1px solid rgba(148,163,184,.2);box-shadow:0 12px 32px rgba(15,23,42,.12);display:flex;flex-direction:column;gap:.45rem;transition:transform .3s ease,box-shadow .3s ease}
+  .resumo-item:hover{transform:translateY(-2px);box-shadow:0 18px 38px rgba(59,130,246,.2)}
+  .resumo-item .label{font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:#1f2937}
+  .resumo-item .hint{font-size:.75rem;color:#4b5563;line-height:1.2;display:block}
+  .resumo-item .value{font-size:1.65rem;font-weight:700;color:#111827}
+  .resumo-item .resumo-icon{width:2.25rem;height:2.25rem;border-radius:.8rem;display:flex;align-items:center;justify-content:center;font-size:1.1rem}
+  .resumo-item .resumo-top{display:flex;justify-content:space-between;align-items:flex-start;gap:1rem}
+  .resumo-item .resumo-meta{display:flex;flex-direction:column;gap:.35rem}
+  .resumo-item.positivo{background:linear-gradient(135deg,rgba(236,253,245,.92),rgba(209,250,229,.85));border-color:rgba(16,185,129,.35)}
+  .resumo-item.positivo .value{color:#047857}
+  .resumo-item.positivo .label{color:#047857}
+  .resumo-item.positivo .resumo-icon{background:rgba(16,185,129,.15);color:#047857}
+  .resumo-item.alerta{background:linear-gradient(135deg,rgba(254,242,242,.95),rgba(254,226,226,.85));border-color:rgba(248,113,113,.35)}
+  .resumo-item.alerta .value{color:#b91c1c}
+  .resumo-item.alerta .label{color:#b91c1c}
+  .resumo-item.alerta .resumo-icon{background:rgba(248,113,113,.18);color:#b91c1c}
+  .resumo-item.neutro{background:linear-gradient(135deg,rgba(219,234,254,.92),rgba(191,219,254,.85));border-color:rgba(59,130,246,.35)}
+  .resumo-item.neutro .value{color:#1d4ed8}
+  .resumo-item.neutro .label{color:#1d4ed8}
+  .resumo-item.neutro .resumo-icon{background:rgba(59,130,246,.18);color:#1d4ed8}
+  .resumo-item.basico{background:linear-gradient(135deg,rgba(248,250,252,.95),rgba(241,245,249,.92));border-color:rgba(148,163,184,.35)}
+  .resumo-item.basico .label{color:#0f172a}
+  .resumo-item.basico .resumo-icon{background:rgba(226,232,240,.6);color:#2563eb}
+  .dark .resumo-hero{background:linear-gradient(150deg,rgba(59,130,246,.15),rgba(67,56,202,.22));border-color:rgba(129,140,248,.4)}
+  .dark .resumo-item{background:rgba(17,24,39,.8);border-color:rgba(99,102,241,.25);box-shadow:0 12px 32px rgba(15,23,42,.45)}
+  .dark .resumo-item .label{color:#cbd5f5}
+  .dark .resumo-item .hint{color:#9ca3af}
+  .dark .resumo-item .value{color:#f9fafb}
+  .dark .resumo-item.positivo{background:linear-gradient(135deg,rgba(6,95,70,.78),rgba(5,150,105,.62));border-color:rgba(16,185,129,.45)}
+  .dark .resumo-item.alerta{background:linear-gradient(135deg,rgba(153,27,27,.78),rgba(220,38,38,.62));border-color:rgba(248,113,113,.45)}
+  .dark .resumo-item.neutro{background:linear-gradient(135deg,rgba(30,64,175,.78),rgba(37,99,235,.6));border-color:rgba(96,165,250,.45)}
+  .dark .resumo-item .resumo-icon{background:rgba(148,163,184,.2)}
+  .dark .resumo-item.basico{background:linear-gradient(135deg,rgba(30,41,59,.86),rgba(15,23,42,.88));border-color:rgba(148,163,184,.35)}
+  .dark .resumo-item.basico .resumo-icon{background:rgba(79,70,229,.25);color:#a5b4fc}
+
+  @media (max-width:1023px){
+    .resumo-item{padding:.9rem}
+    .resumo-item .value{font-size:1.45rem}
+    .resumo-item .resumo-top{flex-direction:column;align-items:flex-start}
+  }
+
   /* Melhorias visuais para o modal */
   .modal-content {
     animation: modalFadeIn 0.3s ease-out;
@@ -547,19 +617,103 @@ html.dark .mobile-tab-button {
     color: #d1d5db; /* dark:text-gray-300 */
   }
 
-/* NOVO: Estilo para o botão flutuante quando invisível */
-#floating-menu.invisible {
-  pointer-events: none;
-  display: none; /* Adicionado para garantir que não ocupe espaço nem receba cliques */
-}
+  .envelopes-toolbar{display:flex;flex-direction:column;gap:1.2rem}
+  .envelopes-toolbar .toolbar-metrics{display:flex;flex-wrap:wrap;gap:.75rem}
+  .envelopes-toolbar .toolbar-actions{display:flex;flex-wrap:wrap;gap:.65rem;align-items:center}
+  @media(min-width:768px){.envelopes-toolbar{flex-direction:row;align-items:flex-start;justify-content:space-between}.envelopes-toolbar .toolbar-actions{justify-content:flex-end}}
+  .envelopes-toolbar .stat-chip{display:flex;flex-direction:column;gap:.25rem;padding:.65rem .9rem;border-radius:1rem;background:rgba(30,64,175,.12);color:#1e3a8a;font-weight:600;font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;min-width:10rem;box-shadow:0 8px 24px rgba(30,64,175,.15)}
+  .envelopes-toolbar .stat-chip span{opacity:.65;font-size:.7rem;letter-spacing:.12em}
+  .dark .envelopes-toolbar .stat-chip{background:rgba(59,130,246,.22);color:#bfdbfe}
+  .envelopes-toolbar .stat-chip strong{font-size:1.15rem;color:inherit}
+  .envelopes-toolbar .stat-chip.chip-green{background:rgba(16,185,129,.14);color:#047857;box-shadow:0 8px 24px rgba(16,185,129,.18)}
+  .dark .envelopes-toolbar .stat-chip.chip-green{background:rgba(16,185,129,.26);color:#6ee7b7}
+  .envelopes-toolbar .toolbar-actions button{border-radius:.85rem;padding:.55rem .9rem;font-weight:600;display:flex;align-items:center;gap:.5rem;font-size:.78rem;letter-spacing:.06em;text-transform:uppercase;border:none;transition:transform .2s ease,box-shadow .2s ease;cursor:pointer}
+  .envelopes-toolbar .toolbar-actions button:active{transform:scale(.97)}
+  .envelopes-toolbar .toolbar-actions .meta-cta{background:linear-gradient(140deg,#10b981,#059669);color:white;box-shadow:0 18px 38px rgba(16,185,129,.35);padding:.65rem 1.15rem}
+  .envelopes-toolbar .toolbar-actions .meta-cta .meta-cta-icon{width:2.1rem;height:2.1rem;border-radius:.7rem;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:1rem}
+  .envelopes-toolbar .toolbar-actions .meta-cta .meta-cta-text{display:flex;flex-direction:column;gap:.1rem;align-items:flex-start}
+  .envelopes-toolbar .toolbar-actions .meta-cta .meta-cta-text strong{font-size:.78rem;letter-spacing:.14em}
+  #btn-envelopes-total-direcionado{font-size:.72rem;letter-spacing:.08em;opacity:.9}
+  .envelopes-toolbar .toolbar-actions .toolbar-secondary{background:rgba(148,163,184,.18);color:#475569;border:1px solid rgba(148,163,184,.35)}
+  .envelopes-toolbar .toolbar-actions .toolbar-ghost{background:transparent;border:1px dashed rgba(59,130,246,.4);color:#2563eb}
+  .dark .envelopes-toolbar .toolbar-actions .meta-cta{box-shadow:0 18px 38px rgba(16,185,129,.45)}
+  .dark .envelopes-toolbar .toolbar-actions .toolbar-secondary{background:rgba(30,41,59,.6);color:#cbd5f5;border-color:rgba(148,163,184,.35)}
+  .dark .envelopes-toolbar .toolbar-actions .toolbar-ghost{color:#93c5fd;border-color:rgba(37,99,235,.55)}
+  .metas-dropdown-wrapper{position:relative}
+  #metas-dropdown{position:absolute;right:0;top:calc(100% + .75rem);width:24rem;max-width:92vw;background:white;border-radius:1.25rem;padding:1.35rem;box-shadow:0 25px 50px rgba(15,23,42,.2);border:1px solid rgba(148,163,184,.25);z-index:20;display:none}
+  #metas-dropdown.show{display:block;animation:fadeIn .2s ease-out}
+  #metas-dropdown .metas-dropdown-head{display:flex;align-items:flex-start;justify-content:space-between;gap:.85rem;margin-bottom:1rem}
+  #metas-dropdown h4{font-size:.95rem;font-weight:700;color:#1f2937;margin-bottom:.25rem}
+  #metas-dropdown p{font-size:.75rem;color:#475569;margin-bottom:0}
+  #metas-dropdown-total{font-size:1.05rem;color:#1f2937;font-weight:700;display:block}
+  #metas-dropdown .metas-dropdown-total-label{font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;color:#475569;margin-bottom:.2rem;text-align:right}
+  #metas-dropdown .meta-row{display:flex;gap:.85rem;padding:.65rem .75rem;border-radius:.9rem;background:rgba(248,250,252,.85);border:1px solid rgba(148,163,184,.2);box-shadow:0 10px 18px rgba(15,23,42,.08)}
+  #metas-dropdown .meta-info{flex:1;display:flex;flex-direction:column;gap:.25rem;font-size:.8rem;color:#475569}
+  #metas-dropdown .meta-info strong{font-size:.9rem;color:#1f2937}
+  #metas-dropdown .meta-progress{height:.35rem;border-radius:9999px;background:rgba(148,163,184,.3);overflow:hidden;position:relative}
+  #metas-dropdown .meta-progress span{display:block;height:100%;background:linear-gradient(135deg,rgba(59,130,246,.7),rgba(79,70,229,.65))}
+  #metas-dropdown .meta-target{font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:#1f2937}
+  #metas-dropdown .meta-target.missing{color:#6b7280;font-style:italic}
+  #metas-dropdown .meta-value{display:flex;flex-direction:column;justify-content:center;align-items:flex-end;font-weight:700;font-size:1.05rem;color:#1f2937;min-width:6.5rem}
+  #metas-dropdown form{margin-top:1.2rem;padding-top:1.2rem;border-top:1px solid rgba(148,163,184,.22);display:grid;gap:.7rem}
+  #metas-dropdown label{font-size:.72rem;font-weight:600;color:#1f2937;text-transform:uppercase;letter-spacing:.08em}
+  #metas-dropdown select,#metas-dropdown input{width:100%;padding:.55rem .75rem;border-radius:.75rem;border:1px solid rgba(148,163,184,.45);background:rgba(255,255,255,.95);font-size:.85rem}
+  #metas-dropdown button[type="submit"]{margin-top:.35rem;border-radius:.85rem;padding:.6rem .95rem;background:linear-gradient(135deg,#2563eb,#1d4ed8);color:white;font-weight:600;font-size:.85rem;display:flex;align-items:center;justify-content:center;gap:.4rem;transition:transform .2s ease,box-shadow .2s ease}
+  #metas-dropdown button[type="submit"] i{font-size:.85rem}
+  #metas-dropdown button[type="submit"]:hover{transform:translateY(-1px);box-shadow:0 12px 24px rgba(37,99,235,.25)}
+  #metas-dropdown-empty{font-size:.82rem;color:#6b7280;padding:.75rem .5rem}
+  .dark #metas-dropdown{background:#111827;border-color:rgba(79,70,229,.35);box-shadow:0 25px 45px rgba(15,23,42,.55)}
+  .dark #metas-dropdown h4{color:#e5e7eb}
+  .dark #metas-dropdown p{color:#94a3b8}
+  .dark #metas-dropdown #metas-dropdown-total{color:#cbd5f5}
+  .dark #metas-dropdown .meta-row{background:rgba(30,41,59,.8);border-color:rgba(79,70,229,.3)}
+  .dark #metas-dropdown .meta-info strong{color:#e5e7eb}
+  .dark #metas-dropdown .meta-info{color:#9ca3af}
+  .dark #metas-dropdown .meta-target{color:#cbd5f5}
+  .dark #metas-dropdown .metas-dropdown-total-label{color:#94a3b8}
+  .dark #metas-dropdown .meta-target.missing{color:#94a3b8}
+  .dark #metas-dropdown .meta-value{color:#e5e7eb}
+  .dark #metas-dropdown label{color:#cbd5f5}
+  .dark #metas-dropdown select,.dark #metas-dropdown input{background:rgba(17,24,39,.9);border-color:rgba(79,70,229,.45);color:#e5e7eb}
 
-#secondary-buttons {
-  pointer-events: none; /* impede cliques quando invisível */
-}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
 
-#floating-menu.open #secondary-buttons {
-  pointer-events: auto; /* permite cliques apenas quando aberto */
-}
+  #bottom-action-bar{position:fixed;bottom:0;left:0;right:0;z-index:40;display:block;pointer-events:none}
+  #bottom-action-bar .inner{margin:0 auto;max-width:520px;padding:0 1.1rem 1.1rem;pointer-events:auto}
+  #bottom-action-bar nav{background:rgba(255,255,255,.92);backdrop-filter:blur(14px);border-radius:1.75rem;border:1px solid rgba(148,163,184,.35);box-shadow:0 18px 50px rgba(15,23,42,.3);padding:.75rem 1rem;display:flex;align-items:flex-end;gap:1.1rem}
+  #bottom-action-bar button{display:flex;flex-direction:column;align-items:center;gap:.3rem;font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;font-weight:600;color:#475569;flex:1;transition:color .2s ease,transform .2s ease}
+  #bottom-action-bar button i{font-size:1.15rem}
+  #bottom-action-bar button span{font-size:.62rem;letter-spacing:.16em}
+  #bottom-action-bar button.active{color:#2563eb}
+  #bottom-action-bar button:active{transform:scale(.96)}
+  #bottom-action-add{justify-content:center;width:4rem;height:4rem;border-radius:1.5rem;background:linear-gradient(140deg,#2563eb,#4f46e5);color:white;box-shadow:0 20px 45px rgba(37,99,235,.42);transform:translateY(-1.65rem);font-size:1.45rem;position:relative;overflow:hidden;flex:0 0 4rem;border:1px solid rgba(255,255,255,.35)}
+  #bottom-action-add i{font-size:1.45rem}
+  #bottom-action-add span{font-size:.6rem;text-transform:uppercase;letter-spacing:.16em}
+  #bottom-action-add::after{content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(135deg,rgba(37,99,235,.25),rgba(129,140,248,.35));opacity:0;transition:opacity .25s ease}
+  #bottom-action-add:hover::after{opacity:1}
+  .dark #bottom-action-bar nav{background:rgba(17,24,39,.92);border-color:rgba(79,70,229,.45);box-shadow:0 20px 55px rgba(15,23,42,.65)}
+  .dark #bottom-action-bar button{color:#cbd5f5}
+  .dark #bottom-action-add{background:linear-gradient(140deg,#4c1d95,#312e81);border-color:rgba(99,102,241,.45)}
+
+  #bottom-action-sheet{position:fixed;inset:0;z-index:50;display:none}
+  #bottom-action-sheet.show{display:block}
+  #bottom-action-sheet .sheet-overlay{position:absolute;inset:0;background:rgba(15,23,42,.55)}
+  #bottom-action-sheet .sheet-panel{position:absolute;left:0;right:0;bottom:0;background:rgba(255,255,255,.97);backdrop-filter:blur(18px);border-radius:1.5rem 1.5rem 0 0;padding:1.5rem;box-shadow:0 -25px 60px rgba(15,23,42,.35);animation:slideUp .24s ease-out}
+  #bottom-action-sheet .sheet-panel h4{font-size:.9rem;text-transform:uppercase;letter-spacing:.14em;color:#475569;text-align:center;margin-bottom:1rem}
+  #bottom-action-sheet .action-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.75rem}
+  #bottom-action-sheet .action-grid button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.45rem;border-radius:1rem;padding:.9rem .5rem;background:linear-gradient(145deg,rgba(241,245,249,.95),rgba(226,232,240,.9));border:1px solid rgba(148,163,184,.25);font-size:.75rem;font-weight:600;color:#1f2937;transition:transform .2s ease,box-shadow .2s ease}
+  #bottom-action-sheet .action-grid button i{font-size:1.35rem}
+  #bottom-action-sheet .action-grid button:hover{transform:translateY(-3px);box-shadow:0 18px 35px rgba(148,163,184,.35)}
+  .dark #bottom-action-sheet .sheet-panel{background:rgba(17,24,39,.92);border:1px solid rgba(79,70,229,.35);box-shadow:0 -25px 60px rgba(15,23,42,.75)}
+  .dark #bottom-action-sheet .sheet-panel h4{color:#e5e7eb}
+  .dark #bottom-action-sheet .action-grid button{background:linear-gradient(145deg,rgba(30,41,59,.92),rgba(15,23,42,.92));border-color:rgba(79,70,229,.35);color:#e5e7eb}
+  .dark #bottom-action-sheet .action-grid button:hover{box-shadow:0 18px 35px rgba(79,70,229,.35)}
+
+  @keyframes slideUp{from{transform:translateY(25px);opacity:0}to{transform:translateY(0);opacity:1}}
+
+  body{padding-bottom:6rem}
+  @media(min-width:1024px){body{padding-bottom:0}}
+  body.hide-mobile-bar{padding-bottom:0}
 
 </style>
 
@@ -780,7 +934,34 @@ html.dark .mobile-tab-button {
     <div id="danger-banner" class="hidden danger-banner">⚠️ Atenção — fixos + parcelas do mês ultrapassam o limite! Verifique.</div>
 
     <!-- RESUMO COM SLIDER -->
-    <div class="section-card gradient-shadow compact-resumo">
+    <div class="section-card gradient-shadow compact-resumo resumo-hero">
+      <div class="resumo-hero-header">
+        <div>
+          <h2>Visão geral do mês</h2>
+          <p>Acompanhe entradas, gastos e saldo real considerando o período filtrado.</p>
+        </div>
+        <div class="resumo-hero-balance" aria-live="polite">
+          <div class="resumo-quick-chip"><i class="fa fa-scale-balanced"></i>Saldo real</div>
+          <strong>R$ <span id="resumo-hero-saldo">0,00</span></strong>
+        </div>
+      </div>
+      <div class="resumo-quick-stats" aria-label="Indicadores rápidos">
+        <div class="resumo-quick-card positivo" data-quick-card="entradas">
+          <div class="resumo-quick-chip"><i class="fa fa-arrow-trend-up"></i>Entradas</div>
+          <strong>R$ <span id="resumo-quick-entradas">0,00</span></strong>
+          <small>Recebido no período</small>
+        </div>
+        <div class="resumo-quick-card alerta" data-quick-card="saidas">
+          <div class="resumo-quick-chip"><i class="fa fa-arrow-trend-down"></i>Saídas</div>
+          <strong>R$ <span id="resumo-quick-saidas">0,00</span></strong>
+          <small>Gastos consolidados</small>
+        </div>
+        <div class="resumo-quick-card" data-quick-card="saldo">
+          <div class="resumo-quick-chip"><i class="fa fa-piggy-bank"></i>Margem livre</div>
+          <strong>R$ <span id="resumo-quick-saldo">0,00</span></strong>
+          <small>Entradas - saídas</small>
+        </div>
+      </div>
       <div class="resumo-slider-nav">
         <button type="button" class="resumo-slider-dot is-active" data-slide="0">Gastos</button>
         <button type="button" class="resumo-slider-dot" data-slide="1">Fluxo</button>
@@ -795,48 +976,104 @@ html.dark .mobile-tab-button {
           <section class="resumo-slide" data-key="gastos">
             <div class="resumo-slide-grid">
               <div class="resumo-item alerta">
-                <span class="label">Total previsto (mês)</span>
-                <span class="value">R$ <span id="resumo-total-mes">0,00</span></span>
-                <span class="hint">Histórico + Parcelas + Fixos</span>
+                <div class="resumo-top">
+                  <div class="flex items-start gap-3">
+                    <span class="resumo-icon"><i class="fa fa-wallet"></i></span>
+                    <div class="resumo-meta">
+                      <span class="label">Total previsto (mês)</span>
+                      <span class="hint">Histórico + Parcelas + Fixos</span>
+                    </div>
+                  </div>
+                  <span class="value">R$ <span id="resumo-total-mes">0,00</span></span>
+                </div>
               </div>
               <div class="resumo-item neutro">
-                <span class="label">Cartões</span>
-                <span class="value">R$ <span id="resumo-cartoes">0,00</span></span>
-                <span class="hint">Inclui parcelas do mês</span>
+                <div class="resumo-top">
+                  <div class="flex items-start gap-3">
+                    <span class="resumo-icon"><i class="fa fa-credit-card"></i></span>
+                    <div class="resumo-meta">
+                      <span class="label">Cartões</span>
+                      <span class="hint">Inclui parcelas do mês</span>
+                    </div>
+                  </div>
+                  <span class="value">R$ <span id="resumo-cartoes">0,00</span></span>
+                </div>
               </div>
-              <div class="resumo-item">
-                <span class="label">PIX</span>
-                <span class="value">R$ <span id="resumo-pix">0,00</span></span>
-                <span class="hint">Pagamentos instantâneos</span>
+              <div class="resumo-item basico">
+                <div class="resumo-top">
+                  <div class="flex items-start gap-3">
+                    <span class="resumo-icon"><i class="fa fa-bolt"></i></span>
+                    <div class="resumo-meta">
+                      <span class="label">PIX</span>
+                      <span class="hint">Pagamentos instantâneos</span>
+                    </div>
+                  </div>
+                  <span class="value">R$ <span id="resumo-pix">0,00</span></span>
+                </div>
               </div>
-              <div class="resumo-item">
-                <span class="label">Parcelas (mês)</span>
-                <span class="value">R$ <span id="resumo-parcelas-mes">0,00</span></span>
-                <span class="hint">Compromissos do mês atual</span>
+              <div class="resumo-item basico">
+                <div class="resumo-top">
+                  <div class="flex items-start gap-3">
+                    <span class="resumo-icon"><i class="fa fa-layer-group"></i></span>
+                    <div class="resumo-meta">
+                      <span class="label">Parcelas (mês)</span>
+                      <span class="hint">Compromissos do mês atual</span>
+                    </div>
+                  </div>
+                  <span class="value">R$ <span id="resumo-parcelas-mes">0,00</span></span>
+                </div>
               </div>
             </div>
           </section>
           <section class="resumo-slide" data-key="fluxo">
             <div class="resumo-slide-grid">
               <div class="resumo-item positivo">
-                <span class="label">Entradas do mês</span>
-                <span class="value">R$ <span id="resumo-entradas-mes">0,00</span></span>
-                <span class="hint">Salários, vendas e extras</span>
+                <div class="resumo-top">
+                  <div class="flex items-start gap-3">
+                    <span class="resumo-icon"><i class="fa fa-arrow-trend-up"></i></span>
+                    <div class="resumo-meta">
+                      <span class="label">Entradas do mês</span>
+                      <span class="hint">Salários, vendas e extras</span>
+                    </div>
+                  </div>
+                  <span class="value">R$ <span id="resumo-entradas-mes">0,00</span></span>
+                </div>
               </div>
               <div class="resumo-item alerta">
-                <span class="label">Saídas totais</span>
-                <span class="value">R$ <span id="resumo-saidas-mes">0,00</span></span>
-                <span class="hint">Todos os gastos do mês</span>
+                <div class="resumo-top">
+                  <div class="flex items-start gap-3">
+                    <span class="resumo-icon"><i class="fa fa-arrow-trend-down"></i></span>
+                    <div class="resumo-meta">
+                      <span class="label">Saídas totais</span>
+                      <span class="hint">Todos os gastos do mês</span>
+                    </div>
+                  </div>
+                  <span class="value">R$ <span id="resumo-saidas-mes">0,00</span></span>
+                </div>
               </div>
               <div class="resumo-item neutro">
-                <span class="label">Saldo projetado</span>
-                <span class="value">R$ <span id="resumo-saldo-projetado">0,00</span></span>
-                <span class="hint">Após rendimento de 1% a.m.</span>
+                <div class="resumo-top">
+                  <div class="flex items-start gap-3">
+                    <span class="resumo-icon"><i class="fa fa-chart-line"></i></span>
+                    <div class="resumo-meta">
+                      <span class="label">Saldo projetado</span>
+                      <span class="hint">Após rendimento de 1% a.m.</span>
+                    </div>
+                  </div>
+                  <span class="value">R$ <span id="resumo-saldo-projetado">0,00</span></span>
+                </div>
               </div>
-              <div class="resumo-item">
-                <span class="label">Ganho em investimentos</span>
-                <span class="value">R$ <span id="resumo-ganho-invest">0,00</span></span>
-                <span class="hint">Comparado ao aporte total</span>
+              <div class="resumo-item basico">
+                <div class="resumo-top">
+                  <div class="flex items-start gap-3">
+                    <span class="resumo-icon"><i class="fa fa-seedling"></i></span>
+                    <div class="resumo-meta">
+                      <span class="label">Ganho em investimentos</span>
+                      <span class="hint">Comparado ao aporte total</span>
+                    </div>
+                  </div>
+                  <span class="value">R$ <span id="resumo-ganho-invest">0,00</span></span>
+                </div>
               </div>
             </div>
           </section>
@@ -846,16 +1083,57 @@ html.dark .mobile-tab-button {
 
     <!-- NOVO: Envelopes orçamentários -->
     <div class="section-card space-y-4" id="painel-envelopes">
-      <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h3 class="text-lg font-bold flex items-center gap-2">🎯 Envelopes do Mês</h3>
-          <p class="text-xs text-gray-500 dark:text-gray-400">Defina limites mensais de gastos, acompanhe a margem disponível e direcione sobras para reservas futuras.</p>
+      <div class="envelopes-toolbar">
+        <div class="toolbar-metrics" id="envelopes-chips">
+          <div class="stat-chip"><span>Margem livre</span><strong id="total-margem-disponivel">R$ 0,00</strong></div>
+          <div class="stat-chip chip-green"><span>Direcionado em metas</span><strong id="total-direcionado-metas">R$ 0,00</strong></div>
         </div>
-        <div class="flex items-center gap-2 text-xs">
-          <button id="btn-envelopes-reservar-todos" type="button" class="px-3 py-1 rounded bg-emerald-600 dark:bg-emerald-700 text-white hover:bg-emerald-700 dark:hover:bg-emerald-800 transition">Reservar sobras</button>
-          <button id="btn-envelopes-limpar-reservas" type="button" class="px-3 py-1 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-100 hover:bg-gray-300 dark:hover:bg-gray-600 transition">Limpar reservas</button>
+        <div class="toolbar-actions metas-dropdown-wrapper">
+          <button id="btn-envelopes-reservar-todos" type="button" class="meta-cta" aria-haspopup="dialog" aria-controls="metas-dropdown" aria-expanded="false">
+            <span class="meta-cta-icon"><i class="fa fa-bullseye"></i></span>
+            <span class="meta-cta-text">
+              <strong>Distribuir margem</strong>
+              <span id="btn-envelopes-total-direcionado">R$ 0,00 reservados</span>
+            </span>
+          </button>
+          <button id="btn-envelopes-limpar-reservas" type="button" class="toolbar-secondary">Liberar reservas</button>
+          <button id="btn-toggle-metas" type="button" class="toolbar-ghost" aria-expanded="false" aria-controls="metas-dropdown">Ver metas</button>
+          <div id="metas-dropdown" role="dialog" aria-hidden="true">
+            <div class="metas-dropdown-head">
+              <div>
+                <h4>Metas do mês</h4>
+                <p>Direcione a margem disponível para os objetivos configurados abaixo.</p>
+              </div>
+              <div>
+                <span class="metas-dropdown-total-label">Total reservado</span>
+                <span id="metas-dropdown-total">R$ 0,00</span>
+              </div>
+            </div>
+            <div id="metas-dropdown-list" class="space-y-2"></div>
+            <form id="form-direcionar-meta" class="text-xs">
+              <div>
+                <label for="meta-selecionada">Meta</label>
+                <select id="meta-selecionada" required class="bg-white dark:bg-transparent"></select>
+              </div>
+              <div>
+                <label for="meta-envelope-origem">Envelope</label>
+                <select id="meta-envelope-origem" required class="bg-white dark:bg-transparent">
+                  <option value="fixo">Custo fixo</option>
+                  <option value="parcelado">Parcelados</option>
+                  <option value="variavel">Variáveis</option>
+                </select>
+              </div>
+              <div>
+                <label for="meta-valor-direcionar">Valor (R$)</label>
+                <input type="number" step="0.01" min="0.01" id="meta-valor-direcionar" required />
+              </div>
+              <div class="text-[0.7rem] text-slate-500 dark:text-slate-400">Margem disponível no envelope: <span id="meta-livre-indicador">R$ 0,00</span></div>
+              <button type="submit"><i class="fa fa-route"></i>Direcionar margem</button>
+            </form>
+          </div>
         </div>
       </div>
+      <p class="text-xs text-gray-500 dark:text-gray-400">Use os envelopes como limites mensais e direcione sobras para metas específicas sem sair da tela.</p>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="envelopes-grid">
         <div class="envelope-card border-l-4 border-blue-500 bg-blue-50/70 dark:bg-slate-800/60 rounded-lg p-4 flex flex-col gap-3" data-envelope-card="fixo">
           <div class="flex flex-col gap-3">
@@ -886,8 +1164,9 @@ html.dark .mobile-tab-button {
                 <span>Margem disponível: R$ <span id="disponivel-fixo">0,00</span></span>
               </div>
             </div>
+            <div class="text-[0.7rem] text-slate-500 dark:text-slate-400" id="envelope-metas-fixo">Sem reservas direcionadas.</div>
             <div class="grid grid-cols-1 gap-2 text-xs">
-              <button data-envelope-action="reservar" data-envelope="fixo" type="button" class="px-3 py-1 rounded bg-emerald-600 dark:bg-emerald-700 text-white hover:bg-emerald-700 dark:hover:bg-emerald-800 transition">Reservar margem disponível</button>
+              <button data-envelope-action="direcionar" data-envelope="fixo" type="button" class="px-3 py-1 rounded bg-emerald-600 dark:bg-emerald-700 text-white hover:bg-emerald-700 dark:hover:bg-emerald-800 transition">Direcionar para metas</button>
               <button data-envelope-action="liberar" data-envelope="fixo" type="button" class="px-3 py-1 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-100 hover:bg-gray-300 dark:hover:bg-gray-600 transition">Liberar reserva</button>
             </div>
           </div>
@@ -922,8 +1201,9 @@ html.dark .mobile-tab-button {
                 <span>Margem disponível: R$ <span id="disponivel-parcelado">0,00</span></span>
               </div>
             </div>
+            <div class="text-[0.7rem] text-slate-500 dark:text-slate-400" id="envelope-metas-parcelado">Sem reservas direcionadas.</div>
             <div class="grid grid-cols-1 gap-2 text-xs">
-              <button data-envelope-action="reservar" data-envelope="parcelado" type="button" class="px-3 py-1 rounded bg-emerald-600 dark:bg-emerald-700 text-white hover:bg-emerald-700 dark:hover:bg-emerald-800 transition">Reservar margem disponível</button>
+              <button data-envelope-action="direcionar" data-envelope="parcelado" type="button" class="px-3 py-1 rounded bg-emerald-600 dark:bg-emerald-700 text-white hover:bg-emerald-700 dark:hover:bg-emerald-800 transition">Direcionar para metas</button>
               <button data-envelope-action="liberar" data-envelope="parcelado" type="button" class="px-3 py-1 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-100 hover:bg-gray-300 dark:hover:bg-gray-600 transition">Liberar reserva</button>
             </div>
           </div>
@@ -958,8 +1238,9 @@ html.dark .mobile-tab-button {
                 <span>Margem disponível: R$ <span id="disponivel-variavel">0,00</span></span>
               </div>
             </div>
+            <div class="text-[0.7rem] text-slate-500 dark:text-slate-400" id="envelope-metas-variavel">Sem reservas direcionadas.</div>
             <div class="grid grid-cols-1 gap-2 text-xs">
-              <button data-envelope-action="reservar" data-envelope="variavel" type="button" class="px-3 py-1 rounded bg-emerald-600 dark:bg-emerald-700 text-white hover:bg-emerald-700 dark:hover:bg-emerald-800 transition">Reservar margem disponível</button>
+              <button data-envelope-action="direcionar" data-envelope="variavel" type="button" class="px-3 py-1 rounded bg-emerald-600 dark:bg-emerald-700 text-white hover:bg-emerald-700 dark:hover:bg-emerald-800 transition">Direcionar para metas</button>
               <button data-envelope-action="liberar" data-envelope="variavel" type="button" class="px-3 py-1 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-100 hover:bg-gray-300 dark:hover:bg-gray-600 transition">Liberar reserva</button>
             </div>
           </div>
@@ -968,7 +1249,7 @@ html.dark .mobile-tab-button {
     </div>
 
     <!-- HISTÓRICO (variáveis + fixos avulsos) -->
-      <div class="section-card">
+      <div class="section-card" id="historico-section">
       <div class="flex items-center justify-between mb-3">
         <h3 class="text-lg font-bold">Histórico (mês)</h3>
         <div class="flex items-center gap-2">
@@ -1014,7 +1295,7 @@ html.dark .mobile-tab-button {
     </div>
 
     <!-- PARCELADOS (painel dedicado) - MELHORADO -->
-    <div class="section-card">
+    <div class="section-card" id="historico-categorias">
       <div class="flex items-center justify-between mb-3">
         <h3 class="text-lg font-bold">Parcelados (seção dedicada)</h3>
       </div>
@@ -1084,7 +1365,7 @@ html.dark .mobile-tab-button {
     </div>
 
     <!-- NOVA SEÇÃO: GASTOS POR CATEGORIA -->
-    <div class="section-card">
+    <div class="section-card" id="painel-insights">
       <h3 class="text-lg font-bold mb-3">Gastos por Categoria (mês)</h3>
       <div id="categorias-list" class="space-y-3">
         <!-- Categorias serão renderizadas aqui pelo JS -->
@@ -1433,33 +1714,44 @@ html.dark .mobile-tab-button {
   </aside>
 </main>
 
-<!-- MELHORADO: Menu flutuante expansível para mobile -->
- <div id="floating-menu" class="fixed top-40 right-6 z-50 md:hidden"> 
-  <!-- Botão principal (sempre visível) -->
-  <button id="btn-main-float" 
-    class="bg-blue-600 dark:bg-blue-700 text-white p-4 rounded-full shadow-lg floating-btn-transition mb-3"
-    aria-label="Menu de ações">
-    <i class="fa fa-plus text-xl" id="main-icon"></i>
-  </button>
-  
-  <!-- Botões secundários (aparecem quando expandido) -->
-  <div id="secondary-buttons" class="space-y-3 opacity-0 transform translate-y-4 transition-all duration-300">
-    <button id="btn-add-gasto-float" 
-      class="bg-blue-500 dark:bg-blue-600 text-white p-3 rounded-full shadow-lg floating-btn-transition block"
-      aria-label="Adicionar gasto">
-      <i class="fa fa-shopping-cart text-lg"></i>
-    </button>
-    
-    <button id="btn-add-fixo-float"
-      class="bg-purple-600 dark:bg-purple-700 text-white p-3 rounded-full shadow-lg floating-btn-transition block"
-      aria-label="Adicionar fixo">
-      <i class="fa fa-calendar text-lg"></i>
-    </button>
-    <button id="btn-add-parcelado-float"
-      class="bg-indigo-600 dark:bg-indigo-700 text-white p-3 rounded-full shadow-lg floating-btn-transition block"
-      aria-label="Adicionar parcelado">
-      <i class="fa fa-file-invoice-dollar text-lg"></i>
-    </button>
+<!-- Barra de ações fixa para mobile -->
+<div id="bottom-action-bar" class="md:hidden">
+  <div class="inner">
+    <nav class="mobile-bottom-nav" aria-label="Ações rápidas">
+      <button type="button" class="action-nav" data-mobile-nav="historico" aria-label="Ir para histórico">
+        <i class="fa fa-chart-pie"></i>
+        <span>Histórico</span>
+      </button>
+      <button type="button" id="bottom-action-add" aria-expanded="false" aria-controls="bottom-action-sheet" aria-label="Abrir ações de lançamento">
+        <i class="fa fa-plus"></i>
+        <span>Lançar</span>
+      </button>
+      <button type="button" class="action-nav" data-mobile-nav="insights" aria-label="Ver insights">
+        <i class="fa fa-lightbulb"></i>
+        <span>Insights</span>
+      </button>
+    </nav>
+  </div>
+</div>
+
+<div id="bottom-action-sheet" class="md:hidden" aria-hidden="true">
+  <div class="sheet-overlay" data-close-sheet></div>
+  <div class="sheet-panel">
+    <h4>Lançar novo item</h4>
+    <div class="action-grid">
+      <button type="button" id="sheet-add-gasto" aria-label="Adicionar gasto variável">
+        <i class="fa fa-shopping-cart"></i>
+        <span>Gasto</span>
+      </button>
+      <button type="button" id="sheet-add-fixo" aria-label="Adicionar gasto fixo">
+        <i class="fa fa-calendar"></i>
+        <span>Fixo</span>
+      </button>
+      <button type="button" id="sheet-add-parcelado" aria-label="Adicionar parcelado">
+        <i class="fa fa-file-invoice-dollar"></i>
+        <span>Parcelado</span>
+      </button>
+    </div>
   </div>
 </div>
 
@@ -1616,6 +1908,11 @@ const baseAppConfig = {
       borderColor: '#7c3aed',
     },
   },
+  metas: [
+    { id: 'emergencia', titulo: 'Fundo de Emergência', descricao: 'Colchão para imprevistos.' },
+    { id: 'investimentos', titulo: 'Investimentos Extras', descricao: 'Aumente seus aportes e juros futuros.' },
+    { id: 'lazer', titulo: 'Lazer Planejado', descricao: 'Reserve para experiências e descanso.' },
+  ],
 };
 
 const appConfig = deepMerge(baseAppConfig, window.__APP_CONFIG__ || {});
@@ -1628,6 +1925,7 @@ const SIMULADOR_DEFAULT_TAXA = appConfig.investimentos?.simulador?.defaultTaxaMe
 const SIMULADOR_DEFAULT_PERIODO = appConfig.investimentos?.simulador?.defaultPeriodoMeses ?? 12;
 const HISTORICO_MENSAL_CHART_CFG = appConfig.charts?.historicoMensal || {};
 const PARCELADOS_PROJECAO_CHART_CFG = appConfig.charts?.parceladosProjecao || {};
+const METAS_CONFIG = Array.isArray(appConfig.metas) ? appConfig.metas : [];
 
 // NOVO: Função para calcular o mês de referência da fatura
 function calcularMesFatura(dataTransacao, diaFechamento, offset = 0) {  // Adicionado offset com default 0
@@ -1701,7 +1999,7 @@ function abrirModalConfirmacao(title, message, callback, modalOrigemId = null) {
   modalConfirmacaoMessage.textContent = message;
   confirmCallback = callback; // Armazena o callback
   modalConfirmacao.classList.remove('hidden');
-  updateFloatingMenuVisibility(); // Esconde o menu flutuante se estiver aberto
+  updateMobileActionBarVisibility(); // Ajusta ações móveis durante modais
 }
 
 function fecharModalConfirmacao() {
@@ -1713,7 +2011,7 @@ function fecharModalConfirmacao() {
     document.getElementById(modalAnteriorAberto).classList.remove('hidden');
     modalAnteriorAberto = null; // Limpa a referência
   }
-  updateFloatingMenuVisibility(); // Mostra o menu flutuante novamente
+  updateMobileActionBarVisibility(); // Ajusta ações móveis durante modais
 }
 
 // Event listeners para o modal de confirmação
@@ -1790,7 +2088,6 @@ let currentSearchTerm = ''; // Termo de busca atual
 let currentGroupBy = ''; // Agrupamento atual
 
 /* NOVO: Variável para controle de scroll */
-let lastScrollTop = 0;
 
 /* ===========================
    NOVO: SISTEMA DE TAGS INTELIGENTE
@@ -2157,6 +2454,378 @@ function normalizarEnvelopesDoc(data = {}) {
   return base;
 }
 
+function normalizarReservasPlanejadas(data = {}) {
+  const metas = {};
+  const porEnvelope = {};
+  const origemMetas = data?.metas && typeof data.metas === 'object' ? data.metas : (data && typeof data === 'object' ? data : {});
+  Object.keys(origemMetas || {}).forEach(metaId => {
+    const entrada = origemMetas[metaId];
+    const valorBruto = typeof entrada === 'object' ? (entrada?.total ?? entrada?.valor ?? entrada?.amount ?? 0) : entrada;
+    const total = Math.max(0, Number(valorBruto) || 0);
+    if (total > 0) {
+      metas[metaId] = { total };
+    }
+  });
+  const origemEnvelope = data?.porEnvelope && typeof data.porEnvelope === 'object' ? data.porEnvelope : {};
+  Object.keys(origemEnvelope).forEach(tipo => {
+    const metasEnvelope = origemEnvelope[tipo] || {};
+    const acumulado = {};
+    Object.keys(metasEnvelope).forEach(metaId => {
+      const total = Math.max(0, Number(metasEnvelope[metaId]) || 0);
+      if (total > 0) {
+        acumulado[metaId] = total;
+      }
+    });
+    if (Object.keys(acumulado).length > 0) {
+      porEnvelope[tipo] = acumulado;
+    }
+  });
+  return { metas, porEnvelope };
+}
+
+function reconciliarReservasComEnvelopes() {
+  ['fixo', 'parcelado', 'variavel'].forEach(tipo => {
+    const metasEnvelope = reservasPlanejadas.porEnvelope?.[tipo] || {};
+    const somaMetas = Object.values(metasEnvelope).reduce((acc, valor) => acc + (Number(valor) || 0), 0);
+    if (!envelopes[tipo]) {
+      envelopes[tipo] = { ...envelopeConfig[tipo] };
+    }
+    if (somaMetas > 0 && somaMetas > (Number(envelopes[tipo]?.reservado) || 0)) {
+      envelopes[tipo].reservado = somaMetas;
+    }
+  });
+}
+
+function getMetaTitulo(metaId = '') {
+  const meta = METAS_CONFIG.find(item => item.id === metaId);
+  if (meta) return meta.titulo;
+  return capitalize(metaId.replace(/[-_]/g, ' '));
+}
+
+function getMetaValorDesejado(metaObj = {}) {
+  if (!metaObj || typeof metaObj !== 'object') return 0;
+  const keys = ['metaMensal', 'valorMensal', 'mensal', 'meta', 'objetivoMensal', 'valorObjetivo', 'alvo', 'target', 'metaValor'];
+  for (const key of keys) {
+    const value = Number(metaObj[key]);
+    if (!Number.isNaN(value) && value > 0) {
+      return value;
+    }
+  }
+  return 0;
+}
+
+function getMargemDisponivelEnvelope(tipo) {
+  const meta = getEnvelopeMeta(tipo);
+  const gasto = getEnvelopeGastoAtual(tipo);
+  const reservado = Number(envelopes[tipo]?.reservado) || 0;
+  return Math.max(0, meta - gasto - reservado);
+}
+
+function getTotalMargemDisponivel() {
+  return ['fixo', 'parcelado', 'variavel'].reduce((acc, tipo) => acc + getMargemDisponivelEnvelope(tipo), 0);
+}
+
+function selecionarEnvelopeMaiorMargem() {
+  let selecionado = 'variavel';
+  let maiorMargem = -1;
+  ['fixo', 'parcelado', 'variavel'].forEach(tipo => {
+    const margem = getMargemDisponivelEnvelope(tipo);
+    if (margem > maiorMargem) {
+      maiorMargem = margem;
+      selecionado = tipo;
+    }
+  });
+  return selecionado;
+}
+
+function atualizarDropdownMetasOptions() {
+  const select = document.getElementById('meta-selecionada');
+  if (!select) return;
+  const valorAtual = select.value;
+  select.innerHTML = '';
+  const disponiveis = METAS_CONFIG.map(meta => ({ id: meta.id, titulo: meta.titulo }));
+  Object.keys(reservasPlanejadas.metas || {}).forEach(metaId => {
+    if (!disponiveis.some(meta => meta.id === metaId)) {
+      disponiveis.push({ id: metaId, titulo: getMetaTitulo(metaId) });
+    }
+  });
+  if (!disponiveis.length) {
+    const option = document.createElement('option');
+    option.value = '';
+    option.disabled = true;
+    option.selected = true;
+    option.textContent = 'Configure metas em appConfig.metas';
+    select.appendChild(option);
+    return;
+  }
+  const placeholder = document.createElement('option');
+  placeholder.value = '';
+  placeholder.disabled = true;
+  placeholder.selected = true;
+  placeholder.textContent = 'Selecione uma meta';
+  select.appendChild(placeholder);
+  disponiveis.forEach(meta => {
+    const option = document.createElement('option');
+    option.value = meta.id;
+    option.textContent = meta.titulo;
+    select.appendChild(option);
+  });
+  if (valorAtual && disponiveis.some(meta => meta.id === valorAtual)) {
+    select.value = valorAtual;
+  }
+}
+
+function atualizarResumoMetas() {
+  const totalMargemEl = document.getElementById('total-margem-disponivel');
+  const totalDirecionadoEl = document.getElementById('total-direcionado-metas');
+  const totalDirecionadoBadge = document.getElementById('btn-envelopes-total-direcionado');
+  const metasDropdownTotal = document.getElementById('metas-dropdown-total');
+  if (totalMargemEl) {
+    totalMargemEl.textContent = `R$ ${moeda(getTotalMargemDisponivel())}`;
+  }
+  const totalDirecionado = Object.values(reservasPlanejadas.metas || {}).reduce((acc, meta) => acc + (Number(meta.total) || 0), 0);
+  if (totalDirecionadoEl) {
+    totalDirecionadoEl.textContent = `R$ ${moeda(totalDirecionado)}`;
+  }
+  if (totalDirecionadoBadge) {
+    totalDirecionadoBadge.textContent = `R$ ${moeda(totalDirecionado)} reservados`;
+  }
+  if (metasDropdownTotal) {
+    metasDropdownTotal.textContent = `R$ ${moeda(totalDirecionado)}`;
+  }
+
+  const list = document.getElementById('metas-dropdown-list');
+  if (list) {
+    list.innerHTML = '';
+    let possuiMetas = false;
+    const metaIdsRegistrados = new Set();
+    METAS_CONFIG.forEach(meta => {
+      metaIdsRegistrados.add(meta.id);
+      const total = Number(reservasPlanejadas.metas?.[meta.id]?.total) || 0;
+      const alvo = getMetaValorDesejado(meta);
+      const percentual = alvo > 0 ? Math.min(100, (total / alvo) * 100) : 0;
+      const row = document.createElement('div');
+      row.className = 'meta-row';
+      row.innerHTML = `
+        <div class="meta-info">
+          <strong>${meta.titulo}</strong>
+          ${meta.descricao ? `<span>${meta.descricao}</span>` : ''}
+          ${alvo > 0
+            ? `<div class="meta-progress" aria-hidden="true"><span style="width:${percentual}%"></span></div>
+               <div class="meta-target">Meta mensal: R$ ${moeda(alvo)} (${percentual.toFixed(0)}% reservado)</div>`
+            : '<div class="meta-target missing">Defina um valor mensal para acompanhar o progresso.</div>'}
+        </div>
+        <div class="meta-value">R$ ${moeda(total)}</div>
+      `;
+      row.addEventListener('click', () => abrirDirecionamentoMetas({ metaId: meta.id }));
+      row.style.cursor = 'pointer';
+      row.setAttribute('role', 'button');
+      row.setAttribute('tabindex', '0');
+      row.addEventListener('keydown', evt => {
+        if (evt.key === 'Enter' || evt.key === ' ') {
+          evt.preventDefault();
+          abrirDirecionamentoMetas({ metaId: meta.id });
+        }
+      });
+      list.appendChild(row);
+      if (total > 0) possuiMetas = true;
+    });
+    Object.keys(reservasPlanejadas.metas || {}).forEach(metaId => {
+      if (metaIdsRegistrados.has(metaId)) return;
+      const total = Number(reservasPlanejadas.metas?.[metaId]?.total) || 0;
+      const row = document.createElement('div');
+      row.className = 'meta-row';
+      row.innerHTML = `
+        <div class="meta-info">
+          <strong>${getMetaTitulo(metaId)}</strong>
+          <span>Meta personalizada</span>
+          <div class="meta-target missing">Configure um objetivo mensal para acompanhar.</div>
+        </div>
+        <div class="meta-value">R$ ${moeda(total)}</div>
+      `;
+      row.addEventListener('click', () => abrirDirecionamentoMetas({ metaId }));
+      row.style.cursor = 'pointer';
+      row.setAttribute('role', 'button');
+      row.setAttribute('tabindex', '0');
+      row.addEventListener('keydown', evt => {
+        if (evt.key === 'Enter' || evt.key === ' ') {
+          evt.preventDefault();
+          abrirDirecionamentoMetas({ metaId });
+        }
+      });
+      list.appendChild(row);
+      if (total > 0) possuiMetas = true;
+    });
+    if (!possuiMetas) {
+      const vazio = document.createElement('div');
+      vazio.id = 'metas-dropdown-empty';
+      vazio.className = 'text-[0.8rem] text-slate-500';
+      vazio.textContent = 'Nenhuma reserva direcionada ainda.';
+      list.appendChild(vazio);
+    }
+  }
+
+  ['fixo', 'parcelado', 'variavel'].forEach(tipo => {
+    const destinoEl = document.getElementById(`envelope-metas-${tipo}`);
+    if (!destinoEl) return;
+    const metasEnvelope = reservasPlanejadas.porEnvelope?.[tipo] || {};
+    const entries = Object.entries(metasEnvelope).filter(([, valor]) => (Number(valor) || 0) > 0);
+    if (!entries.length) {
+      destinoEl.textContent = 'Sem reservas direcionadas.';
+      return;
+    }
+    destinoEl.innerHTML = entries.map(([metaId, valor]) => `${getMetaTitulo(metaId)}: <strong>R$ ${moeda(valor)}</strong>`).join('<br>');
+  });
+}
+
+function atualizarIndicadorMetaLivre() {
+  const selectEnvelope = document.getElementById('meta-envelope-origem');
+  const indicador = document.getElementById('meta-livre-indicador');
+  if (!selectEnvelope || !indicador) return;
+  const tipo = selectEnvelope.value;
+  indicador.textContent = `R$ ${moeda(getMargemDisponivelEnvelope(tipo))}`;
+}
+
+function getReservasPayloadLimpo() {
+  const metas = {};
+  Object.entries(reservasPlanejadas.metas || {}).forEach(([metaId, meta]) => {
+    const total = Number(meta?.total) || 0;
+    if (total > 0) {
+      metas[metaId] = { total };
+    }
+  });
+  const porEnvelope = {};
+  Object.entries(reservasPlanejadas.porEnvelope || {}).forEach(([tipo, mapa]) => {
+    const filtrado = {};
+    Object.entries(mapa || {}).forEach(([metaId, valor]) => {
+      const total = Number(valor) || 0;
+      if (total > 0) filtrado[metaId] = total;
+    });
+    if (Object.keys(filtrado).length > 0) {
+      porEnvelope[tipo] = filtrado;
+    }
+  });
+  return { metas, porEnvelope };
+}
+
+function persistReservasPlanejadas(mensagem = null) {
+  const payload = getReservasPayloadLimpo();
+  return db.collection('limites').doc('conta_unica').set({ reservasPlanejadas: payload }, { merge: true })
+    .then(() => {
+      if (mensagem) showToast(mensagem);
+    })
+    .catch(err => {
+      console.error('Erro ao salvar reservas direcionadas:', err);
+      showToast('Erro ao atualizar metas reservadas.', 'error');
+    });
+}
+
+function atualizarReservaLocal(metaId, envelope, delta) {
+  if (!reservasPlanejadas.metas[metaId]) {
+    reservasPlanejadas.metas[metaId] = { total: 0 };
+  }
+  const atualMeta = Number(reservasPlanejadas.metas[metaId].total) || 0;
+  const novoTotalMeta = Math.max(0, atualMeta + delta);
+  if (novoTotalMeta > 0) {
+    reservasPlanejadas.metas[metaId].total = novoTotalMeta;
+  } else {
+    delete reservasPlanejadas.metas[metaId];
+  }
+
+  if (!reservasPlanejadas.porEnvelope[envelope]) {
+    reservasPlanejadas.porEnvelope[envelope] = {};
+  }
+  const atualEnvelope = Number(reservasPlanejadas.porEnvelope[envelope][metaId]) || 0;
+  const novoTotalEnvelope = Math.max(0, atualEnvelope + delta);
+  if (novoTotalEnvelope > 0) {
+    reservasPlanejadas.porEnvelope[envelope][metaId] = novoTotalEnvelope;
+  } else {
+    delete reservasPlanejadas.porEnvelope[envelope][metaId];
+    if (Object.keys(reservasPlanejadas.porEnvelope[envelope]).length === 0) {
+      delete reservasPlanejadas.porEnvelope[envelope];
+    }
+  }
+}
+
+let metasDropdownAberto = false;
+
+function toggleMetasDropdown(forceAberto = null) {
+  const dropdown = document.getElementById('metas-dropdown');
+  const toggleBtn = document.getElementById('btn-toggle-metas');
+  const ctaBtn = document.getElementById('btn-envelopes-reservar-todos');
+  if (!dropdown) return;
+  const deveAbrir = forceAberto !== null ? forceAberto : !metasDropdownAberto;
+  metasDropdownAberto = deveAbrir;
+  if (deveAbrir) {
+    dropdown.classList.add('show');
+    dropdown.setAttribute('aria-hidden', 'false');
+    if (toggleBtn) toggleBtn.setAttribute('aria-expanded', 'true');
+    if (ctaBtn) ctaBtn.setAttribute('aria-expanded', 'true');
+  } else {
+    dropdown.classList.remove('show');
+    dropdown.setAttribute('aria-hidden', 'true');
+    if (toggleBtn) toggleBtn.setAttribute('aria-expanded', 'false');
+    if (ctaBtn) ctaBtn.setAttribute('aria-expanded', 'false');
+  }
+}
+
+function abrirDirecionamentoMetas({ envelope = null, metaId = null, valor = null } = {}) {
+  atualizarDropdownMetasOptions();
+  toggleMetasDropdown(true);
+  const selectMeta = document.getElementById('meta-selecionada');
+  const selectEnvelope = document.getElementById('meta-envelope-origem');
+  const inputValor = document.getElementById('meta-valor-direcionar');
+  if (selectMeta && metaId && Array.from(selectMeta.options).some(opt => opt.value === metaId)) {
+    selectMeta.value = metaId;
+  }
+  if (selectEnvelope) {
+    if (envelope && ['fixo', 'parcelado', 'variavel'].includes(envelope)) {
+      selectEnvelope.value = envelope;
+    } else {
+      selectEnvelope.value = selecionarEnvelopeMaiorMargem();
+    }
+  }
+  atualizarIndicadorMetaLivre();
+  const margemAtual = getMargemDisponivelEnvelope(selectEnvelope ? selectEnvelope.value : 'variavel');
+  if (inputValor) {
+    const valorSugerido = valor !== null ? valor : margemAtual;
+    inputValor.value = valorSugerido > 0 ? valorSugerido.toFixed(2) : '';
+    if (valorSugerido <= 0) {
+      inputValor.placeholder = 'Sem margem disponível';
+    } else {
+      inputValor.placeholder = '';
+    }
+  }
+}
+
+function direcionarMargemParaMeta(metaId, envelope, valor) {
+  if (!metaId) {
+    showToast('Selecione uma meta para direcionar.', 'warning');
+    return Promise.resolve();
+  }
+  if (!['fixo', 'parcelado', 'variavel'].includes(envelope)) {
+    showToast('Escolha um envelope válido.', 'warning');
+    return Promise.resolve();
+  }
+  const valorNumerico = Math.max(0, Number(valor) || 0);
+  if (valorNumerico <= 0) {
+    showToast('Informe um valor maior que zero.', 'warning');
+    return Promise.resolve();
+  }
+  const margem = getMargemDisponivelEnvelope(envelope);
+  if (valorNumerico > margem + 0.0001) {
+    showToast('Valor excede a margem disponível deste envelope.', 'error');
+    return Promise.resolve();
+  }
+  const reservadoAtual = Number(envelopes[envelope]?.reservado) || 0;
+  return salvarEnvelope(envelope, { reservado: reservadoAtual + valorNumerico }, null)
+    .then(() => {
+      atualizarReservaLocal(metaId, envelope, valorNumerico);
+      atualizarResumoMetas();
+      return persistReservasPlanejadas('Margem direcionada!');
+    });
+}
+
 function getEnvelopeGastoAtual(tipo) {
   const chaveResumo = envelopeConfig[tipo]?.chaveResumo;
   return chaveResumo ? Number(resumo[chaveResumo] || 0) : 0;
@@ -2187,9 +2856,13 @@ function atualizarBarrasVisuais(){
 
 function carregarEnvelopes(){
   db.collection('limites').doc('conta_unica').get().then(doc=>{
-    envelopes = normalizarEnvelopesDoc(doc.exists ? doc.data() : {});
+    const data = doc.exists ? doc.data() : {};
+    envelopes = normalizarEnvelopesDoc(data);
+    reservasPlanejadas = normalizarReservasPlanejadas(data?.reservasPlanejadas || {});
+    reconciliarReservasComEnvelopes();
     atualizarInputsEnvelopes();
     atualizarBarrasVisuais();
+    atualizarResumoMetas();
     gerarInsights();
   });
 }
@@ -2201,6 +2874,7 @@ function salvarEnvelope(tipo, novosValores, mensagem = 'Envelope atualizado com 
   envelopes[tipo] = { ...envelopes[tipo], meta, reservado };
   atualizarInputsEnvelopes();
   atualizarBarrasVisuais();
+  atualizarResumoMetas();
   gerarInsights();
 
   const payload = {
@@ -2211,52 +2885,49 @@ function salvarEnvelope(tipo, novosValores, mensagem = 'Envelope atualizado com 
   };
 
   return db.collection('limites').doc('conta_unica').set(payload, { merge: true })
-    .then(() => showToast(mensagem))
+    .then(() => {
+      if (mensagem) showToast(mensagem);
+    })
     .catch(err => {
       console.error('Erro ao salvar envelope', err);
       showToast('Erro ao salvar envelope.', 'error');
     });
 }
 
-function reservarSaldoDisponivel(tipo) {
-  const meta = Number(envelopes[tipo]?.meta) || 0;
-  const gasto = getEnvelopeGastoAtual(tipo);
-  const reservadoAtual = Number(envelopes[tipo]?.reservado) || 0;
-  const disponivel = Math.max(0, meta - gasto - reservadoAtual);
-  if (disponivel <= 0) {
-    showToast('Não há saldo disponível para reservar neste envelope.', 'warning');
-    return Promise.resolve();
-  }
-  return salvarEnvelope(tipo, { reservado: reservadoAtual + disponivel }, 'Reserva atualizada!');
-}
-
 function limparReservaEnvelope(tipo) {
-  if ((Number(envelopes[tipo]?.reservado) || 0) === 0) {
+  const reservaAtual = Number(envelopes[tipo]?.reservado) || 0;
+  if (reservaAtual === 0) {
     showToast('Nenhuma reserva para liberar.', 'info');
     return Promise.resolve();
   }
-  return salvarEnvelope(tipo, { reservado: 0 }, 'Reserva liberada!');
-}
-
-function reservarSobrasAutomatico() {
-  const acoes = ['fixo', 'parcelado', 'variavel'].map(reservarSaldoDisponivel);
-  return Promise.all(acoes).then(() => atualizarBarrasVisuais());
+  const metasEnvelope = { ...(reservasPlanejadas.porEnvelope?.[tipo] || {}) };
+  return salvarEnvelope(tipo, { reservado: 0 }, 'Reserva liberada!')
+    .then(() => {
+      Object.entries(metasEnvelope).forEach(([metaId, valor]) => {
+        atualizarReservaLocal(metaId, tipo, -Number(valor || 0));
+      });
+      atualizarResumoMetas();
+      return persistReservasPlanejadas();
+    });
 }
 
 function limparReservasAutomatico() {
   const acoes = ['fixo', 'parcelado', 'variavel'].map(limparReservaEnvelope);
-  return Promise.all(acoes).then(() => atualizarBarrasVisuais());
+  return Promise.all(acoes).then(() => {
+    atualizarBarrasVisuais();
+    atualizarResumoMetas();
+  });
 }
 
 function abrirModalGerenciarCartoes() {
   modalGerenciarCartoes.classList.remove('hidden');
   renderListaCartoesExistentes(); // Renderiza a lista de cartões ao abrir
-  updateFloatingMenuVisibility(); // Esconde o menu flutuante
+  updateMobileActionBarVisibility();
 }
 function fecharModalGerenciarCartoes() {
   modalGerenciarCartoes.classList.add('hidden');
   formAddCartao.reset(); // Limpa o formulário
-  updateFloatingMenuVisibility(); // Mostra o menu flutuante
+  updateMobileActionBarVisibility();
 }
 
 function renderListaCartoesExistentes() {
@@ -2865,24 +3536,7 @@ function fecharTodosOsModais() {
 }
 
 function updateFloatingMenuVisibility() {
-  const floatingMenu = document.getElementById('floating-menu');
-  const isModalOpen = !document.getElementById('modal-add-gasto').classList.contains('hidden') ||
-                     !document.getElementById('modal-graficos').classList.contains('hidden') ||
-                     !document.getElementById('modal-fixo').classList.contains('hidden') ||
-                     !document.getElementById('modal-parcelado').classList.contains('hidden') ||
-                     !document.getElementById('modal-graficos-fixos').classList.contains('hidden') ||
-                     !document.getElementById('modal-confirmacao').classList.contains('hidden') ||
-                     !document.getElementById('modal-gerenciar-cartoes').classList.contains('hidden') 
-                     
-  
-  if (isModalOpen) {
-    floatingMenu.classList.add('invisible');
-    floatingMenu.style.display = 'none';
-    if (menuExpanded) toggleFloatingMenu();
-  } else {
-    floatingMenu.classList.remove('invisible');
-    floatingMenu.style.display = 'block';
-  }
+  updateMobileActionBarVisibility();
 }
 
 
@@ -3068,6 +3722,7 @@ function exportarCSVtudo(){
 let unsubLimits, unsubFixos, unsubGastos, unsubParcelados, unsubConfig, unsubEntradas, unsubInvestimentos;
 let allParceladosDocs = [];
 let allGastosDocs = [];
+let reservasPlanejadas = { metas: {}, porEnvelope: {} };
 
 // Funções para mostrar/ocultar spinners
 function showSpinner(id) {
@@ -3096,9 +3751,13 @@ function startObservers(){
   showSpinner('cartoes-loading-spinner'); // Adicionado spinner para cartões
 
   unsubLimits = db.collection('limites').doc('conta_unica').onSnapshot(doc=>{
-    envelopes = normalizarEnvelopesDoc(doc.exists ? doc.data() : {});
+    const data = doc.exists ? doc.data() : {};
+    envelopes = normalizarEnvelopesDoc(data);
+    reservasPlanejadas = normalizarReservasPlanejadas(data?.reservasPlanejadas || {});
+    reconciliarReservasComEnvelopes();
     atualizarInputsEnvelopes();
     atualizarBarrasVisuais();
+    atualizarResumoMetas();
     gerarInsights();
   }, err => {
     console.error("Erro ao carregar envelopes:", err);
@@ -3962,11 +4621,49 @@ function atualizarResumoRapido() {
   const saldo = entradasMes - totalGastosMes;
   const saldoProjetado = saldo + ganhoInvest;
 
+  atualizarResumoQuickCards({ entradasMes, totalGastosMes, saldo });
   atualizarResumoIndicadoresFinanceiros({ entradasMes, totalGastosMes, saldoProjetado, ganhoInvest });
 
   resumoFinanceiroAtual = { entradasMes, totalGastosMes, saldoProjetado, ganhoInvest };
   atualizarSimuladorResultados();
   return resumoFinanceiroAtual;
+}
+
+function atualizarResumoQuickCards({ entradasMes, totalGastosMes, saldo }) {
+  const entradasEl = document.getElementById('resumo-quick-entradas');
+  const saidasEl = document.getElementById('resumo-quick-saidas');
+  const saldoEl = document.getElementById('resumo-quick-saldo');
+  const heroSaldoEl = document.getElementById('resumo-hero-saldo');
+
+  if (entradasEl) entradasEl.textContent = moeda(entradasMes);
+  if (saidasEl) saidasEl.textContent = moeda(totalGastosMes);
+  if (saldoEl) saldoEl.textContent = moeda(saldo);
+  if (heroSaldoEl) heroSaldoEl.textContent = moeda(saldo);
+
+  const entradasCard = document.querySelector('[data-quick-card="entradas"]');
+  if (entradasCard) {
+    entradasCard.classList.remove('alerta', 'neutro', 'positivo');
+    entradasCard.classList.add(entradasMes > 0 ? 'positivo' : 'neutro');
+  }
+
+  const saidasCard = document.querySelector('[data-quick-card="saidas"]');
+  if (saidasCard) {
+    saidasCard.classList.remove('alerta', 'neutro', 'positivo');
+    const excedeu = entradasMes > 0 && totalGastosMes > entradasMes;
+    saidasCard.classList.add(excedeu ? 'alerta' : 'neutro');
+  }
+
+  const saldoCard = document.querySelector('[data-quick-card="saldo"]');
+  if (saldoCard) {
+    saldoCard.classList.remove('alerta', 'neutro', 'positivo');
+    if (saldo > 0) {
+      saldoCard.classList.add('positivo');
+    } else if (saldo < 0) {
+      saldoCard.classList.add('alerta');
+    } else {
+      saldoCard.classList.add('neutro');
+    }
+  }
 }
 
 function atualizarResumoIndicadoresFinanceiros({ entradasMes, totalGastosMes, saldoProjetado, ganhoInvest }) {
@@ -4391,8 +5088,8 @@ if (envelopesGrid) {
     const tipo = btn.getAttribute('data-envelope');
     const acao = btn.getAttribute('data-envelope-action');
     if (!tipo || !acao) return;
-    if (acao === 'reservar') {
-      reservarSaldoDisponivel(tipo);
+    if (acao === 'direcionar') {
+      abrirDirecionamentoMetas({ envelope: tipo });
     } else if (acao === 'liberar') {
       limparReservaEnvelope(tipo);
     }
@@ -4403,7 +5100,7 @@ const reservarTodosBtn = document.getElementById('btn-envelopes-reservar-todos')
 if (reservarTodosBtn) {
   reservarTodosBtn.addEventListener('click', e => {
     e.preventDefault();
-    reservarSobrasAutomatico();
+    abrirDirecionamentoMetas({ envelope: selecionarEnvelopeMaiorMargem() });
   });
 }
 
@@ -4414,6 +5111,49 @@ if (limparReservasBtn) {
     limparReservasAutomatico();
   });
 }
+
+const toggleMetasBtn = document.getElementById('btn-toggle-metas');
+if (toggleMetasBtn) {
+  toggleMetasBtn.addEventListener('click', e => {
+    e.preventDefault();
+    toggleMetasDropdown();
+  });
+}
+
+const metaEnvelopeSelect = document.getElementById('meta-envelope-origem');
+if (metaEnvelopeSelect) {
+  metaEnvelopeSelect.addEventListener('change', () => atualizarIndicadorMetaLivre());
+  atualizarIndicadorMetaLivre();
+}
+
+const metasForm = document.getElementById('form-direcionar-meta');
+if (metasForm) {
+  metasForm.addEventListener('submit', e => {
+    e.preventDefault();
+    const metaId = document.getElementById('meta-selecionada')?.value || '';
+    const envelope = document.getElementById('meta-envelope-origem')?.value || '';
+    const valorInput = document.getElementById('meta-valor-direcionar');
+    const valor = valorInput?.value || '';
+    direcionarMargemParaMeta(metaId, envelope, valor).then(() => {
+      atualizarIndicadorMetaLivre();
+      if (valorInput) {
+        valorInput.value = '';
+      }
+    });
+  });
+}
+
+document.addEventListener('click', e => {
+  if (!metasDropdownAberto) return;
+  const dropdown = document.getElementById('metas-dropdown');
+  const toggleBtnLocal = document.getElementById('btn-toggle-metas');
+  if (!dropdown) return;
+  if (!dropdown.contains(e.target) && (!toggleBtnLocal || !toggleBtnLocal.contains(e.target))) {
+    toggleMetasDropdown(false);
+  }
+});
+
+atualizarDropdownMetasOptions();
 
 /* ===========================
    FILTRO MESES POPULATION helper (GERAL)
@@ -4453,66 +5193,102 @@ document.getElementById('filtro-mes').addEventListener('change', ()=>{
 
 
 /* ===========================
-   NOVO: MENU FLUTUANTE EXPANSÍVEL PARA MOBILE
+   NAV INFERIOR PARA MOBILE
    =========================== */
-let isFloatingMenuExpanded = false;
+let mobileActionSheetOpen = false;
 
-function initFloatingMenu() {
-  const btnMainFloat = document.getElementById('btn-main-float');
-  const secondaryButtons = document.getElementById('secondary-buttons');
-  const mainIcon = document.getElementById('main-icon');
-  const btnAddFixoFloat = document.getElementById('btn-add-fixo-float');
+function syncMobileActionBarSpacing() {
+  const actionBar = document.getElementById('bottom-action-bar');
+  if (!actionBar) return;
+  const isHidden = actionBar.classList.contains('hidden') || document.body.classList.contains('hide-mobile-bar');
+  const shouldEnable = window.innerWidth < 768 && !isHidden;
+  document.body.classList.toggle('has-mobile-action-bar', shouldEnable);
+}
 
-  // Toggle do menu principal
-  btnMainFloat.addEventListener('click', () => {
-    isFloatingMenuExpanded = !isFloatingMenuExpanded;
-    
-    if (isFloatingMenuExpanded) {
-      // Expande o menu
-      secondaryButtons.classList.remove('opacity-0', 'translate-y-4');
-      secondaryButtons.classList.add('opacity-100', 'translate-y-0');
-      mainIcon.className = 'fa fa-times text-xl';
-      btnMainFloat.style.transform = 'rotate(45deg)'; // Efeito de rotação
+function openMobileActionSheet() {
+  const sheet = document.getElementById('bottom-action-sheet');
+  const addBtn = document.getElementById('bottom-action-add');
+  if (!sheet || !addBtn) return;
+  sheet.classList.add('show');
+  sheet.setAttribute('aria-hidden', 'false');
+  addBtn.setAttribute('aria-expanded', 'true');
+  mobileActionSheetOpen = true;
+}
+
+function closeMobileActionSheet() {
+  const sheet = document.getElementById('bottom-action-sheet');
+  const addBtn = document.getElementById('bottom-action-add');
+  if (!sheet || !addBtn) return;
+  sheet.classList.remove('show');
+  sheet.setAttribute('aria-hidden', 'true');
+  addBtn.setAttribute('aria-expanded', 'false');
+  mobileActionSheetOpen = false;
+}
+
+function initMobileActionBar() {
+  const addBtn = document.getElementById('bottom-action-add');
+  const sheet = document.getElementById('bottom-action-sheet');
+  const overlay = sheet ? sheet.querySelector('[data-close-sheet]') : null;
+  if (!addBtn || !sheet || !overlay) return;
+
+  addBtn.addEventListener('click', () => {
+    if (mobileActionSheetOpen) {
+      closeMobileActionSheet();
     } else {
-      // Recolhe o menu
-      secondaryButtons.classList.add('opacity-0', 'translate-y-4');
-      secondaryButtons.classList.remove('opacity-100', 'translate-y-0');
-      mainIcon.className = 'fa fa-plus text-xl';
-      btnMainFloat.style.transform = 'rotate(0deg)'; // Volta à posição original
+      openMobileActionSheet();
     }
   });
 
-  // Event listener para o novo botão de adicionar fixo
-  btnAddFixoFloat.addEventListener('click', () => {
-    abrirModalFixo();
-    // Recolhe o menu após ação
-    if (isFloatingMenuExpanded) { // Verifica se está expandido antes de recolher
-      isFloatingMenuExpanded = false;
-      secondaryButtons.classList.add('opacity-0', 'translate-y-4');
-      secondaryButtons.classList.remove('opacity-100', 'translate-y-0');
-      mainIcon.className = 'fa fa-plus text-xl';
-      btnMainFloat.style.transform = 'rotate(0deg)';
+  overlay.addEventListener('click', () => closeMobileActionSheet());
+  sheet.addEventListener('click', e => {
+    if (e.target === sheet) closeMobileActionSheet();
+  });
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && mobileActionSheetOpen) {
+      closeMobileActionSheet();
     }
   });
 
-  // Fecha menu ao clicar fora
-  document.addEventListener('click', (e) => {
-    const floatingMenu = document.getElementById('floating-menu');
-    if (!floatingMenu.contains(e.target) && isFloatingMenuExpanded) {
-      isFloatingMenuExpanded = false;
-      secondaryButtons.classList.add('opacity-0', 'translate-y-4');
-      secondaryButtons.classList.remove('opacity-100', 'translate-y-0');
-      mainIcon.className = 'fa fa-plus text-xl';
-      btnMainFloat.style.transform = 'rotate(0deg)';
-    }
+  window.addEventListener('resize', syncMobileActionBarSpacing);
+  syncMobileActionBarSpacing();
+
+  const navButtons = document.querySelectorAll('#bottom-action-bar .action-nav');
+  navButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = btn.dataset.mobileNav;
+      if (target) {
+        const el = document.getElementById(`${target}-section`) || document.getElementById(`painel-${target}`) || document.getElementById(target);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        navButtons.forEach(b => b.classList.toggle('active', b === btn));
+        closeMobileActionSheet();
+      }
+    });
   });
+
+  const sheetActions = [
+    { id: 'sheet-add-gasto', handler: () => abrirModal() },
+    { id: 'sheet-add-fixo', handler: () => abrirModalFixo() },
+    { id: 'sheet-add-parcelado', handler: () => abrirModalParcelado() },
+  ];
+  sheetActions.forEach(({ id, handler }) => {
+    const button = document.getElementById(id);
+    if (!button) return;
+    button.addEventListener('click', () => {
+      handler();
+      closeMobileActionSheet();
+    });
+  });
+
+  updateMobileActionBarVisibility();
 }
 
 /* ===========================
    MODAL DE ADICIONAR GASTOS
    =========================== */
 const btnOpenAddGasto = document.getElementById('btn-open-add-gasto');
-const btnAddGastoFloat = document.getElementById('btn-add-gasto-float');
 const modalAddGasto = document.getElementById('modal-add-gasto');
 const modalClose = document.getElementById('modal-close');
 const modalCancel = document.getElementById('modal-cancel');
@@ -4557,21 +5333,6 @@ function fecharModal() {
 }
 
 btnOpenAddGasto.addEventListener('click', abrirModal);
-btnAddGastoFloat.addEventListener('click', () => {
-  abrirModal();
-  // Recolhe o menu flutuante se estiver expandido
-  if (isFloatingMenuExpanded) {
-    const secondaryButtons = document.getElementById('secondary-buttons');
-    const mainIcon = document.getElementById('main-icon');
-    const btnMainFloat = document.getElementById('btn-main-float');
-    
-    isFloatingMenuExpanded = false;
-    secondaryButtons.classList.add('opacity-0', 'translate-y-4');
-    secondaryButtons.classList.remove('opacity-100', 'translate-y-0');
-    mainIcon.className = 'fa fa-plus text-xl';
-    btnMainFloat.style.transform = 'rotate(0deg)';
-  }
-});
 
 // REMOVIDO: fecharTodosOsModais() duplicado aqui, já existe no topo do script
 
@@ -5572,7 +6333,7 @@ function limparFiltros() {
 // Inicializa filtros e gráficos ao abrir modal (MODIFICADA)
 btnHistoricoGraficos?.addEventListener('click', () => {
   modalGraficos.classList.remove('hidden');
-  updateFloatingMenuVisibility();
+  updateMobileActionBarVisibility();
 
   // Pega cartões únicos dos gastos atuais
   const cartoesUnicos = Array.from(new Set(allGastosDocs.map(doc => (doc.data().cartao || '').toLowerCase()).filter(c => c)));
@@ -5592,7 +6353,7 @@ btnHistoricoGraficos?.addEventListener('click', () => {
 
 modalGraficosClose.addEventListener('click', () => {
   modalGraficos.classList.add('hidden');
-  updateFloatingMenuVisibility();
+  updateMobileActionBarVisibility();
   if (chartCategorias) {
     chartCategorias.destroy();
     chartCategorias = null;
@@ -5656,7 +6417,7 @@ function boot(){
   initHistoricoSearch();
   initHistoricoCollapsible(); // Inicializa a funcionalidade de colapsar/expandir
   initHistoricoActions();     // Inicializa os botões de ação
-  initFloatingMenu(); // NOVO: Inicializa o menu flutuante
+  initMobileActionBar(); // Inicializa barra inferior móvel
 }
 
 
@@ -5896,112 +6657,25 @@ function gerarInsights() {
 
 
 
-/* ===========================
-   NOVO: MENU FLUTUANTE EXPANSÍVEL PARA MOBILE
-   =========================== */
-let menuExpanded = false;
-function toggleFloatingMenu() {
-  const secondaryButtons = document.getElementById('secondary-buttons');
-  const mainIcon = document.getElementById('main-icon');
-  const btnMainFloat = document.getElementById('btn-main-float');
-  menuExpanded = !menuExpanded;
-  if (menuExpanded) {
-    secondaryButtons.classList.remove('opacity-0', 'translate-y-4');
-    secondaryButtons.classList.add('opacity-100', 'translate-y-0');
-    mainIcon.className = 'fa fa-times text-xl';
-    btnMainFloat.style.transform = 'rotate(45deg)';
-    // Certifica-se de que os botões secundários podem ser clicados
-    secondaryButtons.style.pointerEvents = 'auto';
-  } else {
-    secondaryButtons.classList.add('opacity-0', 'translate-y-4');
-    secondaryButtons.classList.remove('opacity-100', 'translate-y-0');
-    mainIcon.className = 'fa fa-plus text-xl';
-    btnMainFloat.style.transform = 'rotate(0deg)';
-    // Impede cliques nos botões secundários quando recolhido
-    secondaryButtons.style.pointerEvents = 'none';
-  }
-}
-
-// Event listeners para o menu flutuante
-document.getElementById('btn-main-float').addEventListener('click', toggleFloatingMenu);
-
-// Event listener para botão de adicionar fixo no menu flutuante
-document.getElementById('btn-add-fixo-float').addEventListener('click', () => {
-  abrirModalFixo();
-  if (isFloatingMenuExpanded) toggleFloatingMenu(); // Fecha o menu se estiver aberto
-});
-
-// Event listener para botão de adicionar parcelado no menu flutuante
-document.getElementById('btn-add-parcelado-float').addEventListener('click', () => {
-  abrirModalParcelado(); // Chama sem argumentos para ADICIONAR
-  if (isFloatingMenuExpanded) toggleFloatingMenu(); // Fecha o menu se estiver aberto
-});
-
-
-// Fecha o menu quando clica fora
-document.addEventListener('click', (e) => {
-  const floatingMenu = document.getElementById('floating-menu');
-  if (menuExpanded && !floatingMenu.contains(e.target)) {
-    toggleFloatingMenu();
-  }
-});
-
-// Melhoria no scroll para esconder/mostrar o menu flutuante
-window.addEventListener('scroll', () => {
-  const st = window.pageYOffset || document.documentElement.scrollTop;
-  const floatingMenu = document.getElementById('floating-menu');
-  // Verifica se algum modal está aberto
+function updateMobileActionBarVisibility() {
+  const actionBar = document.getElementById('bottom-action-bar');
+  if (!actionBar) return;
   const isModalOpen = !document.getElementById('modal-add-gasto').classList.contains('hidden') ||
                      !document.getElementById('modal-graficos').classList.contains('hidden') ||
                      !document.getElementById('modal-fixo').classList.contains('hidden') ||
                      !document.getElementById('modal-parcelado').classList.contains('hidden') ||
                      !document.getElementById('modal-graficos-fixos').classList.contains('hidden') ||
                      !document.getElementById('modal-confirmacao').classList.contains('hidden') ||
-                     !document.getElementById('modal-gerenciar-cartoes').classList.contains('hidden'); // NOVO: Adicionado modal de gerenciar cartões
+                     !document.getElementById('modal-gerenciar-cartoes').classList.contains('hidden');
   if (isModalOpen) {
-    // Se algum modal estiver aberto, esconde completamente o menu e o torna não clicável
-    floatingMenu.classList.add('invisible');
-    floatingMenu.style.display = 'none'; // Garante que não ocupe espaço
-    return;
+    actionBar.classList.add('hidden');
+    document.body.classList.add('hide-mobile-bar');
+    closeMobileActionSheet();
   } else {
-    // Se nenhum modal estiver aberto, mostra o menu e o torna clicável
-    floatingMenu.classList.remove('invisible');
-    floatingMenu.style.display = 'block'; // Garante que esteja visível
+    actionBar.classList.remove('hidden');
+    document.body.classList.remove('hide-mobile-bar');
   }
-  if (st > lastScrollTop && st > 100) {
-    // Scrolling down - esconde o menu
-    floatingMenu.style.transform = 'translateY(100px)';
-    floatingMenu.style.opacity = '0';
-    floatingMenu.classList.add('invisible'); // Torna não clicável
-    floatingMenu.style.display = 'none'; // Garante que não ocupe espaço
-    if (menuExpanded) toggleFloatingMenu(); // Fecha se estiver expandido
-  } else {
-    // Scrolling up - mostra o menu
-    floatingMenu.style.transform = 'translateY(0)';
-    floatingMenu.style.opacity = '1';
-    floatingMenu.classList.remove('invisible'); // Torna clicável
-    floatingMenu.style.display = 'block'; // Garante que esteja visível
-  }
-  lastScrollTop = st <= 0 ? 0 : st;
-});
-// Função para esconder/mostrar menu quando modals abrem/fecham
-function updateFloatingMenuVisibility() {
-  const floatingMenu = document.getElementById('floating-menu');
-  const isModalOpen = !document.getElementById('modal-add-gasto').classList.contains('hidden') ||
-                     !document.getElementById('modal-graficos').classList.contains('hidden') ||
-                     !document.getElementById('modal-fixo').classList.contains('hidden') ||
-                     !document.getElementById('modal-parcelado').classList.contains('hidden') ||
-                     !document.getElementById('modal-graficos-fixos').classList.contains('hidden') ||
-                     !document.getElementById('modal-confirmacao').classList.contains('hidden') ||
-                     !document.getElementById('modal-gerenciar-cartoes').classList.contains('hidden'); // NOVO: Adicionado modal de gerenciar cartões
-  if (isModalOpen) {
-    floatingMenu.classList.add('invisible'); // Torna não clicável
-    floatingMenu.style.display = 'none'; // Garante que não ocupe espaço
-    if (menuExpanded) toggleFloatingMenu(); // Fecha se estiver expandido
-  } else {
-    floatingMenu.classList.remove('invisible'); // Torna clicável
-    floatingMenu.style.display = 'block'; // Garante que esteja visível
-  }
+  syncMobileActionBarSpacing();
 }
 
     /* ===========================
