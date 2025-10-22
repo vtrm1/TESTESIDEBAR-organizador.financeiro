@@ -1052,6 +1052,17 @@ html.dark .mobile-tab-button {
         </div>
       </div>
 
+      <div class="mt-6">
+        <div class="flex items-center justify-between mb-2">
+          <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2"><i class="fa fa-chart-column text-purple-500"></i><span>Projeção de parcelas</span></h4>
+          <span id="parcelados-projecao-janela" class="text-xs text-gray-500 dark:text-gray-400">Próximos meses</span>
+        </div>
+        <div class="relative h-48">
+          <canvas id="grafico-parcelados-projecao" class="w-full h-full"></canvas>
+          <div id="parcelados-projecao-empty" class="absolute inset-0 flex items-center justify-center text-xs text-gray-500 dark:text-gray-400">Cadastre parcelados ativos para visualizar a projeção.</div>
+        </div>
+      </div>
+
       <div class="overflow-x-auto">
         <div id="parcelados-loading-spinner" class="loading-spinner spinner-hidden">
           <i class="fa fa-spinner fa-spin"></i> Carregando parcelados...
@@ -1211,7 +1222,7 @@ html.dark .mobile-tab-button {
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div class="space-y-3">
               <h5 class="text-xs font-semibold text-gray-600 dark:text-gray-200 uppercase tracking-wide">Cenário atual</h5>
-              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-start">
+              <div class="grid grid-cols-1 gap-3">
                 <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 flex flex-col gap-1 h-full">Valor inicial (R$)
                   <input id="simulador-valor-inicial" data-simulador="base" type="number" step="0.01" min="0" class="px-2 py-1 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600 text-right" />
                 </label>
@@ -1228,7 +1239,7 @@ html.dark .mobile-tab-button {
             </div>
             <div class="space-y-3">
               <h5 class="text-xs font-semibold text-gray-600 dark:text-gray-200 uppercase tracking-wide">Comparar cenário</h5>
-              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-start">
+              <div class="grid grid-cols-1 gap-3">
                 <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 flex flex-col gap-1 h-full">Aporte mensal alternativo (R$)
                   <input id="simulador-aporte-alternativo" data-simulador="alternativo" type="number" step="0.01" min="0" class="px-2 py-1 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600 text-right" />
                 </label>
@@ -1588,6 +1599,11 @@ const baseAppConfig = {
       acumuladoColor: '#6366f1',
       mediaColor: '#f97316',
     },
+    parceladosProjecao: {
+      monthsWindow: 6,
+      barColor: 'rgba(129, 140, 248, 0.55)',
+      borderColor: '#7c3aed',
+    },
   },
 };
 
@@ -1600,6 +1616,7 @@ const INSIGHTS_TOGGLE_LABELS = {
 const SIMULADOR_DEFAULT_TAXA = appConfig.investimentos?.simulador?.defaultTaxaMensalPercent ?? 1;
 const SIMULADOR_DEFAULT_PERIODO = appConfig.investimentos?.simulador?.defaultPeriodoMeses ?? 12;
 const HISTORICO_MENSAL_CHART_CFG = appConfig.charts?.historicoMensal || {};
+const PARCELADOS_PROJECAO_CHART_CFG = appConfig.charts?.parceladosProjecao || {};
 
 // NOVO: Função para calcular o mês de referência da fatura
 function calcularMesFatura(dataTransacao, diaFechamento, offset = 0) {  // Adicionado offset com default 0
@@ -2728,9 +2745,14 @@ function renderParcelados(docs){
   
   const mesKey = document.getElementById('filtro-mes').value;
   const hoje = new Date();
-  const alvoKey = (mesKey === 'all' || !mesKey) ? yyyymm(hoje) : mesKey; 
-  const [ay,am] = alvoKey.split('-'); 
-  const refDate = new Date(parseInt(ay), parseInt(am)-1, 1); // Data de referência para o mês selecionado
+  const alvoKey = (mesKey === 'all' || !mesKey) ? yyyymm(hoje) : mesKey;
+  const [ay,am] = alvoKey.split('-');
+  let refDate = new Date(parseInt(ay), parseInt(am)-1, 1); // Data de referência para o mês selecionado
+  if (Number.isNaN(refDate.getTime())) {
+    refDate = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+  }
+
+  renderGraficoParceladosProjecao(docs, refDate);
 
   let totalMes=0, totalRestante=0, countAtivos=0;
 
@@ -4717,6 +4739,7 @@ let chartCartoes = null;
 let chartTendenciaCategorias = null; // NOVO: Variável para o gráfico de tendência
 let chartInvestimentos = null; // NOVO: Gráfico de evolução dos investimentos
 let chartHistoricoMensal = null; // NOVO: Gráfico de resumo mensal do histórico
+let chartParceladosProjecao = null; // NOVO: Projeção de parcelados
 const modalGraficos = document.getElementById('modal-graficos');
 const modalGraficosClose = document.getElementById('modal-graficos-close');
 const btnHistoricoGraficos = document.getElementById('btn-historico-graficos');
@@ -4752,28 +4775,51 @@ function obterSelecionados(prefix) {
 // NOVO: Função auxiliar para obter o intervalo de datas do filtro de período
 function getPeriodoDatas() {
   const hoje = new Date();
-  let startDate = new Date(hoje.getFullYear(), hoje.getMonth(), 1); // Padrão: início do mês atual
-  let endDate = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0); // Padrão: fim do mês atual
+  const filtroMesEl = document.getElementById('filtro-mes');
+  const filtroMesVal = filtroMesEl ? filtroMesEl.value : null;
+  const possuiMesSelecionado = filtroMesVal && filtroMesVal !== 'all';
+  const baseDate = (() => {
+    if (!possuiMesSelecionado) return hoje;
+    const [anoSel, mesSel] = filtroMesVal.split('-');
+    const ano = parseInt(anoSel, 10);
+    const mes = parseInt(mesSel, 10) - 1;
+    if (Number.isNaN(ano) || Number.isNaN(mes)) return hoje;
+    return new Date(ano, mes, 1);
+  })();
 
-  const periodoSelecionado = filtroPeriodoGraficos.value;
+  let startDate = new Date(baseDate.getFullYear(), baseDate.getMonth(), 1); // Padrão: início do mês de referência
+  let endDate = new Date(baseDate.getFullYear(), baseDate.getMonth() + 1, 0); // Padrão: fim do mês de referência
+
+  const periodoSelecionado = filtroPeriodoGraficos?.value || 'current_month';
 
   if (periodoSelecionado === 'last_3_months') {
-    startDate = new Date(hoje.getFullYear(), hoje.getMonth() - 2, 1);
+    startDate = new Date(baseDate.getFullYear(), baseDate.getMonth() - 2, 1);
+    endDate = new Date(baseDate.getFullYear(), baseDate.getMonth() + 1, 0);
   } else if (periodoSelecionado === 'last_6_months') {
-    startDate = new Date(hoje.getFullYear(), hoje.getMonth() - 5, 1);
+    startDate = new Date(baseDate.getFullYear(), baseDate.getMonth() - 5, 1);
+    endDate = new Date(baseDate.getFullYear(), baseDate.getMonth() + 1, 0);
   } else if (periodoSelecionado === 'current_year') {
-    startDate = new Date(hoje.getFullYear(), 0, 1);
+    startDate = new Date(baseDate.getFullYear(), 0, 1);
+    endDate = new Date(baseDate.getFullYear(), 11, 31);
   } else if (periodoSelecionado === 'custom') {
     if (filtroPeriodoStart.value) {
       const [y, m] = filtroPeriodoStart.value.split('-');
-      startDate = new Date(parseInt(y), parseInt(m) - 1, 1);
+      const ano = parseInt(y, 10);
+      const mes = parseInt(m, 10) - 1;
+      if (!Number.isNaN(ano) && !Number.isNaN(mes)) {
+        startDate = new Date(ano, mes, 1);
+      }
     }
     if (filtroPeriodoEnd.value) {
       const [y, m] = filtroPeriodoEnd.value.split('-');
-      endDate = new Date(parseInt(y), parseInt(m), 0); // Último dia do mês
+      const ano = parseInt(y, 10);
+      const mes = parseInt(m, 10);
+      if (!Number.isNaN(ano) && !Number.isNaN(mes)) {
+        endDate = new Date(ano, mes, 0); // Último dia do mês informado
+      }
     }
   }
-  // Para 'current_month', os padrões já estão corretos
+  // Para 'current_month', os valores padrão baseados em baseDate já estão corretos
 
   return { startDate, endDate };
 }
@@ -5101,6 +5147,120 @@ function renderGraficoHistoricoMensal(totaisPorMes = {}) {
         }
       }
     }
+  });
+}
+
+function renderGraficoParceladosProjecao(docs = [], refDate = new Date()) {
+  const canvas = document.getElementById('grafico-parcelados-projecao');
+  const emptyState = document.getElementById('parcelados-projecao-empty');
+  const janelaEl = document.getElementById('parcelados-projecao-janela');
+  if (!canvas) return;
+
+  const ctx = canvas.getContext('2d');
+
+  if (chartParceladosProjecao) {
+    chartParceladosProjecao.destroy();
+    chartParceladosProjecao = null;
+  }
+
+  const mesesJanela = Math.max(1, PARCELADOS_PROJECAO_CHART_CFG.monthsWindow || 6);
+  if (janelaEl) {
+    janelaEl.textContent = mesesJanela === 1 ? 'Próximo mês' : `Próximos ${mesesJanela} meses`;
+  }
+
+  const totaisPorMes = {};
+  const baseRef = new Date(refDate.getFullYear(), refDate.getMonth(), 1);
+
+  docs.forEach(doc => {
+    const dados = doc.data ? doc.data() : doc;
+    if (!dados) return;
+    const valorParcela = Number(dados.valorParcela) || 0;
+    const totalParcelas = parseInt(dados.numParcelas, 10) || 0;
+    if (!valorParcela || totalParcelas <= 0) return;
+    const inicio = dados.dataInicio && dados.dataInicio.toDate ? dados.dataInicio.toDate() : new Date(dados.dataInicio);
+    if (!(inicio instanceof Date) || Number.isNaN(inicio.getTime())) return;
+
+    for (let i = 0; i < totalParcelas; i++) {
+      const mesParcela = addMonths(inicio, i);
+      const key = yyyymm(mesParcela);
+      totaisPorMes[key] = (totaisPorMes[key] || 0) + valorParcela;
+    }
+  });
+
+  const labels = [];
+  const valores = [];
+  for (let i = 0; i < mesesJanela; i++) {
+    const dataMes = addMonths(baseRef, i);
+    const chave = yyyymm(dataMes);
+    labels.push(mmYYYY(chave));
+    valores.push(totaisPorMes[chave] || 0);
+  }
+
+  const possuiValores = valores.some(v => v > 0);
+  if (!possuiValores) {
+    if (emptyState) {
+      emptyState.textContent = docs && docs.length
+        ? 'Nenhuma parcela prevista para o período selecionado.'
+        : 'Cadastre parcelados ativos para visualizar a projeção.';
+      emptyState.classList.remove('hidden');
+    }
+    if (ctx) {
+      ctx.clearRect(0, 0, canvas.width || 0, canvas.height || 0);
+    }
+    return;
+  }
+
+  if (emptyState) emptyState.classList.add('hidden');
+
+  const barColor = PARCELADOS_PROJECAO_CHART_CFG.barColor
+    || (html.classList.contains('dark') ? 'rgba(167, 139, 250, 0.6)' : 'rgba(129, 140, 248, 0.55)');
+  const borderColor = PARCELADOS_PROJECAO_CHART_CFG.borderColor || '#7c3aed';
+
+  chartParceladosProjecao = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Valor mensal projetado',
+        data: valores,
+        backgroundColor: barColor,
+        borderColor,
+        borderWidth: 1.5,
+        borderRadius: 6,
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            callback: val => `R$ ${moeda(val)}`,
+            color: html.classList.contains('dark') ? '#d1d5db' : '#1f2937',
+          },
+          grid: {
+            color: html.classList.contains('dark') ? '#374151' : '#e5e7eb',
+          },
+        },
+        x: {
+          ticks: {
+            color: html.classList.contains('dark') ? '#d1d5db' : '#1f2937',
+          },
+          grid: {
+            display: false,
+          },
+        },
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctxTooltip => `R$ ${moeda(ctxTooltip.parsed.y)}`,
+          },
+        },
+      },
+    },
   });
 }
 
