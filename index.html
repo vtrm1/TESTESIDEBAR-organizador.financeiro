@@ -937,29 +937,14 @@ html.dark .mobile-tab-button {
       </div>
     </div>
 
-<!-- NOVA SEÇÃO: GASTOS POR CATEGORIA -->
-    <div class="section-card">
-      <h3 class="text-lg font-bold mb-3">Gastos por Categoria (mês)</h3>
-      <div id="categorias-list" class="space-y-3">
-        <!-- Categorias serão renderizadas aqui pelo JS -->
-        <div class="text-gray-500 dark:text-gray-400">Nenhum gasto categorizado no mês.</div>
-      </div>
-    </div>
-
-    <!-- NOVO: Dashboard de Insights Inteligentes -->
-    <div class="section-card">
-      <h3 class="text-lg font-bold mb-3">💡 Insights Financeiros</h3>
-      <div id="insights-container" class="space-y-3">
-        <!-- Insights serão gerados automaticamente aqui -->
-        <div class="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg text-green-800 dark:text-green-200">Carregando insights...</div>
-      </div>
-    </div>
-
     <!-- HISTÓRICO (variáveis + fixos avulsos) -->
       <div class="section-card">
       <div class="flex items-center justify-between mb-3">
         <h3 class="text-lg font-bold">Histórico (mês)</h3>
         <div class="flex items-center gap-2">
+          <button id="btn-historico-graficos" class="bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-200 px-3 py-1 rounded text-sm hover:bg-blue-200 dark:hover:bg-blue-900/40 transition-colors">
+            <i class="fa fa-chart-pie mr-1"></i>Gráficos
+          </button>
           <button id="exportar-csv" class="bg-green-600 dark:bg-green-700 text-white px-3 py-1 rounded hover:bg-green-700 dark:hover:bg-green-800 transition-colors">Exportar CSV (mês)</button>
         </div>
       </div>
@@ -1049,6 +1034,24 @@ html.dark .mobile-tab-button {
             <tr><td class="td" colspan="8">Nenhum parcelado para o mês selecionado</td></tr>
           </tbody>
         </table>
+      </div>
+    </div>
+
+    <!-- NOVA SEÇÃO: GASTOS POR CATEGORIA -->
+    <div class="section-card">
+      <h3 class="text-lg font-bold mb-3">Gastos por Categoria (mês)</h3>
+      <div id="categorias-list" class="space-y-3">
+        <!-- Categorias serão renderizadas aqui pelo JS -->
+        <div class="text-gray-500 dark:text-gray-400">Nenhum gasto categorizado no mês.</div>
+      </div>
+    </div>
+
+    <!-- NOVO: Dashboard de Insights Inteligentes -->
+    <div class="section-card">
+      <h3 class="text-lg font-bold mb-3">💡 Insights Financeiros</h3>
+      <div id="insights-container" class="space-y-3">
+        <!-- Insights serão gerados automaticamente aqui -->
+        <div class="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg text-green-800 dark:text-green-200">Carregando insights...</div>
       </div>
     </div>
 
@@ -1155,6 +1158,16 @@ html.dark .mobile-tab-button {
         <div class="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
           <div class="text-xs text-purple-700 dark:text-purple-200 uppercase tracking-wide">Projeção futura</div>
           <div class="text-lg font-bold text-purple-800 dark:text-purple-200">R$ <span id="investimento-projecao">0,00</span></div>
+        </div>
+      </div>
+      <div class="pt-3 border-t border-indigo-100 dark:border-indigo-900/40">
+        <div class="flex items-center justify-between mb-2">
+          <h4 class="text-sm font-semibold text-indigo-800 dark:text-indigo-200 flex items-center gap-2"><i class="fa fa-chart-area"></i>Evolução dos aportes</h4>
+          <span class="text-xs text-gray-500 dark:text-gray-400">Últimos 12 meses</span>
+        </div>
+        <div class="relative h-48">
+          <canvas id="grafico-investimentos" class="w-full h-full"></canvas>
+          <div id="investimentos-grafico-empty" class="absolute inset-0 flex items-center justify-center text-xs text-gray-500 dark:text-gray-400">Cadastre investimentos para visualizar o gráfico.</div>
         </div>
       </div>
       <div id="simulador-juros-compostos" class="bg-white/70 dark:bg-gray-800/60 border border-indigo-100 dark:border-indigo-900 rounded-lg p-4 space-y-3 text-sm">
@@ -1385,13 +1398,7 @@ html.dark .mobile-tab-button {
       <i class="fa fa-shopping-cart text-lg"></i>
     </button>
     
-    <button id="btn-open-graficos" 
-      class="bg-green-600 dark:bg-green-700 text-white p-3 rounded-full shadow-lg floating-btn-transition block"
-      aria-label="Abrir gráficos">
-      <i class="fa fa-chart-pie text-lg"></i>
-    </button>
-    
-    <button id="btn-add-fixo-float" 
+    <button id="btn-add-fixo-float"
       class="bg-purple-600 dark:bg-purple-700 text-white p-3 rounded-full shadow-lg floating-btn-transition block"
       aria-label="Adicionar fixo">
       <i class="fa fa-calendar text-lg"></i>
@@ -3452,6 +3459,7 @@ function renderInvestimentosSidebar(docs = []) {
   let totalMes = 0;
   let totalGeral = 0;
   let totalProjetado = 0;
+  const totaisPorMes = {};
 
   docs.forEach(doc => {
     const data = doc.data();
@@ -3466,6 +3474,7 @@ function renderInvestimentosSidebar(docs = []) {
     const descricao = (data.descricao || '').trim();
 
     totalGeral += valor;
+    totaisPorMes[key] = (totaisPorMes[key] || 0) + valor;
     const mesesPassados = Math.max(0, monthDiff(dt, hoje));
     const valorProjetado = valor * Math.pow(1.01, mesesPassados);
     totalProjetado += valorProjetado;
@@ -3508,11 +3517,114 @@ function renderInvestimentosSidebar(docs = []) {
   painelFinanceiroState.investimentosMes = totalMes;
   painelFinanceiroState.investimentosTotais = totalGeral;
   painelFinanceiroState.investimentosProjetados = totalProjetado;
+  renderGraficoInvestimentos(totaisPorMes);
   atualizarResumoRapido();
   atualizarSaudeFinanceira();
   atualizarSimuladorValoresPadrao();
   atualizarSimuladorResultados();
   atualizarFiltroMeses();
+}
+
+function renderGraficoInvestimentos(totaisPorMes = {}) {
+  const canvas = document.getElementById('grafico-investimentos');
+  const emptyState = document.getElementById('investimentos-grafico-empty');
+  if (!canvas) return;
+
+  const ctx = canvas.getContext('2d');
+  if (chartInvestimentos) {
+    chartInvestimentos.destroy();
+    chartInvestimentos = null;
+  }
+
+  const mesesOrdenados = Object.keys(totaisPorMes || {}).sort();
+  if (mesesOrdenados.length === 0) {
+    if (emptyState) emptyState.classList.remove('hidden');
+    if (ctx) ctx.clearRect(0, 0, canvas.width || 0, canvas.height || 0);
+    return;
+  }
+
+  if (emptyState) emptyState.classList.add('hidden');
+
+  const mesesRecentes = mesesOrdenados.slice(-12);
+  const labels = mesesRecentes.map(mmYYYY);
+  const aportesMensais = mesesRecentes.map(mes => totaisPorMes[mes]);
+  let acumulado = 0;
+  const acumuladoSeries = mesesRecentes.map(mes => {
+    acumulado += totaisPorMes[mes];
+    return acumulado;
+  });
+
+  chartInvestimentos = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        {
+          type: 'bar',
+          label: 'Aportes mensais',
+          data: aportesMensais,
+          backgroundColor: 'rgba(99, 102, 241, 0.35)',
+          borderColor: '#6366f1',
+          borderWidth: 1,
+          borderRadius: 6,
+          yAxisID: 'y'
+        },
+        {
+          type: 'line',
+          label: 'Total acumulado',
+          data: acumuladoSeries,
+          borderColor: '#8b5cf6',
+          backgroundColor: 'rgba(139, 92, 246, 0.2)',
+          fill: false,
+          tension: 0.35,
+          pointRadius: 4,
+          pointBackgroundColor: '#8b5cf6',
+          yAxisID: 'y'
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            callback: val => `R$ ${moeda(val)}`,
+            color: html.classList.contains('dark') ? '#d1d5db' : '#1f2937'
+          },
+          grid: {
+            color: html.classList.contains('dark') ? '#4b5563' : '#e5e7eb'
+          }
+        },
+        x: {
+          ticks: {
+            color: html.classList.contains('dark') ? '#d1d5db' : '#1f2937'
+          },
+          grid: {
+            color: html.classList.contains('dark') ? '#374151' : '#f3f4f6'
+          }
+        }
+      },
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: {
+            color: html.classList.contains('dark') ? '#d1d5db' : '#1f2937'
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label: context => {
+              const label = context.dataset.label || '';
+              return `${label}: R$ ${moeda(context.parsed.y || context.parsed)}`;
+            }
+          }
+        }
+      }
+    }
+  });
 }
 
 function calcularProjecaoJurosCompostos(valorInicial, aporteMensal, taxaPercentual, meses) {
@@ -4511,9 +4623,10 @@ if ('serviceWorker' in navigator) {
 let chartCategorias = null;
 let chartCartoes = null;
 let chartTendenciaCategorias = null; // NOVO: Variável para o gráfico de tendência
+let chartInvestimentos = null; // NOVO: Gráfico de evolução dos investimentos
 const modalGraficos = document.getElementById('modal-graficos');
 const modalGraficosClose = document.getElementById('modal-graficos-close');
-const btnOpenGraficos = document.getElementById('btn-open-graficos');
+const btnHistoricoGraficos = document.getElementById('btn-historico-graficos');
 const filtroCartoesContainer = document.getElementById('filtro-cartoes-container');
 const filtroCategoriasContainer = document.getElementById('filtro-categorias-container');
 const filtroPeriodoGraficos = document.getElementById('filtro-periodo-graficos'); // NOVO
@@ -4970,8 +5083,9 @@ function limparFiltros() {
 }
 
 // Inicializa filtros e gráficos ao abrir modal (MODIFICADA)
-btnOpenGraficos.addEventListener('click', () => {
+btnHistoricoGraficos?.addEventListener('click', () => {
   modalGraficos.classList.remove('hidden');
+  updateFloatingMenuVisibility();
 
   // Pega cartões únicos dos gastos atuais
   const cartoesUnicos = Array.from(new Set(allGastosDocs.map(doc => (doc.data().cartao || '').toLowerCase()).filter(c => c)));
@@ -4991,6 +5105,7 @@ btnOpenGraficos.addEventListener('click', () => {
 
 modalGraficosClose.addEventListener('click', () => {
   modalGraficos.classList.add('hidden');
+  updateFloatingMenuVisibility();
   if (chartCategorias) {
     chartCategorias.destroy();
     chartCategorias = null;
