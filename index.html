@@ -807,36 +807,120 @@ html.dark .mobile-tab-button {
       </div>
     </div>
 
-    <!-- LIMITES (barras) -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div class="section-card border-l-4 border-blue-500">
-        <div class="flex justify-between items-center mb-1">
-          <div class="font-semibold">Custo Fixo</div>
-          <div class="text-sm text-gray-500 dark:text-gray-400">Teto: R$ <input id="limite-fixo-input" type="number" class="w-24 inline-block border px-1 py-0.5 rounded text-right bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" value="1300"/></div>
+    <!-- NOVO: Envelopes orçamentários -->
+    <div class="section-card space-y-4" id="painel-envelopes">
+      <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h3 class="text-lg font-bold flex items-center gap-2">🎯 Envelopes do Mês</h3>
+          <p class="text-xs text-gray-500 dark:text-gray-400">Defina metas mensais, veja quanto falta e direcione sobras para reservas futuras.</p>
         </div>
-        <div class="text-lg font-bold">R$ <span id="gasto-fixo">0,00</span></div>
-        <div class="text-xs text-gray-400 dark:text-gray-500">Restante: R$ <span id="restante-fixo">0,00</span></div>
-        <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mt-2"><div id="progress-fixo" class="progress-bar bg-blue-500 h-2 rounded-full" style="width:100%"></div></div>
+        <div class="flex items-center gap-2 text-xs">
+          <button id="btn-envelopes-reservar-todos" type="button" class="px-3 py-1 rounded bg-emerald-600 dark:bg-emerald-700 text-white hover:bg-emerald-700 dark:hover:bg-emerald-800 transition">Reservar sobras</button>
+          <button id="btn-envelopes-limpar-reservas" type="button" class="px-3 py-1 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-100 hover:bg-gray-300 dark:hover:bg-gray-600 transition">Limpar reservas</button>
+        </div>
       </div>
-
-      <div class="section-card border-l-4 border-green-500">
-        <div class="flex justify-between items-center mb-1">
-          <div class="font-semibold">Parcelado (mês)</div>
-          <div class="text-sm text-gray-500 dark:text-gray-400">Teto: R$ <input id="limite-parcelado-input" type="number" class="w-24 inline-block border px-1 py-0.5 rounded text-right bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" value="1400"/></div>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="envelopes-grid">
+        <div class="envelope-card border-l-4 border-blue-500 bg-blue-50/70 dark:bg-slate-800/60 rounded-lg p-4 flex flex-col gap-3" data-envelope-card="fixo">
+          <div class="flex flex-col gap-3">
+            <div class="flex items-start justify-between gap-3">
+              <div class="space-y-1">
+                <div class="font-semibold text-blue-700 dark:text-blue-200 flex items-center gap-2"><i class="fa fa-house"></i><span>Custo Fixo</span></div>
+                <div class="text-lg font-bold text-slate-900 dark:text-slate-100">R$ <span id="gasto-fixo">0,00</span></div>
+                <div class="text-xs text-slate-500 dark:text-slate-400">Falta para meta: R$ <span id="restante-fixo">0,00</span></div>
+                <div class="text-xs text-slate-500 dark:text-slate-400">Reserva futura: R$ <span id="reserva-fixo">0,00</span></div>
+              </div>
+              <div class="space-y-2 text-xs w-32">
+                <label class="block font-semibold text-slate-600 dark:text-slate-300">Meta mensal
+                  <input id="envelope-fixo-meta" type="number" min="0" step="0.01" class="mt-1 w-full border px-2 py-1 rounded text-right bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" />
+                </label>
+                <label class="block font-semibold text-slate-600 dark:text-slate-300">Reserva
+                  <input id="envelope-fixo-reserva" type="number" min="0" step="0.01" class="mt-1 w-full border px-2 py-1 rounded text-right bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" />
+                </label>
+              </div>
+            </div>
+            <div>
+              <div class="w-full bg-white/60 dark:bg-gray-700 rounded-full h-2 shadow-inner">
+                <div id="progress-fixo" class="progress-bar h-2 rounded-full bg-blue-500" style="width:0%"></div>
+              </div>
+              <div class="flex justify-between text-[0.7rem] text-slate-500 dark:text-slate-400 mt-1">
+                <span>Comprometido: <strong id="percentual-fixo">0%</strong></span>
+                <span>Disponível p/ reservar: R$ <span id="disponivel-fixo">0,00</span></span>
+              </div>
+            </div>
+            <div class="grid grid-cols-1 gap-2 text-xs">
+              <button data-envelope-action="reservar" data-envelope="fixo" type="button" class="px-3 py-1 rounded bg-emerald-600 dark:bg-emerald-700 text-white hover:bg-emerald-700 dark:hover:bg-emerald-800 transition">Reservar saldo disponível</button>
+              <button data-envelope-action="liberar" data-envelope="fixo" type="button" class="px-3 py-1 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-100 hover:bg-gray-300 dark:hover:bg-gray-600 transition">Liberar reserva</button>
+            </div>
+          </div>
         </div>
-        <div class="text-lg font-bold">R$ <span id="gasto-parcelado">0,00</span></div>
-        <div class="text-xs text-gray-400 dark:text-gray-500">Restante: R$ <span id="restante-parcelado">0,00</span></div>
-        <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mt-2"><div id="progress-parcelado" class="progress-bar bg-green-500 h-2 rounded-full" style="width:100%"></div></div>
-      </div>
 
-      <div class="section-card border-l-4 border-orange-500">
-        <div class="flex justify-between items-center mb-1">
-          <div class="font-semibold">Variável</div>
-          <div class="text-sm text-gray-500 dark:text-gray-400">Teto: R$ <input id="limite-variavel-input" type="number" class="w-24 inline-block border px-1 py-0.5 rounded text-right bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" value="2000"/></div>
+        <div class="envelope-card border-l-4 border-green-500 bg-emerald-50/70 dark:bg-emerald-900/30 rounded-lg p-4 flex flex-col gap-3" data-envelope-card="parcelado">
+          <div class="flex flex-col gap-3">
+            <div class="flex items-start justify-between gap-3">
+              <div class="space-y-1">
+                <div class="font-semibold text-emerald-700 dark:text-emerald-200 flex items-center gap-2"><i class="fa fa-receipt"></i><span>Parcelados do mês</span></div>
+                <div class="text-lg font-bold text-slate-900 dark:text-slate-100">R$ <span id="gasto-parcelado">0,00</span></div>
+                <div class="text-xs text-slate-500 dark:text-slate-400">Falta para meta: R$ <span id="restante-parcelado">0,00</span></div>
+                <div class="text-xs text-slate-500 dark:text-slate-400">Reserva futura: R$ <span id="reserva-parcelado">0,00</span></div>
+              </div>
+              <div class="space-y-2 text-xs w-32">
+                <label class="block font-semibold text-slate-600 dark:text-slate-300">Meta mensal
+                  <input id="envelope-parcelado-meta" type="number" min="0" step="0.01" class="mt-1 w-full border px-2 py-1 rounded text-right bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" />
+                </label>
+                <label class="block font-semibold text-slate-600 dark:text-slate-300">Reserva
+                  <input id="envelope-parcelado-reserva" type="number" min="0" step="0.01" class="mt-1 w-full border px-2 py-1 rounded text-right bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" />
+                </label>
+              </div>
+            </div>
+            <div>
+              <div class="w-full bg-white/60 dark:bg-gray-700 rounded-full h-2 shadow-inner">
+                <div id="progress-parcelado" class="progress-bar h-2 rounded-full bg-green-500" style="width:0%"></div>
+              </div>
+              <div class="flex justify-between text-[0.7rem] text-slate-500 dark:text-slate-400 mt-1">
+                <span>Comprometido: <strong id="percentual-parcelado">0%</strong></span>
+                <span>Disponível p/ reservar: R$ <span id="disponivel-parcelado">0,00</span></span>
+              </div>
+            </div>
+            <div class="grid grid-cols-1 gap-2 text-xs">
+              <button data-envelope-action="reservar" data-envelope="parcelado" type="button" class="px-3 py-1 rounded bg-emerald-600 dark:bg-emerald-700 text-white hover:bg-emerald-700 dark:hover:bg-emerald-800 transition">Reservar saldo disponível</button>
+              <button data-envelope-action="liberar" data-envelope="parcelado" type="button" class="px-3 py-1 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-100 hover:bg-gray-300 dark:hover:bg-gray-600 transition">Liberar reserva</button>
+            </div>
+          </div>
         </div>
-        <div class="text-lg font-bold">R$ <span id="gasto-variavel">0,00</span></div>
-        <div class="text-xs text-gray-400 dark:text-gray-500">Restante: R$ <span id="restante-variavel">0,00</span></div>
-        <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mt-2"><div id="progress-variavel" class="progress-bar bg-orange-500 h-2 rounded-full" style="width:100%"></div></div>
+
+        <div class="envelope-card border-l-4 border-orange-500 bg-amber-50/80 dark:bg-amber-900/30 rounded-lg p-4 flex flex-col gap-3" data-envelope-card="variavel">
+          <div class="flex flex-col gap-3">
+            <div class="flex items-start justify-between gap-3">
+              <div class="space-y-1">
+                <div class="font-semibold text-amber-700 dark:text-amber-200 flex items-center gap-2"><i class="fa fa-basket-shopping"></i><span>Variáveis</span></div>
+                <div class="text-lg font-bold text-slate-900 dark:text-slate-100">R$ <span id="gasto-variavel">0,00</span></div>
+                <div class="text-xs text-slate-500 dark:text-slate-400">Falta para meta: R$ <span id="restante-variavel">0,00</span></div>
+                <div class="text-xs text-slate-500 dark:text-slate-400">Reserva futura: R$ <span id="reserva-variavel">0,00</span></div>
+              </div>
+              <div class="space-y-2 text-xs w-32">
+                <label class="block font-semibold text-slate-600 dark:text-slate-300">Meta mensal
+                  <input id="envelope-variavel-meta" type="number" min="0" step="0.01" class="mt-1 w-full border px-2 py-1 rounded text-right bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" />
+                </label>
+                <label class="block font-semibold text-slate-600 dark:text-slate-300">Reserva
+                  <input id="envelope-variavel-reserva" type="number" min="0" step="0.01" class="mt-1 w-full border px-2 py-1 rounded text-right bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" />
+                </label>
+              </div>
+            </div>
+            <div>
+              <div class="w-full bg-white/60 dark:bg-gray-700 rounded-full h-2 shadow-inner">
+                <div id="progress-variavel" class="progress-bar h-2 rounded-full bg-orange-500" style="width:0%"></div>
+              </div>
+              <div class="flex justify-between text-[0.7rem] text-slate-500 dark:text-slate-400 mt-1">
+                <span>Comprometido: <strong id="percentual-variavel">0%</strong></span>
+                <span>Disponível p/ reservar: R$ <span id="disponivel-variavel">0,00</span></span>
+              </div>
+            </div>
+            <div class="grid grid-cols-1 gap-2 text-xs">
+              <button data-envelope-action="reservar" data-envelope="variavel" type="button" class="px-3 py-1 rounded bg-emerald-600 dark:bg-emerald-700 text-white hover:bg-emerald-700 dark:hover:bg-emerald-800 transition">Reservar saldo disponível</button>
+              <button data-envelope-action="liberar" data-envelope="variavel" type="button" class="px-3 py-1 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-100 hover:bg-gray-300 dark:hover:bg-gray-600 transition">Liberar reserva</button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -1058,6 +1142,68 @@ html.dark .mobile-tab-button {
         <div class="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
           <div class="text-xs text-purple-700 dark:text-purple-200 uppercase tracking-wide">Projeção futura</div>
           <div class="text-lg font-bold text-purple-800 dark:text-purple-200">R$ <span id="investimento-projecao">0,00</span></div>
+        </div>
+      </div>
+      <div id="simulador-juros-compostos" class="bg-white/70 dark:bg-gray-800/60 border border-indigo-100 dark:border-indigo-900 rounded-lg p-4 space-y-4 text-sm">
+        <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+          <div class="space-y-1">
+            <h4 class="text-sm font-semibold text-indigo-700 dark:text-indigo-200 flex items-center gap-2"><i class="fa fa-calculator"></i><span>Simulador de juros compostos</span></h4>
+            <p class="text-xs text-gray-500 dark:text-gray-400">Reaproveite os totais atuais para projetar rendimentos e compare com um cenário alternativo de aportes ou taxas diferentes.</p>
+          </div>
+          <div class="text-xs text-gray-500 dark:text-gray-400">
+            Atualizado automaticamente com o resumo rápido.
+          </div>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div class="space-y-3">
+            <h5 class="text-xs font-semibold text-gray-600 dark:text-gray-200 uppercase tracking-wide">Cenário atual</h5>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 flex flex-col gap-1">Valor inicial (R$)
+                <input id="simulador-valor-inicial" data-simulador="base" type="number" step="0.01" min="0" class="px-2 py-1 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600 text-right" />
+              </label>
+              <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 flex flex-col gap-1">Aporte mensal (R$)
+                <input id="simulador-aporte-mensal" data-simulador="base" type="number" step="0.01" min="0" class="px-2 py-1 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600 text-right" />
+              </label>
+              <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 flex flex-col gap-1">Taxa mensal (%)
+                <input id="simulador-taxa" data-simulador="base" type="number" step="0.01" class="px-2 py-1 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600 text-right" />
+              </label>
+              <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 flex flex-col gap-1">Período (meses)
+                <input id="simulador-periodo" data-simulador="base" type="number" step="1" min="1" class="px-2 py-1 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600 text-right" />
+              </label>
+            </div>
+          </div>
+          <div class="space-y-3">
+            <h5 class="text-xs font-semibold text-gray-600 dark:text-gray-200 uppercase tracking-wide">Comparar cenário</h5>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 flex flex-col gap-1">Aporte mensal alternativo (R$)
+                <input id="simulador-aporte-alternativo" data-simulador="alternativo" type="number" step="0.01" min="0" class="px-2 py-1 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600 text-right" />
+              </label>
+              <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 flex flex-col gap-1">Taxa mensal alternativa (%)
+                <input id="simulador-taxa-alternativa" data-simulador="alternativo" type="number" step="0.01" class="px-2 py-1 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600 text-right" />
+              </label>
+              <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 flex flex-col gap-1">Aporte único extra (R$)
+                <input id="simulador-aporte-extra" data-simulador="alternativo" type="number" step="0.01" min="0" class="px-2 py-1 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600 text-right" />
+              </label>
+              <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 flex flex-col gap-1">Meses adicionais
+                <input id="simulador-periodo-alternativo" data-simulador="alternativo" type="number" step="1" min="0" class="px-2 py-1 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600 text-right" />
+              </label>
+            </div>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 text-xs">
+          <div class="rounded-lg bg-indigo-100/80 dark:bg-indigo-900/30 p-3">
+            <h6 class="font-semibold text-indigo-800 dark:text-indigo-200 mb-1">Resultado cenário atual</h6>
+            <p class="text-gray-600 dark:text-gray-300">Valor projetado: <strong id="simulador-base-total">R$ 0,00</strong></p>
+            <p class="text-gray-600 dark:text-gray-300">Ganho sobre aportes: <strong id="simulador-base-ganho">R$ 0,00</strong></p>
+          </div>
+          <div class="rounded-lg bg-purple-100/80 dark:bg-purple-900/30 p-3">
+            <h6 class="font-semibold text-purple-800 dark:text-purple-200 mb-1">Resultado cenário alternativo</h6>
+            <p class="text-gray-600 dark:text-gray-300">Valor projetado: <strong id="simulador-alt-total">R$ 0,00</strong></p>
+            <p class="text-gray-600 dark:text-gray-300">Ganho sobre aportes: <strong id="simulador-alt-ganho">R$ 0,00</strong></p>
+          </div>
+        </div>
+        <div class="text-xs text-indigo-700 dark:text-indigo-300">
+          Diferença entre cenários: <strong id="simulador-diferenca-valor">R$ 0,00</strong> em valor acumulado e <strong id="simulador-diferenca-ganho">R$ 0,00</strong> em ganhos.
         </div>
       </div>
       <form id="form-investimento" class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
@@ -1451,7 +1597,16 @@ document.addEventListener('keydown', (e) => {
 /* ===========================
    ESTADO/CONFIGURAÇÕES
    =========================== */
-let limites = {fixo:1300, parcelado:1400, variavel:2000}; // persisted in Firestore
+const envelopeConfig = {
+  fixo: { chaveResumo: 'fixosMes', meta: 1300, reservado: 0, titulo: 'Custo fixo' },
+  parcelado: { chaveResumo: 'parcelasMes', meta: 1400, reservado: 0, titulo: 'Parcelados do mês' },
+  variavel: { chaveResumo: 'historicoMes', meta: 2000, reservado: 0, titulo: 'Variáveis' },
+};
+let envelopes = {
+  fixo: { ...envelopeConfig.fixo },
+  parcelado: { ...envelopeConfig.parcelado },
+  variavel: { ...envelopeConfig.variavel },
+}; // persisted in Firestore
 const cartoesCfgDefault = {
   nubank: { fechamento: 15, label: 'Nubank', mesVencimentoOffset: 0 },  // Mesmo mês
   itau: { fechamento: 2, label: 'Itaú', mesVencimentoOffset: 0 },       // Mesmo mês
@@ -1478,6 +1633,12 @@ const painelFinanceiroState = {
   investimentosTotais: 0,
   investimentosProjetados: 0,
   totalGastosMes: 0,
+};
+let resumoFinanceiroAtual = {
+  entradasMes: 0,
+  totalGastosMes: 0,
+  saldoProjetado: 0,
+  ganhoInvest: 0,
 };
 
 /* resumo */
@@ -1827,22 +1988,125 @@ const formAddCartao = document.getElementById('form-add-cartao');
 const listaCartoesExistentes = document.getElementById('lista-cartoes-existentes');
 
 /* ===========================
-   PERSISTÊNCIA: LIMITES
+   PERSISTÊNCIA: ENVELOPES
    =========================== */
-function carregarLimites(){
-  db.collection('limites').doc('conta_unica').get().then(doc=>{
-    if(doc.exists) limites = {...limites, ...doc.data()};
-    document.getElementById('limite-fixo-input').value = limites.fixo;
-    document.getElementById('limite-parcelado-input').value = limites.parcelado;
-    document.getElementById('limite-variavel-input').value = limites.variavel;
-    atualizarBarrasVisuais();
+function cloneEnvelopeDefaults() {
+  return {
+    fixo: { ...envelopeConfig.fixo },
+    parcelado: { ...envelopeConfig.parcelado },
+    variavel: { ...envelopeConfig.variavel },
+  };
+}
+
+function normalizarEnvelopesDoc(data = {}) {
+  const base = cloneEnvelopeDefaults();
+  ['fixo', 'parcelado', 'variavel'].forEach(tipo => {
+    const entrada = data[tipo];
+    if (typeof entrada === 'number') {
+      base[tipo].meta = Math.max(0, Number(entrada) || 0);
+    } else if (entrada && typeof entrada === 'object') {
+      if ('meta' in entrada || 'teto' in entrada) {
+        const metaVal = entrada.meta ?? entrada.teto;
+        base[tipo].meta = Math.max(0, Number(metaVal) || 0);
+      }
+      if ('reservado' in entrada || 'reserva' in entrada) {
+        const reservaVal = entrada.reservado ?? entrada.reserva;
+        base[tipo].reservado = Math.max(0, Number(reservaVal) || 0);
+      }
+    }
+  });
+  return base;
+}
+
+function getEnvelopeGastoAtual(tipo) {
+  const chaveResumo = envelopeConfig[tipo]?.chaveResumo;
+  return chaveResumo ? Number(resumo[chaveResumo] || 0) : 0;
+}
+
+function getEnvelopeMeta(tipo) {
+  return Number(envelopes[tipo]?.meta || 0);
+}
+
+function atualizarInputsEnvelopes() {
+  ['fixo', 'parcelado', 'variavel'].forEach(tipo => {
+    const metaInput = document.getElementById(`envelope-${tipo}-meta`);
+    const reservaInput = document.getElementById(`envelope-${tipo}-reserva`);
+    if (metaInput && metaInput.dataset.userEdited !== 'true') {
+      metaInput.value = envelopes[tipo]?.meta ?? 0;
+    }
+    if (reservaInput && reservaInput.dataset.userEdited !== 'true') {
+      reservaInput.value = envelopes[tipo]?.reservado ?? 0;
+    }
   });
 }
-function salvarLimite(key,val){ 
-  limites[key]=parseFloat(val)||0; 
-  db.collection('limites').doc('conta_unica').set(limites,{merge:true})
-    .then(() => showToast('Limite atualizado com sucesso!'))
-    .catch(err => showToast('Erro ao salvar limite.', 'error'));
+
+function atualizarBarrasVisuais(){
+  ['fixo', 'parcelado', 'variavel'].forEach(tipo => {
+    atualizarBarra(tipo, getEnvelopeGastoAtual(tipo));
+  });
+}
+
+function carregarEnvelopes(){
+  db.collection('limites').doc('conta_unica').get().then(doc=>{
+    envelopes = normalizarEnvelopesDoc(doc.exists ? doc.data() : {});
+    atualizarInputsEnvelopes();
+    atualizarBarrasVisuais();
+    gerarInsights();
+  });
+}
+
+function salvarEnvelope(tipo, novosValores, mensagem = 'Envelope atualizado com sucesso!') {
+  if (!envelopes[tipo]) envelopes[tipo] = { ...envelopeConfig[tipo] };
+  const meta = Math.max(0, Number(novosValores.meta ?? envelopes[tipo].meta) || 0);
+  const reservado = Math.max(0, Number(novosValores.reservado ?? envelopes[tipo].reservado) || 0);
+  envelopes[tipo] = { ...envelopes[tipo], meta, reservado };
+  atualizarInputsEnvelopes();
+  atualizarBarrasVisuais();
+  gerarInsights();
+
+  const payload = {
+    [tipo]: {
+      meta,
+      reservado,
+    }
+  };
+
+  return db.collection('limites').doc('conta_unica').set(payload, { merge: true })
+    .then(() => showToast(mensagem))
+    .catch(err => {
+      console.error('Erro ao salvar envelope', err);
+      showToast('Erro ao salvar envelope.', 'error');
+    });
+}
+
+function reservarSaldoDisponivel(tipo) {
+  const meta = Number(envelopes[tipo]?.meta) || 0;
+  const gasto = getEnvelopeGastoAtual(tipo);
+  const reservadoAtual = Number(envelopes[tipo]?.reservado) || 0;
+  const disponivel = Math.max(0, meta - gasto - reservadoAtual);
+  if (disponivel <= 0) {
+    showToast('Não há saldo disponível para reservar neste envelope.', 'warning');
+    return Promise.resolve();
+  }
+  return salvarEnvelope(tipo, { reservado: reservadoAtual + disponivel }, 'Reserva atualizada!');
+}
+
+function limparReservaEnvelope(tipo) {
+  if ((Number(envelopes[tipo]?.reservado) || 0) === 0) {
+    showToast('Nenhuma reserva para liberar.', 'info');
+    return Promise.resolve();
+  }
+  return salvarEnvelope(tipo, { reservado: 0 }, 'Reserva liberada!');
+}
+
+function reservarSobrasAutomatico() {
+  const acoes = ['fixo', 'parcelado', 'variavel'].map(reservarSaldoDisponivel);
+  return Promise.all(acoes).then(() => atualizarBarrasVisuais());
+}
+
+function limparReservasAutomatico() {
+  const acoes = ['fixo', 'parcelado', 'variavel'].map(limparReservaEnvelope);
+  return Promise.all(acoes).then(() => atualizarBarrasVisuais());
 }
 
 function abrirModalGerenciarCartoes() {
@@ -2247,11 +2511,12 @@ function renderGraficoFixosCategoria(categorias) {
 function renderGraficoFixosImpacto(fixosAtivos) {
   const labels = fixosAtivos.map(doc => doc.data().nome || 'Sem nome');
   const data = fixosAtivos.map(doc => doc.data().valor || 0);
-  const percentuais = data.map(valor => (valor / limites.fixo * 100).toFixed(1));
+  const metaOrcamentoFixo = getEnvelopeMeta('fixo') || 0;
+  const percentuais = data.map(valor => metaOrcamentoFixo ? (valor / metaOrcamentoFixo * 100).toFixed(1) : '0.0');
 
   const ctx = document.getElementById('grafico-fixos-impacto').getContext('2d');
   if (chartFixosImpacto) chartFixosImpacto.destroy();
-  
+
   chartFixosImpacto = new Chart(ctx, {
     type: 'bar',
     data: {
@@ -2259,7 +2524,7 @@ function renderGraficoFixosImpacto(fixosAtivos) {
       datasets: [{
         label: 'Impacto no Orçamento (%)',
         data: percentuais,
-        backgroundColor: data.map(valor => valor > (limites.fixo * 0.2) ? '#ef4444' : '#10b981'),
+        backgroundColor: data.map(valor => valor > (metaOrcamentoFixo * 0.2) ? '#ef4444' : '#10b981'),
       }]
     },
     options: {
@@ -2306,8 +2571,8 @@ function renderDetalhesFixos(fixosAtivos) {
 
   ordenados.forEach(doc => {
     const f = doc.data();
-    const percentual = ((f.valor || 0) / limites.fixo * 100).toFixed(1);
-    const isAlto = (f.valor || 0) > (limites.fixo * 0.2);
+    const percentual = metaOrcamentoFixo ? ((f.valor || 0) / metaOrcamentoFixo * 100).toFixed(1) : 0;
+    const isAlto = metaOrcamentoFixo ? ((f.valor || 0) > (metaOrcamentoFixo * 0.2)) : false;
 
     const item = document.createElement('div');
     item.className = `flex justify-between items-center p-2 rounded ${isAlto ? 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700' : 'bg-gray-50 dark:bg-gray-700'}`;
@@ -2655,11 +2920,6 @@ function exportarCSVtudo(){
 /* ===========================
    ATUALIZAÇÕES & SNAPSHOTS
    =========================== */
-function atualizarBarrasVisuais(){
-  document.getElementById('gasto-fixo').textContent=moeda(0);
-  document.getElementById('gasto-parcelado').textContent=moeda(0);
-  document.getElementById('gasto-variavel').textContent=moeda(0);
-}
 
 let unsubLimits, unsubFixos, unsubGastos, unsubParcelados, unsubConfig, unsubEntradas, unsubInvestimentos;
 let allParceladosDocs = [];
@@ -2692,11 +2952,13 @@ function startObservers(){
   showSpinner('cartoes-loading-spinner'); // Adicionado spinner para cartões
 
   unsubLimits = db.collection('limites').doc('conta_unica').onSnapshot(doc=>{
-    if(doc.exists) { limites = {...limites, ...doc.data()}; document.getElementById('limite-fixo-input').value=limites.fixo; document.getElementById('limite-parcelado-input').value=limites.parcelado; document.getElementById('limite-variavel-input').value=limites.variavel; }
-    atualizarBarrasVisuais(); // Garante que as barras sejam atualizadas com os novos limites
+    envelopes = normalizarEnvelopesDoc(doc.exists ? doc.data() : {});
+    atualizarInputsEnvelopes();
+    atualizarBarrasVisuais();
+    gerarInsights();
   }, err => {
-    console.error("Erro ao carregar limites:", err);
-    showToast('Erro ao carregar limites.', 'error');
+    console.error("Erro ao carregar envelopes:", err);
+    showToast('Erro ao carregar envelopes.', 'error');
   });
 
   unsubConfig = db.collection('config').doc('cartoes').onSnapshot(snap=>{
@@ -2901,24 +3163,27 @@ allFixosDocs.forEach(doc => {
 
 
       // Verifica todos os tipos de gastos que ultrapassam o limite
-      const triggerParcelado = parcelasMesTotal > (limites.parcelado || 0);
-      const triggerFixo = somaFixosAtivos > (limites.fixo || 0);
+      const metaParcelado = getEnvelopeMeta('parcelado');
+      const metaFixoAtual = getEnvelopeMeta('fixo');
+      const metaVariavel = getEnvelopeMeta('variavel');
+      const triggerParcelado = metaParcelado > 0 && parcelasMesTotal > metaParcelado;
+      const triggerFixo = metaFixoAtual > 0 && somaFixosAtivos > metaFixoAtual;
       const somaVariavel = window._somaVariavelAtual || 0;
-      const triggerVariavel = somaVariavel > (limites.variavel || 0);
+      const triggerVariavel = metaVariavel > 0 && somaVariavel > metaVariavel;
       
       const banner = document.getElementById('danger-banner');
       const alertas = [];
 
       if(triggerFixo) {
-        alertas.push(`<strong>Fixos:</strong> R$ ${moeda(somaFixosAtivos)} / R$ ${moeda(limites.fixo)} (${((somaFixosAtivos/limites.fixo)*100).toFixed(1)}%)`);
+        alertas.push(`<strong>Fixos:</strong> R$ ${moeda(somaFixosAtivos)} / R$ ${moeda(metaFixoAtual)} (${((somaFixosAtivos/metaFixoAtual)*100).toFixed(1)}%)`);
       }
-      
+
       if(triggerParcelado) {
-        alertas.push(`<strong>Parcelados:</strong> R$ ${moeda(parcelasMesTotal)} / R$ ${moeda(limites.parcelado)} (${((parcelasMesTotal/limites.parcelado)*100).toFixed(1)}%)`);
+        alertas.push(`<strong>Parcelados:</strong> R$ ${moeda(parcelasMesTotal)} / R$ ${moeda(metaParcelado)} (${((parcelasMesTotal/metaParcelado)*100).toFixed(1)}%)`);
       }
-      
+
       if(triggerVariavel) {
-        alertas.push(`<strong>Variáveis:</strong> R$ ${moeda(somaVariavel)} / R$ ${moeda(limites.variavel)} (${((somaVariavel/limites.variavel)*100).toFixed(1)}%)`);
+        alertas.push(`<strong>Variáveis:</strong> R$ ${moeda(somaVariavel)} / R$ ${moeda(metaVariavel)} (${((somaVariavel/metaVariavel)*100).toFixed(1)}%)`);
       }
 
       if(alertas.length > 0) {
@@ -2969,12 +3234,34 @@ function atualizarResumoUI(){
 
 
 function atualizarBarra(tipo, gasto){
-  const limite = limites[tipo] || 0;
-  const restante = Math.max(0, limite - (gasto||0));
-  const percent = limite ? Math.max(0, Math.min(100, (gasto/limite)*100)) : 0; 
-  document.getElementById(`progress-${tipo}`).style.width = percent + '%';
-  document.getElementById(`gasto-${tipo}`).textContent = moeda(gasto||0);
-  document.getElementById(`restante-${tipo}`).textContent = moeda(restante);
+  const envelope = envelopes[tipo] || envelopeConfig[tipo] || { meta: 0, reservado: 0 };
+  const meta = Number(envelope.meta) || 0;
+  const reservado = Number(envelope.reservado) || 0;
+  const gastoAtual = Number(gasto) || 0;
+  const comprometido = gastoAtual + reservado;
+  const restante = Math.max(0, meta - gastoAtual);
+  const disponivelParaReserva = Math.max(0, meta - gastoAtual - reservado);
+  const percent = meta ? Math.max(0, Math.min(100, (comprometido / meta) * 100)) : 0;
+
+  const progressEl = document.getElementById(`progress-${tipo}`);
+  const gastoEl = document.getElementById(`gasto-${tipo}`);
+  const restanteEl = document.getElementById(`restante-${tipo}`);
+  const reservaEl = document.getElementById(`reserva-${tipo}`);
+  const disponivelEl = document.getElementById(`disponivel-${tipo}`);
+  const percentualEl = document.getElementById(`percentual-${tipo}`);
+  const card = document.querySelector(`[data-envelope-card="${tipo}"]`);
+
+  if (progressEl) progressEl.style.width = `${percent}%`;
+  if (gastoEl) gastoEl.textContent = moeda(gastoAtual);
+  if (restanteEl) restanteEl.textContent = moeda(restante);
+  if (reservaEl) reservaEl.textContent = moeda(reservado);
+  if (disponivelEl) disponivelEl.textContent = moeda(disponivelParaReserva);
+  if (percentualEl) percentualEl.textContent = `${percent.toFixed(1)}%`;
+
+  if (card) {
+    card.classList.toggle('ring-2', comprometido > meta && meta > 0);
+    card.classList.toggle('ring-red-400', comprometido > meta && meta > 0);
+  }
 }
 
 /* ===========================
@@ -3196,7 +3483,137 @@ function renderInvestimentosSidebar(docs = []) {
   painelFinanceiroState.investimentosProjetados = totalProjetado;
   atualizarResumoRapido();
   atualizarSaudeFinanceira();
+  atualizarSimuladorValoresPadrao();
+  atualizarSimuladorResultados();
   atualizarFiltroMeses();
+}
+
+function calcularProjecaoJurosCompostos(valorInicial, aporteMensal, taxaPercentual, meses) {
+  const principal = Math.max(0, Number(valorInicial) || 0);
+  const aporte = Math.max(0, Number(aporteMensal) || 0);
+  const taxa = Number(taxaPercentual) / 100 || 0;
+  const periodo = Math.max(0, parseInt(meses, 10) || 0);
+  const aportado = principal + (aporte * periodo);
+
+  if (periodo === 0) {
+    return { total: principal, aportado, ganho: principal - aportado };
+  }
+
+  let total;
+  if (taxa === 0) {
+    total = principal + (aporte * periodo);
+  } else {
+    const fator = Math.pow(1 + taxa, periodo);
+    total = (principal * fator) + (aporte * ((fator - 1) / taxa));
+  }
+
+  const ganho = total - aportado;
+  return { total, aportado, ganho };
+}
+
+function atualizarSimuladorValoresPadrao(force = false) {
+  const inicialInput = document.getElementById('simulador-valor-inicial');
+  if (!inicialInput) return;
+  const totalInvestido = painelFinanceiroState.investimentosTotais || 0;
+  if (force || !inicialInput.dataset.userEdited) {
+    inicialInput.value = (totalInvestido || 0).toFixed(2);
+  }
+
+  const aporteMensalInput = document.getElementById('simulador-aporte-mensal');
+  const aporteMes = painelFinanceiroState.investimentosMes || 0;
+  if (aporteMensalInput && (force || !aporteMensalInput.dataset.userEdited)) {
+    aporteMensalInput.value = (aporteMes || 0).toFixed(2);
+  }
+
+  const taxaInput = document.getElementById('simulador-taxa');
+  if (taxaInput && (force || !taxaInput.dataset.userEdited) && !taxaInput.value) {
+    taxaInput.value = '1';
+  }
+
+  const periodoInput = document.getElementById('simulador-periodo');
+  if (periodoInput && (force || !periodoInput.dataset.userEdited) && !periodoInput.value) {
+    periodoInput.value = '12';
+  }
+
+  const aporteAltInput = document.getElementById('simulador-aporte-alternativo');
+  if (aporteAltInput && (force || !aporteAltInput.dataset.userEdited)) {
+    if (aporteAltInput.value === '' || force) {
+      aporteAltInput.value = (aporteMes || 0).toFixed(2);
+    }
+  }
+
+  const taxaAltInput = document.getElementById('simulador-taxa-alternativa');
+  if (taxaAltInput && (force || !taxaAltInput.dataset.userEdited)) {
+    if (taxaAltInput.value === '' || force) {
+      taxaAltInput.value = taxaInput ? taxaInput.value : '1';
+    }
+  }
+
+  const aporteExtraInput = document.getElementById('simulador-aporte-extra');
+  if (aporteExtraInput && (force || !aporteExtraInput.dataset.userEdited) && aporteExtraInput.value === '') {
+    aporteExtraInput.value = '0';
+  }
+
+  const periodoAltInput = document.getElementById('simulador-periodo-alternativo');
+  if (periodoAltInput && (force || !periodoAltInput.dataset.userEdited) && periodoAltInput.value === '') {
+    periodoAltInput.value = '0';
+  }
+}
+
+function atualizarSimuladorResultados() {
+  const baseTotalEl = document.getElementById('simulador-base-total');
+  if (!baseTotalEl) return;
+
+  const valorInicial = parseFloat(document.getElementById('simulador-valor-inicial')?.value) || 0;
+  const aporteMensal = parseFloat(document.getElementById('simulador-aporte-mensal')?.value) || 0;
+  const taxaMensal = parseFloat(document.getElementById('simulador-taxa')?.value) || 0;
+  const periodoMeses = Math.max(1, parseInt(document.getElementById('simulador-periodo')?.value, 10) || 12);
+
+  const base = calcularProjecaoJurosCompostos(valorInicial, aporteMensal, taxaMensal, periodoMeses);
+
+  const aporteAltBruto = parseFloat(document.getElementById('simulador-aporte-alternativo')?.value);
+  const taxaAltBruta = parseFloat(document.getElementById('simulador-taxa-alternativa')?.value);
+  const aporteExtra = Math.max(0, parseFloat(document.getElementById('simulador-aporte-extra')?.value) || 0);
+  const periodoExtra = parseInt(document.getElementById('simulador-periodo-alternativo')?.value, 10);
+
+  const aporteMensalAlternativo = !Number.isNaN(aporteAltBruto) && aporteAltBruto >= 0 ? aporteAltBruto : aporteMensal;
+  const taxaMensalAlternativa = !Number.isNaN(taxaAltBruta) ? taxaAltBruta : taxaMensal;
+  const mesesAlternativo = Math.max(1, periodoMeses + (Number.isNaN(periodoExtra) ? 0 : periodoExtra));
+  const valorInicialAlternativo = valorInicial + aporteExtra;
+
+  const alternativo = calcularProjecaoJurosCompostos(valorInicialAlternativo, aporteMensalAlternativo, taxaMensalAlternativa, mesesAlternativo);
+
+  const diffValor = alternativo.total - base.total;
+  const diffGanho = alternativo.ganho - base.ganho;
+
+  baseTotalEl.textContent = `R$ ${moeda(base.total)}`;
+  const baseGanhoEl = document.getElementById('simulador-base-ganho');
+  if (baseGanhoEl) baseGanhoEl.textContent = `R$ ${moeda(base.ganho)}`;
+
+  const altTotalEl = document.getElementById('simulador-alt-total');
+  if (altTotalEl) altTotalEl.textContent = `R$ ${moeda(alternativo.total)}`;
+  const altGanhoEl = document.getElementById('simulador-alt-ganho');
+  if (altGanhoEl) altGanhoEl.textContent = `R$ ${moeda(alternativo.ganho)}`;
+
+  const diffValorEl = document.getElementById('simulador-diferenca-valor');
+  if (diffValorEl) diffValorEl.textContent = `R$ ${moeda(diffValor)}`;
+  const diffGanhoEl = document.getElementById('simulador-diferenca-ganho');
+  if (diffGanhoEl) diffGanhoEl.textContent = `R$ ${moeda(diffGanho)}`;
+}
+
+function initSimuladorInvestimentos() {
+  const simulador = document.getElementById('simulador-juros-compostos');
+  if (!simulador) return;
+  const inputs = simulador.querySelectorAll('[data-simulador]');
+  inputs.forEach(input => {
+    input.addEventListener('input', () => {
+      input.dataset.userEdited = 'true';
+      atualizarSimuladorResultados();
+    });
+    input.addEventListener('change', () => atualizarSimuladorResultados());
+  });
+  atualizarSimuladorValoresPadrao(true);
+  atualizarSimuladorResultados();
 }
 
 function atualizarResumoSaidasCard(totalGastosPrevistosMes) {
@@ -3237,7 +3654,9 @@ function atualizarResumoRapido() {
 
   atualizarResumoIndicadoresFinanceiros({ entradasMes, totalGastosMes, saldoProjetado, ganhoInvest });
 
-  return { entradasMes, totalGastosMes, saldoProjetado, ganhoInvest };
+  resumoFinanceiroAtual = { entradasMes, totalGastosMes, saldoProjetado, ganhoInvest };
+  atualizarSimuladorResultados();
+  return resumoFinanceiroAtual;
 }
 
 function atualizarResumoIndicadoresFinanceiros({ entradasMes, totalGastosMes, saldoProjetado, ganhoInvest }) {
@@ -3613,9 +4032,56 @@ if (formInvestimento) {
 document.getElementById('exportar-csv').addEventListener('click', exportarCSVmes);
 document.getElementById('exportar-tudo').addEventListener('click', exportarCSVtudo);
 
-document.getElementById('limite-fixo-input').addEventListener('change', e=> salvarLimite('fixo', e.target.value));
-document.getElementById('limite-parcelado-input').addEventListener('change', e=> salvarLimite('parcelado', e.target.value));
-document.getElementById('limite-variavel-input').addEventListener('change', e=> salvarLimite('variavel', e.target.value));
+['fixo', 'parcelado', 'variavel'].forEach(tipo => {
+  const metaInput = document.getElementById(`envelope-${tipo}-meta`);
+  const reservaInput = document.getElementById(`envelope-${tipo}-reserva`);
+  if (metaInput) {
+    metaInput.addEventListener('input', () => metaInput.dataset.userEdited = 'true');
+    metaInput.addEventListener('change', e => {
+      metaInput.dataset.userEdited = '';
+      salvarEnvelope(tipo, { meta: e.target.value });
+    });
+  }
+  if (reservaInput) {
+    reservaInput.addEventListener('input', () => reservaInput.dataset.userEdited = 'true');
+    reservaInput.addEventListener('change', e => {
+      reservaInput.dataset.userEdited = '';
+      salvarEnvelope(tipo, { reservado: e.target.value }, 'Reserva ajustada!');
+    });
+  }
+});
+
+const envelopesGrid = document.getElementById('envelopes-grid');
+if (envelopesGrid) {
+  envelopesGrid.addEventListener('click', e => {
+    const btn = e.target.closest('[data-envelope-action]');
+    if (!btn) return;
+    const tipo = btn.getAttribute('data-envelope');
+    const acao = btn.getAttribute('data-envelope-action');
+    if (!tipo || !acao) return;
+    if (acao === 'reservar') {
+      reservarSaldoDisponivel(tipo);
+    } else if (acao === 'liberar') {
+      limparReservaEnvelope(tipo);
+    }
+  });
+}
+
+const reservarTodosBtn = document.getElementById('btn-envelopes-reservar-todos');
+if (reservarTodosBtn) {
+  reservarTodosBtn.addEventListener('click', e => {
+    e.preventDefault();
+    reservarSobrasAutomatico();
+  });
+}
+
+const limparReservasBtn = document.getElementById('btn-envelopes-limpar-reservas');
+if (limparReservasBtn) {
+  limparReservasBtn.addEventListener('click', e => {
+    e.preventDefault();
+    limparReservasAutomatico();
+  });
+}
 
 /* ===========================
    FILTRO MESES POPULATION helper (GERAL)
@@ -4509,7 +4975,7 @@ filtroPeriodoEnd.addEventListener('change', aplicarFiltros);
    BOOTSTRAP: start observers and initial load
    =========================== */
 function boot(){
-  carregarLimites();
+  carregarEnvelopes();
   // initial empty UI
   atualizarBarrasVisuais();
   // start observing everything
@@ -4556,7 +5022,7 @@ function gerarInsights() {
   
   // Insight: Alerta: Orçamento Estourado!
   const totalGasto = (resumo.historicoMes || 0) + (resumo.parcelasMes || 0) + (resumo.fixosMes || 0);
-  const totalLimite = limites.fixo + limites.parcelado + limites.variavel;
+  const totalLimite = ['fixo', 'parcelado', 'variavel'].reduce((acc, tipo) => acc + getEnvelopeMeta(tipo), 0);
   const economia = totalLimite - totalGasto;
   if (economia < 0) {
     insights.push({
@@ -4564,6 +5030,15 @@ function gerarInsights() {
       title: 'Alerta: Orçamento Estourado!',
       description: `Você já ultrapassou seu orçamento em R$ ${moeda(Math.abs(economia))} este mês.`,
       type: 'error'
+    });
+  }
+
+  if (economia > 0) {
+    insights.push({
+      icon: '✅',
+      title: 'Sobra positiva nas metas',
+      description: `Você ainda tem R$ ${moeda(economia)} disponível dentro das metas do mês. Considere destinar para reservas futuras ou investimentos.`,
+      type: 'success'
     });
   }
 
@@ -4589,13 +5064,92 @@ function gerarInsights() {
   }
 
   // Insight: Atenção: Gastos Fixos Elevados
-  const fixoPercent = ((resumo.fixosMes || 0) / limites.fixo * 100);
-  if (fixoPercent > 80) {
+  const metaFixo = getEnvelopeMeta('fixo');
+  const fixoPercent = metaFixo ? ((resumo.fixosMes || 0) / metaFixo * 100) : 0;
+  if (metaFixo && fixoPercent > 80) {
     insights.push({
       icon: '⚠️',
       title: 'Atenção: Gastos Fixos Elevados',
       description: `Seus gastos fixos estão em ${fixoPercent.toFixed(1)}% do limite. Considere revisar assinaturas não utilizadas.`,
       type: 'warning'
+    });
+  }
+
+  const resumoAtual = resumoFinanceiroAtual || {};
+  const saldoProjetado = resumoAtual.saldoProjetado || 0;
+  const entradasMes = resumoAtual.entradasMes || painelFinanceiroState.entradasMes || 0;
+  const investimentosMes = painelFinanceiroState.investimentosMes || 0;
+  const investimentosTotais = painelFinanceiroState.investimentosTotais || 0;
+
+  ['fixo', 'parcelado', 'variavel'].forEach(tipo => {
+    const meta = getEnvelopeMeta(tipo);
+    if (!meta) return;
+    const gastoAtual = getEnvelopeGastoAtual(tipo);
+    const reservado = Number(envelopes[tipo]?.reservado || 0);
+    const disponivel = Math.max(0, meta - gastoAtual - reservado);
+    const faltaMeta = Math.max(0, meta - gastoAtual);
+    const tituloEnvelope = envelopeConfig[tipo]?.titulo || tipo;
+
+    if (disponivel > 0 && saldoProjetado > 0) {
+      insights.push({
+        icon: '🎯',
+        title: `Reserve no envelope de ${tituloEnvelope.toLowerCase()}`,
+        description: `Há R$ ${moeda(disponivel)} ainda livres nesta meta. Converta em reserva para reforçar objetivos futuros diretamente pelos envelopes.`,
+        type: 'success'
+      });
+    }
+
+    if (faltaMeta > 0 && hoje.getDate() > 20) {
+      insights.push({
+        icon: '⏳',
+        title: `Meta de ${tituloEnvelope.toLowerCase()} a alcançar`,
+        description: `Ainda faltam R$ ${moeda(faltaMeta)} para atingir a meta deste envelope no mês atual. Ajuste gastos ou aumente aportes planejados.`,
+        type: 'warning'
+      });
+    }
+
+    if (reservado > 0 && reservado >= meta * 0.1) {
+      insights.push({
+        icon: '💼',
+        title: `Reserva garantida em ${tituloEnvelope.toLowerCase()}`,
+        description: `Você já separou R$ ${moeda(reservado)} para os próximos meses. Considere planejar como aplicará essa reserva para antecipar objetivos.`,
+        type: 'info'
+      });
+    }
+  });
+
+  if (entradasMes > 0) {
+    const percentualInvestido = (investimentosMes / entradasMes) * 100;
+    if (investimentosMes <= 0 && saldoProjetado > 0) {
+      insights.push({
+        icon: '🚀',
+        title: 'Direcione parte do saldo para investir',
+        description: 'Você possui saldo projetado positivo. Avalie destinar uma parcela para investimentos recorrentes e acelerar suas metas.',
+        type: 'info'
+      });
+    } else if (percentualInvestido < 10 && investimentosMes > 0) {
+      insights.push({
+        icon: '📈',
+        title: 'Aumente seus aportes mensais',
+        description: `Atualmente apenas ${percentualInvestido.toFixed(1)}% das suas entradas viraram investimentos. Ajuste os aportes para chegar em pelo menos 10%.`,
+        type: 'warning'
+      });
+    } else if (percentualInvestido >= 20) {
+      insights.push({
+        icon: '🥇',
+        title: 'Excelente ritmo de investimentos',
+        description: `Você está investindo ${percentualInvestido.toFixed(1)}% das entradas deste mês. Mantenha a consistência para acelerar seus objetivos.`,
+        type: 'success'
+      });
+    }
+  }
+
+  if (investimentosTotais > 0 && saldoProjetado > investimentosTotais * 0.05) {
+    insights.push({
+      icon: '🔁',
+      title: 'Reforce sua carteira com a reserva disponível',
+      description: `O saldo projetado pode aumentar sua carteira em até R$ ${moeda(Math.min(saldoProjetado, investimentosTotais * 0.2))}. Considere um aporte extra pelo simulador para ver o impacto.`,
+      type: 'info'
     });
   }
   
@@ -5097,14 +5651,14 @@ if (cartaoSelecionado === 'pix' || cartaoSelecionado === '') {
        BOOTSTRAP: start observers and initial load
        =========================== */
   function boot(){
-  carregarLimites();
+  carregarEnvelopes();
   atualizarBarrasVisuais();
   startObservers();
   const filtroMes = document.getElementById('filtro-mes');
   const mesAtual = yyyymm(new Date());
   filtroMes.value = mesAtual;
-  popularSelectCartoes(); 
-  
+  popularSelectCartoes();
+
   initTagsSystem();
   initHistoricoSearch();
   initHistoricoCollapsible();
@@ -5234,6 +5788,7 @@ if (e.key === 'Escape') {
 /* start */
 initResumoSlider();
 initMobilePanels();
+initSimuladorInvestimentos();
 atualizarResumoRapido();
 boot();
 
