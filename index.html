@@ -240,8 +240,26 @@
    .danger-banner{background:#fee2e2;border:1px solid #fca5a5;color:#991b1b;padding:1rem;border-radius:.5rem;margin-bottom:1rem;border-left:4px solid #dc2626}
   
   /* Transições suaves para o botão flutuante */
+  body {
+    padding-bottom: 5.5rem;
+  }
+  @media (min-width: 768px) {
+    body {
+      padding-bottom: 6rem;
+    }
+  }
+
   .floating-btn-transition {
     transition: transform 0.3s ease, opacity 0.3s ease, bottom 0.3s ease; /* Adicionado bottom */
+  }
+
+  #floating-menu {
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    pointer-events: none;
+  }
+
+  #floating-menu nav {
+    pointer-events: auto;
   }
   
   /* Melhorias visuais para o modal */
@@ -771,7 +789,7 @@ html.dark .mobile-tab-button {
   </div>
 </div>
 
-<main class="container mx-auto px-4 py-6 grid grid-cols-1 lg:grid-cols-4 gap-6">
+<main class="container mx-auto px-4 py-6 pb-32 md:pb-20 grid grid-cols-1 lg:grid-cols-4 gap-6">
 
   <!-- LEFT: main (resumo + histórico + parcelados) -->
   <section id="painel-gastos" class="mobile-panel hidden lg:block lg:col-span-3 space-y-6">
@@ -1433,33 +1451,48 @@ html.dark .mobile-tab-button {
   </aside>
 </main>
 
-<!-- MELHORADO: Menu flutuante expansível para mobile -->
- <div id="floating-menu" class="fixed top-40 right-6 z-50 md:hidden"> 
-  <!-- Botão principal (sempre visível) -->
-  <button id="btn-main-float" 
-    class="bg-blue-600 dark:bg-blue-700 text-white p-4 rounded-full shadow-lg floating-btn-transition mb-3"
-    aria-label="Menu de ações">
-    <i class="fa fa-plus text-xl" id="main-icon"></i>
-  </button>
-  
-  <!-- Botões secundários (aparecem quando expandido) -->
-  <div id="secondary-buttons" class="space-y-3 opacity-0 transform translate-y-4 transition-all duration-300">
-    <button id="btn-add-gasto-float" 
-      class="bg-blue-500 dark:bg-blue-600 text-white p-3 rounded-full shadow-lg floating-btn-transition block"
-      aria-label="Adicionar gasto">
-      <i class="fa fa-shopping-cart text-lg"></i>
-    </button>
-    
-    <button id="btn-add-fixo-float"
-      class="bg-purple-600 dark:bg-purple-700 text-white p-3 rounded-full shadow-lg floating-btn-transition block"
-      aria-label="Adicionar fixo">
-      <i class="fa fa-calendar text-lg"></i>
-    </button>
-    <button id="btn-add-parcelado-float"
-      class="bg-indigo-600 dark:bg-indigo-700 text-white p-3 rounded-full shadow-lg floating-btn-transition block"
-      aria-label="Adicionar parcelado">
-      <i class="fa fa-file-invoice-dollar text-lg"></i>
-    </button>
+<!-- NOVO: Barra de ações inferior com botão central -->
+<div id="floating-menu" class="fixed inset-x-0 bottom-0 z-50 flex justify-center pointer-events-none">
+  <div class="relative w-full max-w-md px-4 pb-4">
+    <div id="secondary-buttons"
+      class="absolute bottom-20 left-1/2 -translate-x-1/2 flex items-center gap-4 rounded-3xl bg-white/95 dark:bg-gray-900/95 border border-gray-200 dark:border-gray-700 shadow-xl px-4 py-3 opacity-0 translate-y-4 pointer-events-none transition-all duration-300">
+      <button id="btn-add-gasto-float" class="flex flex-col items-center gap-1 text-xs font-semibold text-blue-700 dark:text-blue-300"
+        aria-label="Adicionar gasto variável">
+        <span class="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-300 shadow-sm">
+          <i class="fa fa-shopping-cart text-lg"></i>
+        </span>
+        Variável
+      </button>
+      <button id="btn-add-fixo-float" class="flex flex-col items-center gap-1 text-xs font-semibold text-purple-700 dark:text-purple-300"
+        aria-label="Adicionar gasto fixo">
+        <span class="flex h-10 w-10 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-300 shadow-sm">
+          <i class="fa fa-calendar text-lg"></i>
+        </span>
+        Fixo
+      </button>
+      <button id="btn-add-parcelado-float" class="flex flex-col items-center gap-1 text-xs font-semibold text-indigo-700 dark:text-indigo-300"
+        aria-label="Adicionar gasto parcelado">
+        <span class="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-300 shadow-sm">
+          <i class="fa fa-file-invoice-dollar text-lg"></i>
+        </span>
+        Parcelado
+      </button>
+    </div>
+
+    <nav class="floating-btn-transition relative bg-white/95 dark:bg-gray-900/90 border border-gray-200 dark:border-gray-700 shadow-2xl rounded-full px-6 py-3 flex items-center justify-center pointer-events-auto backdrop-blur">
+      <div class="pointer-events-none absolute inset-x-10 top-2 mx-auto h-1 rounded-full bg-gradient-to-r from-blue-200 via-blue-400 to-blue-200 opacity-60 dark:from-blue-900 dark:via-blue-600 dark:to-blue-900"></div>
+      <div class="relative flex w-full justify-center">
+        <button id="btn-main-float"
+          class="relative flex h-14 w-14 items-center justify-center rounded-full bg-blue-600 dark:bg-blue-700 text-white shadow-lg transition-transform duration-300 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:focus:ring-blue-900"
+          aria-label="Menu de ações" aria-expanded="false">
+          <span class="sr-only">Abrir menu de ações rápidas</span>
+          <i class="fa fa-plus text-xl" id="main-icon"></i>
+        </button>
+      </div>
+    </nav>
+    <div class="mt-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 pointer-events-none select-none">
+      Adicionar lançamento
+    </div>
   </div>
 </div>
 
@@ -2863,29 +2896,6 @@ function fecharTodosOsModais() {
   document.getElementById('modal-graficos-fixos').classList.add('hidden');
   document.getElementById('modal-gerenciar-cartoes').classList.add('hidden');
 }
-
-function updateFloatingMenuVisibility() {
-  const floatingMenu = document.getElementById('floating-menu');
-  const isModalOpen = !document.getElementById('modal-add-gasto').classList.contains('hidden') ||
-                     !document.getElementById('modal-graficos').classList.contains('hidden') ||
-                     !document.getElementById('modal-fixo').classList.contains('hidden') ||
-                     !document.getElementById('modal-parcelado').classList.contains('hidden') ||
-                     !document.getElementById('modal-graficos-fixos').classList.contains('hidden') ||
-                     !document.getElementById('modal-confirmacao').classList.contains('hidden') ||
-                     !document.getElementById('modal-gerenciar-cartoes').classList.contains('hidden') 
-                     
-  
-  if (isModalOpen) {
-    floatingMenu.classList.add('invisible');
-    floatingMenu.style.display = 'none';
-    if (menuExpanded) toggleFloatingMenu();
-  } else {
-    floatingMenu.classList.remove('invisible');
-    floatingMenu.style.display = 'block';
-  }
-}
-
-
 
 function editarParceladoPrompt(id){
   db.collection('parcelados').doc(id).get().then(doc=>{
@@ -4453,57 +4463,80 @@ document.getElementById('filtro-mes').addEventListener('change', ()=>{
 
 
 /* ===========================
-   NOVO: MENU FLUTUANTE EXPANSÍVEL PARA MOBILE
+   MENU DE AÇÕES INFERIOR
    =========================== */
-let isFloatingMenuExpanded = false;
+let floatingMenuOpen = false;
 
-function initFloatingMenu() {
-  const btnMainFloat = document.getElementById('btn-main-float');
+function setFloatingMenuOpen(open) {
   const secondaryButtons = document.getElementById('secondary-buttons');
   const mainIcon = document.getElementById('main-icon');
-  const btnAddFixoFloat = document.getElementById('btn-add-fixo-float');
+  const btnMainFloat = document.getElementById('btn-main-float');
 
-  // Toggle do menu principal
-  btnMainFloat.addEventListener('click', () => {
-    isFloatingMenuExpanded = !isFloatingMenuExpanded;
-    
-    if (isFloatingMenuExpanded) {
-      // Expande o menu
-      secondaryButtons.classList.remove('opacity-0', 'translate-y-4');
-      secondaryButtons.classList.add('opacity-100', 'translate-y-0');
-      mainIcon.className = 'fa fa-times text-xl';
-      btnMainFloat.style.transform = 'rotate(45deg)'; // Efeito de rotação
-    } else {
-      // Recolhe o menu
-      secondaryButtons.classList.add('opacity-0', 'translate-y-4');
-      secondaryButtons.classList.remove('opacity-100', 'translate-y-0');
-      mainIcon.className = 'fa fa-plus text-xl';
-      btnMainFloat.style.transform = 'rotate(0deg)'; // Volta à posição original
-    }
+  floatingMenuOpen = Boolean(open);
+
+  if (secondaryButtons) {
+    secondaryButtons.classList.toggle('opacity-0', !floatingMenuOpen);
+    secondaryButtons.classList.toggle('translate-y-4', !floatingMenuOpen);
+    secondaryButtons.classList.toggle('pointer-events-none', !floatingMenuOpen);
+    secondaryButtons.classList.toggle('opacity-100', floatingMenuOpen);
+    secondaryButtons.classList.toggle('pointer-events-auto', floatingMenuOpen);
+    secondaryButtons.setAttribute('aria-hidden', floatingMenuOpen ? 'false' : 'true');
+  }
+
+  if (mainIcon) {
+    mainIcon.className = floatingMenuOpen ? 'fa fa-times text-xl' : 'fa fa-plus text-xl';
+  }
+
+  if (btnMainFloat) {
+    btnMainFloat.style.transform = floatingMenuOpen ? 'rotate(45deg)' : 'rotate(0deg)';
+    btnMainFloat.setAttribute('aria-expanded', floatingMenuOpen ? 'true' : 'false');
+  }
+}
+
+function toggleFloatingMenu() {
+  setFloatingMenuOpen(!floatingMenuOpen);
+}
+
+function initFloatingMenu() {
+  const floatingMenu = document.getElementById('floating-menu');
+  const btnMainFloat = document.getElementById('btn-main-float');
+  const btnAddGasto = document.getElementById('btn-add-gasto-float');
+  const btnAddFixo = document.getElementById('btn-add-fixo-float');
+  const btnAddParcelado = document.getElementById('btn-add-parcelado-float');
+
+  if (!floatingMenu || !btnMainFloat) return;
+
+  setFloatingMenuOpen(false);
+
+  btnMainFloat.addEventListener('click', (event) => {
+    event.preventDefault();
+    toggleFloatingMenu();
   });
 
-  // Event listener para o novo botão de adicionar fixo
-  btnAddFixoFloat.addEventListener('click', () => {
-    abrirModalFixo();
-    // Recolhe o menu após ação
-    if (isFloatingMenuExpanded) { // Verifica se está expandido antes de recolher
-      isFloatingMenuExpanded = false;
-      secondaryButtons.classList.add('opacity-0', 'translate-y-4');
-      secondaryButtons.classList.remove('opacity-100', 'translate-y-0');
-      mainIcon.className = 'fa fa-plus text-xl';
-      btnMainFloat.style.transform = 'rotate(0deg)';
-    }
-  });
+  if (btnAddGasto) {
+    btnAddGasto.addEventListener('click', () => {
+      abrirModal();
+      setFloatingMenuOpen(false);
+    });
+  }
 
-  // Fecha menu ao clicar fora
-  document.addEventListener('click', (e) => {
-    const floatingMenu = document.getElementById('floating-menu');
-    if (!floatingMenu.contains(e.target) && isFloatingMenuExpanded) {
-      isFloatingMenuExpanded = false;
-      secondaryButtons.classList.add('opacity-0', 'translate-y-4');
-      secondaryButtons.classList.remove('opacity-100', 'translate-y-0');
-      mainIcon.className = 'fa fa-plus text-xl';
-      btnMainFloat.style.transform = 'rotate(0deg)';
+  if (btnAddFixo) {
+    btnAddFixo.addEventListener('click', () => {
+      abrirModalFixo();
+      setFloatingMenuOpen(false);
+    });
+  }
+
+  if (btnAddParcelado) {
+    btnAddParcelado.addEventListener('click', () => {
+      abrirModalParcelado();
+      setFloatingMenuOpen(false);
+    });
+  }
+
+  document.addEventListener('click', (event) => {
+    if (floatingMenuOpen && floatingMenu && !floatingMenu.contains(event.target)) {
+      setFloatingMenuOpen(false);
     }
   });
 }
@@ -4512,7 +4545,6 @@ function initFloatingMenu() {
    MODAL DE ADICIONAR GASTOS
    =========================== */
 const btnOpenAddGasto = document.getElementById('btn-open-add-gasto');
-const btnAddGastoFloat = document.getElementById('btn-add-gasto-float');
 const modalAddGasto = document.getElementById('modal-add-gasto');
 const modalClose = document.getElementById('modal-close');
 const modalCancel = document.getElementById('modal-cancel');
@@ -4557,21 +4589,6 @@ function fecharModal() {
 }
 
 btnOpenAddGasto.addEventListener('click', abrirModal);
-btnAddGastoFloat.addEventListener('click', () => {
-  abrirModal();
-  // Recolhe o menu flutuante se estiver expandido
-  if (isFloatingMenuExpanded) {
-    const secondaryButtons = document.getElementById('secondary-buttons');
-    const mainIcon = document.getElementById('main-icon');
-    const btnMainFloat = document.getElementById('btn-main-float');
-    
-    isFloatingMenuExpanded = false;
-    secondaryButtons.classList.add('opacity-0', 'translate-y-4');
-    secondaryButtons.classList.remove('opacity-100', 'translate-y-0');
-    mainIcon.className = 'fa fa-plus text-xl';
-    btnMainFloat.style.transform = 'rotate(0deg)';
-  }
-});
 
 // REMOVIDO: fecharTodosOsModais() duplicado aqui, já existe no topo do script
 
@@ -5897,110 +5914,65 @@ function gerarInsights() {
 
 
 /* ===========================
-   NOVO: MENU FLUTUANTE EXPANSÍVEL PARA MOBILE
+   CONTROLE DE VISIBILIDADE DO MENU DE AÇÕES
    =========================== */
-let menuExpanded = false;
-function toggleFloatingMenu() {
-  const secondaryButtons = document.getElementById('secondary-buttons');
-  const mainIcon = document.getElementById('main-icon');
-  const btnMainFloat = document.getElementById('btn-main-float');
-  menuExpanded = !menuExpanded;
-  if (menuExpanded) {
-    secondaryButtons.classList.remove('opacity-0', 'translate-y-4');
-    secondaryButtons.classList.add('opacity-100', 'translate-y-0');
-    mainIcon.className = 'fa fa-times text-xl';
-    btnMainFloat.style.transform = 'rotate(45deg)';
-    // Certifica-se de que os botões secundários podem ser clicados
-    secondaryButtons.style.pointerEvents = 'auto';
-  } else {
-    secondaryButtons.classList.add('opacity-0', 'translate-y-4');
-    secondaryButtons.classList.remove('opacity-100', 'translate-y-0');
-    mainIcon.className = 'fa fa-plus text-xl';
-    btnMainFloat.style.transform = 'rotate(0deg)';
-    // Impede cliques nos botões secundários quando recolhido
-    secondaryButtons.style.pointerEvents = 'none';
-  }
-}
-
-// Event listeners para o menu flutuante
-document.getElementById('btn-main-float').addEventListener('click', toggleFloatingMenu);
-
-// Event listener para botão de adicionar fixo no menu flutuante
-document.getElementById('btn-add-fixo-float').addEventListener('click', () => {
-  abrirModalFixo();
-  if (isFloatingMenuExpanded) toggleFloatingMenu(); // Fecha o menu se estiver aberto
-});
-
-// Event listener para botão de adicionar parcelado no menu flutuante
-document.getElementById('btn-add-parcelado-float').addEventListener('click', () => {
-  abrirModalParcelado(); // Chama sem argumentos para ADICIONAR
-  if (isFloatingMenuExpanded) toggleFloatingMenu(); // Fecha o menu se estiver aberto
-});
-
-
-// Fecha o menu quando clica fora
-document.addEventListener('click', (e) => {
-  const floatingMenu = document.getElementById('floating-menu');
-  if (menuExpanded && !floatingMenu.contains(e.target)) {
-    toggleFloatingMenu();
-  }
-});
-
-// Melhoria no scroll para esconder/mostrar o menu flutuante
 window.addEventListener('scroll', () => {
-  const st = window.pageYOffset || document.documentElement.scrollTop;
   const floatingMenu = document.getElementById('floating-menu');
-  // Verifica se algum modal está aberto
+  if (!floatingMenu) return;
+
+  const st = window.pageYOffset || document.documentElement.scrollTop;
   const isModalOpen = !document.getElementById('modal-add-gasto').classList.contains('hidden') ||
                      !document.getElementById('modal-graficos').classList.contains('hidden') ||
                      !document.getElementById('modal-fixo').classList.contains('hidden') ||
                      !document.getElementById('modal-parcelado').classList.contains('hidden') ||
                      !document.getElementById('modal-graficos-fixos').classList.contains('hidden') ||
                      !document.getElementById('modal-confirmacao').classList.contains('hidden') ||
-                     !document.getElementById('modal-gerenciar-cartoes').classList.contains('hidden'); // NOVO: Adicionado modal de gerenciar cartões
+                     !document.getElementById('modal-gerenciar-cartoes').classList.contains('hidden');
+
   if (isModalOpen) {
-    // Se algum modal estiver aberto, esconde completamente o menu e o torna não clicável
     floatingMenu.classList.add('invisible');
-    floatingMenu.style.display = 'none'; // Garante que não ocupe espaço
+    floatingMenu.style.display = 'none';
+    setFloatingMenuOpen(false);
     return;
-  } else {
-    // Se nenhum modal estiver aberto, mostra o menu e o torna clicável
-    floatingMenu.classList.remove('invisible');
-    floatingMenu.style.display = 'block'; // Garante que esteja visível
   }
-  if (st > lastScrollTop && st > 100) {
-    // Scrolling down - esconde o menu
-    floatingMenu.style.transform = 'translateY(100px)';
+
+  floatingMenu.classList.remove('invisible');
+  floatingMenu.style.display = 'flex';
+
+  if (st > lastScrollTop && st > 120) {
+    floatingMenu.style.transform = 'translateY(110%)';
     floatingMenu.style.opacity = '0';
-    floatingMenu.classList.add('invisible'); // Torna não clicável
-    floatingMenu.style.display = 'none'; // Garante que não ocupe espaço
-    if (menuExpanded) toggleFloatingMenu(); // Fecha se estiver expandido
+    if (floatingMenuOpen) setFloatingMenuOpen(false);
   } else {
-    // Scrolling up - mostra o menu
     floatingMenu.style.transform = 'translateY(0)';
     floatingMenu.style.opacity = '1';
-    floatingMenu.classList.remove('invisible'); // Torna clicável
-    floatingMenu.style.display = 'block'; // Garante que esteja visível
   }
+
   lastScrollTop = st <= 0 ? 0 : st;
 });
+
 // Função para esconder/mostrar menu quando modals abrem/fecham
 function updateFloatingMenuVisibility() {
   const floatingMenu = document.getElementById('floating-menu');
+  if (!floatingMenu) return;
+
   const isModalOpen = !document.getElementById('modal-add-gasto').classList.contains('hidden') ||
                      !document.getElementById('modal-graficos').classList.contains('hidden') ||
                      !document.getElementById('modal-fixo').classList.contains('hidden') ||
                      !document.getElementById('modal-parcelado').classList.contains('hidden') ||
                      !document.getElementById('modal-graficos-fixos').classList.contains('hidden') ||
                      !document.getElementById('modal-confirmacao').classList.contains('hidden') ||
-                     !document.getElementById('modal-gerenciar-cartoes').classList.contains('hidden'); // NOVO: Adicionado modal de gerenciar cartões
+                     !document.getElementById('modal-gerenciar-cartoes').classList.contains('hidden');
+
   if (isModalOpen) {
-    floatingMenu.classList.add('invisible'); // Torna não clicável
-    floatingMenu.style.display = 'none'; // Garante que não ocupe espaço
-    if (menuExpanded) toggleFloatingMenu(); // Fecha se estiver expandido
+    floatingMenu.classList.add('invisible');
+    floatingMenu.style.display = 'none';
+    setFloatingMenuOpen(false);
   } else {
-    floatingMenu.classList.remove('invisible'); // Torna clicável
-    floatingMenu.style.display = 'block'; // Garante que esteja visível
+    floatingMenu.classList.remove('invisible');
+    floatingMenu.style.display = 'flex';
+    floatingMenu.style.transform = 'translateY(0)';
+    floatingMenu.style.opacity = '1';
   }
 }
 
