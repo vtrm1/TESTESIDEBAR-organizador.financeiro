@@ -1053,13 +1053,18 @@ html.dark .mobile-tab-button {
       </div>
 
       <div class="mt-6">
-        <div class="flex items-center justify-between mb-2">
-          <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-200 flex items-center gap-2"><i class="fa fa-chart-column text-purple-500"></i><span>Projeção de parcelas</span></h4>
-          <span id="parcelados-projecao-janela" class="text-xs text-gray-500 dark:text-gray-400">Próximos meses</span>
-        </div>
-        <div class="relative h-48">
-          <canvas id="grafico-parcelados-projecao" class="w-full h-full"></canvas>
-          <div id="parcelados-projecao-empty" class="absolute inset-0 flex items-center justify-center text-xs text-gray-500 dark:text-gray-400">Cadastre parcelados ativos para visualizar a projeção.</div>
+        <button type="button" id="toggle-parcelados-projecao" class="w-full flex items-center justify-between text-sm font-semibold text-purple-700 dark:text-purple-200 bg-purple-50 dark:bg-purple-900/20 px-3 py-2 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-900/30 transition" aria-expanded="true" aria-controls="parcelados-projecao-container">
+          <span class="flex items-center gap-2"><i class="fa fa-chart-column text-purple-500"></i><span>Projeção de parcelas</span></span>
+          <span class="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+            <span id="parcelados-projecao-janela">Próximos meses</span>
+            <i id="parcelados-projecao-toggle-icon" class="fa fa-chevron-down transition-transform duration-200"></i>
+          </span>
+        </button>
+        <div id="parcelados-projecao-container" class="mt-3 space-y-2" role="region" aria-live="polite" aria-hidden="false">
+          <div class="relative h-48">
+            <canvas id="grafico-parcelados-projecao" class="w-full h-full"></canvas>
+            <div id="parcelados-projecao-empty" class="absolute inset-0 flex items-center justify-center text-xs text-gray-500 dark:text-gray-400">Cadastre parcelados ativos para visualizar a projeção.</div>
+          </div>
         </div>
       </div>
 
@@ -1107,14 +1112,20 @@ html.dark .mobile-tab-button {
         <h3 class="font-semibold text-lg flex items-center gap-2"><i class="fa fa-arrow-down text-green-500"></i>Entradas de Dinheiro</h3>
         <p class="text-sm text-gray-500 dark:text-gray-400">Registre salários, vendas e rendas extras e acompanhe o fluxo mensal.</p>
       </div>
-      <div class="grid grid-cols-2 gap-2 text-sm">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
         <div class="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
           <div class="text-xs text-green-700 dark:text-green-200 uppercase tracking-wide">Mês selecionado</div>
           <div class="text-lg font-bold text-green-800 dark:text-green-300">R$ <span id="entradas-total-mes">0,00</span></div>
         </div>
         <div class="p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg">
-          <div class="text-xs text-emerald-700 dark:text-emerald-200 uppercase tracking-wide">Total acumulado</div>
-          <div class="text-lg font-bold text-emerald-800 dark:text-emerald-300">R$ <span id="entradas-total-geral">0,00</span></div>
+          <div class="text-xs text-emerald-700 dark:text-emerald-200 uppercase tracking-wide">Saldo líquido do mês</div>
+          <div class="text-lg font-bold text-emerald-800 dark:text-emerald-300">R$ <span id="entradas-saldo-mes">0,00</span></div>
+          <div id="entradas-saldo-hint" class="text-[11px] text-emerald-700/80 dark:text-emerald-200/80 mt-1">Entradas menos saídas previstas do período selecionado.</div>
+        </div>
+        <div class="p-3 bg-green-100 dark:bg-green-900/10 rounded-lg sm:col-span-2">
+          <div class="text-xs text-green-700 dark:text-green-200 uppercase tracking-wide">Entradas registradas</div>
+          <div class="text-lg font-bold text-green-900 dark:text-green-200">R$ <span id="entradas-total-geral">0,00</span></div>
+          <div class="text-[11px] text-green-700/80 dark:text-green-200/80 mt-1">Total acumulado de receitas cadastradas no sistema.</div>
         </div>
       </div>
       <form id="form-entrada" class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
@@ -1219,8 +1230,8 @@ html.dark .mobile-tab-button {
         <p class="text-xs text-gray-500 dark:text-gray-400 px-3">Atualizado automaticamente com o resumo rápido.</p>
         <div data-simulador-content class="space-y-4 hidden px-3 pb-1">
           <p class="text-xs text-gray-500 dark:text-gray-400">Reaproveite os totais atuais para projetar rendimentos e compare com um cenário alternativo de aportes ou taxas diferentes.</p>
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <div class="space-y-3">
+          <div class="flex flex-col gap-4">
+            <div class="space-y-3 border-l-4 border-indigo-100 dark:border-indigo-900/40 pl-4">
               <h5 class="text-xs font-semibold text-gray-600 dark:text-gray-200 uppercase tracking-wide">Cenário atual</h5>
               <div class="grid grid-cols-1 gap-3">
                 <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 flex flex-col gap-1 h-full">Valor inicial (R$)
@@ -1237,7 +1248,7 @@ html.dark .mobile-tab-button {
                 </label>
               </div>
             </div>
-            <div class="space-y-3">
+            <div class="space-y-3 border-l-4 border-indigo-100 dark:border-indigo-900/40 pl-4">
               <h5 class="text-xs font-semibold text-gray-600 dark:text-gray-200 uppercase tracking-wide">Comparar cenário</h5>
               <div class="grid grid-cols-1 gap-3">
                 <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 flex flex-col gap-1 h-full">Aporte mensal alternativo (R$)
@@ -1255,13 +1266,13 @@ html.dark .mobile-tab-button {
               </div>
             </div>
           </div>
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 text-xs">
-            <div class="rounded-lg bg-indigo-100/80 dark:bg-indigo-900/30 p-3">
+          <div class="flex flex-col gap-3 text-xs">
+            <div class="rounded-lg bg-indigo-100/80 dark:bg-indigo-900/30 p-3 border-l-4 border-indigo-300 dark:border-indigo-700/60">
               <h6 class="font-semibold text-indigo-800 dark:text-indigo-200 mb-1">Resultado cenário atual</h6>
               <p class="text-gray-600 dark:text-gray-300">Valor projetado: <strong id="simulador-base-total">R$ 0,00</strong></p>
               <p class="text-gray-600 dark:text-gray-300">Ganho sobre aportes: <strong id="simulador-base-ganho">R$ 0,00</strong></p>
             </div>
-            <div class="rounded-lg bg-purple-100/80 dark:bg-purple-900/30 p-3">
+            <div class="rounded-lg bg-purple-100/80 dark:bg-purple-900/30 p-3 border-l-4 border-purple-300 dark:border-purple-700/60">
               <h6 class="font-semibold text-purple-800 dark:text-purple-200 mb-1">Resultado cenário alternativo</h6>
               <p class="text-gray-600 dark:text-gray-300">Valor projetado: <strong id="simulador-alt-total">R$ 0,00</strong></p>
               <p class="text-gray-600 dark:text-gray-300">Ganho sobre aportes: <strong id="simulador-alt-ganho">R$ 0,00</strong></p>
@@ -3482,8 +3493,9 @@ function renderEntradasSidebar(docs = []) {
   const mostrarTodos = mesSel === 'all';
 
   let totalMes = 0;
-  let totalGeral = 0;
-  const totaisPorTipo = {};
+  let totalRegistrado = 0;
+  const totaisPorTipoPeriodo = {};
+  let itensPeriodo = 0;
 
   docs.forEach(doc => {
     const data = doc.data();
@@ -3497,11 +3509,12 @@ function renderEntradasSidebar(docs = []) {
     const tipo = data.tipo || 'outros';
     const descricao = (data.descricao || '').trim();
 
-    totalGeral += valor;
-    totaisPorTipo[tipo] = (totaisPorTipo[tipo] || 0) + valor;
+    totalRegistrado += valor;
 
     if (mostrarTodos || key === mesSel) {
       totalMes += valor;
+      itensPeriodo += 1;
+      totaisPorTipoPeriodo[tipo] = (totaisPorTipoPeriodo[tipo] || 0) + valor;
       const item = document.createElement('div');
       item.className = 'flex items-center gap-3 p-2 bg-gray-50 dark:bg-gray-700 rounded';
       item.innerHTML = `
@@ -3520,20 +3533,20 @@ function renderEntradasSidebar(docs = []) {
     }
   });
 
-  if (!lista.children.length) {
+  if (itensPeriodo === 0) {
     const empty = document.createElement('div');
     empty.className = 'text-gray-500 dark:text-gray-400';
     empty.textContent = 'Nenhuma entrada registrada para o período selecionado.';
     lista.appendChild(empty);
   }
 
-  if (Object.keys(totaisPorTipo).length === 0) {
+  if (Object.keys(totaisPorTipoPeriodo).length === 0) {
     const emptyTipos = document.createElement('div');
     emptyTipos.className = 'col-span-2 text-gray-500 dark:text-gray-400';
     emptyTipos.textContent = 'Cadastre entradas para ver a distribuição.';
     tiposContainer.appendChild(emptyTipos);
   } else {
-    Object.entries(totaisPorTipo).forEach(([tipo, valor]) => {
+    Object.entries(totaisPorTipoPeriodo).sort((a, b) => b[1] - a[1]).forEach(([tipo, valor]) => {
       const card = document.createElement('div');
       card.className = 'p-2 bg-green-50 dark:bg-green-900/10 rounded';
       card.innerHTML = `
@@ -3545,10 +3558,23 @@ function renderEntradasSidebar(docs = []) {
   }
 
   totalMesEl.textContent = moeda(totalMes);
-  totalGeralEl.textContent = moeda(totalGeral);
+  totalGeralEl.textContent = moeda(totalRegistrado);
+
+  const saldoMesEl = document.getElementById('entradas-saldo-mes');
+  const saldoHintEl = document.getElementById('entradas-saldo-hint');
+  if (saldoMesEl) {
+    if (mostrarTodos) {
+      saldoMesEl.textContent = '--';
+      if (saldoHintEl) saldoHintEl.textContent = 'Selecione um mês específico para calcular o saldo líquido.';
+    } else {
+      const gastosPeriodo = painelFinanceiroState.totalGastosMes || 0;
+      saldoMesEl.textContent = moeda(totalMes - gastosPeriodo);
+      if (saldoHintEl) saldoHintEl.textContent = 'Entradas menos saídas previstas do período selecionado.';
+    }
+  }
 
   painelFinanceiroState.entradasMes = totalMes;
-  painelFinanceiroState.entradasTotais = totalGeral;
+  painelFinanceiroState.entradasTotais = totalRegistrado;
   atualizarResumoRapido();
   atualizarSaudeFinanceira();
   atualizarFiltroMeses();
@@ -4200,6 +4226,28 @@ document.getElementById('parcelado-form').addEventListener('submit', e=>{
     })
     .catch(err => showToast('Erro ao adicionar parcelado: ' + err.message, 'error'));
 });
+
+const toggleParceladosBtn = document.getElementById('toggle-parcelados-projecao');
+if (toggleParceladosBtn) {
+  const parceladosContainer = document.getElementById('parcelados-projecao-container');
+  const parceladosIcon = document.getElementById('parcelados-projecao-toggle-icon');
+  toggleParceladosBtn.addEventListener('click', () => {
+    if (!parceladosContainer) return;
+    const hidden = parceladosContainer.classList.toggle('hidden');
+    toggleParceladosBtn.setAttribute('aria-expanded', (!hidden).toString());
+    parceladosContainer.setAttribute('aria-hidden', hidden ? 'true' : 'false');
+    if (parceladosIcon) {
+      parceladosIcon.classList.toggle('rotate-180', !hidden);
+    }
+    if (!hidden && chartParceladosProjecao) {
+      setTimeout(() => {
+        if (chartParceladosProjecao) {
+          chartParceladosProjecao.resize();
+        }
+      }, 120);
+    }
+  });
+}
 
 /* ===========================
    ENTRADAS & INVESTIMENTOS SIDEBAR
