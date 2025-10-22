@@ -185,6 +185,62 @@
   </div>
 </div>
 
+<!-- NOVO: Modal de planejamento das metas dos envelopes -->
+<div id="modal-planejamento-envelopes" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+  <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 w-11/12 max-w-xl mx-auto relative shadow-2xl modal-content space-y-5">
+    <button id="modal-planejamento-envelopes-close" class="absolute top-3 right-3 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 text-2xl font-bold" aria-label="Fechar modal">&times;</button>
+    <div>
+      <h2 class="text-xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+        <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-900/50 dark:text-emerald-300">
+          <i class="fa fa-bullseye"></i>
+        </span>
+        Planejar margem do mês
+      </h2>
+      <p class="text-sm text-slate-600 dark:text-slate-300 mt-1">Visualize suas metas, quanto já foi reservado e direcione a folga restante para onde fizer mais sentido.</p>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+      <div class="rounded-xl border border-emerald-100 dark:border-emerald-800/50 bg-emerald-50/60 dark:bg-emerald-900/20 p-3">
+        <span class="text-[0.65rem] uppercase tracking-wide text-emerald-600 dark:text-emerald-300">Meta total</span>
+        <div class="text-lg font-semibold text-emerald-800 dark:text-emerald-100">R$ <span id="overview-modal-meta">0,00</span></div>
+      </div>
+      <div class="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-800/40 p-3">
+        <span class="text-[0.65rem] uppercase tracking-wide text-slate-500 dark:text-slate-300">Gasto no mês</span>
+        <div class="text-lg font-semibold text-slate-800 dark:text-slate-100">R$ <span id="overview-modal-gasto">0,00</span></div>
+      </div>
+      <div class="rounded-xl border border-sky-200 dark:border-sky-800/50 bg-sky-50/70 dark:bg-sky-900/20 p-3">
+        <span class="text-[0.65rem] uppercase tracking-wide text-sky-600 dark:text-sky-300">Reservado para metas</span>
+        <div class="text-lg font-semibold text-sky-700 dark:text-sky-200">R$ <span id="overview-modal-reservado">0,00</span></div>
+      </div>
+      <div class="rounded-xl border border-amber-200 dark:border-amber-800/60 bg-amber-50/70 dark:bg-amber-900/20 p-3">
+        <span class="text-[0.65rem] uppercase tracking-wide text-amber-600 dark:text-amber-300">Folga direcionável</span>
+        <div class="text-lg font-semibold text-amber-700 dark:text-amber-200">R$ <span id="overview-modal-margem">0,00</span></div>
+      </div>
+    </div>
+    <div class="space-y-3 text-sm">
+      <div class="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/40 p-3">
+        <p class="text-slate-600 dark:text-slate-300">A folga representa o que sobrou após gastos e reservas planejadas. Escolha uma ação rápida para não deixar esse valor parado.</p>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+        <button id="btn-planejamento-reservar" type="button" class="flex flex-col gap-1 rounded-xl border border-emerald-200 dark:border-emerald-800/60 bg-emerald-600 text-white px-3 py-3 text-left shadow hover:bg-emerald-700 dark:hover:bg-emerald-700 transition">
+          <span class="text-xs uppercase tracking-wide">Ajustar metas</span>
+          <span class="text-sm font-semibold">Reservar nos envelopes</span>
+          <span class="text-[0.7rem] opacity-80">Distribui automaticamente a folga</span>
+        </button>
+        <button id="btn-planejamento-investir" type="button" class="flex flex-col gap-1 rounded-xl border border-sky-200 dark:border-sky-800/60 bg-sky-600 text-white px-3 py-3 text-left shadow hover:bg-sky-700 dark:hover:bg-sky-700 transition">
+          <span class="text-xs uppercase tracking-wide">Fazer render</span>
+          <span class="text-sm font-semibold">Enviar para investimentos</span>
+          <span class="text-[0.7rem] opacity-80">Leva você ao painel de investimentos</span>
+        </button>
+        <button id="btn-planejamento-entrada" type="button" class="flex flex-col gap-1 rounded-xl border border-amber-200 dark:border-amber-700/60 bg-amber-500 text-white px-3 py-3 text-left shadow hover:bg-amber-600 dark:hover:bg-amber-600 transition">
+          <span class="text-xs uppercase tracking-wide">Guardar</span>
+          <span class="text-sm font-semibold">Adicionar como entrada extra</span>
+          <span class="text-[0.7rem] opacity-80">Registra como aporte ou reserva</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <style>
   .progress-bar{transition:width .4s ease}
   .badge-alert{color:#b91c1c;font-weight:700;margin-left:.4rem}
@@ -860,9 +916,17 @@ html.dark .mobile-tab-button {
           <h3 class="text-lg font-bold flex items-center gap-2">🎯 Envelopes do Mês</h3>
           <p class="text-xs text-gray-500 dark:text-gray-400">Defina limites mensais de gastos, acompanhe a margem disponível e direcione sobras para reservas futuras.</p>
         </div>
-        <div class="flex items-center gap-2 text-xs">
-          <button id="btn-envelopes-reservar-todos" type="button" class="px-3 py-1 rounded bg-emerald-600 dark:bg-emerald-700 text-white hover:bg-emerald-700 dark:hover:bg-emerald-800 transition">Reservar sobras</button>
-          <button id="btn-envelopes-limpar-reservas" type="button" class="px-3 py-1 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-100 hover:bg-gray-300 dark:hover:bg-gray-600 transition">Limpar reservas</button>
+        <div class="flex flex-col gap-2 text-xs sm:flex-row sm:items-center sm:gap-3">
+          <button id="btn-envelopes-overview" type="button" class="flex flex-col sm:flex-row sm:items-center sm:gap-3 rounded-full border border-emerald-200 dark:border-emerald-800/60 bg-white/70 dark:bg-emerald-900/30 px-3 py-2 text-left shadow-sm transition hover:border-emerald-400 dark:hover:border-emerald-600">
+            <span class="text-[0.65rem] uppercase tracking-wide text-emerald-700 dark:text-emerald-300">Resumo das metas</span>
+            <span class="text-sm font-semibold text-slate-900 dark:text-slate-100">Meta: R$ <span id="overview-meta-total">0,00</span></span>
+            <span class="text-sm text-slate-700 dark:text-slate-200">Reservado: R$ <span id="overview-reservado-total">0,00</span></span>
+            <span class="text-xs text-emerald-600 dark:text-emerald-300">Margem livre: R$ <span id="overview-margem-total">0,00</span></span>
+          </button>
+          <div class="flex items-center gap-2">
+            <button id="btn-envelopes-reservar-todos" type="button" class="px-3 py-1 rounded bg-emerald-600 dark:bg-emerald-700 text-white hover:bg-emerald-700 dark:hover:bg-emerald-800 transition">Reservar nos envelopes</button>
+            <button id="btn-envelopes-limpar-reservas" type="button" class="px-3 py-1 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-100 hover:bg-gray-300 dark:hover:bg-gray-600 transition">Limpar reservas</button>
+          </div>
         </div>
       </div>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="envelopes-grid">
@@ -1673,6 +1737,34 @@ const SIMULADOR_DEFAULT_PERIODO = appConfig.investimentos?.simulador?.defaultPer
 const HISTORICO_MENSAL_CHART_CFG = appConfig.charts?.historicoMensal || {};
 const PARCELADOS_PROJECAO_CHART_CFG = appConfig.charts?.parceladosProjecao || {};
 
+function goToPanelAndFocus(panelId, inputSelector) {
+  if (!panelId) return;
+  const mobileTab = document.querySelector(`[data-panel-target="${panelId}"]`);
+  if (mobileTab && window.innerWidth < 1024) {
+    mobileTab.click();
+  }
+
+  const panel = document.getElementById(panelId);
+  if (panel) {
+    panel.scrollIntoView({ behavior: 'smooth', block: window.innerWidth < 1024 ? 'start' : 'center' });
+  }
+
+  if (inputSelector) {
+    const input = document.querySelector(inputSelector);
+    if (input) {
+      setTimeout(() => {
+        if (typeof input.focus === 'function') {
+          try {
+            input.focus({ preventScroll: true });
+          } catch (err) {
+            input.focus();
+          }
+        }
+      }, 320);
+    }
+  }
+}
+
 // NOVO: Função para calcular o mês de referência da fatura
 function calcularMesFatura(dataTransacao, diaFechamento, offset = 0) {  // Adicionado offset com default 0
   const data = new Date(dataTransacao);
@@ -2210,6 +2302,23 @@ function getEnvelopeMeta(tipo) {
   return Number(envelopes[tipo]?.meta || 0);
 }
 
+function calcularResumoEnvelopes() {
+  const tipos = ['fixo', 'parcelado', 'variavel'];
+  return tipos.reduce((acc, tipo) => {
+    const meta = getEnvelopeMeta(tipo);
+    const gastoAtual = getEnvelopeGastoAtual(tipo);
+    const reservado = Number(envelopes[tipo]?.reservado || 0);
+    const margem = Math.max(0, meta - gastoAtual - reservado);
+
+    acc.totalMeta += meta;
+    acc.totalGasto += gastoAtual;
+    acc.totalReservado += reservado;
+    acc.totalMargem += margem;
+
+    return acc;
+  }, { totalMeta: 0, totalGasto: 0, totalReservado: 0, totalMargem: 0 });
+}
+
 function atualizarInputsEnvelopes() {
   ['fixo', 'parcelado', 'variavel'].forEach(tipo => {
     const metaInput = document.getElementById(`envelope-${tipo}-meta`);
@@ -2227,6 +2336,32 @@ function atualizarBarrasVisuais(){
   ['fixo', 'parcelado', 'variavel'].forEach(tipo => {
     atualizarBarra(tipo, getEnvelopeGastoAtual(tipo));
   });
+
+  const resumoEnvelopes = calcularResumoEnvelopes();
+  const formatar = valor => (Number(valor) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+  const metaTotalEl = document.getElementById('overview-meta-total');
+  if (metaTotalEl) metaTotalEl.textContent = formatar(resumoEnvelopes.totalMeta);
+
+  const reservadoTotalEl = document.getElementById('overview-reservado-total');
+  if (reservadoTotalEl) reservadoTotalEl.textContent = formatar(resumoEnvelopes.totalReservado);
+
+  const margemTotalEl = document.getElementById('overview-margem-total');
+  if (margemTotalEl) margemTotalEl.textContent = formatar(resumoEnvelopes.totalMargem);
+
+  const modalMetaEl = document.getElementById('overview-modal-meta');
+  if (modalMetaEl) modalMetaEl.textContent = formatar(resumoEnvelopes.totalMeta);
+
+  const modalGastoEl = document.getElementById('overview-modal-gasto');
+  if (modalGastoEl) modalGastoEl.textContent = formatar(resumoEnvelopes.totalGasto);
+
+  const modalReservadoEl = document.getElementById('overview-modal-reservado');
+  if (modalReservadoEl) modalReservadoEl.textContent = formatar(resumoEnvelopes.totalReservado);
+
+  const modalMargemEl = document.getElementById('overview-modal-margem');
+  if (modalMargemEl) modalMargemEl.textContent = formatar(resumoEnvelopes.totalMargem);
+
+  window.__ultimoResumoEnvelopes = resumoEnvelopes;
 }
 
 function carregarEnvelopes(){
@@ -4436,6 +4571,81 @@ if (limparReservasBtn) {
   });
 }
 
+const btnEnvelopesOverview = document.getElementById('btn-envelopes-overview');
+const modalPlanejamentoEnvelopes = document.getElementById('modal-planejamento-envelopes');
+const modalPlanejamentoEnvelopesClose = document.getElementById('modal-planejamento-envelopes-close');
+const btnPlanejamentoReservar = document.getElementById('btn-planejamento-reservar');
+const btnPlanejamentoInvestir = document.getElementById('btn-planejamento-investir');
+const btnPlanejamentoEntrada = document.getElementById('btn-planejamento-entrada');
+
+function abrirModalPlanejamentoEnvelopes() {
+  if (!modalPlanejamentoEnvelopes) return;
+  atualizarBarrasVisuais();
+  modalPlanejamentoEnvelopes.classList.remove('hidden');
+  updateFloatingMenuVisibility();
+}
+
+function fecharModalPlanejamentoEnvelopes() {
+  if (!modalPlanejamentoEnvelopes) return;
+  modalPlanejamentoEnvelopes.classList.add('hidden');
+  updateFloatingMenuVisibility();
+}
+
+btnEnvelopesOverview?.addEventListener('click', abrirModalPlanejamentoEnvelopes);
+modalPlanejamentoEnvelopesClose?.addEventListener('click', fecharModalPlanejamentoEnvelopes);
+
+modalPlanejamentoEnvelopes?.addEventListener('click', (event) => {
+  if (event.target === modalPlanejamentoEnvelopes) {
+    fecharModalPlanejamentoEnvelopes();
+  }
+});
+
+btnPlanejamentoReservar?.addEventListener('click', () => {
+  const margem = window.__ultimoResumoEnvelopes?.totalMargem || 0;
+  if (margem <= 0) {
+    showToast('Não há folga disponível para reservar agora.', 'info');
+    return;
+  }
+  reservarSobrasAutomatico()
+    .then(() => {
+      fecharModalPlanejamentoEnvelopes();
+      showToast('Folga distribuída automaticamente entre os envelopes.');
+    })
+    .catch(() => showToast('Não foi possível reservar automaticamente.', 'error'));
+});
+
+btnPlanejamentoInvestir?.addEventListener('click', () => {
+  const margem = window.__ultimoResumoEnvelopes?.totalMargem || 0;
+  if (margem <= 0) {
+    showToast('Nenhuma folga para enviar aos investimentos no momento.', 'info');
+    return;
+  }
+  fecharModalPlanejamentoEnvelopes();
+  goToPanelAndFocus('painel-investimentos', '#investimento-valor');
+  const inputInvestimento = document.querySelector('#investimento-valor');
+  if (inputInvestimento) {
+    inputInvestimento.value = margem.toFixed(2);
+    inputInvestimento.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+  showToast(`Preenchemos R$ ${moeda(margem)} no formulário de investimentos para você confirmar.`, 'info');
+});
+
+btnPlanejamentoEntrada?.addEventListener('click', () => {
+  const margem = window.__ultimoResumoEnvelopes?.totalMargem || 0;
+  if (margem <= 0) {
+    showToast('Não há folga para registrar como entrada extra.', 'info');
+    return;
+  }
+  fecharModalPlanejamentoEnvelopes();
+  goToPanelAndFocus('painel-entradas', '#entrada-valor');
+  const inputEntrada = document.querySelector('#entrada-valor');
+  if (inputEntrada) {
+    inputEntrada.value = margem.toFixed(2);
+    inputEntrada.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+  showToast(`Sugestão pronta: R$ ${moeda(margem)} já está preenchido nas entradas para você salvar.`, 'info');
+});
+
 /* ===========================
    FILTRO MESES POPULATION helper (GERAL)
    =========================== */
@@ -4497,34 +4707,6 @@ function initFloatingMenu() {
     btnQuickEntradas.setAttribute('aria-expanded', 'true');
   };
 
-  const goToPanelAndFocus = (panelId, inputSelector) => {
-    if (!panelId) return;
-    const mobileTab = document.querySelector(`[data-panel-target="${panelId}"]`);
-    if (mobileTab && window.innerWidth < 1024) {
-      mobileTab.click();
-    }
-
-    const panel = document.getElementById(panelId);
-    if (panel) {
-      panel.scrollIntoView({ behavior: 'smooth', block: window.innerWidth < 1024 ? 'start' : 'center' });
-    }
-
-    if (inputSelector) {
-      const input = document.querySelector(inputSelector);
-      if (input) {
-        setTimeout(() => {
-          if (typeof input.focus === 'function') {
-            try {
-              input.focus({ preventScroll: true });
-            } catch (err) {
-              input.focus();
-            }
-          }
-        }, 320);
-      }
-    }
-  };
-
   if (btnAddVariavel) {
     btnAddVariavel.addEventListener('click', () => {
       abrirModal();
@@ -4548,11 +4730,7 @@ function initFloatingMenu() {
 
   if (btnQuickGraficos) {
     btnQuickGraficos.addEventListener('click', () => {
-      const modalGraficos = document.getElementById('modal-graficos');
-      if (modalGraficos) {
-        modalGraficos.classList.remove('hidden');
-        updateFloatingMenuVisibility();
-      }
+      abrirModalGraficos();
     });
   }
 
@@ -5640,26 +5818,30 @@ function limparFiltros() {
   aplicarFiltros();
 }
 
-// Inicializa filtros e gráficos ao abrir modal (MODIFICADA)
-btnHistoricoGraficos?.addEventListener('click', () => {
+function abrirModalGraficos() {
+  if (!modalGraficos) return;
   modalGraficos.classList.remove('hidden');
   updateFloatingMenuVisibility();
 
-  // Pega cartões únicos dos gastos atuais
-  const cartoesUnicos = Array.from(new Set(allGastosDocs.map(doc => (doc.data().cartao || '').toLowerCase()).filter(c => c)));
-  // Pega categorias únicas dos gastos atuais
-  const categoriasUnicas = Array.from(new Set(allGastosDocs.map(doc => (doc.data().categoria || '').toLowerCase()).filter(c => c)));
+  const cartoesUnicos = Array.from(new Set((allGastosDocs || []).map(doc => (doc.data().cartao || '').toLowerCase()).filter(c => c)));
+  const categoriasUnicas = Array.from(new Set((allGastosDocs || []).map(doc => (doc.data().categoria || '').toLowerCase()).filter(c => c)));
 
-  criarCheckboxes(filtroCartoesContainer, cartoesUnicos, 'filtro-cartoes', true);
-  criarCheckboxes(filtroCategoriasContainer, categoriasUnicas, 'filtro-categorias', true);
+  if (filtroCartoesContainer) {
+    criarCheckboxes(filtroCartoesContainer, cartoesUnicos, 'filtro-cartoes', true);
+  }
+  if (filtroCategoriasContainer) {
+    criarCheckboxes(filtroCategoriasContainer, categoriasUnicas, 'filtro-categorias', true);
+  }
 
-  // NOVO: Garante que o filtro de período esteja no mês atual ao abrir
-  filtroPeriodoGraficos.value = 'current_month';
-  filtroPeriodoStart.classList.add('hidden');
-  filtroPeriodoEnd.classList.add('hidden');
+  if (filtroPeriodoGraficos) filtroPeriodoGraficos.value = 'current_month';
+  if (filtroPeriodoStart) filtroPeriodoStart.classList.add('hidden');
+  if (filtroPeriodoEnd) filtroPeriodoEnd.classList.add('hidden');
 
   aplicarFiltros();
-});
+}
+
+// Inicializa filtros e gráficos ao abrir modal (MODIFICADA)
+btnHistoricoGraficos?.addEventListener('click', abrirModalGraficos);
 
 modalGraficosClose.addEventListener('click', () => {
   modalGraficos.classList.add('hidden');
@@ -5984,6 +6166,7 @@ window.addEventListener('scroll', () => {
                      !document.getElementById('modal-fixo').classList.contains('hidden') ||
                      !document.getElementById('modal-parcelado').classList.contains('hidden') ||
                      !document.getElementById('modal-graficos-fixos').classList.contains('hidden') ||
+                     !document.getElementById('modal-planejamento-envelopes').classList.contains('hidden') ||
                      !document.getElementById('modal-confirmacao').classList.contains('hidden') ||
                      !document.getElementById('modal-gerenciar-cartoes').classList.contains('hidden');
 
@@ -6017,13 +6200,14 @@ function updateFloatingMenuVisibility() {
   if (quickIncomeMenu) quickIncomeMenu.classList.add('hidden');
   if (quickIncomeButton) quickIncomeButton.setAttribute('aria-expanded', 'false');
 
-  const isModalOpen = !document.getElementById('modal-add-gasto').classList.contains('hidden') ||
-                     !document.getElementById('modal-graficos').classList.contains('hidden') ||
-                     !document.getElementById('modal-fixo').classList.contains('hidden') ||
-                     !document.getElementById('modal-parcelado').classList.contains('hidden') ||
-                     !document.getElementById('modal-graficos-fixos').classList.contains('hidden') ||
-                     !document.getElementById('modal-confirmacao').classList.contains('hidden') ||
-                     !document.getElementById('modal-gerenciar-cartoes').classList.contains('hidden');
+    const isModalOpen = !document.getElementById('modal-add-gasto').classList.contains('hidden') ||
+                       !document.getElementById('modal-graficos').classList.contains('hidden') ||
+                       !document.getElementById('modal-fixo').classList.contains('hidden') ||
+                       !document.getElementById('modal-parcelado').classList.contains('hidden') ||
+                       !document.getElementById('modal-graficos-fixos').classList.contains('hidden') ||
+                       !document.getElementById('modal-planejamento-envelopes').classList.contains('hidden') ||
+                       !document.getElementById('modal-confirmacao').classList.contains('hidden') ||
+                       !document.getElementById('modal-gerenciar-cartoes').classList.contains('hidden');
 
   if (isModalOpen) {
     floatingMenu.classList.add('invisible');
@@ -6503,8 +6687,10 @@ if (e.key === 'Escape') {
   document.getElementById('modal-parcelado').classList.add('hidden');
   document.getElementById('modal-graficos').classList.add('hidden');
   document.getElementById('modal-graficos-fixos').classList.add('hidden');
+  document.getElementById('modal-planejamento-envelopes').classList.add('hidden');
   document.getElementById('modal-confirmacao').classList.add('hidden');
   document.getElementById('modal-gerenciar-cartoes').classList.add('hidden');
+  updateFloatingMenuVisibility();
 }
 
 });
