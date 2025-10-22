@@ -6361,24 +6361,6 @@ if (cartaoSelecionado === 'pix' || cartaoSelecionado === '') {
       });
     }
 
-    /* ===========================
-       BOOTSTRAP: start observers and initial load
-       =========================== */
-  function boot(){
-  carregarEnvelopes();
-  atualizarBarrasVisuais();
-  startObservers();
-  const filtroMes = document.getElementById('filtro-mes');
-  const mesAtual = yyyymm(new Date());
-  filtroMes.value = mesAtual;
-  popularSelectCartoes();
-
-  initTagsSystem();
-  initHistoricoSearch();
-  initHistoricoCollapsible();
-  initHistoricoActions();
-}
-
 /* ===========================
    MODAL DE PARCELADOS
    =========================== */
