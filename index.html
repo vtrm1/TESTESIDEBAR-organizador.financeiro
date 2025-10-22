@@ -1479,14 +1479,27 @@ html.dark .mobile-tab-button {
         </span>
         Parcelado
       </button>
-      <button id="btn-quick-cartoes"
-        class="group flex-1 flex flex-col items-center gap-1 text-[0.7rem] font-semibold text-emerald-700 dark:text-emerald-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 dark:focus-visible:ring-emerald-700"
-        type="button" aria-label="Gerenciar cartões">
-        <span class="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-50 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-300 shadow-sm transition-transform group-hover:-translate-y-0.5">
-          <i class="fa fa-wallet text-lg"></i>
-        </span>
-        Cartões
-      </button>
+      <div class="relative flex-1 flex justify-center" data-quick-income-container>
+        <button id="btn-quick-entradas" type="button"
+          class="group flex flex-col items-center gap-1 text-[0.7rem] font-semibold text-emerald-700 dark:text-emerald-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 dark:focus-visible:ring-emerald-700"
+          aria-label="Ações de entrada e investimento" aria-haspopup="true" aria-expanded="false">
+          <span class="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-50 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-300 shadow-sm transition-transform group-hover:-translate-y-0.5">
+            <i class="fa fa-piggy-bank text-lg"></i>
+          </span>
+          Entr./Inv.
+        </button>
+        <div id="quick-income-menu" class="hidden absolute bottom-16 left-1/2 w-44 -translate-x-1/2 rounded-2xl border border-emerald-100 dark:border-emerald-900/40 bg-white/95 dark:bg-gray-900/95 shadow-2xl backdrop-blur p-2 text-[0.72rem] font-semibold text-emerald-700 dark:text-emerald-200 z-10">
+          <span class="pointer-events-none absolute -bottom-2 left-1/2 block h-3 w-3 -translate-x-1/2 rotate-45 bg-white dark:bg-gray-900 border-r border-b border-emerald-100 dark:border-emerald-900/40"></span>
+          <button type="button" data-income-action="entrada" class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left transition hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 dark:hover:bg-emerald-900/30">
+            <i class="fa fa-circle-plus text-sm"></i>
+            Nova entrada
+          </button>
+          <button type="button" data-income-action="investimento" class="mt-1 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left transition hover:bg-emerald-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 dark:hover:bg-emerald-900/30">
+            <i class="fa fa-arrow-trend-up text-sm"></i>
+            Novo investimento
+          </button>
+        </div>
+      </div>
     </nav>
     <div class="mt-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 pointer-events-none select-none">
       Ferramentas rápidas
@@ -4468,9 +4481,49 @@ function initFloatingMenu() {
   const btnAddFixo = document.getElementById('btn-add-gasto-fixo');
   const btnAddParcelado = document.getElementById('btn-add-gasto-parcelado');
   const btnQuickGraficos = document.getElementById('btn-quick-graficos');
-  const btnQuickCartoes = document.getElementById('btn-quick-cartoes');
+  const btnQuickEntradas = document.getElementById('btn-quick-entradas');
+  const quickIncomeMenu = document.getElementById('quick-income-menu');
 
   if (!floatingMenu) return;
+
+  const closeQuickIncomeMenu = () => {
+    if (quickIncomeMenu) quickIncomeMenu.classList.add('hidden');
+    if (btnQuickEntradas) btnQuickEntradas.setAttribute('aria-expanded', 'false');
+  };
+
+  const openQuickIncomeMenu = () => {
+    if (!quickIncomeMenu || !btnQuickEntradas) return;
+    quickIncomeMenu.classList.remove('hidden');
+    btnQuickEntradas.setAttribute('aria-expanded', 'true');
+  };
+
+  const goToPanelAndFocus = (panelId, inputSelector) => {
+    if (!panelId) return;
+    const mobileTab = document.querySelector(`[data-panel-target="${panelId}"]`);
+    if (mobileTab && window.innerWidth < 1024) {
+      mobileTab.click();
+    }
+
+    const panel = document.getElementById(panelId);
+    if (panel) {
+      panel.scrollIntoView({ behavior: 'smooth', block: window.innerWidth < 1024 ? 'start' : 'center' });
+    }
+
+    if (inputSelector) {
+      const input = document.querySelector(inputSelector);
+      if (input) {
+        setTimeout(() => {
+          if (typeof input.focus === 'function') {
+            try {
+              input.focus({ preventScroll: true });
+            } catch (err) {
+              input.focus();
+            }
+          }
+        }, 320);
+      }
+    }
+  };
 
   if (btnAddVariavel) {
     btnAddVariavel.addEventListener('click', () => {
@@ -4503,12 +4556,38 @@ function initFloatingMenu() {
     });
   }
 
-  if (btnQuickCartoes) {
-    btnQuickCartoes.addEventListener('click', () => {
-      const modalCartoes = document.getElementById('modal-gerenciar-cartoes');
-      if (modalCartoes) {
-        modalCartoes.classList.remove('hidden');
-        updateFloatingMenuVisibility();
+  if (btnQuickEntradas && quickIncomeMenu) {
+    btnQuickEntradas.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const isHidden = quickIncomeMenu.classList.contains('hidden');
+      closeQuickIncomeMenu();
+      if (isHidden) {
+        openQuickIncomeMenu();
+      }
+    });
+
+    quickIncomeMenu.addEventListener('click', (event) => {
+      event.stopPropagation();
+    });
+
+    quickIncomeMenu.querySelectorAll('[data-income-action]').forEach(button => {
+      button.addEventListener('click', (event) => {
+        event.preventDefault();
+        const action = button.getAttribute('data-income-action');
+        closeQuickIncomeMenu();
+        if (action === 'entrada') {
+          goToPanelAndFocus('painel-entradas', '#entrada-valor');
+        } else if (action === 'investimento') {
+          goToPanelAndFocus('painel-investimentos', '#investimento-valor');
+        }
+      });
+    });
+
+    document.addEventListener('click', closeQuickIncomeMenu);
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        closeQuickIncomeMenu();
       }
     });
   }
@@ -5896,6 +5975,10 @@ window.addEventListener('scroll', () => {
   if (!floatingMenu) return;
 
   const st = window.pageYOffset || document.documentElement.scrollTop;
+  const quickIncomeMenu = document.getElementById('quick-income-menu');
+  const quickIncomeButton = document.getElementById('btn-quick-entradas');
+  if (quickIncomeMenu) quickIncomeMenu.classList.add('hidden');
+  if (quickIncomeButton) quickIncomeButton.setAttribute('aria-expanded', 'false');
   const isModalOpen = !document.getElementById('modal-add-gasto').classList.contains('hidden') ||
                      !document.getElementById('modal-graficos').classList.contains('hidden') ||
                      !document.getElementById('modal-fixo').classList.contains('hidden') ||
@@ -5928,6 +6011,11 @@ window.addEventListener('scroll', () => {
 function updateFloatingMenuVisibility() {
   const floatingMenu = document.getElementById('floating-menu');
   if (!floatingMenu) return;
+
+  const quickIncomeMenu = document.getElementById('quick-income-menu');
+  const quickIncomeButton = document.getElementById('btn-quick-entradas');
+  if (quickIncomeMenu) quickIncomeMenu.classList.add('hidden');
+  if (quickIncomeButton) quickIncomeButton.setAttribute('aria-expanded', 'false');
 
   const isModalOpen = !document.getElementById('modal-add-gasto').classList.contains('hidden') ||
                      !document.getElementById('modal-graficos').classList.contains('hidden') ||
