@@ -570,14 +570,6 @@ html.dark .mobile-tab-button {
   display: none; /* Adicionado para garantir que não ocupe espaço nem receba cliques */
 }
 
-#secondary-buttons {
-  pointer-events: none; /* impede cliques quando invisível */
-}
-
-#floating-menu.open #secondary-buttons {
-  pointer-events: auto; /* permite cliques apenas quando aberto */
-}
-
 </style>
 
 
@@ -1450,57 +1442,54 @@ html.dark .mobile-tab-button {
   </aside>
 </main>
 
-<!-- NOVO: Barra de ações inferior com botão central -->
+<!-- Barra de ações inferior com atalhos diretos -->
 <div id="floating-menu" class="fixed inset-x-0 bottom-0 z-50 flex justify-center">
   <div class="relative w-full max-w-md px-4 pb-4">
-    <div id="secondary-buttons"
-      class="absolute bottom-20 left-1/2 -translate-x-1/2 flex items-center gap-4 rounded-3xl bg-white/95 dark:bg-gray-900/95 border border-gray-200 dark:border-gray-700 shadow-xl px-4 py-3 opacity-0 translate-y-4 pointer-events-none transition-all duration-300">
-      <button id="btn-add-gasto-float" class="flex flex-col items-center gap-1 text-xs font-semibold text-blue-700 dark:text-blue-300"
-        aria-label="Adicionar gasto variável">
-        <span class="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-300 shadow-sm">
+    <nav class="floating-btn-transition relative bg-white/95 dark:bg-gray-900/90 border border-gray-200 dark:border-gray-700 shadow-2xl rounded-full px-4 py-3 flex items-end justify-between gap-2 pointer-events-auto backdrop-blur">
+      <div class="pointer-events-none absolute inset-x-12 top-2 mx-auto h-1 rounded-full bg-gradient-to-r from-blue-200 via-blue-400 to-blue-200 opacity-60 dark:from-blue-900 dark:via-blue-600 dark:to-blue-900"></div>
+      <button id="btn-quick-graficos"
+        class="group flex-1 flex flex-col items-center gap-1 text-[0.7rem] font-semibold text-blue-700 dark:text-blue-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 dark:focus-visible:ring-blue-700"
+        type="button" aria-label="Abrir gráficos">
+        <span class="flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-300 shadow-sm transition-transform group-hover:-translate-y-0.5">
+          <i class="fa fa-chart-line text-lg"></i>
+        </span>
+        Gráficos
+      </button>
+      <button id="btn-add-gasto-variavel"
+        class="group flex-1 flex flex-col items-center gap-1 text-[0.7rem] font-semibold text-blue-700 dark:text-blue-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 dark:focus-visible:ring-blue-700"
+        type="button" aria-label="Adicionar gasto variável">
+        <span class="flex h-11 w-11 items-center justify-center rounded-full bg-blue-600 text-white shadow-lg transition-transform group-hover:-translate-y-0.5 dark:bg-blue-700">
           <i class="fa fa-shopping-cart text-lg"></i>
         </span>
         Variável
       </button>
-      <button id="btn-add-fixo-float" class="flex flex-col items-center gap-1 text-xs font-semibold text-purple-700 dark:text-purple-300"
-        aria-label="Adicionar gasto fixo">
-        <span class="flex h-10 w-10 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-300 shadow-sm">
+      <button id="btn-add-gasto-fixo"
+        class="group flex-1 flex flex-col items-center gap-1 text-[0.7rem] font-semibold text-purple-700 dark:text-purple-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 dark:focus-visible:ring-purple-600"
+        type="button" aria-label="Adicionar gasto fixo">
+        <span class="flex h-11 w-11 items-center justify-center rounded-full bg-purple-600 text-white shadow-lg transition-transform group-hover:-translate-y-0.5 dark:bg-purple-700">
           <i class="fa fa-calendar text-lg"></i>
         </span>
         Fixo
       </button>
-      <button id="btn-add-parcelado-float" class="flex flex-col items-center gap-1 text-xs font-semibold text-indigo-700 dark:text-indigo-300"
-        aria-label="Adicionar gasto parcelado">
-        <span class="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-300 shadow-sm">
+      <button id="btn-add-gasto-parcelado"
+        class="group flex-1 flex flex-col items-center gap-1 text-[0.7rem] font-semibold text-indigo-700 dark:text-indigo-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 dark:focus-visible:ring-indigo-600"
+        type="button" aria-label="Adicionar gasto parcelado">
+        <span class="flex h-11 w-11 items-center justify-center rounded-full bg-indigo-600 text-white shadow-lg transition-transform group-hover:-translate-y-0.5 dark:bg-indigo-700">
           <i class="fa fa-file-invoice-dollar text-lg"></i>
         </span>
         Parcelado
       </button>
-    </div>
-
-    <nav class="floating-btn-transition relative bg-white/95 dark:bg-gray-900/90 border border-gray-200 dark:border-gray-700 shadow-2xl rounded-full px-5 py-3 flex items-center justify-between gap-4 pointer-events-auto backdrop-blur">
-      <div class="pointer-events-none absolute inset-x-14 top-2 mx-auto h-1 rounded-full bg-gradient-to-r from-blue-200 via-blue-400 to-blue-200 opacity-60 dark:from-blue-900 dark:via-blue-600 dark:to-blue-900"></div>
-      <button id="btn-quick-graficos"
-        class="relative flex h-11 w-11 items-center justify-center rounded-full bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-300 shadow-sm transition-transform hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 dark:focus-visible:ring-blue-700"
-        type="button" aria-label="Abrir gráficos">
-        <i class="fa fa-chart-line text-lg"></i>
-      </button>
-      <div class="relative flex w-full justify-center">
-        <button id="btn-main-float"
-          class="relative flex h-14 w-14 items-center justify-center rounded-full bg-blue-600 dark:bg-blue-700 text-white shadow-lg transition-transform duration-300 focus:outline-none focus:ring-4 focus:ring-blue-300 dark:focus:ring-blue-900"
-          aria-label="Menu de ações" aria-expanded="false">
-          <span class="sr-only">Abrir menu de ações rápidas</span>
-          <i class="fa fa-plus text-xl" id="main-icon"></i>
-        </button>
-      </div>
       <button id="btn-quick-cartoes"
-        class="relative flex h-11 w-11 items-center justify-center rounded-full bg-emerald-50 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-300 shadow-sm transition-transform hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 dark:focus-visible:ring-emerald-700"
+        class="group flex-1 flex flex-col items-center gap-1 text-[0.7rem] font-semibold text-emerald-700 dark:text-emerald-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 dark:focus-visible:ring-emerald-700"
         type="button" aria-label="Gerenciar cartões">
-        <i class="fa fa-wallet text-lg"></i>
+        <span class="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-50 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-300 shadow-sm transition-transform group-hover:-translate-y-0.5">
+          <i class="fa fa-wallet text-lg"></i>
+        </span>
+        Cartões
       </button>
     </nav>
     <div class="mt-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 pointer-events-none select-none">
-      Adicionar lançamento
+      Ferramentas rápidas
     </div>
   </div>
 </div>
@@ -4470,78 +4459,37 @@ document.getElementById('filtro-mes').addEventListener('change', ()=>{
   startObservers(); 
 });
 
-
 /* ===========================
-   MENU DE AÇÕES INFERIOR
+   BARRA DE AÇÕES INFERIOR
    =========================== */
-let floatingMenuOpen = false;
-
-function setFloatingMenuOpen(open) {
-  const secondaryButtons = document.getElementById('secondary-buttons');
-  const mainIcon = document.getElementById('main-icon');
-  const btnMainFloat = document.getElementById('btn-main-float');
-
-  floatingMenuOpen = Boolean(open);
-
-  if (secondaryButtons) {
-    secondaryButtons.classList.toggle('opacity-0', !floatingMenuOpen);
-    secondaryButtons.classList.toggle('translate-y-4', !floatingMenuOpen);
-    secondaryButtons.classList.toggle('pointer-events-none', !floatingMenuOpen);
-    secondaryButtons.classList.toggle('opacity-100', floatingMenuOpen);
-    secondaryButtons.classList.toggle('pointer-events-auto', floatingMenuOpen);
-    secondaryButtons.setAttribute('aria-hidden', floatingMenuOpen ? 'false' : 'true');
-  }
-
-  if (mainIcon) {
-    mainIcon.className = floatingMenuOpen ? 'fa fa-times text-xl' : 'fa fa-plus text-xl';
-  }
-
-  if (btnMainFloat) {
-    btnMainFloat.style.transform = floatingMenuOpen ? 'rotate(45deg)' : 'rotate(0deg)';
-    btnMainFloat.setAttribute('aria-expanded', floatingMenuOpen ? 'true' : 'false');
-  }
-}
-
-function toggleFloatingMenu() {
-  setFloatingMenuOpen(!floatingMenuOpen);
-}
-
 function initFloatingMenu() {
   const floatingMenu = document.getElementById('floating-menu');
-  const btnMainFloat = document.getElementById('btn-main-float');
-  const btnAddGasto = document.getElementById('btn-add-gasto-float');
-  const btnAddFixo = document.getElementById('btn-add-fixo-float');
-  const btnAddParcelado = document.getElementById('btn-add-parcelado-float');
+  const btnAddVariavel = document.getElementById('btn-add-gasto-variavel');
+  const btnAddFixo = document.getElementById('btn-add-gasto-fixo');
+  const btnAddParcelado = document.getElementById('btn-add-gasto-parcelado');
   const btnQuickGraficos = document.getElementById('btn-quick-graficos');
   const btnQuickCartoes = document.getElementById('btn-quick-cartoes');
 
-  if (!floatingMenu || !btnMainFloat) return;
+  if (!floatingMenu) return;
 
-  setFloatingMenuOpen(false);
-
-  btnMainFloat.addEventListener('click', (event) => {
-    event.preventDefault();
-    toggleFloatingMenu();
-  });
-
-  if (btnAddGasto) {
-    btnAddGasto.addEventListener('click', () => {
+  if (btnAddVariavel) {
+    btnAddVariavel.addEventListener('click', () => {
       abrirModal();
-      setFloatingMenuOpen(false);
+      updateFloatingMenuVisibility();
     });
   }
 
   if (btnAddFixo) {
     btnAddFixo.addEventListener('click', () => {
       abrirModalFixo();
-      setFloatingMenuOpen(false);
+      updateFloatingMenuVisibility();
     });
   }
 
   if (btnAddParcelado) {
     btnAddParcelado.addEventListener('click', () => {
       abrirModalParcelado();
-      setFloatingMenuOpen(false);
+      updateFloatingMenuVisibility();
     });
   }
 
@@ -4550,7 +4498,6 @@ function initFloatingMenu() {
       const modalGraficos = document.getElementById('modal-graficos');
       if (modalGraficos) {
         modalGraficos.classList.remove('hidden');
-        setFloatingMenuOpen(false);
         updateFloatingMenuVisibility();
       }
     });
@@ -4561,17 +4508,12 @@ function initFloatingMenu() {
       const modalCartoes = document.getElementById('modal-gerenciar-cartoes');
       if (modalCartoes) {
         modalCartoes.classList.remove('hidden');
-        setFloatingMenuOpen(false);
         updateFloatingMenuVisibility();
       }
     });
   }
 
-  document.addEventListener('click', (event) => {
-    if (floatingMenuOpen && floatingMenu && !floatingMenu.contains(event.target)) {
-      setFloatingMenuOpen(false);
-    }
-  });
+  updateFloatingMenuVisibility();
 }
 
 /* ===========================
@@ -5965,7 +5907,6 @@ window.addEventListener('scroll', () => {
   if (isModalOpen) {
     floatingMenu.classList.add('invisible');
     floatingMenu.style.display = 'none';
-    setFloatingMenuOpen(false);
     return;
   }
 
@@ -5975,7 +5916,6 @@ window.addEventListener('scroll', () => {
   if (st > lastScrollTop && st > 120) {
     floatingMenu.style.transform = 'translateY(110%)';
     floatingMenu.style.opacity = '0';
-    if (floatingMenuOpen) setFloatingMenuOpen(false);
   } else {
     floatingMenu.style.transform = 'translateY(0)';
     floatingMenu.style.opacity = '1';
@@ -6000,7 +5940,7 @@ function updateFloatingMenuVisibility() {
   if (isModalOpen) {
     floatingMenu.classList.add('invisible');
     floatingMenu.style.display = 'none';
-    setFloatingMenuOpen(false);
+    floatingMenu.style.opacity = '0';
   } else {
     floatingMenu.classList.remove('invisible');
     floatingMenu.style.display = 'flex';
