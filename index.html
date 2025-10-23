@@ -782,6 +782,26 @@ html.dark .mobile-tab-button {
   </div>
 </div>
 
+<!-- ACCESS GUARD OVERLAY -->
+<div id="access-guard-overlay" class="hidden fixed inset-0 z-[9999] bg-slate-900/95 backdrop-blur-sm flex items-center justify-center px-4 py-8">
+  <div class="w-full max-w-md bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-emerald-200/60 dark:border-emerald-900/40 p-6 space-y-4 text-center">
+    <div class="flex items-center justify-center w-14 h-14 rounded-full mx-auto bg-emerald-100 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-300">
+      <i id="access-guard-icon" class="fa-solid fa-shield-halved text-2xl"></i>
+    </div>
+    <div class="space-y-2">
+      <h2 id="access-guard-title" class="text-xl font-semibold text-gray-800 dark:text-gray-100">Acesso em análise</h2>
+      <p id="access-guard-message" class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+        Aguarde a liberação do administrador. Assim que sua conta for aprovada, o painel será carregado automaticamente.
+      </p>
+    </div>
+    <div id="access-guard-extra" class="hidden text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 rounded-xl px-4 py-3 leading-relaxed"></div>
+    <div class="flex flex-col sm:flex-row gap-3 pt-2">
+      <button id="access-guard-refresh" type="button" class="flex-1 py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-semibold transition-colors">Verificar status</button>
+      <button id="access-guard-signout" type="button" class="flex-1 py-2.5 rounded-lg border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition-colors">Trocar de conta</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL: Compartilhamento do espaço financeiro -->
 <div id="modal-workspace-share" class="fixed inset-0 z-[9500] hidden items-center justify-center bg-slate-900/80 backdrop-blur px-4 py-8">
   <div class="relative w-full max-w-xl bg-white dark:bg-gray-900 border border-gray-200/80 dark:border-gray-700 rounded-2xl shadow-2xl p-6 sm:p-8">
@@ -820,6 +840,45 @@ html.dark .mobile-tab-button {
   </div>
 </div>
 
+<!-- MODAL: Controle de acesso -->
+<div id="modal-access-manager" class="fixed inset-0 z-[9400] hidden items-center justify-center bg-slate-900/80 backdrop-blur px-4 py-8">
+  <div class="relative w-full max-w-3xl bg-white dark:bg-gray-900 border border-gray-200/80 dark:border-gray-700 rounded-2xl shadow-2xl p-6 sm:p-8">
+    <button id="access-manager-close" class="absolute top-3 right-3 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-2xl leading-none" aria-label="Fechar modal">&times;</button>
+    <div class="space-y-6 text-sm">
+      <div>
+        <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+          <i class="fa-solid fa-user-shield text-emerald-500"></i>
+          Controle de acesso
+        </h2>
+        <p class="mt-2 text-gray-500 dark:text-gray-400 text-sm leading-relaxed">
+          Aprove ou bloqueie contas antes de liberar o painel. Convide clientes apenas depois de validar e-mails e permissões.
+        </p>
+      </div>
+      <div class="grid gap-6 md:grid-cols-2">
+        <section class="space-y-3">
+          <header class="flex items-center justify-between">
+            <h3 class="text-sm font-semibold text-emerald-600 dark:text-emerald-300 uppercase tracking-wide">Pendentes</h3>
+            <span id="access-manager-pending-count" class="text-xs text-gray-400"></span>
+          </header>
+          <ul id="access-manager-pending" class="space-y-3"></ul>
+          <p id="access-manager-pending-empty" class="hidden text-xs text-gray-500 dark:text-gray-400 leading-relaxed">Nenhuma conta aguardando aprovação no momento.</p>
+        </section>
+        <section class="space-y-3">
+          <header class="flex items-center justify-between">
+            <h3 class="text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wide">Bloqueadas</h3>
+            <span id="access-manager-blocked-count" class="text-xs text-gray-400"></span>
+          </header>
+          <ul id="access-manager-blocked" class="space-y-3"></ul>
+          <p id="access-manager-blocked-empty" class="hidden text-xs text-gray-500 dark:text-gray-400 leading-relaxed">Nenhuma conta bloqueada.</p>
+        </section>
+      </div>
+      <footer class="rounded-xl bg-emerald-50/70 dark:bg-emerald-500/10 border border-emerald-200/60 dark:border-emerald-500/30 px-4 py-3 text-xs text-gray-600 dark:text-gray-300 leading-relaxed">
+        <p>💡 Contas aprovadas passam a acessar o mesmo espaço financeiro definido no compartilhamento familiar. Use o bloqueio para suspender o acesso sem excluir dados.</p>
+      </footer>
+    </div>
+  </div>
+</div>
+
 <!-- HEADER: filtro mês + menu do usuário -->
 <header class="bg-white dark:bg-gray-900 shadow sticky top-0 z-40 px-3 py-1 relative">
   <div class="flex items-center gap-2">
@@ -846,6 +905,10 @@ html.dark .mobile-tab-button {
             <span>Tema</span>
           </span>
           <span id="toggleDarkStatus" class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400"></span>
+        </button>
+        <button id="btn-open-access-manager" type="button" class="hidden w-full flex items-center gap-2 px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+          <i class="fa-solid fa-user-check text-emerald-500"></i>
+          <span>Controle de acesso</span>
         </button>
         <button id="btn-open-workspace-sharing" type="button" class="w-full flex items-center gap-2 px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
           <i class="fa fa-people-group text-emerald-500"></i>
@@ -1882,6 +1945,11 @@ let appBootstrapped = false;
 let workspaceInitialized = false;
 let activeWorkspace = { workspaceId: null, ownerUid: null, memberUids: [], isOwner: false };
 const workspaceProfilesCache = new Map();
+let currentUserProfile = null;
+let appReadyForCurrentUser = false;
+let appStartInProgress = false;
+let accessProfileUnsubscribe = null;
+let accessGuardMode = null;
 
 function requireAuthContext() {
   if (!currentUser) {
@@ -1938,20 +2006,81 @@ async function detectLegacyData() {
 }
 
 async function syncUserProfile(user) {
-  if (!user) return;
+  if (!user) return null;
   try {
     const normalized = normalizeEmail(user.email);
-    const profilePayload = {
-      email: user.email || null,
-      normalizedEmail: normalized || null,
-      displayName: user.displayName || null,
-      photoURL: user.photoURL || null,
-      lastLoginAt: firebase.firestore.Timestamp.now(),
+    const profileRef = db.collection('profiles').doc(user.uid);
+    const snapshot = await profileRef.get();
+    const existingProfile = snapshot.exists ? (snapshot.data() || {}) : {};
+    const now = firebase.firestore.Timestamp.now();
+    const updates = {
+      email: user.email || existingProfile.email || null,
+      normalizedEmail: normalized || existingProfile.normalizedEmail || null,
+      displayName: user.displayName || existingProfile.displayName || null,
+      photoURL: user.photoURL || existingProfile.photoURL || null,
+      lastLoginAt: now,
+      updatedAt: now,
     };
-    await db.collection('profiles').doc(user.uid).set(profilePayload, { merge: true });
-    workspaceProfilesCache.set(user.uid, profilePayload);
+
+    if (!existingProfile.createdAt) {
+      updates.createdAt = now;
+    }
+
+    const emailAllowed = isEmailAllowedForRegistration(normalized);
+    let status = existingProfile.status || null;
+    let role = existingProfile.role || null;
+
+    const shouldApprove = shouldAutoApproveUser(user, existingProfile);
+
+    if (!status) {
+      if (!ACCESS_CONTROL_CFG.requireApproval || shouldApprove) {
+        status = 'approved';
+        updates.status = 'approved';
+        updates.approvedAt = now;
+        updates.approvedBy = user.uid;
+      } else {
+        status = 'pending';
+        updates.status = 'pending';
+        updates.pendingAt = now;
+      }
+    }
+
+    if (status === 'approved' && !updates.approvedAt && !existingProfile.approvedAt) {
+      updates.approvedAt = now;
+      updates.approvedBy = existingProfile.approvedBy || user.uid;
+    }
+
+    if (!emailAllowed) {
+      status = 'blocked';
+      updates.status = 'blocked';
+      updates.blockedAt = now;
+      updates.blockedReason = 'not_allowlisted';
+    } else if (existingProfile.blockedReason && status !== 'blocked') {
+      updates.blockedReason = FieldValue.delete();
+    }
+
+    if (status === 'pending' && !existingProfile.pendingAt && !updates.pendingAt) {
+      updates.pendingAt = now;
+    }
+
+    if (!role && userMatchesAdminConfig(user, existingProfile)) {
+      role = 'admin';
+      updates.role = 'admin';
+    }
+
+    if (role) {
+      updates.role = role;
+    }
+
+    updates.status = status;
+
+    await profileRef.set(updates, { merge: true });
+    const mergedProfile = { ...existingProfile, ...updates, status, role };
+    workspaceProfilesCache.set(user.uid, mergedProfile);
+    return { uid: user.uid, ...mergedProfile };
   } catch (error) {
     console.error('Erro ao sincronizar perfil do usuário:', error);
+    return null;
   }
 }
 
@@ -2179,6 +2308,22 @@ const workspaceLeaveButton = document.getElementById('workspace-leave-button');
 const workspaceShareFeedback = document.getElementById('workspace-share-feedback');
 const workspaceOwnerHint = document.getElementById('workspace-owner-hint');
 const footerVerse = document.getElementById('footer-verse');
+const accessGuardOverlay = document.getElementById('access-guard-overlay');
+const accessGuardTitle = document.getElementById('access-guard-title');
+const accessGuardMessage = document.getElementById('access-guard-message');
+const accessGuardExtra = document.getElementById('access-guard-extra');
+const accessGuardRefresh = document.getElementById('access-guard-refresh');
+const accessGuardSignout = document.getElementById('access-guard-signout');
+const accessGuardIcon = document.getElementById('access-guard-icon');
+const accessManagerButton = document.getElementById('btn-open-access-manager');
+const accessManagerModal = document.getElementById('modal-access-manager');
+const accessManagerClose = document.getElementById('access-manager-close');
+const accessManagerPendingList = document.getElementById('access-manager-pending');
+const accessManagerBlockedList = document.getElementById('access-manager-blocked');
+const accessManagerPendingEmpty = document.getElementById('access-manager-pending-empty');
+const accessManagerBlockedEmpty = document.getElementById('access-manager-blocked-empty');
+const accessManagerPendingCount = document.getElementById('access-manager-pending-count');
+const accessManagerBlockedCount = document.getElementById('access-manager-blocked-count');
 
 let authMode = 'signIn';
 let googleLoading = false;
@@ -2290,6 +2435,82 @@ function showWorkspaceFeedback(message, isSuccess = true) {
   workspaceShareFeedback.classList.toggle('dark:text-emerald-300', isSuccess);
   workspaceShareFeedback.classList.toggle('text-red-500', !isSuccess);
   workspaceShareFeedback.classList.toggle('dark:text-red-400', !isSuccess);
+}
+
+function lockBodyScroll() {
+  document.body.classList.add('overflow-hidden');
+}
+
+function unlockBodyScrollIfAllowed() {
+  const authVisible = authOverlay && !authOverlay.classList.contains('hidden');
+  const accessVisible = accessGuardOverlay && !accessGuardOverlay.classList.contains('hidden');
+  const workspaceVisible = workspaceShareModal && !workspaceShareModal.classList.contains('hidden');
+  const accessManagerVisible = accessManagerModal && !accessManagerModal.classList.contains('hidden');
+  if (!authVisible && !accessVisible && !workspaceVisible && !accessManagerVisible) {
+    document.body.classList.remove('overflow-hidden');
+  }
+}
+
+function showAccessGuardOverlay(mode = 'pending', profile = {}) {
+  if (!accessGuardOverlay) return;
+  accessGuardMode = mode;
+  let title = 'Acesso em análise';
+  let message = 'Aguarde a liberação do administrador. Assim que sua conta for aprovada, o painel será carregado automaticamente.';
+  let extra = '';
+  let iconClass = 'fa-shield-halved';
+  let refreshLabel = 'Verificar status';
+
+  if (mode === 'blocked') {
+    title = 'Acesso bloqueado';
+    message = 'Esta conta foi bloqueada pelo administrador. Solicite a liberação antes de tentar novamente.';
+    iconClass = 'fa-user-lock';
+    refreshLabel = 'Tentar novamente';
+    if (profile.blockedReason === 'not_allowlisted') {
+      extra = 'O e-mail informado não está na lista de clientes autorizados. Entre em contato com o administrador para liberar o acesso.';
+    } else if (profile.blockedReason) {
+      extra = profile.blockedReason;
+    }
+  } else if (mode === 'pending') {
+    iconClass = 'fa-hourglass-half';
+    refreshLabel = 'Verificar status';
+    if (profile.pendingAt) {
+      extra = 'Assim que o administrador aprovar sua conta, recarregaremos os dados automaticamente. Você pode verificar novamente sempre que quiser.';
+    }
+  }
+
+  if (accessGuardTitle) {
+    accessGuardTitle.textContent = title;
+  }
+  if (accessGuardMessage) {
+    accessGuardMessage.textContent = message;
+  }
+  if (accessGuardExtra) {
+    if (extra) {
+      accessGuardExtra.textContent = extra;
+      accessGuardExtra.classList.remove('hidden');
+    } else {
+      accessGuardExtra.textContent = '';
+      accessGuardExtra.classList.add('hidden');
+    }
+  }
+  if (accessGuardIcon) {
+    accessGuardIcon.className = `fa-solid ${iconClass} text-2xl`;
+  }
+  if (accessGuardRefresh) {
+    accessGuardRefresh.textContent = refreshLabel;
+    accessGuardRefresh.disabled = false;
+    accessGuardRefresh.classList.remove('opacity-60', 'cursor-not-allowed');
+  }
+
+  accessGuardOverlay.classList.remove('hidden');
+  lockBodyScroll();
+}
+
+function hideAccessGuardOverlay() {
+  if (!accessGuardOverlay) return;
+  accessGuardOverlay.classList.add('hidden');
+  accessGuardMode = null;
+  unlockBodyScrollIfAllowed();
 }
 
 const workspaceJoinSubmitDefault = workspaceJoinSubmit ? workspaceJoinSubmit.textContent : '';
@@ -2463,16 +2684,15 @@ async function openWorkspaceShareModal() {
   resetWorkspaceFeedback();
   await renderWorkspaceSharingDetails();
   workspaceShareModal.classList.remove('hidden');
-  document.body.classList.add('overflow-hidden', 'workspace-share-open');
+  lockBodyScroll();
+  document.body.classList.add('workspace-share-open');
 }
 
 function closeWorkspaceShareModal() {
   if (!workspaceShareModal) return;
   workspaceShareModal.classList.add('hidden');
   document.body.classList.remove('workspace-share-open');
-  if ((!authOverlay || authOverlay.classList.contains('hidden')) && !document.body.classList.contains('workspace-share-open')) {
-    document.body.classList.remove('overflow-hidden');
-  }
+  unlockBodyScrollIfAllowed();
   resetWorkspaceFeedback();
 }
 
@@ -2634,12 +2854,12 @@ function showAuthOverlay() {
   authError.classList.add('hidden');
   authError.textContent = '';
   authOverlay.classList.remove('hidden');
-  document.body.classList.add('overflow-hidden');
+  lockBodyScroll();
 }
 
 function hideAuthOverlay() {
   authOverlay.classList.add('hidden');
-  document.body.classList.remove('overflow-hidden');
+  unlockBodyScrollIfAllowed();
   authError.classList.add('hidden');
   authError.textContent = '';
 }
@@ -2835,18 +3055,363 @@ function updateUserSessionUI(user) {
   updateHeaderOffset();
 }
 
+function isCurrentUserAdmin() {
+  if (!currentUser) return false;
+  if (userMatchesAdminConfig(currentUser, currentUserProfile)) {
+    return true;
+  }
+  return Boolean(currentUserProfile?.role === 'admin');
+}
+
+function updateAdminControlsVisibility() {
+  if (!accessManagerButton) return;
+  const visible = isCurrentUserAdmin();
+  accessManagerButton.classList.toggle('hidden', !visible);
+}
+
+async function startAppForCurrentUser(forceReload = false) {
+  if (!currentUser) return;
+  if (appStartInProgress) return;
+  if (appReadyForCurrentUser && !forceReload) {
+    return;
+  }
+  appStartInProgress = true;
+  try {
+    await ensureUserWorkspace(currentUser);
+    if (!appBootstrapped) {
+      boot();
+      appBootstrapped = true;
+    } else if (forceReload || !appReadyForCurrentUser) {
+      carregarEnvelopes();
+      startObservers();
+    }
+    if (workspaceShareModal && !workspaceShareModal.classList.contains('hidden')) {
+      await renderWorkspaceSharingDetails();
+    }
+    appReadyForCurrentUser = true;
+  } catch (error) {
+    console.error('Erro ao preparar dados do usuário:', error);
+  } finally {
+    appStartInProgress = false;
+  }
+}
+
+function applyAccessPolicy(profile, options = {}) {
+  const { allowAppStart = true, forceReload = false } = options;
+  const requireApproval = ACCESS_CONTROL_CFG.requireApproval !== false;
+  const status = profile?.status || (requireApproval ? 'pending' : 'approved');
+  currentUserProfile = profile || currentUserProfile;
+  updateAdminControlsVisibility();
+  if (!profile) {
+    showAccessGuardOverlay('pending');
+    appReadyForCurrentUser = false;
+    return false;
+  }
+
+  if (status === 'blocked') {
+    showAccessGuardOverlay('blocked', profile);
+    appReadyForCurrentUser = false;
+    return false;
+  }
+
+  if (requireApproval && status !== 'approved') {
+    showAccessGuardOverlay('pending', profile);
+    appReadyForCurrentUser = false;
+    return false;
+  }
+
+  hideAccessGuardOverlay();
+  if (allowAppStart) {
+    startAppForCurrentUser(forceReload);
+  }
+  return true;
+}
+
+function subscribeToAccessProfile(uid) {
+  if (accessProfileUnsubscribe) {
+    accessProfileUnsubscribe();
+    accessProfileUnsubscribe = null;
+  }
+  if (!uid) return;
+  accessProfileUnsubscribe = db.collection('profiles').doc(uid).onSnapshot(
+    (snapshot) => {
+      if (!snapshot.exists) return;
+      const data = snapshot.data() || {};
+      const profile = { uid, ...data };
+      workspaceProfilesCache.set(uid, data);
+      currentUserProfile = profile;
+      updateUserSessionUI(currentUser);
+      updateAdminControlsVisibility();
+      applyAccessPolicy(profile, { allowAppStart: true });
+    },
+    (error) => {
+      console.error('Erro ao acompanhar status de acesso:', error);
+    }
+  );
+}
+
+async function refreshAccessProfile() {
+  if (!currentUser) return null;
+  try {
+    const snapshot = await db.collection('profiles').doc(currentUser.uid).get();
+    if (!snapshot.exists) {
+      return null;
+    }
+    const data = snapshot.data() || {};
+    const profile = { uid: currentUser.uid, ...data };
+    workspaceProfilesCache.set(currentUser.uid, data);
+    currentUserProfile = profile;
+    updateAdminControlsVisibility();
+    return profile;
+  } catch (error) {
+    console.error('Erro ao atualizar o perfil de acesso:', error);
+    return null;
+  }
+}
+
+function closeAccessManagerModal() {
+  if (!accessManagerModal) return;
+  accessManagerModal.classList.add('hidden');
+  unlockBodyScrollIfAllowed();
+}
+
+function createAccessManagerListItem(entry, type) {
+  const li = document.createElement('li');
+  li.className = 'rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/70 px-4 py-4 shadow-sm';
+  const email = entry.email || '—';
+  const statusLabel = type === 'pending' ? 'Aguardando aprovação' : 'Bloqueada';
+  const statusClasses = type === 'pending'
+    ? 'text-amber-600 dark:text-amber-300'
+    : 'text-red-500 dark:text-red-300';
+  const lastLogin = formatDateTime(entry.lastLoginAt);
+  const createdAt = formatDateTime(entry.createdAt);
+  const blockedReason = entry.blockedReason && type === 'blocked' ? entry.blockedReason : '';
+
+  li.innerHTML = `
+    <div class="flex flex-col gap-2">
+      <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+        <div>
+          <p class="text-sm font-semibold text-gray-800 dark:text-gray-100">${email}</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400 break-all">${entry.uid}</p>
+        </div>
+        <span class="text-xs uppercase tracking-wide font-semibold ${statusClasses}">${statusLabel}</span>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-1 text-[0.7rem] text-gray-500 dark:text-gray-400">
+        <span>Cadastro: <strong class="text-gray-700 dark:text-gray-200">${createdAt}</strong></span>
+        <span>Último acesso: <strong class="text-gray-700 dark:text-gray-200">${lastLogin}</strong></span>
+      </div>
+      ${blockedReason ? `<p class="text-xs text-red-500 dark:text-red-300 leading-relaxed">Motivo: ${blockedReason}</p>` : ''}
+      <div class="flex flex-wrap gap-2 pt-1">
+        ${type === 'pending' ? '<button data-action="approve" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white transition-colors">Aprovar</button>' : ''}
+        ${type === 'pending' ? '<button data-action="block" class="px-3 py-1.5 text-xs font-semibold rounded-lg border border-red-200 dark:border-red-500/40 text-red-600 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors">Bloquear</button>' : ''}
+        ${type === 'blocked' ? '<button data-action="approve" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white transition-colors">Liberar acesso</button>' : ''}
+      </div>
+    </div>
+  `;
+
+  const approveButton = li.querySelector('[data-action="approve"]');
+  const blockButton = li.querySelector('[data-action="block"]');
+  const isSelf = entry.uid === currentUser?.uid;
+
+  const setButtonLoading = (button, isLoading) => {
+    if (!button) return;
+    button.disabled = isLoading;
+    button.classList.toggle('opacity-60', isLoading);
+    button.classList.toggle('cursor-not-allowed', isLoading);
+    if (isLoading) {
+      button.dataset.originalText = button.textContent;
+      button.textContent = 'Processando...';
+    } else if (button.dataset.originalText) {
+      button.textContent = button.dataset.originalText;
+      delete button.dataset.originalText;
+    }
+  };
+
+  if (approveButton) {
+    if (isSelf && type === 'blocked') {
+      approveButton.disabled = true;
+      approveButton.classList.add('opacity-60', 'cursor-not-allowed');
+    } else {
+      approveButton.addEventListener('click', async () => {
+        setButtonLoading(approveButton, true);
+        try {
+          await updateUserAccessStatus(entry.uid, 'approved');
+          await loadAccessManagerLists();
+          showToast('Conta liberada com sucesso!');
+        } catch (error) {
+          console.error('Erro ao aprovar usuário:', error);
+          showToast('Não foi possível atualizar o acesso agora.', 'error');
+        } finally {
+          setButtonLoading(approveButton, false);
+        }
+      });
+    }
+  }
+
+  if (blockButton) {
+    if (isSelf) {
+      blockButton.disabled = true;
+      blockButton.classList.add('opacity-60', 'cursor-not-allowed');
+    } else {
+      blockButton.addEventListener('click', async () => {
+        setButtonLoading(blockButton, true);
+        try {
+          await updateUserAccessStatus(entry.uid, 'blocked');
+          await loadAccessManagerLists();
+          showToast('Conta bloqueada.', 'info');
+        } catch (error) {
+          console.error('Erro ao bloquear usuário:', error);
+          showToast('Não foi possível bloquear agora.', 'error');
+        } finally {
+          setButtonLoading(blockButton, false);
+        }
+      });
+    }
+  }
+
+  return li;
+}
+
+function renderAccessManagerList(targetList, entries, emptyLabel, type) {
+  if (!targetList) return;
+  targetList.innerHTML = '';
+  if (!entries || entries.length === 0) {
+    if (emptyLabel) {
+      emptyLabel.classList.remove('hidden');
+    }
+    return;
+  }
+  if (emptyLabel) {
+    emptyLabel.classList.add('hidden');
+  }
+  entries
+    .sort((a, b) => {
+      const aTime = a.updatedAt?.toMillis ? a.updatedAt.toMillis() : (a.updatedAt || 0);
+      const bTime = b.updatedAt?.toMillis ? b.updatedAt.toMillis() : (b.updatedAt || 0);
+      return bTime - aTime;
+    })
+    .forEach((entry) => {
+      targetList.appendChild(createAccessManagerListItem(entry, type));
+    });
+}
+
+async function loadAccessManagerLists() {
+  if (!isCurrentUserAdmin()) {
+    showToast('Somente administradores podem gerenciar acessos.', 'error');
+    return;
+  }
+  if (!accessManagerPendingList || !accessManagerBlockedList) {
+    return;
+  }
+
+  accessManagerPendingList.innerHTML = '';
+  accessManagerBlockedList.innerHTML = '';
+  if (accessManagerPendingEmpty) accessManagerPendingEmpty.classList.add('hidden');
+  if (accessManagerBlockedEmpty) accessManagerBlockedEmpty.classList.add('hidden');
+  if (accessManagerPendingCount) accessManagerPendingCount.textContent = '';
+  if (accessManagerBlockedCount) accessManagerBlockedCount.textContent = '';
+
+  try {
+    const query = db.collection('profiles').where('status', 'in', ['pending', 'blocked']);
+    const snapshot = await query.get();
+    const pending = [];
+    const blocked = [];
+    snapshot.forEach((doc) => {
+      const data = doc.data() || {};
+      const entry = { uid: doc.id, ...data };
+      if (entry.status === 'blocked') {
+        blocked.push(entry);
+      } else {
+        pending.push(entry);
+      }
+    });
+
+    renderAccessManagerList(accessManagerPendingList, pending, accessManagerPendingEmpty, 'pending');
+    renderAccessManagerList(accessManagerBlockedList, blocked, accessManagerBlockedEmpty, 'blocked');
+
+    if (accessManagerPendingCount) {
+      accessManagerPendingCount.textContent = pending.length ? `${pending.length}` : '';
+    }
+    if (accessManagerBlockedCount) {
+      accessManagerBlockedCount.textContent = blocked.length ? `${blocked.length}` : '';
+    }
+  } catch (error) {
+    console.error('Erro ao carregar a fila de aprovação:', error);
+    if (accessManagerPendingEmpty) {
+      accessManagerPendingEmpty.textContent = 'Não foi possível carregar as solicitações agora.';
+      accessManagerPendingEmpty.classList.remove('hidden');
+    }
+  }
+}
+
+async function updateUserAccessStatus(uid, status) {
+  if (!isCurrentUserAdmin()) {
+    throw new Error('Sem permissão para alterar acessos.');
+  }
+  if (!uid) {
+    throw new Error('Usuário inválido.');
+  }
+
+  const now = firebase.firestore.Timestamp.now();
+  const profileRef = db.collection('profiles').doc(uid);
+  const updates = {
+    status,
+    updatedAt: now,
+  };
+
+  if (status === 'approved') {
+    updates.approvedAt = now;
+    updates.approvedBy = currentUser?.uid || null;
+    updates.blockedAt = FieldValue.delete();
+    updates.blockedBy = FieldValue.delete();
+    updates.blockedReason = FieldValue.delete();
+    updates.pendingAt = FieldValue.delete();
+  } else if (status === 'blocked') {
+    updates.blockedAt = now;
+    updates.blockedBy = currentUser?.uid || null;
+    updates.blockedReason = 'Bloqueado pelo administrador.';
+    updates.pendingAt = FieldValue.delete();
+    updates.approvedAt = FieldValue.delete();
+    updates.approvedBy = FieldValue.delete();
+  } else if (status === 'pending') {
+    updates.pendingAt = now;
+    updates.approvedAt = FieldValue.delete();
+    updates.approvedBy = FieldValue.delete();
+    updates.blockedAt = FieldValue.delete();
+    updates.blockedBy = FieldValue.delete();
+    updates.blockedReason = FieldValue.delete();
+  }
+
+  await profileRef.set(updates, { merge: true });
+  if (uid === currentUser?.uid) {
+    const profile = await refreshAccessProfile();
+    applyAccessPolicy(profile, { allowAppStart: true, forceReload: true });
+  }
+}
+
+async function openAccessManagerModal() {
+  if (!accessManagerModal) return;
+  if (!isCurrentUserAdmin()) {
+    showToast('Somente administradores podem gerenciar acessos.', 'error');
+    return;
+  }
+  accessManagerModal.classList.remove('hidden');
+  lockBodyScroll();
+  await loadAccessManagerLists();
+}
+
 async function handleUserSignedIn(user) {
   currentUser = user;
+  appReadyForCurrentUser = false;
   updateUserSessionUI(user);
   hideAuthOverlay();
-  await syncUserProfile(user);
-  await ensureUserWorkspace(user);
-  if (!appBootstrapped) {
-    boot();
-    appBootstrapped = true;
-  } else {
-    carregarEnvelopes();
-    startObservers();
+  const profile = await syncUserProfile(user);
+  currentUserProfile = profile;
+  updateAdminControlsVisibility();
+  subscribeToAccessProfile(user?.uid || null);
+  const allowed = applyAccessPolicy(profile, { allowAppStart: true, forceReload: true });
+  if (!allowed) {
+    return;
   }
   if (workspaceShareModal && !workspaceShareModal.classList.contains('hidden')) {
     await renderWorkspaceSharingDetails();
@@ -2855,12 +3420,22 @@ async function handleUserSignedIn(user) {
 
 function handleUserSignedOut() {
   currentUser = null;
+  currentUserProfile = null;
+  appReadyForCurrentUser = false;
+  appStartInProgress = false;
+  if (accessProfileUnsubscribe) {
+    accessProfileUnsubscribe();
+    accessProfileUnsubscribe = null;
+  }
   workspaceInitialized = false;
   activeWorkspace = { workspaceId: null, ownerUid: null, memberUids: [], isOwner: false };
   workspaceProfilesCache.clear();
   closeWorkspaceShareModal();
+  closeAccessManagerModal();
   updateUserSessionUI(null);
+  updateAdminControlsVisibility();
   exitVerificationMode('signIn');
+  hideAccessGuardOverlay();
   showAuthOverlay();
 }
 
@@ -2899,6 +3474,12 @@ function initAuthFlow() {
       if (authMode === 'signIn') {
         await auth.signInWithEmailAndPassword(email, password);
       } else {
+        if (!isEmailAllowedForRegistration(email)) {
+          authError.textContent = 'Este e-mail não está liberado para cadastro. Solicite acesso ao administrador.';
+          authError.classList.remove('hidden');
+          setAuthLoading(false);
+          return;
+        }
         await auth.createUserWithEmailAndPassword(email, password);
       }
       authForm.reset();
@@ -3115,6 +3696,9 @@ function initAuthFlow() {
     if (event.key === 'Escape' && workspaceShareModal && !workspaceShareModal.classList.contains('hidden')) {
       closeWorkspaceShareModal();
     }
+    if (event.key === 'Escape' && accessManagerModal && !accessManagerModal.classList.contains('hidden')) {
+      closeAccessManagerModal();
+    }
   });
 
   auth.onAuthStateChanged(async (user) => {
@@ -3129,6 +3713,59 @@ function initAuthFlow() {
       handleUserSignedOut();
     }
   });
+
+  if (accessGuardRefresh) {
+    accessGuardRefresh.addEventListener('click', async () => {
+      if (!currentUser) return;
+      accessGuardRefresh.disabled = true;
+      accessGuardRefresh.classList.add('opacity-60', 'cursor-not-allowed');
+      try {
+        await currentUser.reload().catch(() => {});
+        const profile = await refreshAccessProfile();
+        if (profile) {
+          applyAccessPolicy(profile, { allowAppStart: true, forceReload: true });
+        }
+      } catch (error) {
+        console.error('Erro ao atualizar status de acesso:', error);
+        showToast('Não foi possível verificar agora. Tente novamente em instantes.', 'error');
+      } finally {
+        accessGuardRefresh.disabled = false;
+        accessGuardRefresh.classList.remove('opacity-60', 'cursor-not-allowed');
+      }
+    });
+  }
+
+  if (accessGuardSignout) {
+    accessGuardSignout.addEventListener('click', async () => {
+      try {
+        await auth.signOut();
+      } catch (error) {
+        console.error('Erro ao sair da conta:', error);
+        showToast('Não foi possível sair agora. Tente novamente.', 'error');
+      }
+    });
+  }
+
+  if (accessManagerButton) {
+    accessManagerButton.addEventListener('click', () => {
+      openAccessManagerModal().catch((error) => {
+        console.error('Erro ao abrir controle de acesso:', error);
+        showToast('Não foi possível abrir o painel agora.', 'error');
+      });
+    });
+  }
+
+  if (accessManagerClose) {
+    accessManagerClose.addEventListener('click', closeAccessManagerModal);
+  }
+
+  if (accessManagerModal) {
+    accessManagerModal.addEventListener('click', (event) => {
+      if (event.target === accessManagerModal) {
+        closeAccessManagerModal();
+      }
+    });
+  }
 }
 
 /* ===========================
@@ -3151,6 +3788,22 @@ const formatDateInputValue = (value = new Date()) => {
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
   return `${date.getFullYear()}-${month}-${day}`;
+};
+
+const formatDateTime = (value) => {
+  if (!value) return '—';
+  let date;
+  if (value instanceof Date) {
+    date = value;
+  } else if (typeof value?.toDate === 'function') {
+    date = value.toDate();
+  } else {
+    date = new Date(value);
+  }
+  if (!date || Number.isNaN(date.getTime())) {
+    return '—';
+  }
+  return date.toLocaleString('pt-BR', { hour12: false });
 };
 
 const capitalize = (str = '') => str ? str.charAt(0).toUpperCase() + str.slice(1) : '';
@@ -3210,6 +3863,15 @@ const baseAppConfig = {
       borderColor: '#7c3aed',
     },
   },
+  accessControl: {
+    requireApproval: true,
+    autoApproveFirstUser: true,
+    adminEmails: [],
+    adminUids: [],
+    allowedEmails: [],
+    allowedDomains: [],
+    requireAllowlist: false,
+  },
 };
 
 const appConfig = deepMerge(baseAppConfig, window.__APP_CONFIG__ || {});
@@ -3222,6 +3884,93 @@ const SIMULADOR_DEFAULT_TAXA = appConfig.investimentos?.simulador?.defaultTaxaMe
 const SIMULADOR_DEFAULT_PERIODO = appConfig.investimentos?.simulador?.defaultPeriodoMeses ?? 12;
 const HISTORICO_MENSAL_CHART_CFG = appConfig.charts?.historicoMensal || {};
 const PARCELADOS_PROJECAO_CHART_CFG = appConfig.charts?.parceladosProjecao || {};
+
+const ACCESS_CONTROL_CFG = (() => {
+  const cfg = appConfig.accessControl || {};
+  const normalizeList = (list = []) => {
+    if (!Array.isArray(list)) return new Set();
+    return new Set(list.map(normalizeEmail).filter(Boolean));
+  };
+  const normalizeUidList = (list = []) => {
+    if (!Array.isArray(list)) return new Set();
+    return new Set(list.map((value) => typeof value === 'string' ? value.trim() : '').filter(Boolean));
+  };
+  const normalizeDomains = (list = []) => {
+    if (!Array.isArray(list)) return new Set();
+    return new Set(
+      list
+        .map((domain) => (domain || '').toString().trim().toLowerCase().replace(/^\./, ''))
+        .filter(Boolean)
+    );
+  };
+  return {
+    requireApproval: cfg.requireApproval !== false,
+    autoApproveFirstUser: cfg.autoApproveFirstUser !== false,
+    adminEmails: normalizeList(cfg.adminEmails || []),
+    adminUids: normalizeUidList(cfg.adminUids || []),
+    allowedEmails: normalizeList(cfg.allowedEmails || []),
+    allowedDomains: normalizeDomains(cfg.allowedDomains || []),
+    requireAllowlist: cfg.requireAllowlist === true,
+  };
+})();
+
+function emailMatchesAllowlist(normalizedEmail) {
+  if (!normalizedEmail) return false;
+  const domain = normalizedEmail.split('@')[1] || '';
+  if (ACCESS_CONTROL_CFG.allowedEmails.has(normalizedEmail)) {
+    return true;
+  }
+  if (domain && ACCESS_CONTROL_CFG.allowedDomains.has(domain)) {
+    return true;
+  }
+  return false;
+}
+
+function isEmailAllowedForRegistration(email) {
+  const normalized = normalizeEmail(email);
+  if (!normalized) return false;
+  const inAllowlist = emailMatchesAllowlist(normalized);
+  if (ACCESS_CONTROL_CFG.requireAllowlist) {
+    return inAllowlist;
+  }
+  return true;
+}
+
+function userMatchesAdminConfig(user, profile = {}) {
+  if (!user && !profile) return false;
+  const uid = user?.uid || profile?.uid || null;
+  if (uid && ACCESS_CONTROL_CFG.adminUids.has(uid)) {
+    return true;
+  }
+  const normalized = normalizeEmail(user?.email || profile?.email || profile?.normalizedEmail || '');
+  if (normalized && ACCESS_CONTROL_CFG.adminEmails.has(normalized)) {
+    return true;
+  }
+  if (profile?.role === 'admin') {
+    return true;
+  }
+  return false;
+}
+
+function shouldAutoApproveUser(user, existingProfile = null) {
+  if (existingProfile && existingProfile.status === 'approved') {
+    return true;
+  }
+  if (userMatchesAdminConfig(user, existingProfile || {})) {
+    return true;
+  }
+  const normalized = normalizeEmail(user?.email || existingProfile?.email || '');
+  if (normalized && emailMatchesAllowlist(normalized)) {
+    return true;
+  }
+  if (!existingProfile && ACCESS_CONTROL_CFG.autoApproveFirstUser) {
+    return true;
+  }
+  if (!ACCESS_CONTROL_CFG.requireApproval) {
+    return true;
+  }
+  return false;
+}
 
 function goToPanelAndFocus(panelId, inputSelector) {
   if (!panelId) return;
