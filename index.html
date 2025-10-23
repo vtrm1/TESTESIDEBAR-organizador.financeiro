@@ -736,66 +736,76 @@ html.dark .mobile-tab-button {
       <h2 id="auth-title" class="text-2xl font-bold text-emerald-600 dark:text-emerald-400">Acessar sua conta</h2>
       <p id="auth-description" class="text-sm text-gray-500 dark:text-gray-400">Faça login para carregar seus dados financeiros salvos.</p>
     </div>
-    <form id="auth-form" class="space-y-4">
-      <div class="space-y-1">
-        <label for="auth-email" class="text-sm font-medium text-gray-700 dark:text-gray-300">E-mail</label>
-        <input id="auth-email" type="email" autocomplete="email" required class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+    <div id="auth-form-block" class="space-y-6">
+      <form id="auth-form" class="space-y-4">
+        <div class="space-y-1">
+          <label for="auth-email" class="text-sm font-medium text-gray-700 dark:text-gray-300">E-mail</label>
+          <input id="auth-email" type="email" autocomplete="email" required class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+        </div>
+        <div class="space-y-1">
+          <label for="auth-password" class="text-sm font-medium text-gray-700 dark:text-gray-300">Senha</label>
+          <input id="auth-password" type="password" autocomplete="current-password" required minlength="6" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+        </div>
+        <div class="space-y-2">
+          <button type="submit" id="auth-submit" class="w-full py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-semibold transition-colors">Entrar</button>
+          <button type="button" id="auth-toggle-mode" class="w-full py-2.5 rounded-lg border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition-colors">Criar uma nova conta</button>
+        </div>
+        <p id="auth-error" class="text-sm text-red-500 hidden"></p>
+      </form>
+      <div id="auth-social-block" class="space-y-3">
+        <div class="flex items-center gap-3 text-xs uppercase tracking-[0.3em] text-gray-400 dark:text-gray-500">
+          <span class="flex-1 h-px bg-gray-200 dark:bg-gray-700"></span>
+          <span>ou</span>
+          <span class="flex-1 h-px bg-gray-200 dark:bg-gray-700"></span>
+        </div>
+        <button type="button" id="auth-google" class="w-full flex items-center justify-center gap-3 py-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/80 transition-colors">
+          <i class="fab fa-google text-lg"></i>
+          <span data-label>Entrar com Google</span>
+        </button>
+        <p id="auth-google-helper" class="hidden text-xs leading-relaxed text-amber-600 dark:text-amber-400 bg-amber-50/80 dark:bg-amber-400/10 border border-amber-200/80 dark:border-amber-500/40 rounded-lg px-3 py-2">
+          Para usar o Google em desenvolvimento, abra o app por <strong>http://localhost</strong> ou adicione <strong data-google-host></strong> à lista de domínios autorizados no Console do Firebase (Authentication → Settings → Authorized domains).
+        </p>
       </div>
-      <div class="space-y-1">
-        <label for="auth-password" class="text-sm font-medium text-gray-700 dark:text-gray-300">Senha</label>
-        <input id="auth-password" type="password" autocomplete="current-password" required minlength="6" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+    </div>
+    <div id="auth-verify-block" class="hidden space-y-4">
+      <div class="space-y-2 text-sm text-left">
+        <p class="text-gray-600 dark:text-gray-300">Enviamos um link de confirmação para <strong id="auth-verify-email" class="break-all"></strong>.</p>
+        <p class="text-gray-500 dark:text-gray-400">Confirme o endereço para liberar seu ambiente financeiro. Depois de clicar no link, volte aqui e toque em “Já confirmei”.</p>
       </div>
       <div class="space-y-2">
-        <button type="submit" id="auth-submit" class="w-full py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-semibold transition-colors">Entrar</button>
-        <button type="button" id="auth-toggle-mode" class="w-full py-2.5 rounded-lg border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition-colors">Criar uma nova conta</button>
+        <button type="button" id="auth-verify-refresh" class="w-full py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-semibold transition-colors">Já confirmei</button>
+        <button type="button" id="auth-verify-resend" class="w-full py-2.5 rounded-lg border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition-colors">Reenviar e-mail de verificação</button>
+        <button type="button" id="auth-verify-change" class="w-full py-2 rounded-lg text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">Entrar com outro e-mail</button>
       </div>
-      <p id="auth-error" class="text-sm text-red-500 hidden"></p>
-    </form>
-    <div class="space-y-3">
-      <div class="flex items-center gap-3 text-xs uppercase tracking-[0.3em] text-gray-400 dark:text-gray-500">
-        <span class="flex-1 h-px bg-gray-200 dark:bg-gray-700"></span>
-        <span>ou</span>
-        <span class="flex-1 h-px bg-gray-200 dark:bg-gray-700"></span>
-      </div>
-      <button type="button" id="auth-google" class="w-full flex items-center justify-center gap-3 py-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/80 transition-colors">
-        <i class="fab fa-google text-lg"></i>
-        <span data-label>Entrar com Google</span>
-      </button>
-      <p id="auth-google-helper" class="hidden text-xs leading-relaxed text-amber-600 dark:text-amber-400 bg-amber-50/80 dark:bg-amber-400/10 border border-amber-200/80 dark:border-amber-500/40 rounded-lg px-3 py-2">
-        Para usar o Google em desenvolvimento, abra o app por <strong>http://localhost</strong> ou adicione <strong data-google-host></strong> à lista de domínios autorizados no Console do Firebase (Authentication → Settings → Authorized domains).
-      </p>
+      <p id="auth-verify-feedback" class="hidden text-sm"></p>
     </div>
   </div>
 </div>
 
 <!-- HEADER: filtro mês (geral) + botão adicionar gasto (desktop) + Dark Mode Toggle -->
-<header class="bg-white dark:bg-gray-900 shadow sticky top-0 z-40 flex items-center justify-between px-4 py-4 md:py-3 relative">
-  <div class="flex items-center gap-4">
-    <!-- Ajuste para mobile: text-xl no mobile, text-2xl no desktop -->
-    <div class="text-xl md:text-2xl font-bold text-blue-600 dark:text-blue-400">Org. Financeiro</div>
-    <!-- Esconde o subtítulo no mobile -->
-    <div class="text-sm text-gray-500 dark:text-gray-400 hidden md:block">Controle familiar</div>
-  </div>
-  <div class="flex items-center gap-3 flex-wrap justify-end">
-    <!-- Filtro de mês GERAL (para histórico e resumo) -->
-    <select id="filtro-mes" class="px-3 py-1 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600 text-sm">
-      <option value="all">Todos</option>
-    </select>
-
-    <!-- Botão visível só no desktop -->
-    <button id="btn-open-add-gasto"
-      class="hidden md:flex bg-blue-600 dark:bg-blue-700 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700 dark:hover:bg-blue-800 flex items-center gap-2 transition-colors"
-      aria-label="Adicionar gasto">
-      <i class="fa fa-plus"></i> <span class="hidden md:inline">Adicionar gasto</span>
-    </button>
-    <!-- NOVO: Botão Toggle Dark Mode -->
-    <button id="toggleDark" class="p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-100 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
-      <span class="dark:hidden">🌙</span>
-      <span class="hidden dark:inline">☀️</span>
-    </button>
-    <div id="user-session" class="hidden items-center gap-2 rounded-full bg-gray-100 dark:bg-gray-800/80 px-3 py-1.5">
-      <span id="user-email-badge" class="text-sm font-medium text-gray-600 dark:text-gray-200 truncate max-w-[150px]"></span>
-      <button id="btn-signout" type="button" class="text-xs font-semibold text-red-500 hover:text-red-600 dark:text-red-300 dark:hover:text-red-200 transition-colors">Sair</button>
+<header class="bg-white dark:bg-gray-900 shadow sticky top-0 z-40 px-4 py-2 md:py-3 relative">
+  <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+    <div class="flex items-center gap-3 min-w-0">
+      <div class="text-lg md:text-2xl font-bold text-blue-600 dark:text-blue-400 leading-none">Org. Financeiro</div>
+      <div class="text-xs md:text-sm text-gray-500 dark:text-gray-400 hidden md:block">Controle familiar</div>
+    </div>
+    <div class="flex flex-wrap items-center gap-2 justify-end text-sm sm:flex-nowrap sm:gap-3">
+      <select id="filtro-mes" class="px-3 py-1.5 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600 text-xs sm:text-sm">
+        <option value="all">Todos</option>
+      </select>
+      <button id="btn-open-add-gasto"
+        class="hidden md:flex bg-blue-600 dark:bg-blue-700 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700 dark:hover:bg-blue-800 items-center gap-2 transition-colors"
+        aria-label="Adicionar gasto">
+        <i class="fa fa-plus"></i> <span class="hidden md:inline">Adicionar gasto</span>
+      </button>
+      <button id="toggleDark" class="p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-100 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
+        <span class="dark:hidden">🌙</span>
+        <span class="hidden dark:inline">☀️</span>
+      </button>
+      <div id="user-session" class="hidden items-center gap-1.5 rounded-full bg-gray-100 dark:bg-gray-800/80 px-2.5 py-1 text-xs sm:text-sm">
+        <span id="user-email-badge" class="font-medium text-gray-600 dark:text-gray-200 truncate max-w-[140px]"></span>
+        <button id="btn-signout" type="button" class="text-[0.7rem] sm:text-xs font-semibold text-red-500 hover:text-red-600 dark:text-red-300 dark:hover:text-red-200 transition-colors">Sair</button>
+      </div>
     </div>
   </div>
 </header>
@@ -1927,6 +1937,14 @@ if (authGoogleHostTarget) {
   const hostLabel = authEnvironment.host || window.location.host || window.location.hostname || 'seu domínio';
   authGoogleHostTarget.textContent = hostLabel;
 }
+const authFormBlock = document.getElementById('auth-form-block');
+const authSocialBlock = document.getElementById('auth-social-block');
+const authVerifyBlock = document.getElementById('auth-verify-block');
+const authVerifyEmail = document.getElementById('auth-verify-email');
+const authVerifyResend = document.getElementById('auth-verify-resend');
+const authVerifyRefresh = document.getElementById('auth-verify-refresh');
+const authVerifyChange = document.getElementById('auth-verify-change');
+const authVerifyFeedback = document.getElementById('auth-verify-feedback');
 const defaultGoogleHelperHtml = authGoogleHelper ? authGoogleHelper.innerHTML : '';
 const userSession = document.getElementById('user-session');
 const userEmailBadge = document.getElementById('user-email-badge');
@@ -1934,6 +1952,7 @@ const signOutButton = document.getElementById('btn-signout');
 
 let authMode = 'signIn';
 let googleLoading = false;
+let pendingVerificationUser = null;
 
 function showGoogleHelper(messageHtml = defaultGoogleHelperHtml) {
   if (!authGoogleHelper) return;
@@ -1948,7 +1967,14 @@ function hideGoogleHelper() {
 }
 
 function updateAuthModeUI() {
-  if (authMode === 'signIn') {
+  const isVerification = authMode === 'verify';
+  if (isVerification) {
+    const verificationEmail = pendingVerificationUser?.email || authEmailInput.value.trim();
+    authTitle.textContent = 'Confirme seu e-mail';
+    authDescription.textContent = verificationEmail
+      ? `Abra o e-mail enviado para ${verificationEmail} e clique no link de confirmação.`
+      : 'Abra o e-mail de confirmação que enviamos e clique no link para liberar sua conta.';
+  } else if (authMode === 'signIn') {
     authTitle.textContent = 'Acessar sua conta';
     authDescription.textContent = 'Faça login para carregar seus dados financeiros salvos.';
     authSubmit.textContent = 'Entrar';
@@ -1960,6 +1986,81 @@ function updateAuthModeUI() {
     authSubmit.textContent = 'Cadastrar e acessar';
     authToggleMode.textContent = 'Já tenho conta';
     authPasswordInput.autocomplete = 'new-password';
+  }
+
+  if (authFormBlock) authFormBlock.classList.toggle('hidden', isVerification);
+  if (authSocialBlock) authSocialBlock.classList.toggle('hidden', isVerification);
+  if (authVerifyBlock) authVerifyBlock.classList.toggle('hidden', !isVerification);
+  if (authToggleMode) authToggleMode.classList.toggle('hidden', isVerification);
+}
+
+function resetVerificationFeedback() {
+  if (!authVerifyFeedback) return;
+  authVerifyFeedback.classList.add('hidden');
+  authVerifyFeedback.textContent = '';
+  authVerifyFeedback.classList.remove('text-emerald-500', 'dark:text-emerald-300', 'text-red-500', 'dark:text-red-400');
+}
+
+function showVerificationFeedback(message, isSuccess = true) {
+  if (!authVerifyFeedback) return;
+  authVerifyFeedback.textContent = message;
+  authVerifyFeedback.classList.remove('hidden');
+  authVerifyFeedback.classList.toggle('text-emerald-500', isSuccess);
+  authVerifyFeedback.classList.toggle('dark:text-emerald-300', isSuccess);
+  authVerifyFeedback.classList.toggle('text-red-500', !isSuccess);
+  authVerifyFeedback.classList.toggle('dark:text-red-400', !isSuccess);
+}
+
+function setVerificationButtonsDisabled(isDisabled) {
+  [authVerifyResend, authVerifyRefresh, authVerifyChange].forEach((button) => {
+    if (!button) return;
+    button.disabled = isDisabled;
+    button.classList.toggle('opacity-60', isDisabled);
+    button.classList.toggle('cursor-not-allowed', isDisabled);
+  });
+}
+
+function exitVerificationMode(nextMode = 'signIn') {
+  pendingVerificationUser = null;
+  authMode = nextMode;
+  resetVerificationFeedback();
+  updateAuthModeUI();
+}
+
+function requiresEmailVerification(user) {
+  if (!user) return false;
+  const providerIds = (user.providerData || []).map((provider) => provider?.providerId).filter(Boolean);
+  const usesPassword = providerIds.includes('password');
+  const hasTrustedProvider = providerIds.some((providerId) => providerId && providerId !== 'password');
+  if (hasTrustedProvider) {
+    return false;
+  }
+  return usesPassword && !user.emailVerified;
+}
+
+async function handlePendingEmailVerification(user) {
+  pendingVerificationUser = user;
+  authMode = 'verify';
+  resetVerificationFeedback();
+  if (authVerifyEmail) {
+    authVerifyEmail.textContent = user.email || '';
+  }
+  updateAuthModeUI();
+  showAuthOverlay();
+
+  const metadata = user.metadata || {};
+  const creationTime = metadata.creationTime || null;
+  const lastSignInTime = metadata.lastSignInTime || null;
+  const firstSession = creationTime && creationTime === lastSignInTime;
+
+  if (firstSession) {
+    try {
+      await user.sendEmailVerification();
+      showVerificationFeedback('E-mail de verificação enviado. Confira sua caixa de entrada.', true);
+    } catch (error) {
+      console.error('Erro ao enviar verificação automática:', error);
+      showVerificationFeedback('Não foi possível enviar o e-mail automaticamente. Use o botão de reenviar abaixo.', false);
+    }
   }
 }
 
@@ -1979,6 +2080,9 @@ function hideAuthOverlay() {
 }
 
 function setAuthLoading(isLoading) {
+  if (authMode === 'verify') {
+    return;
+  }
   authSubmit.disabled = isLoading;
   authToggleMode.disabled = isLoading;
   authEmailInput.disabled = isLoading;
@@ -2036,6 +2140,20 @@ function mapAuthErrorMessage(error) {
   }
 }
 
+function mapVerificationErrorMessage(error) {
+  if (!error || !error.code) {
+    return 'Não foi possível enviar o e-mail. Tente novamente em instantes.';
+  }
+  switch (error.code) {
+    case 'auth/too-many-requests':
+      return 'Muitas solicitações seguidas. Aguarde alguns minutos e tente reenviar.';
+    case 'auth/quota-exceeded':
+      return 'Limite temporário de envios atingido. Tente novamente daqui a pouco.';
+    default:
+      return mapAuthErrorMessage(error);
+  }
+}
+
 function updateHeaderOffset() {
   window.requestAnimationFrame(() => {
     const header = document.querySelector('header');
@@ -2076,6 +2194,7 @@ function handleUserSignedOut() {
   currentUser = null;
   workspaceInitialized = false;
   updateUserSessionUI(null);
+  exitVerificationMode('signIn');
   showAuthOverlay();
 }
 
@@ -2172,6 +2291,64 @@ function initAuthFlow() {
     });
   }
 
+  if (authVerifyResend) {
+    authVerifyResend.addEventListener('click', async () => {
+      const user = auth.currentUser;
+      if (!user) return;
+      setVerificationButtonsDisabled(true);
+      resetVerificationFeedback();
+      try {
+        await user.sendEmailVerification();
+        showVerificationFeedback('Novo e-mail enviado. Verifique sua caixa de entrada ou pasta de spam.', true);
+      } catch (error) {
+        console.error('Erro ao reenviar verificação:', error);
+        showVerificationFeedback(mapVerificationErrorMessage(error), false);
+      } finally {
+        setVerificationButtonsDisabled(false);
+      }
+    });
+  }
+
+  if (authVerifyRefresh) {
+    authVerifyRefresh.addEventListener('click', async () => {
+      const user = auth.currentUser;
+      if (!user) return;
+      setVerificationButtonsDisabled(true);
+      resetVerificationFeedback();
+      try {
+        await user.reload();
+        const refreshedUser = auth.currentUser;
+        if (refreshedUser && !requiresEmailVerification(refreshedUser)) {
+          exitVerificationMode('signIn');
+          await handleUserSignedIn(refreshedUser);
+        } else {
+          showVerificationFeedback('Ainda não identificamos a confirmação. Aguarde alguns segundos e tente novamente.', false);
+        }
+      } catch (error) {
+        console.error('Erro ao atualizar estado de verificação:', error);
+        showVerificationFeedback('Não foi possível validar a confirmação agora. Tente novamente em instantes.', false);
+      } finally {
+        setVerificationButtonsDisabled(false);
+      }
+    });
+  }
+
+  if (authVerifyChange) {
+    authVerifyChange.addEventListener('click', async () => {
+      resetVerificationFeedback();
+      setVerificationButtonsDisabled(true);
+      try {
+        await auth.signOut();
+        exitVerificationMode('signIn');
+      } catch (error) {
+        console.error('Erro ao trocar e-mail:', error);
+        showVerificationFeedback('Não foi possível encerrar a sessão agora. Tente novamente.', false);
+      } finally {
+        setVerificationButtonsDisabled(false);
+      }
+    });
+  }
+
   if (signOutButton) {
     signOutButton.addEventListener('click', async () => {
       try {
@@ -2186,6 +2363,11 @@ function initAuthFlow() {
 
   auth.onAuthStateChanged(async (user) => {
     if (user) {
+      if (requiresEmailVerification(user)) {
+        await handlePendingEmailVerification(user);
+        return;
+      }
+      exitVerificationMode('signIn');
       await handleUserSignedIn(user);
     } else {
       handleUserSignedOut();
