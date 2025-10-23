@@ -808,8 +808,9 @@ html.dark .mobile-tab-button {
       </div>
       <form id="workspace-join-form" class="space-y-3">
         <div class="space-y-2">
-          <label for="workspace-join-code" class="text-sm font-medium text-gray-700 dark:text-gray-200">Entrar em um espaço existente</label>
-          <input id="workspace-join-code" type="text" class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-gray-800 dark:text-gray-100 placeholder-gray-400" placeholder="Informe o código ou e-mail da conta" autocomplete="off" />
+          <label for="workspace-join-code" class="text-sm font-medium text-gray-700 dark:text-gray-200">Recebeu um código familiar?</label>
+          <input id="workspace-join-code" type="text" class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-gray-800 dark:text-gray-100 placeholder-gray-400" placeholder="Cole o código ou e-mail da conta administradora" autocomplete="off" />
+          <p id="workspace-join-helper" class="hidden text-xs text-gray-500 dark:text-gray-400 leading-relaxed">Essa área aparece para quem entra com outra conta. Peça para o familiar acessar o app com o login dele(a) e colar o código acima.</p>
         </div>
         <button id="workspace-join-submit" type="submit" class="w-full py-2.5 rounded-lg font-semibold bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600 text-white transition-colors">Usar esse espaço</button>
       </form>
@@ -2118,6 +2119,7 @@ const workspaceMembersList = document.getElementById('workspace-members-list');
 const workspaceJoinForm = document.getElementById('workspace-join-form');
 const workspaceJoinCodeInput = document.getElementById('workspace-join-code');
 const workspaceJoinSubmit = document.getElementById('workspace-join-submit');
+const workspaceJoinHelper = document.getElementById('workspace-join-helper');
 const workspaceLeaveButton = document.getElementById('workspace-leave-button');
 const workspaceShareFeedback = document.getElementById('workspace-share-feedback');
 const workspaceOwnerHint = document.getElementById('workspace-owner-hint');
@@ -2291,8 +2293,13 @@ async function renderWorkspaceSharingDetails() {
     workspaceShareCode.textContent = workspaceId || '—';
   }
 
+  const isOwnerOfPersonalWorkspace = Boolean(activeWorkspace?.isOwner && activeWorkspace.workspaceId === currentUser.uid);
+
   if (workspaceJoinCodeInput) {
     workspaceJoinCodeInput.value = '';
+    workspaceJoinCodeInput.placeholder = isOwnerOfPersonalWorkspace
+      ? 'Esse campo aparecerá para quem entrar com outra conta'
+      : 'Cole o código ou e-mail da conta administradora';
   }
 
   if (workspaceOwnerHint) {
@@ -2306,8 +2313,19 @@ async function renderWorkspaceSharingDetails() {
   }
 
   if (workspaceJoinForm) {
-    const shouldHideJoin = activeWorkspace?.isOwner && activeWorkspace.workspaceId === currentUser.uid;
-    workspaceJoinForm.classList.toggle('hidden', Boolean(shouldHideJoin));
+    workspaceJoinForm.classList.toggle('opacity-60', isOwnerOfPersonalWorkspace);
+  }
+
+  if (workspaceJoinHelper) {
+    workspaceJoinHelper.classList.toggle('hidden', !isOwnerOfPersonalWorkspace);
+  }
+
+  if (workspaceJoinSubmit) {
+    workspaceJoinSubmit.classList.toggle('opacity-60', isOwnerOfPersonalWorkspace);
+  }
+
+  if (!isOwnerOfPersonalWorkspace && workspaceJoinCodeInput) {
+    setTimeout(() => workspaceJoinCodeInput.focus(), 60);
   }
 
   if (workspaceLeaveButton) {
