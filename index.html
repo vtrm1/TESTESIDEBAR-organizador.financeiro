@@ -243,7 +243,7 @@
 
 <style>
   :root {
-    --app-header-height: 4rem;
+    --app-header-height: 3.25rem;
   }
 
   #mobile-quickbar {
@@ -820,47 +820,41 @@ html.dark .mobile-tab-button {
   </div>
 </div>
 
-<!-- HEADER: filtro mês (geral) + botão adicionar gasto (desktop) + Dark Mode Toggle -->
-<header class="bg-white dark:bg-gray-900 shadow sticky top-0 z-40 px-4 py-1.5 md:py-2 relative">
-  <div class="flex flex-wrap items-center justify-between gap-x-2 gap-y-2">
-    <div class="flex items-center gap-2 min-w-0">
-      <div class="hidden md:block text-sm text-gray-500 dark:text-gray-400">Controle familiar</div>
-      <span id="workspace-context-badge" class="hidden inline-flex items-center gap-1 rounded-full bg-emerald-100/80 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-200 px-2 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wide"></span>
-    </div>
-    <div class="flex-1 flex items-center justify-end gap-1.5 sm:gap-2 flex-wrap">
-      <select id="filtro-mes" class="px-3 py-1.5 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600 text-xs sm:text-sm">
-        <option value="all">Todos</option>
-      </select>
-      <button id="btn-open-add-gasto"
-        class="hidden md:flex bg-blue-600 dark:bg-blue-700 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700 dark:hover:bg-blue-800 items-center gap-2 transition-colors"
-        aria-label="Adicionar gasto">
-        <i class="fa fa-plus"></i> <span class="hidden md:inline">Adicionar gasto</span>
+<!-- HEADER: filtro mês + menu do usuário -->
+<header class="bg-white dark:bg-gray-900 shadow sticky top-0 z-40 px-3 py-1 relative">
+  <div class="flex items-center gap-2">
+    <select id="filtro-mes" class="flex-1 min-w-0 px-3 py-1.5 border rounded-lg bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600 text-xs sm:text-sm">
+      <option value="all">Todos</option>
+    </select>
+    <div id="user-session" class="relative hidden shrink-0">
+      <button id="user-menu-trigger" type="button" class="flex items-center gap-1.5 rounded-full border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-800/70 px-2 py-1 shadow-sm text-xs sm:text-sm text-gray-700 dark:text-gray-100 transition-colors hover:border-emerald-200 dark:hover:border-emerald-500"
+        aria-haspopup="true" aria-expanded="false">
+        <span id="user-avatar-badge" class="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-white text-xs font-semibold">U</span>
+        <span id="user-badge-label" class="max-w-[6rem] sm:max-w-[8rem] truncate text-left text-[0.7rem] sm:text-sm"></span>
+        <i class="fa fa-chevron-down text-[0.6rem] text-gray-500 dark:text-gray-400 transition-transform duration-200 transform" data-user-menu-caret></i>
       </button>
-      <button id="toggleDark" class="p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-100 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
-        <span class="dark:hidden">🌙</span>
-        <span class="hidden dark:inline">☀️</span>
-      </button>
-      <div id="user-session" class="relative hidden shrink-0">
-        <button id="user-menu-trigger" type="button" class="flex items-center gap-1.5 rounded-full border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-800/70 px-2.5 py-1 shadow-sm text-xs sm:text-sm text-gray-700 dark:text-gray-100 transition-colors hover:border-emerald-200 dark:hover:border-emerald-500"
-          aria-haspopup="true" aria-expanded="false">
-          <span id="user-avatar-badge" class="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500 text-white text-sm font-semibold">U</span>
-          <span id="user-badge-label" class="max-w-[6.5rem] sm:max-w-[8.5rem] truncate text-left"></span>
-          <i class="fa fa-chevron-down text-[0.65rem] text-gray-500 dark:text-gray-400 transition-transform duration-200 transform" data-user-menu-caret></i>
-        </button>
-        <div id="user-menu-dropdown" class="absolute right-0 mt-2 w-60 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-xl overflow-hidden hidden">
-          <div class="px-4 py-3 border-b border-gray-100 dark:border-gray-700 text-[0.7rem] leading-relaxed text-gray-500 dark:text-gray-400">
-            Conectado como
-            <div id="user-email-badge" class="mt-1 font-medium text-gray-700 dark:text-gray-100 break-words"></div>
-          </div>
-          <button id="btn-open-workspace-sharing" type="button" class="w-full flex items-center gap-2 px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-            <i class="fa fa-people-group text-emerald-500"></i>
-            <span>Família</span>
-          </button>
-          <button id="btn-signout" type="button" class="w-full flex items-center gap-2 px-4 py-2 text-left text-sm text-red-600 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors">
-            <i class="fa fa-arrow-right-from-bracket"></i>
-            <span>Sair</span>
-          </button>
+      <div id="user-menu-dropdown" class="absolute right-0 mt-2 w-60 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-xl overflow-hidden hidden">
+        <div class="px-4 py-3 border-b border-gray-100 dark:border-gray-700 space-y-1 text-[0.72rem] leading-relaxed text-gray-500 dark:text-gray-400">
+          <div class="uppercase tracking-wide text-[0.65rem] text-gray-400 dark:text-gray-500">Conectado como</div>
+          <div id="user-email-badge" class="font-medium text-gray-700 dark:text-gray-100 break-words"></div>
+          <span id="workspace-context-badge" class="hidden inline-flex items-center gap-1 rounded-full bg-emerald-100/80 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-200 px-2 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wide"></span>
         </div>
+        <button id="toggleDark" type="button" aria-label="Alternar tema" class="w-full flex items-center justify-between px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+          <span class="flex items-center gap-2">
+            <i class="fa-solid fa-moon text-xs" data-dark-icon></i>
+            <i class="fa-solid fa-sun text-xs hidden" data-light-icon></i>
+            <span>Tema</span>
+          </span>
+          <span id="toggleDarkStatus" class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400"></span>
+        </button>
+        <button id="btn-open-workspace-sharing" type="button" class="w-full flex items-center gap-2 px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+          <i class="fa fa-people-group text-emerald-500"></i>
+          <span>Família</span>
+        </button>
+        <button id="btn-signout" type="button" class="w-full flex items-center gap-2 px-4 py-2 text-left text-sm text-red-600 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors">
+          <i class="fa fa-arrow-right-from-bracket"></i>
+          <span>Sair</span>
+        </button>
       </div>
     </div>
   </div>
@@ -1770,28 +1764,65 @@ html.dark .mobile-tab-button {
 // Dark Mode Toggle (Detecta sistema + salva preferência)
 const html = document.documentElement;
 const toggleBtn = document.getElementById('toggleDark');
+const toggleStatus = document.getElementById('toggleDarkStatus');
+const toggleDarkIcon = toggleBtn ? toggleBtn.querySelector('[data-dark-icon]') : null;
+const toggleLightIcon = toggleBtn ? toggleBtn.querySelector('[data-light-icon]') : null;
+
+function syncDarkToggleUI() {
+  if (!toggleBtn) return;
+  const isDark = html.classList.contains('dark');
+  toggleBtn.setAttribute('aria-pressed', isDark ? 'true' : 'false');
+  if (toggleStatus) {
+    toggleStatus.textContent = isDark ? 'Escuro' : 'Claro';
+  }
+  if (toggleDarkIcon) {
+    toggleDarkIcon.classList.toggle('hidden', !isDark);
+  }
+  if (toggleLightIcon) {
+    toggleLightIcon.classList.toggle('hidden', isDark);
+  }
+}
 
 function initDarkMode() {
-  if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  if (localStorage.theme === 'dark' || (!('theme' in localStorage) && prefersDark)) {
     html.classList.add('dark');
   } else {
     html.classList.remove('dark');
   }
-  // Atualiza ícone do botão
-  if (toggleBtn) {
-    toggleBtn.innerHTML = html.classList.contains('dark') ? '☀️' : '🌙';
-  }
+  syncDarkToggleUI();
 }
 
 if (toggleBtn) {
   toggleBtn.addEventListener('click', () => {
     html.classList.toggle('dark');
     localStorage.theme = html.classList.contains('dark') ? 'dark' : 'light';
-    toggleBtn.innerHTML = html.classList.contains('dark') ? '☀️' : '🌙';
+    syncDarkToggleUI();
   });
 }
 
 initDarkMode(); // Inicializa ao carregar
+
+try {
+  const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+  const mediaListener = (event) => {
+    if (!('theme' in localStorage)) {
+      if (event.matches) {
+        html.classList.add('dark');
+      } else {
+        html.classList.remove('dark');
+      }
+      syncDarkToggleUI();
+    }
+  };
+  if (typeof mediaQuery.addEventListener === 'function') {
+    mediaQuery.addEventListener('change', mediaListener);
+  } else if (typeof mediaQuery.addListener === 'function') {
+    mediaQuery.addListener(mediaListener);
+  }
+} catch (error) {
+  console.debug('Não foi possível observar mudanças de tema do sistema.', error);
+}
 
 // Registro SW (limpo, como antes)
 if ("serviceWorker" in navigator) {
@@ -2747,7 +2778,7 @@ function updateHeaderOffset() {
   window.requestAnimationFrame(() => {
     const header = document.querySelector('header');
     const measuredHeight = header ? Math.ceil(header.getBoundingClientRect().height) : 0;
-    const fallback = window.innerWidth < 768 ? 72 : 64; // valores aproximados para mobile/desktop
+    const fallback = window.innerWidth < 768 ? 60 : 56; // valores aproximados para mobile/desktop
     const finalHeight = measuredHeight || fallback;
     document.documentElement.style.setProperty('--app-header-height', `${finalHeight}px`);
   });
@@ -6282,7 +6313,9 @@ function fecharModal() {
   renderSelectedTags();
 }
 
-btnOpenAddGasto.addEventListener('click', abrirModal);
+if (btnOpenAddGasto) {
+  btnOpenAddGasto.addEventListener('click', abrirModal);
+}
 
 // REMOVIDO: fecharTodosOsModais() duplicado aqui, já existe no topo do script
 
