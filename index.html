@@ -2029,6 +2029,7 @@ async function syncUserProfile(user) {
     const emailAllowed = isEmailAllowedForRegistration(normalized);
     let status = existingProfile.status || null;
     let role = existingProfile.role || null;
+    let forcedFirstApproval = false;
 
     const shouldApprove = shouldAutoApproveUser(user, existingProfile);
 
@@ -2043,11 +2044,43 @@ async function syncUserProfile(user) {
         updates.status = 'pending';
         updates.pendingAt = now;
       }
+    } else if (status !== 'approved' && shouldApprove) {
+      status = 'approved';
+      updates.status = 'approved';
+      updates.approvedAt = now;
+      updates.approvedBy = user.uid;
+      updates.pendingAt = FieldValue.delete();
+      updates.blockedAt = FieldValue.delete();
+      updates.blockedBy = FieldValue.delete();
+      updates.blockedReason = FieldValue.delete();
+    }
+
+    if (ACCESS_CONTROL_CFG.autoApproveFirstUser && status !== 'approved') {
+      try {
+        const approvedSnap = await db.collection('profiles').where('status', '==', 'approved').limit(1).get();
+        if (approvedSnap.empty) {
+          status = 'approved';
+          forcedFirstApproval = true;
+          updates.status = 'approved';
+          updates.approvedAt = now;
+          updates.approvedBy = user.uid;
+          updates.pendingAt = FieldValue.delete();
+          updates.blockedAt = FieldValue.delete();
+          updates.blockedBy = FieldValue.delete();
+          updates.blockedReason = FieldValue.delete();
+        }
+      } catch (checkError) {
+        console.error('Erro ao verificar aprovados existentes:', checkError);
+      }
     }
 
     if (status === 'approved' && !updates.approvedAt && !existingProfile.approvedAt) {
       updates.approvedAt = now;
       updates.approvedBy = existingProfile.approvedBy || user.uid;
+    }
+
+    if (status === 'approved' && existingProfile.pendingAt && updates.pendingAt === undefined) {
+      updates.pendingAt = FieldValue.delete();
     }
 
     if (!emailAllowed) {
@@ -2063,7 +2096,8 @@ async function syncUserProfile(user) {
       updates.pendingAt = now;
     }
 
-    if (!role && userMatchesAdminConfig(user, existingProfile)) {
+    const shouldGrantAdmin = userMatchesAdminConfig(user, existingProfile) || forcedFirstApproval;
+    if (!role && shouldGrantAdmin) {
       role = 'admin';
       updates.role = 'admin';
     }
