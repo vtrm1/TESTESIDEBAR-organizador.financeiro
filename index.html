@@ -821,12 +821,13 @@ html.dark .mobile-tab-button {
 </div>
 
 <!-- HEADER: filtro mês (geral) + botão adicionar gasto (desktop) + Dark Mode Toggle -->
-<header class="bg-white dark:bg-gray-900 shadow sticky top-0 z-40 px-4 py-2 md:py-3 relative">
-  <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-    <div class="flex items-center gap-3 min-w-0">
+<header class="bg-white dark:bg-gray-900 shadow sticky top-0 z-40 px-4 py-1.5 md:py-2 relative">
+  <div class="flex flex-wrap items-center justify-between gap-x-2 gap-y-2">
+    <div class="flex items-center gap-2 min-w-0">
       <div class="hidden md:block text-sm text-gray-500 dark:text-gray-400">Controle familiar</div>
+      <span id="workspace-context-badge" class="hidden inline-flex items-center gap-1 rounded-full bg-emerald-100/80 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-200 px-2 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wide"></span>
     </div>
-    <div class="flex flex-wrap items-center gap-2 justify-end text-sm sm:flex-nowrap sm:gap-3">
+    <div class="flex-1 flex items-center justify-end gap-1.5 sm:gap-2 flex-wrap">
       <select id="filtro-mes" class="px-3 py-1.5 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600 text-xs sm:text-sm">
         <option value="all">Todos</option>
       </select>
@@ -839,11 +840,27 @@ html.dark .mobile-tab-button {
         <span class="dark:hidden">🌙</span>
         <span class="hidden dark:inline">☀️</span>
       </button>
-      <div id="user-session" class="hidden items-center gap-1.5 rounded-full bg-gray-100 dark:bg-gray-800/80 px-2.5 py-1 text-xs sm:text-sm">
-        <span id="user-email-badge" class="font-medium text-gray-600 dark:text-gray-200 truncate max-w-[140px]"></span>
-        <span id="workspace-context-badge" class="hidden text-[0.65rem] uppercase tracking-wide font-semibold text-emerald-600 dark:text-emerald-300"></span>
-        <button id="btn-open-workspace-sharing" type="button" class="text-[0.7rem] sm:text-xs font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-300 dark:hover:text-blue-200 transition-colors">Família</button>
-        <button id="btn-signout" type="button" class="text-[0.7rem] sm:text-xs font-semibold text-red-500 hover:text-red-600 dark:text-red-300 dark:hover:text-red-200 transition-colors">Sair</button>
+      <div id="user-session" class="relative hidden shrink-0">
+        <button id="user-menu-trigger" type="button" class="flex items-center gap-1.5 rounded-full border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-800/70 px-2.5 py-1 shadow-sm text-xs sm:text-sm text-gray-700 dark:text-gray-100 transition-colors hover:border-emerald-200 dark:hover:border-emerald-500"
+          aria-haspopup="true" aria-expanded="false">
+          <span id="user-avatar-badge" class="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500 text-white text-sm font-semibold">U</span>
+          <span id="user-badge-label" class="max-w-[6.5rem] sm:max-w-[8.5rem] truncate text-left"></span>
+          <i class="fa fa-chevron-down text-[0.65rem] text-gray-500 dark:text-gray-400 transition-transform duration-200 transform" data-user-menu-caret></i>
+        </button>
+        <div id="user-menu-dropdown" class="absolute right-0 mt-2 w-60 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-xl overflow-hidden hidden">
+          <div class="px-4 py-3 border-b border-gray-100 dark:border-gray-700 text-[0.7rem] leading-relaxed text-gray-500 dark:text-gray-400">
+            Conectado como
+            <div id="user-email-badge" class="mt-1 font-medium text-gray-700 dark:text-gray-100 break-words"></div>
+          </div>
+          <button id="btn-open-workspace-sharing" type="button" class="w-full flex items-center gap-2 px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+            <i class="fa fa-people-group text-emerald-500"></i>
+            <span>Família</span>
+          </button>
+          <button id="btn-signout" type="button" class="w-full flex items-center gap-2 px-4 py-2 text-left text-sm text-red-600 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors">
+            <i class="fa fa-arrow-right-from-bracket"></i>
+            <span>Sair</span>
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -1793,7 +1810,10 @@ if ("serviceWorker" in navigator) {
 <!-- NOVO: Toast Message para feedback -->
 <div id="toast-message" class="hidden"></div>
 
-<footer class="text-center text-sm text-gray-500 dark:text-gray-400 py-6">© 2025 Organizador Financeiro <br> Vitor Barbosa</br></footer>
+<footer class="text-center text-xs sm:text-sm text-gray-500 dark:text-gray-400 py-6 space-y-3">
+  <div id="footer-verse" class="max-w-2xl mx-auto text-[0.75rem] sm:text-sm text-gray-600 dark:text-gray-300 italic leading-relaxed"></div>
+  <div class="text-[0.7rem] sm:text-xs text-gray-400 dark:text-gray-500">© 2025 Organizador Financeiro <br> Vitor Barbosa</div>
+</footer>
 
 <!-- Firebase compat scripts -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -2107,6 +2127,11 @@ const authVerifyFeedback = document.getElementById('auth-verify-feedback');
 const defaultGoogleHelperHtml = authGoogleHelper ? authGoogleHelper.innerHTML : '';
 const userSession = document.getElementById('user-session');
 const userEmailBadge = document.getElementById('user-email-badge');
+const userBadgeLabel = document.getElementById('user-badge-label');
+const userAvatarBadge = document.getElementById('user-avatar-badge');
+const userMenuTrigger = document.getElementById('user-menu-trigger');
+const userMenuDropdown = document.getElementById('user-menu-dropdown');
+const userMenuCaret = document.querySelector('[data-user-menu-caret]');
 const signOutButton = document.getElementById('btn-signout');
 const workspaceContextBadge = document.getElementById('workspace-context-badge');
 const workspaceShareButton = document.getElementById('btn-open-workspace-sharing');
@@ -2122,10 +2147,31 @@ const workspaceJoinHelper = document.getElementById('workspace-join-helper');
 const workspaceLeaveButton = document.getElementById('workspace-leave-button');
 const workspaceShareFeedback = document.getElementById('workspace-share-feedback');
 const workspaceOwnerHint = document.getElementById('workspace-owner-hint');
+const footerVerse = document.getElementById('footer-verse');
 
 let authMode = 'signIn';
 let googleLoading = false;
 let pendingVerificationUser = null;
+let isUserMenuOpen = false;
+
+const bibleVerses = [
+  { text: 'As mãos diligentes trazem riqueza.', reference: 'Provérbios 10:4' },
+  { text: 'O mordomo fiel e prudente.', reference: 'Lucas 12:42' },
+  { text: 'Confia ao Senhor as tuas obras.', reference: 'Provérbios 16:3' },
+  { text: 'O que se requer dos despenseiros é que cada um seja encontrado fiel.', reference: '1 Coríntios 4:2' },
+  {
+    text: 'De fato, a piedade com contentamento é grande fonte de lucro. Porque nada trouxemos para este mundo e nada podemos levar dele.',
+    reference: '1 Timóteo 6:6-7'
+  },
+  {
+    text: 'Com sabedoria se constrói a casa, e com discernimento ela se consolida; pelo conhecimento os seus cômodos se enchem do que é precioso e agradável.',
+    reference: 'Provérbios 24:3-4'
+  },
+  {
+    text: 'Os planos bem elaborados levam à fartura; mas o apressado sempre acaba na miséria.',
+    reference: 'Provérbios 21:5'
+  }
+];
 
 function showGoogleHelper(messageHtml = defaultGoogleHelperHtml) {
   if (!authGoogleHelper) return;
@@ -2628,6 +2674,61 @@ function mapAuthErrorMessage(error) {
   }
 }
 
+function computeUserInitials(email) {
+  if (!email) return 'U';
+  const [localPart] = email.split('@');
+  const base = localPart || email;
+  const cleaned = base.replace(/[^a-zA-Z0-9]+/g, ' ').trim();
+  if (!cleaned) return 'U';
+  const parts = cleaned.split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) {
+    return (parts[0][0] + parts[1][0]).toUpperCase();
+  }
+  return cleaned.slice(0, 2).toUpperCase();
+}
+
+function updateUserBadge(email) {
+  const displayEmail = email || 'Conta';
+  const [localPart] = displayEmail.split('@');
+  const compactLabel = localPart || displayEmail;
+  if (userBadgeLabel) {
+    userBadgeLabel.textContent = compactLabel;
+    userBadgeLabel.title = displayEmail;
+  }
+  if (userAvatarBadge) {
+    userAvatarBadge.textContent = computeUserInitials(email);
+  }
+}
+
+function setUserMenuState(open) {
+  if (!userMenuDropdown || !userMenuTrigger) return;
+  isUserMenuOpen = !!open;
+  userMenuTrigger.setAttribute('aria-expanded', isUserMenuOpen ? 'true' : 'false');
+  userMenuDropdown.classList.toggle('hidden', !isUserMenuOpen);
+  if (userMenuCaret) {
+    userMenuCaret.classList.toggle('rotate-180', isUserMenuOpen);
+  }
+}
+
+function toggleUserMenu(force) {
+  const shouldOpen = typeof force === 'boolean' ? force : !isUserMenuOpen;
+  setUserMenuState(shouldOpen);
+}
+
+function closeUserMenu() {
+  setUserMenuState(false);
+}
+
+function updateFooterVerse() {
+  if (!footerVerse || !bibleVerses.length) return;
+  const randomIndex = Math.floor(Math.random() * bibleVerses.length);
+  const verse = bibleVerses[randomIndex];
+  footerVerse.innerHTML = `
+    <span class="block">“${verse.text}”</span>
+    <span class="block not-italic text-[0.65rem] sm:text-xs text-gray-500 dark:text-gray-400 mt-1">— ${verse.reference}</span>
+  `;
+}
+
 function mapVerificationErrorMessage(error) {
   if (!error || !error.code) {
     return 'Não foi possível enviar o e-mail. Tente novamente em instantes.';
@@ -2681,12 +2782,23 @@ function updateWorkspaceContextUI() {
 
 function updateUserSessionUI(user) {
   if (!userSession) return;
+  closeUserMenu();
   if (user) {
-    userEmailBadge.textContent = user.email || 'Conta';
+    const email = user.email || 'Conta';
+    if (userEmailBadge) {
+      userEmailBadge.textContent = email;
+      userEmailBadge.title = email;
+    }
+    updateUserBadge(email);
     userSession.classList.remove('hidden');
   } else {
+    closeUserMenu();
     userSession.classList.add('hidden');
-    userEmailBadge.textContent = '';
+    if (userEmailBadge) {
+      userEmailBadge.textContent = '';
+      userEmailBadge.removeAttribute('title');
+    }
+    updateUserBadge('');
   }
   updateWorkspaceContextUI();
   updateHeaderOffset();
@@ -2874,6 +2986,7 @@ function initAuthFlow() {
 
   if (signOutButton) {
     signOutButton.addEventListener('click', async () => {
+      closeUserMenu();
       try {
         await auth.signOut();
         window.location.reload();
@@ -2886,6 +2999,7 @@ function initAuthFlow() {
 
   if (workspaceShareButton) {
     workspaceShareButton.addEventListener('click', () => {
+      closeUserMenu();
       if (!currentUser) {
         showAuthOverlay();
         return;
@@ -8005,6 +8119,22 @@ formParcelado.addEventListener('submit', e => {
 });
 
 
+if (userMenuTrigger && userMenuDropdown) {
+  userMenuTrigger.addEventListener('click', (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    toggleUserMenu();
+  });
+}
+
+document.addEventListener('click', (event) => {
+  if (!userSession) return;
+  if (!userSession.contains(event.target)) {
+    closeUserMenu();
+  }
+});
+
+
 // NOVO: Atalhos de teclado
 document.addEventListener('keydown', (e) => {
   // Ctrl/Cmd + N = Novo gasto
@@ -8013,14 +8143,14 @@ document.addEventListener('keydown', (e) => {
     abrirModal();
     showToast('Atalho: Ctrl+N para novo gasto', 'info');
   }
-  
+
   // Ctrl/Cmd + F = Novo fixo
   if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
     e.preventDefault();
     abrirModalFixo();
     showToast('Atalho: Ctrl+F para novo fixo', 'info');
   }
-  
+
   // Ctrl/Cmd + G = Abrir gráficos
   if ((e.ctrlKey || e.metaKey) && e.key === 'g') {
     e.preventDefault();
@@ -8029,23 +8159,26 @@ document.addEventListener('keydown', (e) => {
       showToast('Atalho: Ctrl+G para gráficos', 'info');
     }
   }
-  
-// ESC = Fechar modals
-if (e.key === 'Escape') {
-  document.getElementById('modal-add-gasto').classList.add('hidden');
-  document.getElementById('modal-fixo').classList.add('hidden');
-  document.getElementById('modal-parcelado').classList.add('hidden');
-  document.getElementById('modal-graficos').classList.add('hidden');
-  document.getElementById('modal-graficos-fixos').classList.add('hidden');
-  document.getElementById('modal-planejamento-envelopes').classList.add('hidden');
-  document.getElementById('modal-confirmacao').classList.add('hidden');
-  document.getElementById('modal-gerenciar-cartoes').classList.add('hidden');
-  updateFloatingMenuVisibility();
-}
 
+  // ESC = Fechar modals e dropdowns
+  if (e.key === 'Escape') {
+    document.getElementById('modal-add-gasto').classList.add('hidden');
+    document.getElementById('modal-fixo').classList.add('hidden');
+    document.getElementById('modal-parcelado').classList.add('hidden');
+    document.getElementById('modal-graficos').classList.add('hidden');
+    document.getElementById('modal-graficos-fixos').classList.add('hidden');
+    document.getElementById('modal-planejamento-envelopes').classList.add('hidden');
+    document.getElementById('modal-confirmacao').classList.add('hidden');
+    document.getElementById('modal-gerenciar-cartoes').classList.add('hidden');
+    closeUserMenu();
+    updateFloatingMenuVisibility();
+  }
 });
 
-window.addEventListener('resize', updateHeaderOffset);
+window.addEventListener('resize', () => {
+  closeUserMenu();
+  updateHeaderOffset();
+});
 
 /* start */
 initResumoSlider();
@@ -8053,6 +8186,7 @@ initMobilePanels();
 initSimuladorInvestimentos();
 atualizarResumoRapido();
 initAuthFlow();
+updateFooterVerse();
 updateHeaderOffset();
 
 </script>
