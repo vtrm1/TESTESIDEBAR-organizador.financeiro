@@ -242,6 +242,14 @@
 </div>
 
 <style>
+  :root {
+    --app-header-height: 4rem;
+  }
+
+  #mobile-quickbar {
+    top: var(--app-header-height);
+  }
+
   .progress-bar{transition:width .4s ease}
   .badge-alert{color:#b91c1c;font-weight:700;margin-left:.4rem}
   .section-card{background:white;border-radius:.75rem;box-shadow:0 1px 2px rgba(0,0,0,.06);padding:1rem}
@@ -793,7 +801,7 @@ html.dark .mobile-tab-button {
 </header>
 
 <!-- MOBILE QUICK SUMMARY + NAV -->
-<section id="mobile-quickbar" class="lg:hidden sticky top-16 z-30 px-4 py-3 space-y-2 bg-white/90 dark:bg-gray-900/90 backdrop-blur border-b border-gray-200/70 dark:border-gray-700/60 shadow-sm">
+<section id="mobile-quickbar" class="lg:hidden sticky z-30 px-4 py-3 space-y-2 bg-white/90 dark:bg-gray-900/90 backdrop-blur border-b border-gray-200/70 dark:border-gray-700/60 shadow-sm">
   <div class="flex items-center justify-between text-[0.7rem] uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
     <span>Visão geral</span>
     <span class="font-semibold text-blue-600 dark:text-blue-300">Mobile</span>
@@ -2028,6 +2036,16 @@ function mapAuthErrorMessage(error) {
   }
 }
 
+function updateHeaderOffset() {
+  window.requestAnimationFrame(() => {
+    const header = document.querySelector('header');
+    const measuredHeight = header ? Math.ceil(header.getBoundingClientRect().height) : 0;
+    const fallback = window.innerWidth < 768 ? 72 : 64; // valores aproximados para mobile/desktop
+    const finalHeight = measuredHeight || fallback;
+    document.documentElement.style.setProperty('--app-header-height', `${finalHeight}px`);
+  });
+}
+
 function updateUserSessionUI(user) {
   if (!userSession) return;
   if (user) {
@@ -2037,6 +2055,7 @@ function updateUserSessionUI(user) {
     userSession.classList.add('hidden');
     userEmailBadge.textContent = '';
   }
+  updateHeaderOffset();
 }
 
 async function handleUserSignedIn(user) {
@@ -7233,11 +7252,14 @@ if (e.key === 'Escape') {
 
 });
 
+window.addEventListener('resize', updateHeaderOffset);
+
 /* start */
 initResumoSlider();
 initMobilePanels();
 initSimuladorInvestimentos();
 atualizarResumoRapido();
 initAuthFlow();
+updateHeaderOffset();
 
 </script>
