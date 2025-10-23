@@ -754,7 +754,7 @@ html.dark .mobile-tab-button {
         <span data-label>Entrar com Google</span>
       </button>
       <p id="auth-google-helper" class="hidden text-xs leading-relaxed text-amber-600 dark:text-amber-400 bg-amber-50/80 dark:bg-amber-400/10 border border-amber-200/80 dark:border-amber-500/40 rounded-lg px-3 py-2">
-        Para usar o Google em desenvolvimento, abra o app por <strong>http://localhost</strong> ou adicione este domínio à lista de autorizados no Console do Firebase.
+        Para usar o Google em desenvolvimento, abra o app por <strong>http://localhost</strong> ou adicione <strong data-google-host></strong> à lista de domínios autorizados no Console do Firebase (Authentication → Settings → Authorized domains).
       </p>
     </div>
   </div>
@@ -1424,58 +1424,58 @@ html.dark .mobile-tab-button {
           <div id="investimentos-grafico-empty" class="absolute inset-0 flex items-center justify-center text-xs text-gray-500 dark:text-gray-400">Cadastre investimentos para visualizar o gráfico.</div>
         </div>
       </div>
-      <div id="simulador-juros-compostos" class="bg-white/70 dark:bg-gray-800/60 border border-indigo-100 dark:border-indigo-900 rounded-lg p-4 space-y-3 text-sm">
-        <button type="button" class="w-full flex items-center justify-between text-left font-semibold text-indigo-700 dark:text-indigo-200 px-3 py-2 rounded-md bg-indigo-50/80 dark:bg-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition" data-simulador-toggle aria-expanded="false">
+      <div id="simulador-juros-compostos" class="bg-white/70 dark:bg-gray-800/60 border border-indigo-100 dark:border-indigo-900 rounded-lg p-5 space-y-4 text-base md:text-sm">
+        <button type="button" class="w-full flex items-center justify-between text-left font-semibold text-indigo-700 dark:text-indigo-200 px-3 py-3 md:py-2.5 rounded-md bg-indigo-50/80 dark:bg-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition text-base md:text-sm" data-simulador-toggle aria-expanded="false">
           <span class="flex items-center gap-2"><i class="fa fa-calculator"></i><span>Simulador de juros compostos</span></span>
           <i class="fa fa-chevron-down text-xs" data-simulador-icon></i>
         </button>
-        <p class="text-xs text-gray-500 dark:text-gray-400 px-3">Atualizado automaticamente com o resumo rápido.</p>
-        <div data-simulador-content class="space-y-4 hidden px-3 pb-1">
-          <p class="text-xs text-gray-500 dark:text-gray-400">Reaproveite os totais atuais para projetar rendimentos e compare com um cenário alternativo de aportes ou taxas diferentes.</p>
-          <div class="flex flex-col gap-4">
-            <div class="space-y-3 border-l-4 border-indigo-100 dark:border-indigo-900/40 pl-4">
-              <h5 class="text-xs font-semibold text-gray-600 dark:text-gray-200 uppercase tracking-wide">Cenário atual</h5>
-              <div class="grid grid-cols-1 gap-3">
-                <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 flex flex-col gap-1 h-full">Valor inicial (R$)
-                  <input id="simulador-valor-inicial" data-simulador="base" type="number" step="0.01" min="0" class="px-2 py-1 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600 text-right" />
+        <p class="text-sm md:text-xs text-gray-500 dark:text-gray-400 px-3">Atualizado automaticamente com o resumo rápido.</p>
+        <div data-simulador-content class="space-y-5 hidden px-3 pb-1">
+          <p class="text-sm md:text-xs text-gray-500 dark:text-gray-400">Reaproveite os totais atuais para projetar rendimentos e compare com um cenário alternativo de aportes ou taxas diferentes.</p>
+          <div class="flex flex-col gap-5">
+            <div class="space-y-4 border-l-4 border-indigo-100 dark:border-indigo-900/40 pl-4">
+              <h5 class="text-sm md:text-xs font-semibold text-gray-600 dark:text-gray-200 uppercase tracking-wide">Cenário atual</h5>
+              <div class="grid grid-cols-1 gap-4">
+                <label class="text-sm md:text-xs font-semibold text-gray-600 dark:text-gray-300 flex flex-col gap-1.5 h-full">Valor inicial (R$)
+                  <input id="simulador-valor-inicial" data-simulador="base" type="number" step="0.01" min="0" class="px-3 py-2 md:py-1.5 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600 text-right" />
                 </label>
-                <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 flex flex-col gap-1 h-full">Aporte mensal (R$)
-                  <input id="simulador-aporte-mensal" data-simulador="base" type="number" step="0.01" min="0" class="px-2 py-1 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600 text-right" />
+                <label class="text-sm md:text-xs font-semibold text-gray-600 dark:text-gray-300 flex flex-col gap-1.5 h-full">Aporte mensal (R$)
+                  <input id="simulador-aporte-mensal" data-simulador="base" type="number" step="0.01" min="0" class="px-3 py-2 md:py-1.5 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600 text-right" />
                 </label>
-                <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 flex flex-col gap-1 h-full">Taxa mensal (%)
-                  <input id="simulador-taxa" data-simulador="base" type="number" step="0.01" class="px-2 py-1 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600 text-right" />
+                <label class="text-sm md:text-xs font-semibold text-gray-600 dark:text-gray-300 flex flex-col gap-1.5 h-full">Taxa mensal (%)
+                  <input id="simulador-taxa" data-simulador="base" type="number" step="0.01" class="px-3 py-2 md:py-1.5 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600 text-right" />
                 </label>
-                <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 flex flex-col gap-1 h-full">Período (meses)
-                  <input id="simulador-periodo" data-simulador="base" type="number" step="1" min="1" class="px-2 py-1 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600 text-right" />
+                <label class="text-sm md:text-xs font-semibold text-gray-600 dark:text-gray-300 flex flex-col gap-1.5 h-full">Período (meses)
+                  <input id="simulador-periodo" data-simulador="base" type="number" step="1" min="1" class="px-3 py-2 md:py-1.5 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600 text-right" />
                 </label>
               </div>
             </div>
-            <div class="space-y-3 border-l-4 border-indigo-100 dark:border-indigo-900/40 pl-4">
-              <h5 class="text-xs font-semibold text-gray-600 dark:text-gray-200 uppercase tracking-wide">Comparar cenário</h5>
-              <div class="grid grid-cols-1 gap-3">
-                <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 flex flex-col gap-1 h-full">Aporte mensal alternativo (R$)
-                  <input id="simulador-aporte-alternativo" data-simulador="alternativo" type="number" step="0.01" min="0" class="px-2 py-1 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600 text-right" />
+            <div class="space-y-4 border-l-4 border-indigo-100 dark:border-indigo-900/40 pl-4">
+              <h5 class="text-sm md:text-xs font-semibold text-gray-600 dark:text-gray-200 uppercase tracking-wide">Comparar cenário</h5>
+              <div class="grid grid-cols-1 gap-4">
+                <label class="text-sm md:text-xs font-semibold text-gray-600 dark:text-gray-300 flex flex-col gap-1.5 h-full">Aporte mensal alternativo (R$)
+                  <input id="simulador-aporte-alternativo" data-simulador="alternativo" type="number" step="0.01" min="0" class="px-3 py-2 md:py-1.5 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600 text-right" />
                 </label>
-                <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 flex flex-col gap-1 h-full">Taxa mensal alternativa (%)
-                  <input id="simulador-taxa-alternativa" data-simulador="alternativo" type="number" step="0.01" class="px-2 py-1 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600 text-right" />
+                <label class="text-sm md:text-xs font-semibold text-gray-600 dark:text-gray-300 flex flex-col gap-1.5 h-full">Taxa mensal alternativa (%)
+                  <input id="simulador-taxa-alternativa" data-simulador="alternativo" type="number" step="0.01" class="px-3 py-2 md:py-1.5 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600 text-right" />
                 </label>
-                <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 flex flex-col gap-1 h-full">Aporte único extra (R$)
-                  <input id="simulador-aporte-extra" data-simulador="alternativo" type="number" step="0.01" min="0" class="px-2 py-1 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600 text-right" />
+                <label class="text-sm md:text-xs font-semibold text-gray-600 dark:text-gray-300 flex flex-col gap-1.5 h-full">Aporte único extra (R$)
+                  <input id="simulador-aporte-extra" data-simulador="alternativo" type="number" step="0.01" min="0" class="px-3 py-2 md:py-1.5 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600 text-right" />
                 </label>
-                <label class="text-xs font-semibold text-gray-600 dark:text-gray-300 flex flex-col gap-1 h-full">Meses adicionais
-                  <input id="simulador-periodo-alternativo" data-simulador="alternativo" type="number" step="1" min="0" class="px-2 py-1 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600 text-right" />
+                <label class="text-sm md:text-xs font-semibold text-gray-600 dark:text-gray-300 flex flex-col gap-1.5 h-full">Meses adicionais
+                  <input id="simulador-periodo-alternativo" data-simulador="alternativo" type="number" step="1" min="0" class="px-3 py-2 md:py-1.5 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600 text-right" />
                 </label>
               </div>
             </div>
           </div>
-          <div class="flex flex-col gap-3 text-xs">
-            <div class="rounded-lg bg-indigo-100/80 dark:bg-indigo-900/30 p-3 border-l-4 border-indigo-300 dark:border-indigo-700/60">
-              <h6 class="font-semibold text-indigo-800 dark:text-indigo-200 mb-1">Resultado cenário atual</h6>
+          <div class="flex flex-col gap-4 text-sm md:text-xs">
+            <div class="rounded-lg bg-indigo-100/80 dark:bg-indigo-900/30 p-4 border-l-4 border-indigo-300 dark:border-indigo-700/60">
+              <h6 class="font-semibold text-indigo-800 dark:text-indigo-200 mb-1 text-base md:text-sm">Resultado cenário atual</h6>
               <p class="text-gray-600 dark:text-gray-300">Valor projetado: <strong id="simulador-base-total">R$ 0,00</strong></p>
               <p class="text-gray-600 dark:text-gray-300">Ganho sobre aportes: <strong id="simulador-base-ganho">R$ 0,00</strong></p>
             </div>
-            <div class="rounded-lg bg-purple-100/80 dark:bg-purple-900/30 p-3 border-l-4 border-purple-300 dark:border-purple-700/60">
-              <h6 class="font-semibold text-purple-800 dark:text-purple-200 mb-1">Resultado cenário alternativo</h6>
+            <div class="rounded-lg bg-purple-100/80 dark:bg-purple-900/30 p-4 border-l-4 border-purple-300 dark:border-purple-700/60">
+              <h6 class="font-semibold text-purple-800 dark:text-purple-200 mb-1 text-base md:text-sm">Resultado cenário alternativo</h6>
               <p class="text-gray-600 dark:text-gray-300">Valor projetado: <strong id="simulador-alt-total">R$ 0,00</strong></p>
               <p class="text-gray-600 dark:text-gray-300">Ganho sobre aportes: <strong id="simulador-alt-ganho">R$ 0,00</strong></p>
             </div>
@@ -1914,6 +1914,11 @@ const authPasswordInput = document.getElementById('auth-password');
 const authGoogleButton = document.getElementById('auth-google');
 const authGoogleLabel = authGoogleButton?.querySelector('[data-label]') || null;
 const authGoogleHelper = document.getElementById('auth-google-helper');
+const authGoogleHostTarget = authGoogleHelper?.querySelector('[data-google-host]') || null;
+if (authGoogleHostTarget) {
+  const hostLabel = authEnvironment.host || window.location.host || window.location.hostname || 'seu domínio';
+  authGoogleHostTarget.textContent = hostLabel;
+}
 const defaultGoogleHelperHtml = authGoogleHelper ? authGoogleHelper.innerHTML : '';
 const userSession = document.getElementById('user-session');
 const userEmailBadge = document.getElementById('user-email-badge');
@@ -2219,11 +2224,6 @@ const baseAppConfig = {
     variavel: { chaveResumo: 'historicoMes', meta: 2000, reservado: 0, titulo: 'Variáveis' },
   },
   cartoes: {
-    nubank: { fechamento: 15, label: 'Nubank', mesVencimentoOffset: 0 },
-    itau: { fechamento: 2, label: 'Itaú', mesVencimentoOffset: 0 },
-    univ: { fechamento: 27, label: 'Univ', mesVencimentoOffset: 1 },
-    amazon: { fechamento: 25, label: 'Amazon', mesVencimentoOffset: 1 },
-    mercado: { fechamento: 4, label: 'Mercado Pago', mesVencimentoOffset: 0 },
     pix: { fechamento: null, label: 'PIX', mesVencimentoOffset: 0 },
   },
   insights: {
