@@ -782,6 +782,43 @@ html.dark .mobile-tab-button {
   </div>
 </div>
 
+<!-- MODAL: Compartilhamento do espaço financeiro -->
+<div id="modal-workspace-share" class="fixed inset-0 z-[9500] hidden items-center justify-center bg-slate-900/80 backdrop-blur px-4 py-8">
+  <div class="relative w-full max-w-xl bg-white dark:bg-gray-900 border border-gray-200/80 dark:border-gray-700 rounded-2xl shadow-2xl p-6 sm:p-8">
+    <button id="workspace-share-close" class="absolute top-3 right-3 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-2xl leading-none" aria-label="Fechar modal">&times;</button>
+    <div class="space-y-6 text-sm">
+      <div>
+        <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+          <i class="fa-solid fa-people-roof text-emerald-500"></i>
+          Espaço familiar
+        </h2>
+        <p id="workspace-owner-hint" class="mt-2 text-gray-500 dark:text-gray-400 text-sm leading-relaxed"></p>
+      </div>
+      <div class="rounded-xl border border-emerald-200/70 dark:border-emerald-500/30 bg-emerald-50/60 dark:bg-emerald-500/10 p-4 space-y-3">
+        <div class="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">Código do seu espaço</div>
+        <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+          <code id="workspace-share-code" class="flex-1 text-lg sm:text-xl font-semibold text-emerald-700 dark:text-emerald-300 break-all bg-white dark:bg-gray-900 px-3 py-1.5 rounded-lg border border-emerald-200/60 dark:border-emerald-500/40 shadow-inner">—</code>
+          <button id="workspace-copy-code" type="button" class="self-start sm:self-auto px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white transition-colors">Copiar</button>
+        </div>
+        <p class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">Compartilhe este código com quem também precisa enxergar e editar esses dados. Após inserir o código, a outra conta passará a usar o mesmo ambiente financeiro.</p>
+      </div>
+      <div class="space-y-3">
+        <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wide">Quem tem acesso</h3>
+        <ul id="workspace-members-list" class="space-y-2 text-sm"></ul>
+      </div>
+      <form id="workspace-join-form" class="space-y-3">
+        <div class="space-y-2">
+          <label for="workspace-join-code" class="text-sm font-medium text-gray-700 dark:text-gray-200">Entrar em um espaço existente</label>
+          <input id="workspace-join-code" type="text" class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-gray-800 dark:text-gray-100 placeholder-gray-400" placeholder="Informe o código ou e-mail da conta" autocomplete="off" />
+        </div>
+        <button id="workspace-join-submit" type="submit" class="w-full py-2.5 rounded-lg font-semibold bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600 text-white transition-colors">Usar esse espaço</button>
+      </form>
+      <button id="workspace-leave-button" type="button" class="hidden w-full py-2.5 rounded-lg font-semibold border border-red-200 dark:border-red-500/40 text-red-600 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors">Voltar para meu espaço individual</button>
+      <p id="workspace-share-feedback" class="hidden text-sm"></p>
+    </div>
+  </div>
+</div>
+
 <!-- HEADER: filtro mês (geral) + botão adicionar gasto (desktop) + Dark Mode Toggle -->
 <header class="bg-white dark:bg-gray-900 shadow sticky top-0 z-40 px-4 py-2 md:py-3 relative">
   <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -804,6 +841,8 @@ html.dark .mobile-tab-button {
       </button>
       <div id="user-session" class="hidden items-center gap-1.5 rounded-full bg-gray-100 dark:bg-gray-800/80 px-2.5 py-1 text-xs sm:text-sm">
         <span id="user-email-badge" class="font-medium text-gray-600 dark:text-gray-200 truncate max-w-[140px]"></span>
+        <span id="workspace-context-badge" class="hidden text-[0.65rem] uppercase tracking-wide font-semibold text-emerald-600 dark:text-emerald-300"></span>
+        <button id="btn-open-workspace-sharing" type="button" class="text-[0.7rem] sm:text-xs font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-300 dark:hover:text-blue-200 transition-colors">Família</button>
         <button id="btn-signout" type="button" class="text-[0.7rem] sm:text-xs font-semibold text-red-500 hover:text-red-600 dark:text-red-300 dark:hover:text-red-200 transition-colors">Sair</button>
       </div>
     </div>
@@ -1785,10 +1824,13 @@ const authEnvironment = {
   host: window.location.host,
 };
 const messaging = firebase.messaging(); // Inicializa o Messaging
+const FieldValue = firebase.firestore.FieldValue;
 
 let currentUser = null;
 let appBootstrapped = false;
 let workspaceInitialized = false;
+let activeWorkspace = { workspaceId: null, ownerUid: null, memberUids: [], isOwner: false };
+const workspaceProfilesCache = new Map();
 
 function requireAuthContext() {
   if (!currentUser) {
@@ -1796,9 +1838,20 @@ function requireAuthContext() {
   }
 }
 
+function getWorkspaceOwnerUid() {
+  if (activeWorkspace && activeWorkspace.ownerUid) {
+    return activeWorkspace.ownerUid;
+  }
+  return currentUser?.uid || null;
+}
+
 function userRootRef() {
   requireAuthContext();
-  return db.collection('users').doc(currentUser.uid);
+  const ownerUid = getWorkspaceOwnerUid();
+  if (!ownerUid) {
+    throw new Error('Espaço financeiro não definido.');
+  }
+  return db.collection('users').doc(ownerUid);
 }
 
 function userCollectionRef(name) {
@@ -1807,6 +1860,10 @@ function userCollectionRef(name) {
 
 function userDocRef(collectionName, docId) {
   return userCollectionRef(collectionName).doc(docId);
+}
+
+function normalizeEmail(email = '') {
+  return (email || '').trim().toLowerCase();
 }
 
 async function detectLegacyData() {
@@ -1829,7 +1886,26 @@ async function detectLegacyData() {
   );
 }
 
+async function syncUserProfile(user) {
+  if (!user) return;
+  try {
+    const normalized = normalizeEmail(user.email);
+    const profilePayload = {
+      email: user.email || null,
+      normalizedEmail: normalized || null,
+      displayName: user.displayName || null,
+      photoURL: user.photoURL || null,
+      lastLoginAt: firebase.firestore.Timestamp.now(),
+    };
+    await db.collection('profiles').doc(user.uid).set(profilePayload, { merge: true });
+    workspaceProfilesCache.set(user.uid, profilePayload);
+  } catch (error) {
+    console.error('Erro ao sincronizar perfil do usuário:', error);
+  }
+}
+
 async function migrateLegacyData(user) {
+  const ownerUid = getWorkspaceOwnerUid() || user?.uid || null;
   const collectionNames = ['gastos', 'parcelados', 'entradas', 'investimentos', 'fixos'];
 
   for (const name of collectionNames) {
@@ -1839,8 +1915,8 @@ async function migrateLegacyData(user) {
       const targetCollection = userCollectionRef(name);
       for (const doc of snapshot.docs) {
         const data = doc.data() || {};
-        if (data.ownerUid && data.ownerUid !== user.uid) continue;
-        await targetCollection.doc(doc.id).set({ ...data, ownerUid: user.uid }, { merge: true });
+        if (ownerUid && data.ownerUid && data.ownerUid !== ownerUid) continue;
+        await targetCollection.doc(doc.id).set({ ...data, ownerUid: ownerUid || data.ownerUid || null }, { merge: true });
       }
     } catch (err) {
       console.error(`Erro ao migrar coleção legacy ${name}:`, err);
@@ -1866,55 +1942,138 @@ async function migrateLegacyData(user) {
   }
 }
 
-async function ensureUserWorkspace(user) {
-  if (!user) return;
+async function maybeMigrateLegacyData(user) {
+  if (!user || !activeWorkspace?.isOwner) {
+    return false;
+  }
+
+  const legacyMarkerRef = db.collection('metadata').doc('legacy_migration');
+  const ownerUid = getWorkspaceOwnerUid();
+  let shouldMigrate = false;
 
   try {
-    const workspaceDocRef = userRootRef().collection('metadata').doc('workspace');
-    const workspaceSnap = await workspaceDocRef.get();
-    if (workspaceSnap.exists && workspaceSnap.data()?.initialized) {
-      workspaceInitialized = true;
-      return;
-    }
-
-    const legacyMarkerRef = db.collection('metadata').doc('legacy_migration');
     const markerSnap = await legacyMarkerRef.get().catch(() => null);
-    let shouldMigrate = false;
-
     if (markerSnap && markerSnap.exists) {
       const markerData = markerSnap.data() || {};
-      if (markerData.migratedBy === user.uid && !markerData.completed) {
+      if (markerData.completed && markerData.migratedBy === ownerUid) {
+        return true;
+      }
+      if (markerData.migratedBy === ownerUid && !markerData.completed) {
         shouldMigrate = true;
       }
     } else {
       const hasLegacyData = await detectLegacyData();
       if (hasLegacyData) {
-        shouldMigrate = window.confirm('Encontramos dados existentes antes da autenticação. Deseja vinculá-los à sua conta?');
+        shouldMigrate = window.confirm('Encontramos dados existentes antes da autenticação. Deseja vinculá-los ao seu espaço familiar?');
         if (shouldMigrate) {
           await legacyMarkerRef.set({
-            migratedBy: user.uid,
-            startedAt: firebase.firestore.Timestamp.now()
+            migratedBy: ownerUid,
+            workspaceId: activeWorkspace.workspaceId,
+            startedAt: firebase.firestore.Timestamp.now(),
           }, { merge: true });
         }
       }
     }
 
-    if (shouldMigrate) {
-      await migrateLegacyData(user);
-      await legacyMarkerRef.set({
-        migratedBy: user.uid,
-        migratedAt: firebase.firestore.Timestamp.now(),
-        completed: true
+    if (!shouldMigrate) {
+      return false;
+    }
+
+    await migrateLegacyData(user);
+    await legacyMarkerRef.set({
+      migratedBy: ownerUid,
+      workspaceId: activeWorkspace.workspaceId,
+      migratedAt: firebase.firestore.Timestamp.now(),
+      completed: true,
+    }, { merge: true });
+    return true;
+  } catch (error) {
+    console.error('Erro ao verificar migração legada:', error);
+    return false;
+  }
+}
+
+async function ensureUserWorkspace(user) {
+  if (!user) return;
+
+  try {
+    const baseUserDocRef = db.collection('users').doc(user.uid);
+    const workspaceDocRef = baseUserDocRef.collection('metadata').doc('workspace');
+    const workspaceSnap = await workspaceDocRef.get().catch(() => null);
+    const workspaceData = workspaceSnap && workspaceSnap.exists ? (workspaceSnap.data() || {}) : {};
+
+    let workspaceId = workspaceData.sharedWorkspaceId || workspaceData.linkedOwnerUid || user.uid;
+    let ownerUid = workspaceData.sharedOwnerUid || workspaceData.linkedOwnerUid || workspaceData.ownerUid || workspaceId || user.uid;
+
+    if (!workspaceId) workspaceId = user.uid;
+    if (!ownerUid) ownerUid = user.uid;
+
+    const sharedWorkspaceRef = db.collection('sharedWorkspaces').doc(workspaceId);
+    const sharedSnap = await sharedWorkspaceRef.get().catch(() => null);
+    let sharedData = sharedSnap && sharedSnap.exists ? (sharedSnap.data() || {}) : {};
+
+    if (!sharedSnap || !sharedSnap.exists) {
+      sharedData = {
+        workspaceId,
+        ownerUid,
+        memberUids: [ownerUid],
+      };
+      await sharedWorkspaceRef.set({
+        ...sharedData,
+        createdAt: firebase.firestore.Timestamp.now(),
+      }, { merge: true });
+    } else {
+      if (sharedData.ownerUid && sharedData.ownerUid !== ownerUid) {
+        ownerUid = sharedData.ownerUid;
+      }
+      if (sharedData.workspaceId) {
+        workspaceId = sharedData.workspaceId;
+      } else {
+        await sharedWorkspaceRef.set({ workspaceId }, { merge: true });
+      }
+    }
+
+    const memberSet = new Set(Array.isArray(sharedData.memberUids) ? sharedData.memberUids : []);
+    memberSet.add(ownerUid);
+    memberSet.add(user.uid);
+
+    if (!sharedData.memberUids || !sharedData.memberUids.includes(ownerUid)) {
+      await sharedWorkspaceRef.set({
+        memberUids: FieldValue.arrayUnion(ownerUid),
+        updatedAt: firebase.firestore.Timestamp.now(),
       }, { merge: true });
     }
 
+    if (!sharedData.memberUids || !sharedData.memberUids.includes(user.uid)) {
+      await sharedWorkspaceRef.set({
+        memberUids: FieldValue.arrayUnion(user.uid),
+        updatedAt: firebase.firestore.Timestamp.now(),
+      }, { merge: true });
+    }
+
+    if (!sharedData.ownerUid && ownerUid) {
+      await sharedWorkspaceRef.set({ ownerUid }, { merge: true });
+    }
+
+    activeWorkspace = {
+      workspaceId,
+      ownerUid,
+      memberUids: Array.from(memberSet),
+      isOwner: ownerUid === user.uid,
+    };
+
+    const migratedFlag = workspaceData.migrated || await maybeMigrateLegacyData(user);
+
     await workspaceDocRef.set({
       initialized: true,
+      sharedWorkspaceId: workspaceId,
+      sharedOwnerUid: ownerUid,
       updatedAt: firebase.firestore.Timestamp.now(),
-      migrated: shouldMigrate
+      migrated: Boolean(migratedFlag),
     }, { merge: true });
 
     workspaceInitialized = true;
+    updateWorkspaceContextUI();
   } catch (err) {
     console.error('Erro ao preparar workspace do usuário:', err);
   }
@@ -1949,6 +2108,19 @@ const defaultGoogleHelperHtml = authGoogleHelper ? authGoogleHelper.innerHTML : 
 const userSession = document.getElementById('user-session');
 const userEmailBadge = document.getElementById('user-email-badge');
 const signOutButton = document.getElementById('btn-signout');
+const workspaceContextBadge = document.getElementById('workspace-context-badge');
+const workspaceShareButton = document.getElementById('btn-open-workspace-sharing');
+const workspaceShareModal = document.getElementById('modal-workspace-share');
+const workspaceShareClose = document.getElementById('workspace-share-close');
+const workspaceShareCode = document.getElementById('workspace-share-code');
+const workspaceCopyCode = document.getElementById('workspace-copy-code');
+const workspaceMembersList = document.getElementById('workspace-members-list');
+const workspaceJoinForm = document.getElementById('workspace-join-form');
+const workspaceJoinCodeInput = document.getElementById('workspace-join-code');
+const workspaceJoinSubmit = document.getElementById('workspace-join-submit');
+const workspaceLeaveButton = document.getElementById('workspace-leave-button');
+const workspaceShareFeedback = document.getElementById('workspace-share-feedback');
+const workspaceOwnerHint = document.getElementById('workspace-owner-hint');
 
 let authMode = 'signIn';
 let googleLoading = false;
@@ -2020,6 +2192,305 @@ function setVerificationButtonsDisabled(isDisabled) {
   });
 }
 
+function resetWorkspaceFeedback() {
+  if (!workspaceShareFeedback) return;
+  workspaceShareFeedback.classList.add('hidden');
+  workspaceShareFeedback.textContent = '';
+  workspaceShareFeedback.classList.remove(
+    'text-emerald-600',
+    'dark:text-emerald-300',
+    'text-red-500',
+    'dark:text-red-400'
+  );
+}
+
+function showWorkspaceFeedback(message, isSuccess = true) {
+  if (!workspaceShareFeedback) return;
+  workspaceShareFeedback.textContent = message;
+  workspaceShareFeedback.classList.remove('hidden');
+  workspaceShareFeedback.classList.toggle('text-emerald-600', isSuccess);
+  workspaceShareFeedback.classList.toggle('dark:text-emerald-300', isSuccess);
+  workspaceShareFeedback.classList.toggle('text-red-500', !isSuccess);
+  workspaceShareFeedback.classList.toggle('dark:text-red-400', !isSuccess);
+}
+
+const workspaceJoinSubmitDefault = workspaceJoinSubmit ? workspaceJoinSubmit.textContent : '';
+const workspaceLeaveDefault = workspaceLeaveButton ? workspaceLeaveButton.textContent : '';
+
+function setWorkspaceJoinLoading(isLoading) {
+  if (workspaceJoinSubmit) {
+    workspaceJoinSubmit.disabled = isLoading;
+    workspaceJoinSubmit.textContent = isLoading
+      ? 'Conectando...'
+      : (workspaceJoinSubmitDefault || 'Usar esse espaço');
+    workspaceJoinSubmit.classList.toggle('opacity-60', isLoading);
+    workspaceJoinSubmit.classList.toggle('cursor-not-allowed', isLoading);
+  }
+  if (workspaceJoinCodeInput) {
+    workspaceJoinCodeInput.disabled = isLoading;
+  }
+}
+
+function setWorkspaceLeaveLoading(isLoading) {
+  if (!workspaceLeaveButton) return;
+  workspaceLeaveButton.disabled = isLoading;
+  workspaceLeaveButton.textContent = isLoading
+    ? 'Saindo...'
+    : (workspaceLeaveDefault || 'Voltar para meu espaço individual');
+  workspaceLeaveButton.classList.toggle('opacity-60', isLoading);
+  workspaceLeaveButton.classList.toggle('cursor-not-allowed', isLoading);
+}
+
+function formatUid(uid = '') {
+  if (!uid) return '';
+  return uid.length <= 12 ? uid : `${uid.slice(0, 4)}…${uid.slice(-4)}`;
+}
+
+async function fetchWorkspaceProfile(uid) {
+  if (!uid) return null;
+  if (workspaceProfilesCache.has(uid)) {
+    const cached = workspaceProfilesCache.get(uid) || {};
+    return { uid, ...cached };
+  }
+  try {
+    const snap = await db.collection('profiles').doc(uid).get();
+    if (snap.exists) {
+      const data = snap.data() || {};
+      workspaceProfilesCache.set(uid, data);
+      return { uid, ...data };
+    }
+  } catch (error) {
+    console.error('Erro ao carregar perfil do workspace:', error);
+  }
+  return { uid };
+}
+
+async function loadWorkspaceMemberProfiles() {
+  if (!activeWorkspace || !Array.isArray(activeWorkspace.memberUids)) {
+    return [];
+  }
+  const uniqueUids = Array.from(new Set(activeWorkspace.memberUids));
+  const profiles = await Promise.all(uniqueUids.map(fetchWorkspaceProfile));
+  return profiles.filter(Boolean);
+}
+
+function createWorkspaceBadge(label, classes) {
+  const span = document.createElement('span');
+  span.className = `text-[0.65rem] uppercase tracking-wide font-semibold px-2 py-1 rounded-full ${classes}`;
+  span.textContent = label;
+  return span;
+}
+
+async function renderWorkspaceSharingDetails() {
+  if (!workspaceShareModal || !currentUser) {
+    return;
+  }
+
+  const workspaceId = activeWorkspace?.workspaceId || currentUser.uid;
+  if (workspaceShareCode) {
+    workspaceShareCode.textContent = workspaceId || '—';
+  }
+
+  if (workspaceJoinCodeInput) {
+    workspaceJoinCodeInput.value = '';
+  }
+
+  if (workspaceOwnerHint) {
+    if (activeWorkspace?.isOwner) {
+      workspaceOwnerHint.textContent = 'Você administra este espaço familiar. Compartilhe o código acima com outras contas de confiança para que enxerguem os mesmos dados.';
+    } else {
+      const ownerProfile = await fetchWorkspaceProfile(activeWorkspace?.ownerUid);
+      const ownerLabel = ownerProfile?.email || ownerProfile?.displayName || formatUid(activeWorkspace?.ownerUid || '');
+      workspaceOwnerHint.innerHTML = `Este espaço pertence a <strong>${ownerLabel || 'seu parceiro(a)'}</strong>. Todas as contas listadas abaixo enxergam e editam os mesmos lançamentos.`;
+    }
+  }
+
+  if (workspaceJoinForm) {
+    const shouldHideJoin = activeWorkspace?.isOwner && activeWorkspace.workspaceId === currentUser.uid;
+    workspaceJoinForm.classList.toggle('hidden', Boolean(shouldHideJoin));
+  }
+
+  if (workspaceLeaveButton) {
+    const shouldHideLeave = !activeWorkspace || activeWorkspace.isOwner || activeWorkspace.workspaceId === currentUser.uid;
+    workspaceLeaveButton.classList.toggle('hidden', Boolean(shouldHideLeave));
+  }
+
+  if (workspaceMembersList) {
+    workspaceMembersList.innerHTML = '<li class="text-sm text-gray-500 dark:text-gray-400">Carregando integrantes...</li>';
+    const profiles = await loadWorkspaceMemberProfiles();
+    workspaceMembersList.innerHTML = '';
+
+    if (!profiles.length) {
+      const li = document.createElement('li');
+      li.className = 'text-sm text-gray-500 dark:text-gray-400';
+      li.textContent = 'Somente você tem acesso a este espaço no momento.';
+      workspaceMembersList.appendChild(li);
+    } else {
+      profiles.forEach(profile => {
+        const li = document.createElement('li');
+        li.className = 'flex items-center justify-between gap-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50/70 dark:bg-gray-800/50 px-3 py-2';
+
+        const info = document.createElement('div');
+        info.className = 'min-w-0';
+        const name = document.createElement('div');
+        name.className = 'font-semibold text-gray-700 dark:text-gray-200 truncate';
+        name.textContent = profile.displayName || profile.email || formatUid(profile.uid);
+        const email = document.createElement('div');
+        email.className = 'text-xs text-gray-500 dark:text-gray-400 truncate';
+        email.textContent = profile.email || formatUid(profile.uid);
+        info.appendChild(name);
+        info.appendChild(email);
+
+        const badgesWrap = document.createElement('div');
+        badgesWrap.className = 'flex items-center gap-2 shrink-0';
+        if (profile.uid === activeWorkspace?.ownerUid) {
+          badgesWrap.appendChild(createWorkspaceBadge('Admin', 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-200'));
+        }
+        if (profile.uid === currentUser.uid) {
+          badgesWrap.appendChild(createWorkspaceBadge('Você', 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-200'));
+        }
+
+        li.appendChild(info);
+        if (badgesWrap.childNodes.length > 0) {
+          li.appendChild(badgesWrap);
+        }
+        workspaceMembersList.appendChild(li);
+      });
+    }
+  }
+}
+
+async function openWorkspaceShareModal() {
+  if (!workspaceShareModal) return;
+  if (!currentUser) {
+    showAuthOverlay();
+    return;
+  }
+  resetWorkspaceFeedback();
+  await renderWorkspaceSharingDetails();
+  workspaceShareModal.classList.remove('hidden');
+  document.body.classList.add('overflow-hidden', 'workspace-share-open');
+}
+
+function closeWorkspaceShareModal() {
+  if (!workspaceShareModal) return;
+  workspaceShareModal.classList.add('hidden');
+  document.body.classList.remove('workspace-share-open');
+  if ((!authOverlay || authOverlay.classList.contains('hidden')) && !document.body.classList.contains('workspace-share-open')) {
+    document.body.classList.remove('overflow-hidden');
+  }
+  resetWorkspaceFeedback();
+}
+
+async function resolveWorkspaceIdentifier(identifier) {
+  const raw = (identifier || '').trim();
+  if (!raw) {
+    throw new Error('Informe um código ou e-mail válido.');
+  }
+
+  if (raw.includes('@')) {
+    const normalized = normalizeEmail(raw);
+    if (!normalized) {
+      throw new Error('Informe um e-mail válido.');
+    }
+    const querySnap = await db.collection('profiles').where('normalizedEmail', '==', normalized).limit(1).get();
+    if (querySnap.empty) {
+      throw new Error('Não encontramos nenhuma conta com esse e-mail.');
+    }
+    const ownerUid = querySnap.docs[0].id;
+    const ownerWorkspaceSnap = await db.collection('users').doc(ownerUid).collection('metadata').doc('workspace').get();
+    const ownerWorkspaceData = ownerWorkspaceSnap.exists ? (ownerWorkspaceSnap.data() || {}) : {};
+    return ownerWorkspaceData.sharedWorkspaceId || ownerWorkspaceData.linkedOwnerUid || ownerUid;
+  }
+
+  return raw;
+}
+
+async function joinWorkspaceById(workspaceId) {
+  if (!currentUser) {
+    throw new Error('Faça login para conectar-se a um espaço compartilhado.');
+  }
+
+  const trimmed = (workspaceId || '').trim();
+  if (!trimmed) {
+    throw new Error('Informe um código válido.');
+  }
+
+  if (activeWorkspace?.workspaceId && trimmed === activeWorkspace.workspaceId) {
+    throw new Error('Você já está usando esse espaço.');
+  }
+
+  const sharedRef = db.collection('sharedWorkspaces').doc(trimmed);
+  const sharedSnap = await sharedRef.get();
+  if (!sharedSnap.exists) {
+    throw new Error('Nenhum espaço compartilhado encontrado com esse código.');
+  }
+
+  const sharedData = sharedSnap.data() || {};
+  const ownerUid = sharedData.ownerUid || trimmed;
+  if (ownerUid === currentUser.uid) {
+    throw new Error('Este código corresponde ao seu próprio espaço.');
+  }
+
+  await sharedRef.set({
+    ownerUid,
+    workspaceId: trimmed,
+    memberUids: FieldValue.arrayUnion(currentUser.uid),
+    updatedAt: firebase.firestore.Timestamp.now(),
+  }, { merge: true });
+
+  await db.collection('users').doc(currentUser.uid).collection('metadata').doc('workspace').set({
+    sharedWorkspaceId: trimmed,
+    sharedOwnerUid: ownerUid,
+    initialized: true,
+    linkedAt: firebase.firestore.Timestamp.now(),
+  }, { merge: true });
+
+  await ensureUserWorkspace(currentUser);
+  carregarEnvelopes();
+  startObservers();
+  await renderWorkspaceSharingDetails();
+  updateWorkspaceContextUI();
+  showToast('Ambiente compartilhado conectado!');
+}
+
+async function joinWorkspaceByIdentifier(identifier) {
+  const workspaceId = await resolveWorkspaceIdentifier(identifier);
+  await joinWorkspaceById(workspaceId);
+  return workspaceId;
+}
+
+async function leaveSharedWorkspace() {
+  if (!currentUser) {
+    throw new Error('Faça login para sair de um espaço compartilhado.');
+  }
+  if (!activeWorkspace || !activeWorkspace.workspaceId) {
+    throw new Error('Nenhum espaço compartilhado ativo para sair.');
+  }
+  if (activeWorkspace.ownerUid === currentUser.uid) {
+    throw new Error('O administrador não pode sair do próprio espaço.');
+  }
+
+  const previousWorkspaceId = activeWorkspace.workspaceId;
+
+  await db.collection('users').doc(currentUser.uid).collection('metadata').doc('workspace').set({
+    sharedWorkspaceId: currentUser.uid,
+    sharedOwnerUid: currentUser.uid,
+    updatedAt: firebase.firestore.Timestamp.now(),
+  }, { merge: true });
+
+  await db.collection('sharedWorkspaces').doc(previousWorkspaceId).set({
+    memberUids: FieldValue.arrayRemove(currentUser.uid),
+    updatedAt: firebase.firestore.Timestamp.now(),
+  }, { merge: true });
+
+  await ensureUserWorkspace(currentUser);
+  carregarEnvelopes();
+  startObservers();
+  await renderWorkspaceSharingDetails();
+  updateWorkspaceContextUI();
+  showToast('Você voltou para o seu espaço individual.');
+}
 function exitVerificationMode(nextMode = 'signIn') {
   pendingVerificationUser = null;
   authMode = nextMode;
@@ -2164,6 +2635,33 @@ function updateHeaderOffset() {
   });
 }
 
+function updateWorkspaceContextUI() {
+  const hasUser = Boolean(currentUser);
+  if (workspaceShareButton) {
+    workspaceShareButton.disabled = !hasUser;
+    workspaceShareButton.classList.toggle('opacity-60', !hasUser);
+    workspaceShareButton.classList.toggle('cursor-not-allowed', !hasUser);
+  }
+
+  if (!workspaceContextBadge) {
+    return;
+  }
+
+  const shared = Boolean(
+    hasUser && activeWorkspace?.workspaceId && (
+      (Array.isArray(activeWorkspace.memberUids) && activeWorkspace.memberUids.length > 1) ||
+      (activeWorkspace.ownerUid && activeWorkspace.ownerUid !== currentUser?.uid)
+    )
+  );
+
+  workspaceContextBadge.classList.toggle('hidden', !shared);
+  if (shared) {
+    workspaceContextBadge.textContent = activeWorkspace?.isOwner ? 'Família (admin)' : 'Família';
+  } else {
+    workspaceContextBadge.textContent = '';
+  }
+}
+
 function updateUserSessionUI(user) {
   if (!userSession) return;
   if (user) {
@@ -2173,6 +2671,7 @@ function updateUserSessionUI(user) {
     userSession.classList.add('hidden');
     userEmailBadge.textContent = '';
   }
+  updateWorkspaceContextUI();
   updateHeaderOffset();
 }
 
@@ -2180,6 +2679,7 @@ async function handleUserSignedIn(user) {
   currentUser = user;
   updateUserSessionUI(user);
   hideAuthOverlay();
+  await syncUserProfile(user);
   await ensureUserWorkspace(user);
   if (!appBootstrapped) {
     boot();
@@ -2188,11 +2688,17 @@ async function handleUserSignedIn(user) {
     carregarEnvelopes();
     startObservers();
   }
+  if (workspaceShareModal && !workspaceShareModal.classList.contains('hidden')) {
+    await renderWorkspaceSharingDetails();
+  }
 }
 
 function handleUserSignedOut() {
   currentUser = null;
   workspaceInitialized = false;
+  activeWorkspace = { workspaceId: null, ownerUid: null, memberUids: [], isOwner: false };
+  workspaceProfilesCache.clear();
+  closeWorkspaceShareModal();
   updateUserSessionUI(null);
   exitVerificationMode('signIn');
   showAuthOverlay();
@@ -2360,6 +2866,94 @@ function initAuthFlow() {
       }
     });
   }
+
+  if (workspaceShareButton) {
+    workspaceShareButton.addEventListener('click', () => {
+      if (!currentUser) {
+        showAuthOverlay();
+        return;
+      }
+      openWorkspaceShareModal().catch((error) => {
+        console.error('Erro ao abrir modal de compartilhamento:', error);
+        showWorkspaceFeedback('Não foi possível carregar o compartilhamento agora.', false);
+      });
+    });
+  }
+
+  workspaceShareClose?.addEventListener('click', closeWorkspaceShareModal);
+
+  if (workspaceShareModal) {
+    workspaceShareModal.addEventListener('click', (event) => {
+      if (event.target === workspaceShareModal) {
+        closeWorkspaceShareModal();
+      }
+    });
+  }
+
+  if (workspaceCopyCode) {
+    workspaceCopyCode.addEventListener('click', async () => {
+      if (!workspaceShareCode) return;
+      const code = (workspaceShareCode.textContent || '').trim();
+      if (!code || code === '—') {
+        showWorkspaceFeedback('Código indisponível no momento. Tente novamente após carregar os dados.', false);
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(code);
+        showWorkspaceFeedback('Código copiado! Envie para quem vai compartilhar o ambiente.', true);
+      } catch (error) {
+        console.error('Erro ao copiar código do workspace:', error);
+        showWorkspaceFeedback('Não foi possível copiar automaticamente. Copie manualmente.', false);
+      }
+    });
+  }
+
+  if (workspaceJoinForm) {
+    workspaceJoinForm.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      if (!workspaceJoinCodeInput) return;
+      const identifier = workspaceJoinCodeInput.value;
+      if (!identifier || !identifier.trim()) {
+        showWorkspaceFeedback('Informe um código ou e-mail válido para conectar.', false);
+        return;
+      }
+      setWorkspaceJoinLoading(true);
+      resetWorkspaceFeedback();
+      try {
+        await joinWorkspaceByIdentifier(identifier);
+        showWorkspaceFeedback('Pronto! Agora vocês compartilham o mesmo espaço financeiro.', true);
+      } catch (error) {
+        console.error('Erro ao vincular espaço compartilhado:', error);
+        const message = error?.message || 'Não foi possível usar esse código agora.';
+        showWorkspaceFeedback(message, false);
+      } finally {
+        setWorkspaceJoinLoading(false);
+      }
+    });
+  }
+
+  if (workspaceLeaveButton) {
+    workspaceLeaveButton.addEventListener('click', async () => {
+      setWorkspaceLeaveLoading(true);
+      resetWorkspaceFeedback();
+      try {
+        await leaveSharedWorkspace();
+        showWorkspaceFeedback('Seu espaço individual foi restaurado.', true);
+      } catch (error) {
+        console.error('Erro ao sair do espaço compartilhado:', error);
+        const message = error?.message || 'Não foi possível sair desse espaço agora.';
+        showWorkspaceFeedback(message, false);
+      } finally {
+        setWorkspaceLeaveLoading(false);
+      }
+    });
+  }
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && workspaceShareModal && !workspaceShareModal.classList.contains('hidden')) {
+      closeWorkspaceShareModal();
+    }
+  });
 
   auth.onAuthStateChanged(async (user) => {
     if (user) {
@@ -5116,7 +5710,7 @@ document.getElementById('parcelado-form').addEventListener('submit', e=>{
   }
   const [y,m] = inicio.split('-');
   const dataInicio = new Date(parseInt(y), parseInt(m)-1, 1);
-  userCollectionRef('parcelados').add({descricao:desc, valorParcela, numParcelas, cartao, dataInicio, ownerUid: currentUser?.uid || null})
+  userCollectionRef('parcelados').add({descricao:desc, valorParcela, numParcelas, cartao, dataInicio, ownerUid: getWorkspaceOwnerUid() || null})
     .then(()=> {
       e.target.reset();
       showToast('Parcelado adicionado com sucesso!');
@@ -5181,7 +5775,7 @@ if (formEntrada) {
       descricao,
       data: firebase.firestore.Timestamp.fromDate(data),
       createdAt: firebase.firestore.Timestamp.now(),
-      ownerUid: currentUser?.uid || null,
+      ownerUid: getWorkspaceOwnerUid() || null,
     }).then(() => {
       showToast('Entrada registrada com sucesso!', 'success');
       formEntrada.reset();
@@ -5231,7 +5825,7 @@ if (formInvestimento) {
       descricao,
       data: firebase.firestore.Timestamp.fromDate(data),
       createdAt: firebase.firestore.Timestamp.now(),
-      ownerUid: currentUser?.uid || null,
+      ownerUid: getWorkspaceOwnerUid() || null,
     }).then(() => {
       showToast('Investimento registrado!', 'success');
       formInvestimento.reset();
@@ -5610,7 +6204,7 @@ formAddGastoModal.addEventListener('submit', e => {
     tags: selectedTagsArray, // NOVO: Adiciona as tags selecionadas
     data: firebase.firestore.Timestamp.now(),
     mesFatura: mesFaturaCalculado, // NOVO CAMPO
-    ownerUid: currentUser?.uid || null
+    ownerUid: getWorkspaceOwnerUid() || null
   }).then(() => {
     // Limpa tags selecionadas
     selectedTagsArray = [];
@@ -5719,7 +6313,7 @@ formFixo.addEventListener('submit', e => {
       });
   } else {
     // Adicionar novo gasto fixo
-    userCollectionRef('fixos').add({ ...novoFixo, ownerUid: currentUser?.uid || null })
+    userCollectionRef('fixos').add({ ...novoFixo, ownerUid: getWorkspaceOwnerUid() || null })
       .then(() => {
         showToast('Gasto fixo adicionado com sucesso!');
         modalFixo.classList.add('hidden');
@@ -7148,7 +7742,7 @@ function updateFloatingMenuVisibility() {
         tags: selectedTagsArray,
         data: firebase.firestore.Timestamp.now(),
         mesFatura: mesFaturaCalculado,
-        ownerUid: currentUser?.uid || null
+        ownerUid: getWorkspaceOwnerUid() || null
       }).then(() => {
         selectedTagsArray = [];
         renderSelectedTags();
@@ -7381,7 +7975,7 @@ formParcelado.addEventListener('submit', e => {
       });
   } else {
     // Adicionar novo parcelado
-    userCollectionRef('parcelados').add({ ...parceladoData, ownerUid: currentUser?.uid || null }) // Usa parceladoData para adicionar
+    userCollectionRef('parcelados').add({ ...parceladoData, ownerUid: getWorkspaceOwnerUid() || null }) // Usa parceladoData para adicionar
       .then(() => {
         showToast('Parcelado adicionado com sucesso!');
         modalParcelado.classList.add('hidden');
