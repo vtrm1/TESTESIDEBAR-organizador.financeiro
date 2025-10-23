@@ -1939,6 +1939,7 @@ const authEnvironment = {
 };
 const messaging = firebase.messaging(); // Inicializa o Messaging
 const FieldValue = firebase.firestore.FieldValue;
+const FieldPath = firebase.firestore.FieldPath;
 
 let currentUser = null;
 let appBootstrapped = false;
@@ -1950,6 +1951,7 @@ let appReadyForCurrentUser = false;
 let appStartInProgress = false;
 let accessProfileUnsubscribe = null;
 let accessGuardMode = null;
+let workspaceMetadataNormalizationExecuted = false;
 
 function requireAuthContext() {
   if (!currentUser) {
@@ -1962,6 +1964,150 @@ function getWorkspaceOwnerUid() {
     return activeWorkspace.ownerUid;
   }
   return currentUser?.uid || null;
+}
+
+function getActiveWorkspaceId() {
+  if (activeWorkspace && activeWorkspace.workspaceId) {
+    return activeWorkspace.workspaceId;
+  }
+  return getWorkspaceOwnerUid() || currentUser?.uid || null;
+}
+
+function stampWorkspaceCreation(data = {}) {
+  const base = { ...data };
+  const now = firebase.firestore.Timestamp.now();
+  const ownerUid = getWorkspaceOwnerUid() || currentUser?.uid || null;
+  const workspaceId = getActiveWorkspaceId();
+
+  if (ownerUid && !('ownerUid' in base)) {
+    base.ownerUid = ownerUid;
+  }
+
+  if (workspaceId && !('workspaceId' in base)) {
+    base.workspaceId = workspaceId;
+  }
+
+  if (!('createdAt' in base)) {
+    base.createdAt = now;
+  }
+
+  if (!('updatedAt' in base)) {
+    base.updatedAt = now;
+  }
+
+  if (!('createdByUid' in base)) {
+    base.createdByUid = currentUser?.uid || null;
+  }
+
+  if (!('createdByEmail' in base)) {
+    base.createdByEmail = currentUser?.email || null;
+  }
+
+  return base;
+}
+
+function stampWorkspaceUpdate(data = {}) {
+  const base = { ...data };
+  const now = firebase.firestore.Timestamp.now();
+  const ownerUid = getWorkspaceOwnerUid() || currentUser?.uid || null;
+  const workspaceId = getActiveWorkspaceId();
+
+  if (ownerUid && !('ownerUid' in base)) {
+    base.ownerUid = ownerUid;
+  }
+
+  if (workspaceId && !('workspaceId' in base)) {
+    base.workspaceId = workspaceId;
+  }
+
+  base.updatedAt = now;
+
+  return base;
+}
+
+async function ensureWorkspaceMetadataForCollections(force = false) {
+  if (workspaceMetadataNormalizationExecuted && !force) {
+    return;
+  }
+
+  const ownerUid = getWorkspaceOwnerUid();
+  const workspaceId = getActiveWorkspaceId();
+
+  if (!ownerUid || !workspaceId) {
+    return;
+  }
+
+  workspaceMetadataNormalizationExecuted = true;
+
+  const collections = ['gastos', 'parcelados', 'entradas', 'investimentos', 'fixos'];
+  const batchSize = 200;
+
+  try {
+    for (const name of collections) {
+      let lastDoc = null;
+      let more = true;
+
+      while (more) {
+        let query = userCollectionRef(name).orderBy(FieldPath.documentId()).limit(batchSize);
+        if (lastDoc) {
+          query = query.startAfter(lastDoc);
+        }
+
+        const snapshot = await query.get();
+        if (snapshot.empty) {
+          break;
+        }
+
+        const batch = db.batch();
+        let updates = 0;
+
+        snapshot.docs.forEach(docSnap => {
+          const data = docSnap.data() || {};
+          const patch = {};
+
+          if (!data.ownerUid || data.ownerUid !== ownerUid) {
+            patch.ownerUid = ownerUid;
+          }
+
+          if (!data.workspaceId || data.workspaceId !== workspaceId) {
+            patch.workspaceId = workspaceId;
+          }
+
+          if (!data.createdAt) {
+            if (data.data instanceof firebase.firestore.Timestamp) {
+              patch.createdAt = data.data;
+            } else if (data.dataInicio instanceof firebase.firestore.Timestamp) {
+              patch.createdAt = data.dataInicio;
+            } else {
+              patch.createdAt = firebase.firestore.Timestamp.now();
+            }
+          }
+
+          if (!data.updatedAt) {
+            patch.updatedAt = firebase.firestore.Timestamp.now();
+          }
+
+          if (Object.keys(patch).length > 0) {
+            batch.set(docSnap.ref, stampWorkspaceUpdate(patch), { merge: true });
+            updates += 1;
+          }
+        });
+
+        if (updates > 0) {
+          await batch.commit();
+        }
+
+        if (snapshot.size < batchSize) {
+          break;
+        }
+
+        lastDoc = snapshot.docs[snapshot.docs.length - 1];
+      }
+    }
+  } catch (err) {
+    console.error('Erro ao normalizar metadados de workspace:', err);
+    workspaceMetadataNormalizationExecuted = false;
+  }
 }
 
 function userRootRef() {
@@ -2130,7 +2276,21 @@ async function migrateLegacyData(user) {
       for (const doc of snapshot.docs) {
         const data = doc.data() || {};
         if (ownerUid && data.ownerUid && data.ownerUid !== ownerUid) continue;
-        await targetCollection.doc(doc.id).set({ ...data, ownerUid: ownerUid || data.ownerUid || null }, { merge: true });
+        const merged = { ...data, ownerUid: ownerUid || data.ownerUid || null };
+        if (!merged.workspaceId) {
+          merged.workspaceId = activeWorkspace?.workspaceId || ownerUid || currentUser?.uid || null;
+        }
+        if (!merged.createdAt) {
+          if (merged.data instanceof firebase.firestore.Timestamp) {
+            merged.createdAt = merged.data;
+          } else if (merged.dataInicio instanceof firebase.firestore.Timestamp) {
+            merged.createdAt = merged.dataInicio;
+          } else {
+            merged.createdAt = firebase.firestore.Timestamp.now();
+          }
+        }
+        const stamped = stampWorkspaceUpdate(merged);
+        await targetCollection.doc(doc.id).set(stamped, { merge: true });
       }
     } catch (err) {
       console.error(`Erro ao migrar coleção legacy ${name}:`, err);
@@ -2140,7 +2300,7 @@ async function migrateLegacyData(user) {
   try {
     const limitesSnap = await db.collection('limites').doc('conta_unica').get();
     if (limitesSnap.exists) {
-      await userDocRef('limites', 'conta_unica').set(limitesSnap.data(), { merge: true });
+      await userDocRef('limites', 'conta_unica').set(stampWorkspaceUpdate(limitesSnap.data() || {}), { merge: true });
     }
   } catch (err) {
     console.error('Erro ao migrar limites legacy:', err);
@@ -2269,6 +2429,7 @@ async function ensureUserWorkspace(user) {
       await sharedWorkspaceRef.set({ ownerUid }, { merge: true });
     }
 
+    workspaceMetadataNormalizationExecuted = false;
     activeWorkspace = {
       workspaceId,
       ownerUid,
@@ -2288,6 +2449,7 @@ async function ensureUserWorkspace(user) {
 
     workspaceInitialized = true;
     updateWorkspaceContextUI();
+    ensureWorkspaceMetadataForCollections().catch(err => console.error('Falha ao garantir metadados de workspace:', err));
   } catch (err) {
     console.error('Erro ao preparar workspace do usuário:', err);
   }
@@ -3462,6 +3624,7 @@ function handleUserSignedOut() {
     accessProfileUnsubscribe = null;
   }
   workspaceInitialized = false;
+  workspaceMetadataNormalizationExecuted = false;
   activeWorkspace = { workspaceId: null, ownerUid: null, memberUids: [], isOwner: false };
   workspaceProfilesCache.clear();
   closeWorkspaceShareModal();
@@ -4659,7 +4822,7 @@ function salvarEnvelope(tipo, novosValores, mensagem = 'Envelope atualizado com 
     }
   };
 
-  return userDocRef('limites', 'conta_unica').set(payload, { merge: true })
+  return userDocRef('limites', 'conta_unica').set(stampWorkspaceUpdate(payload), { merge: true })
     .then(() => showToast(mensagem))
     .catch(err => {
       console.error('Erro ao salvar envelope', err);
@@ -4874,7 +5037,7 @@ function renderFixos(docs) {
 }
 
 function toggleAtivoFixo(id, atual) {
-  userCollectionRef('fixos').doc(id).update({ ativo: !atual })
+  userCollectionRef('fixos').doc(id).update(stampWorkspaceUpdate({ ativo: !atual }))
     .then(() => {
       showToast(`Gasto fixo ${!atual ? 'ativado' : 'desativado'} com sucesso!`);
       carregarFixos(); // Recarrega a lista para atualizar os botões
@@ -5442,7 +5605,7 @@ function editarFechamentoPrompt(key){
 
 function editarGasto(id, campo, valor){
   const update = {}; update[campo] = campo==='valor' ? (parseFloat(valor)||0) : valor;
-  userCollectionRef('gastos').doc(id).update(update)
+  userCollectionRef('gastos').doc(id).update(stampWorkspaceUpdate(update))
     .then(() => showToast('Gasto atualizado!'))
     .catch(err => showToast('Erro ao atualizar gasto.', 'error'));
 }
@@ -6655,7 +6818,7 @@ document.getElementById('parcelado-form').addEventListener('submit', e=>{
   }
   const [y,m] = inicio.split('-');
   const dataInicio = new Date(parseInt(y), parseInt(m)-1, 1);
-  userCollectionRef('parcelados').add({descricao:desc, valorParcela, numParcelas, cartao, dataInicio, ownerUid: getWorkspaceOwnerUid() || null})
+  userCollectionRef('parcelados').add(stampWorkspaceCreation({ descricao: desc, valorParcela, numParcelas, cartao, dataInicio }))
     .then(()=> {
       e.target.reset();
       showToast('Parcelado adicionado com sucesso!');
@@ -6714,14 +6877,12 @@ if (formEntrada) {
     }
 
     const data = new Date(`${dataValor}T12:00:00`);
-    userCollectionRef('entradas').add({
+    userCollectionRef('entradas').add(stampWorkspaceCreation({
       tipo,
       valor,
       descricao,
       data: firebase.firestore.Timestamp.fromDate(data),
-      createdAt: firebase.firestore.Timestamp.now(),
-      ownerUid: getWorkspaceOwnerUid() || null,
-    }).then(() => {
+    })).then(() => {
       showToast('Entrada registrada com sucesso!', 'success');
       formEntrada.reset();
       if (entradaDataInput) entradaDataInput.value = formatDateInputValue(new Date());
@@ -6764,14 +6925,12 @@ if (formInvestimento) {
     }
 
     const data = new Date(`${dataValor}T12:00:00`);
-    userCollectionRef('investimentos').add({
+    userCollectionRef('investimentos').add(stampWorkspaceCreation({
       tipo,
       valor,
       descricao,
       data: firebase.firestore.Timestamp.fromDate(data),
-      createdAt: firebase.firestore.Timestamp.now(),
-      ownerUid: getWorkspaceOwnerUid() || null,
-    }).then(() => {
+    })).then(() => {
       showToast('Investimento registrado!', 'success');
       formInvestimento.reset();
       if (investimentoDataInput) investimentoDataInput.value = formatDateInputValue(new Date());
@@ -7142,7 +7301,7 @@ formAddGastoModal.addEventListener('submit', e => {
     }
   }
 
-  userCollectionRef('gastos').add({
+  userCollectionRef('gastos').add(stampWorkspaceCreation({
     tipo: 'variavel',
     cartao: cartaoSelecionado,
     categoria,
@@ -7151,8 +7310,7 @@ formAddGastoModal.addEventListener('submit', e => {
     tags: selectedTagsArray, // NOVO: Adiciona as tags selecionadas
     data: firebase.firestore.Timestamp.now(),
     mesFatura: mesFaturaCalculado, // NOVO CAMPO
-    ownerUid: getWorkspaceOwnerUid() || null
-  }).then(() => {
+  })).then(() => {
     // Limpa tags selecionadas
     selectedTagsArray = [];
     renderSelectedTags();
@@ -7249,7 +7407,7 @@ formFixo.addEventListener('submit', e => {
 
   if (docId) {
     // Editar gasto fixo existente
-    userCollectionRef('fixos').doc(docId).update(novoFixo)
+    userCollectionRef('fixos').doc(docId).update(stampWorkspaceUpdate(novoFixo))
       .then(() => {
         showToast('Gasto fixo atualizado com sucesso!');
         modalFixo.classList.add('hidden');
@@ -7260,7 +7418,7 @@ formFixo.addEventListener('submit', e => {
       });
   } else {
     // Adicionar novo gasto fixo
-    userCollectionRef('fixos').add({ ...novoFixo, ownerUid: getWorkspaceOwnerUid() || null })
+    userCollectionRef('fixos').add(stampWorkspaceCreation(novoFixo))
       .then(() => {
         showToast('Gasto fixo adicionado com sucesso!');
         modalFixo.classList.add('hidden');
@@ -8680,7 +8838,7 @@ function updateFloatingMenuVisibility() {
         }
       }
 
-      userCollectionRef('gastos').add({
+      userCollectionRef('gastos').add(stampWorkspaceCreation({
         tipo: 'variavel',
         cartao: cartaoSelecionado,
         categoria,
@@ -8689,8 +8847,7 @@ function updateFloatingMenuVisibility() {
         tags: selectedTagsArray,
         data: firebase.firestore.Timestamp.now(),
         mesFatura: mesFaturaCalculado,
-        ownerUid: getWorkspaceOwnerUid() || null
-      }).then(() => {
+      })).then(() => {
         selectedTagsArray = [];
         renderSelectedTags();
         fecharModal();
@@ -8743,14 +8900,14 @@ if (cartaoSelecionado === 'pix' || cartaoSelecionado === '') {
   }
 }
 
-      userCollectionRef('gastos').doc(id).update({
+      userCollectionRef('gastos').doc(id).update(stampWorkspaceUpdate({
         cartao: cartaoSelecionado,
         categoria,
         valor,
         descricao: desc,
         tags: selectedTagsArray,
         mesFatura: mesFaturaCalculado
-      }).then(() => {
+      })).then(() => {
         selectedTagsArray = [];
         renderSelectedTags();
         fecharModal();
@@ -8911,7 +9068,7 @@ formParcelado.addEventListener('submit', e => {
   const docId = formParcelado.dataset.docId;
   if (docId) {
     // Editar parcelado existente
-    userCollectionRef('parcelados').doc(docId).update(parceladoData)
+    userCollectionRef('parcelados').doc(docId).update(stampWorkspaceUpdate(parceladoData))
       .then(() => {
         showToast('Parcelado atualizado com sucesso!');
         modalParcelado.classList.add('hidden');
@@ -8922,7 +9079,7 @@ formParcelado.addEventListener('submit', e => {
       });
   } else {
     // Adicionar novo parcelado
-    userCollectionRef('parcelados').add({ ...parceladoData, ownerUid: getWorkspaceOwnerUid() || null }) // Usa parceladoData para adicionar
+    userCollectionRef('parcelados').add(stampWorkspaceCreation(parceladoData)) // Usa parceladoData para adicionar
       .then(() => {
         showToast('Parcelado adicionado com sucesso!');
         modalParcelado.classList.add('hidden');
