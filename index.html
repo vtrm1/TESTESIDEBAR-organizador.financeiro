@@ -753,6 +753,9 @@ html.dark .mobile-tab-button {
         <i class="fab fa-google text-lg"></i>
         <span data-label>Entrar com Google</span>
       </button>
+      <p id="auth-google-helper" class="hidden text-xs leading-relaxed text-amber-600 dark:text-amber-400 bg-amber-50/80 dark:bg-amber-400/10 border border-amber-200/80 dark:border-amber-500/40 rounded-lg px-3 py-2">
+        Para usar o Google em desenvolvimento, abra o app por <strong>http://localhost</strong> ou adicione este domínio à lista de autorizados no Console do Firebase.
+      </p>
     </div>
   </div>
 </div>
@@ -1759,6 +1762,10 @@ const db = firebase.firestore();
 const auth = firebase.auth();
 const googleAuthProvider = new firebase.auth.GoogleAuthProvider();
 googleAuthProvider.setCustomParameters({ prompt: 'select_account' });
+const authEnvironment = {
+  isFileProtocol: window.location.protocol === 'file:',
+  host: window.location.host,
+};
 const messaging = firebase.messaging(); // Inicializa o Messaging
 
 let currentUser = null;
@@ -1906,12 +1913,26 @@ const authEmailInput = document.getElementById('auth-email');
 const authPasswordInput = document.getElementById('auth-password');
 const authGoogleButton = document.getElementById('auth-google');
 const authGoogleLabel = authGoogleButton?.querySelector('[data-label]') || null;
+const authGoogleHelper = document.getElementById('auth-google-helper');
+const defaultGoogleHelperHtml = authGoogleHelper ? authGoogleHelper.innerHTML : '';
 const userSession = document.getElementById('user-session');
 const userEmailBadge = document.getElementById('user-email-badge');
 const signOutButton = document.getElementById('btn-signout');
 
 let authMode = 'signIn';
 let googleLoading = false;
+
+function showGoogleHelper(messageHtml = defaultGoogleHelperHtml) {
+  if (!authGoogleHelper) return;
+  authGoogleHelper.innerHTML = messageHtml || defaultGoogleHelperHtml;
+  authGoogleHelper.classList.remove('hidden');
+}
+
+function hideGoogleHelper() {
+  if (!authGoogleHelper) return;
+  authGoogleHelper.innerHTML = defaultGoogleHelperHtml;
+  authGoogleHelper.classList.add('hidden');
+}
 
 function updateAuthModeUI() {
   if (authMode === 'signIn') {
@@ -1991,6 +2012,10 @@ function mapAuthErrorMessage(error) {
       return 'Seu navegador bloqueou a janela do Google. Permita pop-ups e tente novamente.';
     case 'auth/operation-not-supported-in-this-environment':
       return 'Este navegador não suporta o login com Google nesta janela. Tente novamente em outra guia ou dispositivo.';
+    case 'auth/unauthorized-domain': {
+      const host = authEnvironment.host || window.location.hostname || 'este domínio';
+      return `Autorize "${host || 'este domínio'}" em Authentication → Settings → Authorized domains no Console do Firebase.`;
+    }
     case 'auth/account-exists-with-different-credential':
       return 'Já existe uma conta com este e-mail usando outro método de acesso. Entre com ele e vincule o Google nas configurações.';
     default:
@@ -2039,6 +2064,14 @@ function initAuthFlow() {
     updateAuthModeUI();
   });
 
+  if (authGoogleButton && authEnvironment.isFileProtocol) {
+    authGoogleButton.disabled = true;
+    authGoogleButton.classList.add('opacity-60', 'cursor-not-allowed');
+    showGoogleHelper('Abra o app usando <strong>http://localhost</strong> ou publique em um domínio autorizado para usar o Google.');
+  } else if (!authEnvironment.isFileProtocol) {
+    hideGoogleHelper();
+  }
+
   authForm.addEventListener('submit', async (event) => {
     event.preventDefault();
     const email = authEmailInput.value.trim();
@@ -2069,10 +2102,11 @@ function initAuthFlow() {
     }
   });
 
-  if (authGoogleButton) {
+  if (authGoogleButton && !authEnvironment.isFileProtocol) {
     authGoogleButton.addEventListener('click', async () => {
       authError.classList.add('hidden');
       authError.textContent = '';
+      hideGoogleHelper();
       setAuthLoading(true);
       setGoogleLoading(true);
 
@@ -2093,6 +2127,11 @@ function initAuthFlow() {
         }
 
         if (error?.code === 'auth/popup-closed-by-user' || error?.code === 'auth/cancelled-popup-request') {
+          authError.textContent = mapAuthErrorMessage(error);
+          authError.classList.remove('hidden');
+        } else if (error?.code === 'auth/unauthorized-domain') {
+          const host = authEnvironment.host || window.location.hostname || 'este domínio';
+          showGoogleHelper(`Inclua <strong>${host}</strong> em Authentication → Settings → Authorized domains no Console do Firebase para liberar o login com Google.`);
           authError.textContent = mapAuthErrorMessage(error);
           authError.classList.remove('hidden');
         } else if (error) {

@@ -1,0 +1,11 @@
+{
+  "name": "Organizador Financeiro",
+  "short_name": "OrgFinanceiro",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "lang": "pt-BR",
+  "background_color": "#0f172a",
+  "theme_color": "#22c55e",
+  "description": "Controle seus gastos, envelopes e investimentos com o Organizador Financeiro."
+}
