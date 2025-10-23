@@ -251,6 +251,8 @@
   .resumo-slider-nav{display:flex;align-items:center;gap:.5rem;margin-bottom:1rem}
   .resumo-slider-dot{padding:.4rem .9rem;border-radius:9999px;background:#f3f4f6;color:#4b5563;font-weight:600;font-size:.85rem;transition:all .25s ease}
   .resumo-slider-dot.is-active{background:#2563eb;color:white;box-shadow:0 8px 16px rgba(37,99,235,.25)}
+  .dark .resumo-slider-dot{background:rgba(148,163,184,0.18);color:#e2e8f0;border:1px solid rgba(148,163,184,0.2)}
+  .dark .resumo-slider-dot.is-active{background:linear-gradient(135deg,#2563eb,#7c3aed);color:#ffffff;box-shadow:0 12px 32px rgba(124,58,237,0.35);border-color:transparent}
   .resumo-slide-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}
   .resumo-slide-grid .resumo-item{padding:.75rem;border-radius:.75rem;background:#f9fafb;display:flex;flex-direction:column;gap:.35rem}
   .resumo-item .label{font-size:.8rem;color:#6b7280;text-transform:uppercase;letter-spacing:.05em}
@@ -262,21 +264,51 @@
   .resumo-item.alerta .value{color:#b91c1c}
   .resumo-item.neutro{background:rgba(59,130,246,.08);color:#1d4ed8}
   .resumo-item.neutro .value{color:#1d4ed8}
-  .dark .resumo-slide-grid .resumo-item{background:rgba(55,65,81,.6);color:#e5e7eb}
-  .dark .resumo-item .value{color:#f3f4f6}
-  .dark .resumo-item .label{color:#9ca3af}
-  .dark .resumo-item .hint{color:#6b7280}
-  .dark .resumo-item.positivo{background:rgba(16,185,129,.18);color:#bbf7d0}
-  .dark .resumo-item.positivo .value{color:#86efac}
-  .dark .resumo-item.alerta{background:rgba(248,113,113,.2);color:#fecaca}
-  .dark .resumo-item.alerta .value{color:#fca5a5}
-  .dark .resumo-item.neutro{background:rgba(59,130,246,.18);color:#bfdbfe}
-  .dark .resumo-item.neutro .value{color:#93c5fd}
+  .dark .resumo-slide-grid .resumo-item {
+    background: linear-gradient(145deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.88));
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    color: #e2e8f0;
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.55);
+  }
+  .dark .resumo-item .value {
+    color: #f8fafc;
+  }
+  .dark .resumo-item .label {
+    color: #cbd5f5;
+  }
+  .dark .resumo-item .hint {
+    color: #94a3b8;
+  }
+  .dark .resumo-item.positivo {
+    background: linear-gradient(150deg, rgba(16, 185, 129, 0.35), rgba(5, 150, 105, 0.4));
+    border-color: rgba(45, 212, 191, 0.4);
+    color: #d1fae5;
+  }
+  .dark .resumo-item.positivo .value {
+    color: #6ee7b7;
+  }
+  .dark .resumo-item.alerta {
+    background: linear-gradient(150deg, rgba(248, 113, 113, 0.35), rgba(185, 28, 28, 0.45));
+    border-color: rgba(248, 150, 150, 0.4);
+    color: #fee2e2;
+  }
+  .dark .resumo-item.alerta .value {
+    color: #fca5a5;
+  }
+  .dark .resumo-item.neutro {
+    background: linear-gradient(150deg, rgba(59, 130, 246, 0.35), rgba(49, 46, 129, 0.5));
+    border-color: rgba(147, 197, 253, 0.35);
+    color: #dbeafe;
+  }
+  .dark .resumo-item.neutro .value {
+    color: #bfdbfe;
+  }
   .resumo-slider-dots{display:flex;gap:.4rem}
   .resumo-slider-dots button{width:.5rem;height:.5rem;border-radius:9999px;background:#e5e7eb;border:none;padding:0;transition:transform .25s ease,background .25s ease}
   .resumo-slider-dots button.is-active{background:#2563eb;transform:scale(1.1)}
   .gradient-shadow{position:relative}
   .gradient-shadow::after{content:"";position:absolute;inset:0;border-radius:.75rem;pointer-events:none;box-shadow:0 10px 35px rgba(15,23,42,.1)}
+  .dark .gradient-shadow{background:linear-gradient(160deg,rgba(30,41,59,0.95),rgba(17,24,39,0.92));border:1px solid rgba(148,163,184,0.2);box-shadow:0 20px 45px rgba(15,23,42,0.6)}
   .compact-resumo{padding:1rem 1.2rem 1.25rem}
   .compact-resumo .resumo-slider-nav{margin-bottom:.75rem}
   .compact-resumo .resumo-slide-grid{gap:.75rem}
@@ -439,6 +471,42 @@
     background-color: #10b981; /* green-500 */
   }
 
+  #parcelados-table-wrapper {
+    max-height: none;
+    overflow-y: visible;
+    transition: box-shadow 0.25s ease, border-color 0.25s ease, background 0.25s ease;
+  }
+
+  #parcelados-table-wrapper.parcelados-scroll {
+    max-height: 26rem;
+    overflow-y: auto;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.75rem;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    box-shadow: inset 0 -12px 18px -14px rgba(15, 23, 42, 0.25);
+  }
+
+  #parcelados-table-wrapper.parcelados-scroll table {
+    min-width: 48rem;
+  }
+
+  #parcelados-table-wrapper.parcelados-scroll::-webkit-scrollbar {
+    width: 10px;
+  }
+
+  #parcelados-table-wrapper.parcelados-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  #parcelados-table-wrapper.parcelados-scroll::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.35);
+    border-radius: 9999px;
+  }
+
+  #parcelados-table-wrapper.parcelados-scroll::-webkit-scrollbar-thumb:hover {
+    background: rgba(100, 116, 139, 0.5);
+  }
+
   /* NOVO: Estilos para sistema de tags */
 .tag-pill {
   display: inline-block;
@@ -546,6 +614,11 @@ html.dark .mobile-tab-button {
     background-color: #374151;
     color: #f9fafb;
   }
+  .dark .section-card.gradient-shadow {
+    background: linear-gradient(160deg, rgba(30, 41, 59, 0.95), rgba(17, 24, 39, 0.92));
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    box-shadow: 0 20px 45px rgba(15, 23, 42, 0.6);
+  }
   .dark .bg-white {
     background-color: #374151 !important;
   }
@@ -618,6 +691,20 @@ html.dark .mobile-tab-button {
   html.dark .parcelado-futuro {
     background-color: #374151; /* dark:bg-gray-700 */
     color: #d1d5db; /* dark:text-gray-300 */
+  }
+
+  html.dark #parcelados-table-wrapper.parcelados-scroll {
+    border-color: #475569;
+    background: linear-gradient(180deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.9) 100%);
+    box-shadow: inset 0 -12px 20px -14px rgba(15, 23, 42, 0.6);
+  }
+
+  html.dark #parcelados-table-wrapper.parcelados-scroll::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.45);
+  }
+
+  html.dark #parcelados-table-wrapper.parcelados-scroll::-webkit-scrollbar-thumb:hover {
+    background: rgba(148, 163, 184, 0.65);
   }
 
 /* NOVO: Estilo para o botão flutuante quando invisível */
@@ -1142,14 +1229,16 @@ html.dark .mobile-tab-button {
         <div id="parcelados-loading-spinner" class="loading-spinner spinner-hidden">
           <i class="fa fa-spinner fa-spin"></i> Carregando parcelados...
         </div>
-        <table class="w-full">
-          <thead>
-            <tr><th class="th">Descrição</th><th class="th">Parcela (R$)</th><th class="th">Progresso</th><th class="th">Status</th><th class="th">Cartão</th><th class="th">Início</th><th class="th">Fim</th><th class="th">Ações</th></tr>
-          </thead>
-          <tbody id="parcelados-list">
-            <tr><td class="td" colspan="8">Nenhum parcelado para o mês selecionado</td></tr>
-          </tbody>
-        </table>
+        <div id="parcelados-table-wrapper">
+          <table class="w-full">
+            <thead>
+              <tr><th class="th">Descrição</th><th class="th">Parcela (R$)</th><th class="th">Progresso</th><th class="th">Status</th><th class="th">Cartão</th><th class="th">Início</th><th class="th">Fim</th><th class="th">Ações</th></tr>
+            </thead>
+            <tbody id="parcelados-list">
+              <tr><td class="td" colspan="8">Nenhum parcelado para o mês selecionado</td></tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
 
@@ -2921,7 +3010,8 @@ document.getElementById('modal-graficos-fixos-close').addEventListener('click', 
 function renderParcelados(docs){
   const tbody = document.getElementById('parcelados-list');
   tbody.innerHTML='';
-  
+  const scrollWrapper = document.getElementById('parcelados-table-wrapper');
+
   const mesKey = document.getElementById('filtro-mes').value;
   const hoje = new Date();
   const alvoKey = (mesKey === 'all' || !mesKey) ? yyyymm(hoje) : mesKey;
@@ -2944,14 +3034,17 @@ function renderParcelados(docs){
     return ativaNoMes;
   });
 
-  if(!filteredDocs.length){ 
-    tbody.innerHTML='<tr><td class="td" colspan="8">Nenhum parcelado para o mês selecionado</td></tr>'; 
+  if(!filteredDocs.length){
+    tbody.innerHTML='<tr><td class="td" colspan="8">Nenhum parcelado para o mês selecionado</td></tr>';
     document.getElementById('p-total-mes').textContent = moeda(0);
     document.getElementById('p-total-restante').textContent = moeda(0);
     document.getElementById('p-ativos').textContent = String(0);
     atualizarBarra('parcelado', 0);
     resumo.parcelasMes = 0;
-    return; 
+    if (scrollWrapper) {
+      scrollWrapper.classList.remove('parcelados-scroll');
+    }
+    return;
   }
 
   filteredDocs.forEach(doc=>{
@@ -3021,6 +3114,10 @@ function renderParcelados(docs){
 
   atualizarBarra('parcelado', totalMes);
   resumo.parcelasMes = totalMes;
+
+  if (scrollWrapper) {
+    scrollWrapper.classList.toggle('parcelados-scroll', filteredDocs.length > 7);
+  }
 }
 
 function fecharTodosOsModais() {
