@@ -743,6 +743,17 @@ html.dark .mobile-tab-button {
       </div>
       <p id="auth-error" class="text-sm text-red-500 hidden"></p>
     </form>
+    <div class="space-y-3">
+      <div class="flex items-center gap-3 text-xs uppercase tracking-[0.3em] text-gray-400 dark:text-gray-500">
+        <span class="flex-1 h-px bg-gray-200 dark:bg-gray-700"></span>
+        <span>ou</span>
+        <span class="flex-1 h-px bg-gray-200 dark:bg-gray-700"></span>
+      </div>
+      <button type="button" id="auth-google" class="w-full flex items-center justify-center gap-3 py-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700/80 transition-colors">
+        <i class="fab fa-google text-lg"></i>
+        <span data-label>Entrar com Google</span>
+      </button>
+    </div>
   </div>
 </div>
 
@@ -1746,6 +1757,8 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const auth = firebase.auth();
+const googleAuthProvider = new firebase.auth.GoogleAuthProvider();
+googleAuthProvider.setCustomParameters({ prompt: 'select_account' });
 const messaging = firebase.messaging(); // Inicializa o Messaging
 
 let currentUser = null;
@@ -1891,11 +1904,14 @@ const authTitle = document.getElementById('auth-title');
 const authDescription = document.getElementById('auth-description');
 const authEmailInput = document.getElementById('auth-email');
 const authPasswordInput = document.getElementById('auth-password');
+const authGoogleButton = document.getElementById('auth-google');
+const authGoogleLabel = authGoogleButton?.querySelector('[data-label]') || null;
 const userSession = document.getElementById('user-session');
 const userEmailBadge = document.getElementById('user-email-badge');
 const signOutButton = document.getElementById('btn-signout');
 
 let authMode = 'signIn';
+let googleLoading = false;
 
 function updateAuthModeUI() {
   if (authMode === 'signIn') {
@@ -1933,9 +1949,25 @@ function setAuthLoading(isLoading) {
   authToggleMode.disabled = isLoading;
   authEmailInput.disabled = isLoading;
   authPasswordInput.disabled = isLoading;
+  if (authGoogleButton && !googleLoading) {
+    authGoogleButton.disabled = isLoading;
+    authGoogleButton.classList.toggle('opacity-60', isLoading);
+    authGoogleButton.classList.toggle('cursor-not-allowed', isLoading);
+  }
   authSubmit.textContent = isLoading
     ? (authMode === 'signIn' ? 'Entrando...' : 'Criando conta...')
     : (authMode === 'signIn' ? 'Entrar' : 'Cadastrar e acessar');
+}
+
+function setGoogleLoading(isLoading) {
+  if (!authGoogleButton) return;
+  googleLoading = isLoading;
+  authGoogleButton.disabled = isLoading;
+  authGoogleButton.classList.toggle('opacity-60', isLoading);
+  authGoogleButton.classList.toggle('cursor-not-allowed', isLoading);
+  if (authGoogleLabel) {
+    authGoogleLabel.textContent = isLoading ? 'Conectando...' : 'Entrar com Google';
+  }
 }
 
 function mapAuthErrorMessage(error) {
@@ -1952,6 +1984,15 @@ function mapAuthErrorMessage(error) {
       return 'E-mail ou senha inválidos.';
     case 'auth/too-many-requests':
       return 'Muitas tentativas. Aguarde alguns instantes e tente novamente.';
+    case 'auth/popup-closed-by-user':
+    case 'auth/cancelled-popup-request':
+      return 'Login com Google cancelado. Tente novamente.';
+    case 'auth/popup-blocked':
+      return 'Seu navegador bloqueou a janela do Google. Permita pop-ups e tente novamente.';
+    case 'auth/operation-not-supported-in-this-environment':
+      return 'Este navegador não suporta o login com Google nesta janela. Tente novamente em outra guia ou dispositivo.';
+    case 'auth/account-exists-with-different-credential':
+      return 'Já existe uma conta com este e-mail usando outro método de acesso. Entre com ele e vincule o Google nas configurações.';
     default:
       return 'Erro inesperado. Verifique seus dados e tente novamente.';
   }
@@ -2027,6 +2068,46 @@ function initAuthFlow() {
       setAuthLoading(false);
     }
   });
+
+  if (authGoogleButton) {
+    authGoogleButton.addEventListener('click', async () => {
+      authError.classList.add('hidden');
+      authError.textContent = '';
+      setAuthLoading(true);
+      setGoogleLoading(true);
+
+      let attemptedRedirect = false;
+
+      try {
+        await auth.signInWithPopup(googleAuthProvider);
+      } catch (error) {
+        if (error?.code === 'auth/popup-blocked' || error?.code === 'auth/operation-not-supported-in-this-environment') {
+          try {
+            attemptedRedirect = true;
+            await auth.signInWithRedirect(googleAuthProvider);
+            return;
+          } catch (redirectError) {
+            attemptedRedirect = false;
+            error = redirectError;
+          }
+        }
+
+        if (error?.code === 'auth/popup-closed-by-user' || error?.code === 'auth/cancelled-popup-request') {
+          authError.textContent = mapAuthErrorMessage(error);
+          authError.classList.remove('hidden');
+        } else if (error) {
+          console.error('Erro ao entrar com Google:', error);
+          authError.textContent = mapAuthErrorMessage(error);
+          authError.classList.remove('hidden');
+        }
+      } finally {
+        if (!attemptedRedirect) {
+          setGoogleLoading(false);
+          setAuthLoading(false);
+        }
+      }
+    });
+  }
 
   if (signOutButton) {
     signOutButton.addEventListener('click', async () => {
