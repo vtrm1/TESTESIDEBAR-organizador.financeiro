@@ -3589,19 +3589,14 @@ async function loadAccessManagerLists() {
   if (accessManagerBlockedCount) accessManagerBlockedCount.textContent = '';
 
   try {
-    const query = db.collection('profiles').where('status', 'in', ['pending', 'blocked']);
-    const snapshot = await query.get();
-    const pending = [];
-    const blocked = [];
-    snapshot.forEach((doc) => {
-      const data = doc.data() || {};
-      const entry = { uid: doc.id, ...data };
-      if (entry.status === 'blocked') {
-        blocked.push(entry);
-      } else {
-        pending.push(entry);
-      }
-    });
+    const profilesRef = db.collection('profiles');
+    const [pendingSnap, blockedSnap] = await Promise.all([
+      profilesRef.where('status', '==', 'pending').get(),
+      profilesRef.where('status', '==', 'blocked').get(),
+    ]);
+
+    const pending = pendingSnap.docs.map((doc) => ({ uid: doc.id, ...(doc.data() || {}) }));
+    const blocked = blockedSnap.docs.map((doc) => ({ uid: doc.id, ...(doc.data() || {}) }));
 
     renderAccessManagerList(accessManagerPendingList, pending, accessManagerPendingEmpty, 'pending');
     renderAccessManagerList(accessManagerBlockedList, blocked, accessManagerBlockedEmpty, 'blocked');
@@ -3614,9 +3609,23 @@ async function loadAccessManagerLists() {
     }
   } catch (error) {
     console.error('Erro ao carregar a fila de aprovação:', error);
+    const errorMessage = (() => {
+      if (error?.code === 'permission-denied') {
+        return 'Sem permissão para listar solicitações. Verifique as regras de segurança.';
+      }
+      if (error?.code === 'failed-precondition') {
+        return 'Ative o índice necessário no Firestore ou tente novamente mais tarde.';
+      }
+      return 'Não foi possível carregar as solicitações agora.';
+    })();
+
     if (accessManagerPendingEmpty) {
-      accessManagerPendingEmpty.textContent = 'Não foi possível carregar as solicitações agora.';
+      accessManagerPendingEmpty.textContent = errorMessage;
       accessManagerPendingEmpty.classList.remove('hidden');
+    }
+    if (accessManagerBlockedEmpty) {
+      accessManagerBlockedEmpty.textContent = errorMessage;
+      accessManagerBlockedEmpty.classList.remove('hidden');
     }
   }
 }
