@@ -5,6 +5,7 @@ const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${APP_VERSION}`;
 const FONT_CACHE = `${CACHE_PREFIX}font-${APP_VERSION}`;
 
 const CORE_ASSETS = [
+  '/',
   '/index.html',
   '/manifest.json',
   '/sw.js',
@@ -112,22 +113,22 @@ self.addEventListener('fetch', (event) => {
 
 function createOfflineResponse() {
   const offlineHtml = `<!DOCTYPE html>
-  <html lang="pt-BR">
-    <head>
-      <meta charset="utf-8" />
-      <title>Organizador Financeiro</title>
-      <meta name="viewport" content="width=device-width, initial-scale=1" />
-      <style>
-        body { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 0; padding: 2rem; background: #0f172a; color: #f8fafc; display: grid; min-height: 100vh; place-content: center; text-align: center; }
-        h1 { font-size: 1.5rem; margin-bottom: 1rem; }
-        p { font-size: 1rem; line-height: 1.5; color: #e2e8f0; }
-      </style>
-    </head>
-    <body>
-      <h1>Você está offline</h1>
-      <p>Conecte-se à internet para sincronizar seus dados. O conteúdo salvo continuará disponível assim que a conexão retornar.</p>
-    </body>
-  </html>`;
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <title>Organizador Financeiro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      body { font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 0; padding: 2rem; background: #0f172a; color: #f8fafc; display: grid; min-height: 100vh; place-content: center; text-align: center; }
+      h1 { font-size: 1.5rem; margin-bottom: 1rem; }
+      p { font-size: 1rem; line-height: 1.5; color: #e2e8f0; }
+    </style>
+  </head>
+  <body>
+    <h1>Você está offline</h1>
+    <p>Conecte-se à internet para sincronizar seus dados. O conteúdo salvo continuará disponível assim que a conexão retornar.</p>
+  </body>
+</html>`;
 
   return new Response(offlineHtml, {
     headers: { 'Content-Type': 'text/html; charset=utf-8' },
