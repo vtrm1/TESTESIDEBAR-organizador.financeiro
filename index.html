@@ -779,6 +779,7 @@ html.dark .mobile-tab-button {
       </div>
       <p id="auth-verify-feedback" class="hidden text-sm"></p>
     </div>
+    <div id="auth-verse" class="hidden text-xs leading-relaxed text-gray-600 dark:text-gray-300 bg-emerald-50/60 dark:bg-emerald-500/10 border border-emerald-100/70 dark:border-emerald-500/30 rounded-xl px-4 py-3 text-center italic"></div>
   </div>
 </div>
 
@@ -1941,6 +1942,16 @@ const messaging = firebase.messaging(); // Inicializa o Messaging
 const FieldValue = firebase.firestore.FieldValue;
 const FieldPath = firebase.firestore.FieldPath;
 
+firebase.firestore().enablePersistence({ synchronizeTabs: true }).catch((error) => {
+  if (error?.code === 'failed-precondition') {
+    console.warn('Persistência offline não habilitada: múltiplas abas abertas do app.');
+  } else if (error?.code === 'unimplemented') {
+    console.warn('Persistência offline não é suportada neste navegador.');
+  } else if (error) {
+    console.error('Falha ao habilitar persistência offline:', error);
+  }
+});
+
 let currentUser = null;
 let appBootstrapped = false;
 let workspaceInitialized = false;
@@ -1952,6 +1963,17 @@ let appStartInProgress = false;
 let accessProfileUnsubscribe = null;
 let accessGuardMode = null;
 let workspaceMetadataNormalizationExecuted = false;
+let serviceWorkerRegistrationRef = null;
+let swControllerChangeHandled = false;
+
+const NOTIFICATION_PROMPT_KEY = 'of-notification-prompted';
+let notificationPrompted = false;
+
+try {
+  notificationPrompted = localStorage.getItem(NOTIFICATION_PROMPT_KEY) === '1';
+} catch (error) {
+  notificationPrompted = false;
+}
 
 function requireAuthContext() {
   if (!currentUser) {
@@ -2477,6 +2499,7 @@ const authSocialBlock = document.getElementById('auth-social-block');
 const authVerifyBlock = document.getElementById('auth-verify-block');
 const authVerifyEmail = document.getElementById('auth-verify-email');
 const authVerifyResend = document.getElementById('auth-verify-resend');
+const authVerse = document.getElementById('auth-verse');
 const authVerifyRefresh = document.getElementById('auth-verify-refresh');
 const authVerifyChange = document.getElementById('auth-verify-change');
 const authVerifyFeedback = document.getElementById('auth-verify-feedback');
@@ -2542,8 +2565,29 @@ const bibleVerses = [
   {
     text: 'Os planos bem elaborados levam à fartura; mas o apressado sempre acaba na miséria.',
     reference: 'Provérbios 21:5'
+  },
+  {
+    text: 'Honra o Senhor com todos os teus recursos e com os primeiros frutos de todas as tuas plantações; e os teus celeiros ficarão plenamente cheios.',
+    reference: 'Provérbios 3:9-10'
+  },
+  {
+    text: 'Pois onde estiver o seu tesouro, aí também estará o seu coração.',
+    reference: 'Mateus 6:21'
+  },
+  {
+    text: 'Aprende com a formiga, preguiçoso; ela prepara sua comida no verão e ajunta o seu suprimento na colheita.',
+    reference: 'Provérbios 6:6-8'
+  },
+  {
+    text: 'O homem bom deixa herança para os filhos dos seus filhos.',
+    reference: 'Provérbios 13:22'
   }
 ];
+
+const lastVerseReferences = {
+  footer: null,
+  auth: null,
+};
 
 function showGoogleHelper(messageHtml = defaultGoogleHelperHtml) {
   if (!authGoogleHelper) return;
@@ -3049,6 +3093,7 @@ function showAuthOverlay() {
   updateAuthModeUI();
   authError.classList.add('hidden');
   authError.textContent = '';
+  updateAuthVerse();
   authOverlay.classList.remove('hidden');
   lockBodyScroll();
 }
@@ -3166,14 +3211,46 @@ function closeUserMenu() {
   setUserMenuState(false);
 }
 
+function pickRandomBibleVerse(excludeReference = null) {
+  if (!Array.isArray(bibleVerses) || bibleVerses.length === 0) {
+    return null;
+  }
+  const pool = excludeReference
+    ? bibleVerses.filter(verse => verse.reference !== excludeReference)
+    : bibleVerses;
+  const versesPool = pool.length ? pool : bibleVerses;
+  const randomIndex = Math.floor(Math.random() * versesPool.length);
+  return versesPool[randomIndex] || null;
+}
+
 function updateFooterVerse() {
-  if (!footerVerse || !bibleVerses.length) return;
-  const randomIndex = Math.floor(Math.random() * bibleVerses.length);
-  const verse = bibleVerses[randomIndex];
+  if (!footerVerse) return;
+  const verse = pickRandomBibleVerse(lastVerseReferences.auth);
+  if (!verse) {
+    footerVerse.textContent = '';
+    return;
+  }
   footerVerse.innerHTML = `
     <span class="block">“${verse.text}”</span>
     <span class="block not-italic text-[0.65rem] sm:text-xs text-gray-500 dark:text-gray-400 mt-1">— ${verse.reference}</span>
   `;
+  lastVerseReferences.footer = verse.reference;
+}
+
+function updateAuthVerse() {
+  if (!authVerse) return;
+  const verse = pickRandomBibleVerse(lastVerseReferences.footer);
+  if (!verse) {
+    authVerse.classList.add('hidden');
+    authVerse.textContent = '';
+    return;
+  }
+  authVerse.innerHTML = `
+    <span class="block">“${verse.text}”</span>
+    <span class="block not-italic text-[0.65rem] text-emerald-700 dark:text-emerald-300 mt-2">— ${verse.reference}</span>
+  `;
+  authVerse.classList.remove('hidden');
+  lastVerseReferences.auth = verse.reference;
 }
 
 function mapVerificationErrorMessage(error) {
@@ -3612,6 +3689,9 @@ async function handleUserSignedIn(user) {
   if (workspaceShareModal && !workspaceShareModal.classList.contains('hidden')) {
     await renderWorkspaceSharingDetails();
   }
+  maybeRequestNotificationPermission().catch((error) => {
+    console.error('Falha ao solicitar notificações após login:', error);
+  });
 }
 
 function handleUserSignedOut() {
@@ -4068,6 +4148,10 @@ const baseAppConfig = {
     allowedEmails: [],
     allowedDomains: [],
     requireAllowlist: false,
+  },
+  messaging: {
+    vapidKey: null,
+    autoPrompt: false,
   },
 };
 
@@ -7450,35 +7534,143 @@ formFixo.addEventListener('submit', e => {
    PWA & NOTIFICAÇÕES
    =========================== */
 async function solicitarPermissaoNotificacoes() {
+  if (typeof Notification === 'undefined') {
+    console.warn('Este navegador não suporta notificações.');
+    return null;
+  }
+
+  if (Notification.permission === 'denied') {
+    console.log('Notificações foram negadas anteriormente.');
+    return null;
+  }
+
   try {
     const permission = await Notification.requestPermission();
-    if (permission === 'granted') {
-      console.log('Permissão concedida para notificações');
-      // Substitua 'SUA_VAPID_KEY' pela sua chave VAPID do Firebase
-      const token = await messaging.getToken({ vapidKey: 'SUA_VAPID_KEY' }); 
-      console.log('Token FCM:', token);
-      // Envie o token para seu backend para enviar notificações
-    } else {
-      console.log('Permissão para notificações negada');
+    if (permission !== 'granted') {
+      console.log('Permissão para notificações não concedida.');
+      return null;
     }
+
+    const vapidKey = appConfig.messaging?.vapidKey || null;
+    if (!vapidKey) {
+      console.warn('Defina appConfig.messaging.vapidKey para habilitar o recebimento de notificações push.');
+      return null;
+    }
+
+    const registration = serviceWorkerRegistrationRef
+      || (await navigator.serviceWorker.ready.catch(() => null));
+
+    if (!registration) {
+      console.warn('Service worker ainda não está pronto para receber notificações.');
+      return null;
+    }
+
+    if (typeof messaging.useServiceWorker === 'function') {
+      messaging.useServiceWorker(registration);
+    }
+
+    const token = await messaging.getToken({ vapidKey, serviceWorkerRegistration: registration });
+    console.log('Token FCM obtido:', token);
+    return token;
   } catch (error) {
-    console.error('Erro ao solicitar permissão:', error);
+    console.error('Erro ao solicitar permissão para notificações:', error);
+    return null;
   }
 }
 
-// Registrar service worker APENAS para PWA (sem Firebase por agora)
+async function maybeRequestNotificationPermission({ force = false } = {}) {
+  if (typeof Notification === 'undefined') {
+    return null;
+  }
+
+  const alreadyPrompted = notificationPrompted || Notification.permission !== 'default';
+
+  if (!force) {
+    const autoPromptEnabled = Boolean(appConfig.messaging?.autoPrompt);
+    if (!autoPromptEnabled || alreadyPrompted) {
+      return null;
+    }
+  }
+
+  const token = await solicitarPermissaoNotificacoes();
+
+  if (!force) {
+    notificationPrompted = true;
+    try {
+      localStorage.setItem(NOTIFICATION_PROMPT_KEY, '1');
+    } catch (error) {
+      // Ignora indisponibilidade do storage (ex.: navegação privada)
+    }
+  }
+
+  return token;
+}
+
+function requestServiceWorkerActivation(registration) {
+  if (!registration || !registration.waiting) return;
+  registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+}
+
+// Registrar service worker e preparar funcionalidades offline/PWA
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js')
     .then(registration => {
+      serviceWorkerRegistrationRef = registration;
       console.log('✅ Service Worker registrado para PWA:', registration.scope);
-      // Comentei as partes do Firebase para evitar erros - volte depois se quiser notificações
-      // messaging.useServiceWorker(registration);
-      // solicitarPermissaoNotificacoes();
+
+      if (typeof messaging.useServiceWorker === 'function') {
+        try {
+          messaging.useServiceWorker(registration);
+        } catch (error) {
+          console.warn('Não foi possível vincular o service worker ao Firebase Messaging:', error);
+        }
+      }
+
+      if (registration.waiting) {
+        requestServiceWorkerActivation(registration);
+      }
+
+      registration.addEventListener('updatefound', () => {
+        const installingWorker = registration.installing;
+        if (!installingWorker) return;
+        installingWorker.addEventListener('statechange', () => {
+          if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            requestServiceWorkerActivation(registration);
+          }
+        });
+      });
     })
     .catch(err => {
       console.error('❌ Erro ao registrar Service Worker:', err);
     });
+
+  navigator.serviceWorker.ready.then(registration => {
+    serviceWorkerRegistrationRef = registration;
+    if (typeof messaging.useServiceWorker === 'function') {
+      try {
+        messaging.useServiceWorker(registration);
+      } catch (error) {
+        console.warn('Não foi possível vincular o service worker ativo ao Firebase Messaging:', error);
+      }
+    }
+  }).catch(() => {
+    // Ignora indisponibilidade na primeira carga
+  });
+
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (swControllerChangeHandled) return;
+    swControllerChangeHandled = true;
+    showToast('Aplicativo atualizado e pronto para uso offline.', 'success');
+  });
 }
+
+window.addEventListener('offline', () => {
+  showToast('Você está offline. Alguns dados recentes podem não atualizar.', 'warning');
+});
+
+window.addEventListener('online', () => {
+  showToast('Conexão restabelecida. Dados atualizados novamente.', 'success');
+});
 
 /* ===========================
    NOVO: MODAL DE GRÁFICOS INTERATIVOS COM FILTROS
