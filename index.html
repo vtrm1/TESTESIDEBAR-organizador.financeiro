@@ -2550,6 +2550,7 @@ const accessManagerBlockedCount = document.getElementById('access-manager-blocke
 const FIRESTORE_RULES_SNIPPET = String.raw`rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+
     function isSignedIn() {
       return request.auth != null;
     }
@@ -2560,10 +2561,6 @@ service cloud.firestore {
         get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.role == 'admin';
     }
 
-    function isOwner(workspaceId) {
-      return isSignedIn() && workspaceId == request.auth.uid;
-    }
-
     function workspaceAllowed(workspaceId) {
       return isSignedIn() &&
         (workspaceId == request.auth.uid ||
@@ -2572,21 +2569,45 @@ service cloud.firestore {
             get(/databases/$(database)/documents/sharedWorkspaces/$(workspaceId)).data.memberUids));
     }
 
+    // 👤 Perfis de acesso (aprovação, bloqueio, etc.)
     match /profiles/{uid} {
-      allow read: if isSignedIn() && (uid == request.auth.uid || isAdmin());
+      // Usuário autenticado cria o próprio perfil
       allow create: if isSignedIn() && uid == request.auth.uid;
-      allow update: if isSignedIn() && (uid == request.auth.uid || isAdmin());
+
+      // Pode ler o próprio perfil; admins leem todos
+      allow read: if isSignedIn() && (uid == request.auth.uid || isAdmin());
+
+      // Admins podem atualizar qualquer perfil.
+      // Usuário comum pode atualizar o próprio enquanto o status original ainda está "pending"
+      // (permite concluir o cadastro) ou manter campos básicos sem mudar status/cargo.
+      allow update: if isSignedIn() && (
+        isAdmin() ||
+        (uid == request.auth.uid &&
+         (resource.data.status == 'pending' || (
+           request.resource.data.role == resource.data.role &&
+           request.resource.data.status == resource.data.status &&
+           request.resource.data.approvedAt == resource.data.approvedAt &&
+           request.resource.data.approvedBy == resource.data.approvedBy &&
+           request.resource.data.blockedAt == resource.data.blockedAt &&
+           request.resource.data.blockedBy == resource.data.blockedBy &&
+           request.resource.data.blockedReason == resource.data.blockedReason
+         )))
+      );
+
       allow delete: if false;
     }
 
+    // 👨‍👩‍👧‍👦 Workspaces compartilhados
     match /sharedWorkspaces/{workspaceId} {
       allow read, write: if workspaceAllowed(workspaceId);
     }
 
+    // 💼 Dados financeiros do workspace
     match /users/{ownerUid}/{collection}/{docId} {
       allow read, write: if workspaceAllowed(ownerUid);
     }
 
+    // 🚫 Tudo que não foi mapeado permanece bloqueado
     match /{document=**} {
       allow read, write: if false;
     }
@@ -2603,7 +2624,7 @@ function showFirestoreRulesHelp(targetElement) {
 
   const intro = document.createElement('p');
   intro.innerHTML = 'Sem permissão para listar solicitações. Atualize as <strong>regras do Firestore</strong> com o bloco abaixo ' +
-    'e tente novamente. Lembre-se de publicar as regras no console.';
+    'e tente novamente. Copie tudo, incluindo as duas chaves "}" finais, e publique as regras no console.';
   wrapper.appendChild(intro);
 
   const details = document.createElement('details');
