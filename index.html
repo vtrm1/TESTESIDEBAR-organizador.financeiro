@@ -2547,6 +2547,81 @@ const accessManagerPendingEmpty = document.getElementById('access-manager-pendin
 const accessManagerBlockedEmpty = document.getElementById('access-manager-blocked-empty');
 const accessManagerPendingCount = document.getElementById('access-manager-pending-count');
 const accessManagerBlockedCount = document.getElementById('access-manager-blocked-count');
+const FIRESTORE_RULES_SNIPPET = String.raw`rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() &&
+        exists(/databases/$(database)/documents/profiles/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    function isOwner(workspaceId) {
+      return isSignedIn() && workspaceId == request.auth.uid;
+    }
+
+    function workspaceAllowed(workspaceId) {
+      return isSignedIn() &&
+        (workspaceId == request.auth.uid ||
+         (exists(/databases/$(database)/documents/sharedWorkspaces/$(workspaceId)) &&
+          request.auth.uid in
+            get(/databases/$(database)/documents/sharedWorkspaces/$(workspaceId)).data.memberUids));
+    }
+
+    match /profiles/{uid} {
+      allow read: if isSignedIn() && (uid == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() && uid == request.auth.uid;
+      allow update: if isSignedIn() && (uid == request.auth.uid || isAdmin());
+      allow delete: if false;
+    }
+
+    match /sharedWorkspaces/{workspaceId} {
+      allow read, write: if workspaceAllowed(workspaceId);
+    }
+
+    match /users/{ownerUid}/{collection}/{docId} {
+      allow read, write: if workspaceAllowed(ownerUid);
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}`;
+
+function showFirestoreRulesHelp(targetElement) {
+  if (!targetElement) return;
+  targetElement.classList.remove('hidden');
+  targetElement.innerHTML = '';
+
+  const wrapper = document.createElement('div');
+  wrapper.className = 'space-y-2 text-xs text-gray-600 dark:text-gray-300';
+
+  const intro = document.createElement('p');
+  intro.innerHTML = 'Sem permissão para listar solicitações. Atualize as <strong>regras do Firestore</strong> com o bloco abaixo ' +
+    'e tente novamente. Lembre-se de publicar as regras no console.';
+  wrapper.appendChild(intro);
+
+  const details = document.createElement('details');
+  details.className = 'bg-gray-50 dark:bg-gray-800/60 border border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-3';
+
+  const summary = document.createElement('summary');
+  summary.className = 'font-semibold text-gray-700 dark:text-gray-200 cursor-pointer';
+  summary.textContent = 'Ver regras recomendadas';
+  details.appendChild(summary);
+
+  const pre = document.createElement('pre');
+  pre.className = 'mt-2 whitespace-pre-wrap break-words text-[10px] leading-4 text-gray-700 dark:text-gray-100';
+  pre.textContent = FIRESTORE_RULES_SNIPPET;
+  details.appendChild(pre);
+
+  wrapper.appendChild(details);
+  targetElement.appendChild(wrapper);
+}
 
 let authMode = 'signIn';
 let googleLoading = false;
@@ -3609,10 +3684,16 @@ async function loadAccessManagerLists() {
     }
   } catch (error) {
     console.error('Erro ao carregar a fila de aprovação:', error);
-    const errorMessage = (() => {
-      if (error?.code === 'permission-denied') {
-        return 'Sem permissão para listar solicitações. Verifique as regras de segurança.';
+    if (error?.code === 'permission-denied') {
+      if (accessManagerPendingEmpty) {
+        showFirestoreRulesHelp(accessManagerPendingEmpty);
       }
+      if (accessManagerBlockedEmpty) {
+        showFirestoreRulesHelp(accessManagerBlockedEmpty);
+      }
+      return;
+    }
+    const errorMessage = (() => {
       if (error?.code === 'failed-precondition') {
         return 'Ative o índice necessário no Firestore ou tente novamente mais tarde.';
       }
