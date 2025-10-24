@@ -919,17 +919,27 @@ html.dark .mobile-tab-button {
       <option value="all">Todos</option>
     </select>
     <div id="user-session" class="relative hidden shrink-0">
-      <button id="user-menu-trigger" type="button" class="flex items-center gap-1.5 rounded-full border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-800/70 px-2 py-1 shadow-sm text-xs sm:text-sm text-gray-700 dark:text-gray-100 transition-colors hover:border-emerald-200 dark:hover:border-emerald-500"
+      <button id="user-menu-trigger" type="button" class="relative flex items-center gap-1.5 rounded-full border border-gray-200 dark:border-gray-700 bg-white/90 dark:bg-gray-800/70 px-2 py-1 shadow-sm text-xs sm:text-sm text-gray-700 dark:text-gray-100 transition-colors hover:border-emerald-200 dark:hover:border-emerald-500"
         aria-haspopup="true" aria-expanded="false">
         <span id="user-avatar-badge" class="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500 text-white text-xs font-semibold">U</span>
         <span id="user-badge-label" class="max-w-[6rem] sm:max-w-[8rem] truncate text-left text-[0.7rem] sm:text-sm"></span>
         <i class="fa fa-chevron-down text-[0.6rem] text-gray-500 dark:text-gray-400 transition-transform duration-200 transform" data-user-menu-caret></i>
+        <span id="user-plan-reminder-dot" class="hidden absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full shadow-md" aria-hidden="true"></span>
       </button>
       <div id="user-menu-dropdown" class="absolute right-0 mt-2 w-60 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-xl overflow-hidden hidden">
         <div class="px-4 py-3 border-b border-gray-100 dark:border-gray-700 space-y-1 text-[0.72rem] leading-relaxed text-gray-500 dark:text-gray-400">
           <div class="uppercase tracking-wide text-[0.65rem] text-gray-400 dark:text-gray-500">Conectado como</div>
           <div id="user-email-badge" class="font-medium text-gray-700 dark:text-gray-100 break-words"></div>
           <span id="workspace-context-badge" class="hidden inline-flex items-center gap-1 rounded-full bg-emerald-100/80 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-200 px-2 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wide"></span>
+        </div>
+        <div id="user-plan-reminder" class="hidden border-b border-gray-100 dark:border-gray-700">
+          <div class="px-4 py-3 text-xs flex items-start gap-2">
+            <i id="user-plan-reminder-icon" class="fa-solid fa-bell text-[0.7rem] mt-0.5" aria-hidden="true"></i>
+            <div class="space-y-1">
+              <p id="user-plan-reminder-label" class="text-xs font-semibold"></p>
+              <p id="user-plan-reminder-desc" class="text-[0.65rem] leading-4"></p>
+            </div>
+          </div>
         </div>
         <button id="toggleDark" type="button" aria-label="Alternar tema" class="w-full flex items-center justify-between px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
           <span class="flex items-center gap-2">
@@ -2547,6 +2557,11 @@ const userAvatarBadge = document.getElementById('user-avatar-badge');
 const userMenuTrigger = document.getElementById('user-menu-trigger');
 const userMenuDropdown = document.getElementById('user-menu-dropdown');
 const userMenuCaret = document.querySelector('[data-user-menu-caret]');
+const userPlanReminder = document.getElementById('user-plan-reminder');
+const userPlanReminderLabel = document.getElementById('user-plan-reminder-label');
+const userPlanReminderDesc = document.getElementById('user-plan-reminder-desc');
+const userPlanReminderIcon = document.getElementById('user-plan-reminder-icon');
+const userPlanReminderDot = document.getElementById('user-plan-reminder-dot');
 const signOutButton = document.getElementById('btn-signout');
 const workspaceContextBadge = document.getElementById('workspace-context-badge');
 const workspaceShareButton = document.getElementById('btn-open-workspace-sharing');
@@ -2723,6 +2738,39 @@ const bibleVerses = [
     reference: 'Provérbios 13:22'
   }
 ];
+
+const PLAN_REMINDER_CLASS_SETS = {
+  warning: {
+    container: ['bg-amber-50', 'dark:bg-amber-500/10'],
+    icon: ['text-amber-500', 'dark:text-amber-300'],
+    label: ['text-amber-700', 'dark:text-amber-200'],
+    desc: ['text-amber-600', 'dark:text-amber-200'],
+    dot: ['bg-amber-400'],
+  },
+  expired: {
+    container: ['bg-rose-50', 'dark:bg-rose-500/10'],
+    icon: ['text-rose-500', 'dark:text-rose-300'],
+    label: ['text-rose-600', 'dark:text-rose-200'],
+    desc: ['text-rose-600', 'dark:text-rose-200'],
+    dot: ['bg-rose-500'],
+  },
+};
+
+const PLAN_REMINDER_ALL_CLASSES = Object.keys(PLAN_REMINDER_CLASS_SETS.warning).reduce((acc, key) => {
+  const combined = new Set();
+  Object.values(PLAN_REMINDER_CLASS_SETS).forEach((variant) => {
+    (variant[key] || []).forEach((className) => combined.add(className));
+  });
+  acc[key] = Array.from(combined);
+  return acc;
+}, {});
+
+const PLAN_REMINDER_ICON_VARIANTS = {
+  warning: 'fa-hourglass-half',
+  expired: 'fa-circle-exclamation',
+};
+
+const PLAN_REMINDER_ICON_DEFAULT = 'fa-bell';
 
 const ACCESS_PLAN_OPTIONS = [
   { value: 'monthly', label: 'Mensal • 30 dias', months: 1 },
@@ -3450,6 +3498,95 @@ function updateWorkspaceContextUI() {
   }
 }
 
+function updateUserPlanReminder(profile) {
+  if (!userPlanReminder || !userPlanReminderLabel || !userPlanReminderDesc || !userPlanReminderIcon || !userPlanReminderDot) {
+    return;
+  }
+
+  const targets = {
+    container: userPlanReminder,
+    icon: userPlanReminderIcon,
+    label: userPlanReminderLabel,
+    desc: userPlanReminderDesc,
+    dot: userPlanReminderDot,
+  };
+
+  Object.entries(targets).forEach(([key, element]) => {
+    if (!element) return;
+    const classes = PLAN_REMINDER_ALL_CLASSES[key] || [];
+    if (classes.length) {
+      element.classList.remove(...classes);
+    }
+  });
+
+  if (userPlanReminderIcon) {
+    userPlanReminderIcon.classList.remove(PLAN_REMINDER_ICON_VARIANTS.warning, PLAN_REMINDER_ICON_VARIANTS.expired, PLAN_REMINDER_ICON_DEFAULT);
+    userPlanReminderIcon.classList.add(PLAN_REMINDER_ICON_DEFAULT);
+  }
+
+  userPlanReminder.classList.add('hidden');
+  userPlanReminderDot.classList.add('hidden');
+  userPlanReminderLabel.textContent = '';
+  userPlanReminderDesc.textContent = '';
+
+  if (!profile) {
+    return;
+  }
+
+  const planEndsAt = parseFirestoreDate(profile.planEndsAt);
+  if (!planEndsAt) {
+    return;
+  }
+
+  const now = new Date();
+  const diffMs = planEndsAt.getTime() - now.getTime();
+  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+  const planStatus = profile.planStatus || (diffMs >= 0 ? 'active' : 'expired');
+
+  let variant = null;
+  let labelText = '';
+  let descText = '';
+
+  if (diffMs < 0 || planStatus === 'expired') {
+    variant = 'expired';
+    labelText = `Seu acesso expirou em ${formatDate(planEndsAt)}.`;
+    descText = 'Entre em contato com o responsável para renovar e recuperar o acesso.';
+  } else if (diffDays <= 7) {
+    variant = 'warning';
+    if (diffDays <= 0) {
+      labelText = 'Seu acesso expira hoje.';
+    } else {
+      const daysLabel = diffDays === 1 ? 'dia' : 'dias';
+      labelText = `Seu acesso expira em ${diffDays} ${daysLabel}.`;
+    }
+    descText = 'Combine a renovação com o responsável para evitar interrupções.';
+  }
+
+  if (!variant) {
+    return;
+  }
+
+  userPlanReminderLabel.textContent = labelText;
+  userPlanReminderDesc.textContent = descText;
+
+  const variantClasses = PLAN_REMINDER_CLASS_SETS[variant];
+  Object.entries(targets).forEach(([key, element]) => {
+    if (!element) return;
+    const classesToAdd = variantClasses[key] || [];
+    if (classesToAdd.length) {
+      element.classList.add(...classesToAdd);
+    }
+  });
+
+  if (userPlanReminderIcon) {
+    userPlanReminderIcon.classList.remove(PLAN_REMINDER_ICON_DEFAULT);
+    userPlanReminderIcon.classList.add(PLAN_REMINDER_ICON_VARIANTS[variant]);
+  }
+
+  userPlanReminder.classList.remove('hidden');
+  userPlanReminderDot.classList.remove('hidden');
+}
+
 function updateUserSessionUI(user) {
   if (!userSession) return;
   closeUserMenu();
@@ -3470,6 +3607,7 @@ function updateUserSessionUI(user) {
     }
     updateUserBadge('');
   }
+  updateUserPlanReminder(user ? currentUserProfile : null);
   updateWorkspaceContextUI();
   updateHeaderOffset();
 }
@@ -3581,6 +3719,7 @@ async function refreshAccessProfile() {
     workspaceProfilesCache.set(currentUser.uid, data);
     currentUserProfile = profile;
     updateAdminControlsVisibility();
+    updateUserPlanReminder(profile);
     return profile;
   } catch (error) {
     console.error('Erro ao atualizar o perfil de acesso:', error);
