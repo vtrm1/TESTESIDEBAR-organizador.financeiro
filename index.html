@@ -855,7 +855,7 @@ html.dark .mobile-tab-button {
           Aprove ou bloqueie contas antes de liberar o painel. Convide clientes apenas depois de validar e-mails e permissões.
         </p>
       </div>
-      <div class="grid gap-6 md:grid-cols-2">
+      <div class="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
         <section class="space-y-3">
           <header class="flex items-center justify-between">
             <h3 class="text-sm font-semibold text-emerald-600 dark:text-emerald-300 uppercase tracking-wide">Pendentes</h3>
@@ -863,6 +863,14 @@ html.dark .mobile-tab-button {
           </header>
           <ul id="access-manager-pending" class="space-y-3"></ul>
           <p id="access-manager-pending-empty" class="hidden text-xs text-gray-500 dark:text-gray-400 leading-relaxed">Nenhuma conta aguardando aprovação no momento.</p>
+        </section>
+        <section class="space-y-3">
+          <header class="flex items-center justify-between">
+            <h3 class="text-sm font-semibold text-emerald-700 dark:text-emerald-200 uppercase tracking-wide">Ativos</h3>
+            <span id="access-manager-approved-count" class="text-xs text-gray-400"></span>
+          </header>
+          <ul id="access-manager-approved" class="space-y-3"></ul>
+          <p id="access-manager-approved-empty" class="hidden text-xs text-gray-500 dark:text-gray-400 leading-relaxed">Nenhuma conta liberada além da sua.</p>
         </section>
         <section class="space-y-3">
           <header class="flex items-center justify-between">
@@ -2542,10 +2550,13 @@ const accessManagerButton = document.getElementById('btn-open-access-manager');
 const accessManagerModal = document.getElementById('modal-access-manager');
 const accessManagerClose = document.getElementById('access-manager-close');
 const accessManagerPendingList = document.getElementById('access-manager-pending');
+const accessManagerApprovedList = document.getElementById('access-manager-approved');
 const accessManagerBlockedList = document.getElementById('access-manager-blocked');
 const accessManagerPendingEmpty = document.getElementById('access-manager-pending-empty');
+const accessManagerApprovedEmpty = document.getElementById('access-manager-approved-empty');
 const accessManagerBlockedEmpty = document.getElementById('access-manager-blocked-empty');
 const accessManagerPendingCount = document.getElementById('access-manager-pending-count');
+const accessManagerApprovedCount = document.getElementById('access-manager-approved-count');
 const accessManagerBlockedCount = document.getElementById('access-manager-blocked-count');
 const FIRESTORE_RULES_SNIPPET = String.raw`rules_version = '2';
 service cloud.firestore {
@@ -3552,32 +3563,75 @@ function createAccessManagerListItem(entry, type) {
   const li = document.createElement('li');
   li.className = 'rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/70 px-4 py-4 shadow-sm';
   const email = entry.email || '—';
-  const statusLabel = type === 'pending' ? 'Aguardando aprovação' : 'Bloqueada';
-  const statusClasses = type === 'pending'
-    ? 'text-amber-600 dark:text-amber-300'
-    : 'text-red-500 dark:text-red-300';
+
+  const statusMeta = {
+    pending: {
+      label: 'Aguardando aprovação',
+      classes: 'text-amber-600 dark:text-amber-300',
+    },
+    blocked: {
+      label: 'Bloqueada',
+      classes: 'text-red-500 dark:text-red-300',
+    },
+    approved: {
+      label: 'Acesso liberado',
+      classes: 'text-emerald-600 dark:text-emerald-300',
+    },
+  }[type] || {
+    label: entry.status || 'Status indefinido',
+    classes: 'text-gray-500 dark:text-gray-400',
+  };
+
   const lastLogin = formatDateTime(entry.lastLoginAt);
   const createdAt = formatDateTime(entry.createdAt);
+  const approvedAt = formatDateTime(entry.approvedAt);
+  const blockedAt = formatDateTime(entry.blockedAt);
+  const pendingAt = formatDateTime(entry.pendingAt);
   const blockedReason = entry.blockedReason && type === 'blocked' ? entry.blockedReason : '';
+  const roleBadge = (() => {
+    if (entry.role === 'admin') {
+      return '<span class="inline-flex items-center gap-1 rounded-full bg-emerald-100/80 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-200 px-2 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wide">Admin</span>';
+    }
+    if (entry.role && entry.role !== 'user') {
+      return `<span class="inline-flex items-center gap-1 rounded-full bg-gray-100 dark:bg-gray-700/60 text-gray-600 dark:text-gray-300 px-2 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wide">${entry.role}</span>`;
+    }
+    return '';
+  })();
+
+  const timelineRows = [
+    `Cadastro: <strong class="text-gray-700 dark:text-gray-200">${createdAt}</strong>`,
+    `Último acesso: <strong class="text-gray-700 dark:text-gray-200">${lastLogin}</strong>`,
+  ];
+
+  if (type === 'pending' && pendingAt) {
+    timelineRows.push(`Solicitado: <strong class="text-gray-700 dark:text-gray-200">${pendingAt}</strong>`);
+  }
+  if (type === 'approved' && approvedAt) {
+    timelineRows.push(`Liberado: <strong class="text-gray-700 dark:text-gray-200">${approvedAt}</strong>`);
+  }
+  if (type === 'blocked' && blockedAt) {
+    timelineRows.push(`Bloqueado: <strong class="text-gray-700 dark:text-gray-200">${blockedAt}</strong>`);
+  }
 
   li.innerHTML = `
     <div class="flex flex-col gap-2">
       <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
-        <div>
+        <div class="space-y-1">
           <p class="text-sm font-semibold text-gray-800 dark:text-gray-100">${email}</p>
           <p class="text-xs text-gray-500 dark:text-gray-400 break-all">${entry.uid}</p>
+          ${roleBadge ? `<div>${roleBadge}</div>` : ''}
         </div>
-        <span class="text-xs uppercase tracking-wide font-semibold ${statusClasses}">${statusLabel}</span>
+        <span class="text-xs uppercase tracking-wide font-semibold ${statusMeta.classes}">${statusMeta.label}</span>
       </div>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-1 text-[0.7rem] text-gray-500 dark:text-gray-400">
-        <span>Cadastro: <strong class="text-gray-700 dark:text-gray-200">${createdAt}</strong></span>
-        <span>Último acesso: <strong class="text-gray-700 dark:text-gray-200">${lastLogin}</strong></span>
+        ${timelineRows.map((row) => `<span>${row}</span>`).join('')}
       </div>
       ${blockedReason ? `<p class="text-xs text-red-500 dark:text-red-300 leading-relaxed">Motivo: ${blockedReason}</p>` : ''}
       <div class="flex flex-wrap gap-2 pt-1">
         ${type === 'pending' ? '<button data-action="approve" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white transition-colors">Aprovar</button>' : ''}
         ${type === 'pending' ? '<button data-action="block" class="px-3 py-1.5 text-xs font-semibold rounded-lg border border-red-200 dark:border-red-500/40 text-red-600 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors">Bloquear</button>' : ''}
         ${type === 'blocked' ? '<button data-action="approve" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white transition-colors">Liberar acesso</button>' : ''}
+        ${type === 'approved' ? '<button data-action="block" class="px-3 py-1.5 text-xs font-semibold rounded-lg border border-red-200 dark:border-red-500/40 text-red-600 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors">Suspender acesso</button>' : ''}
       </div>
     </div>
   `;
@@ -3673,32 +3727,41 @@ async function loadAccessManagerLists() {
     showToast('Somente administradores podem gerenciar acessos.', 'error');
     return;
   }
-  if (!accessManagerPendingList || !accessManagerBlockedList) {
+  if (!accessManagerPendingList || !accessManagerBlockedList || !accessManagerApprovedList) {
     return;
   }
 
   accessManagerPendingList.innerHTML = '';
   accessManagerBlockedList.innerHTML = '';
+  accessManagerApprovedList.innerHTML = '';
   if (accessManagerPendingEmpty) accessManagerPendingEmpty.classList.add('hidden');
+  if (accessManagerApprovedEmpty) accessManagerApprovedEmpty.classList.add('hidden');
   if (accessManagerBlockedEmpty) accessManagerBlockedEmpty.classList.add('hidden');
   if (accessManagerPendingCount) accessManagerPendingCount.textContent = '';
+  if (accessManagerApprovedCount) accessManagerApprovedCount.textContent = '';
   if (accessManagerBlockedCount) accessManagerBlockedCount.textContent = '';
 
   try {
     const profilesRef = db.collection('profiles');
-    const [pendingSnap, blockedSnap] = await Promise.all([
+    const [pendingSnap, approvedSnap, blockedSnap] = await Promise.all([
       profilesRef.where('status', '==', 'pending').get(),
+      profilesRef.where('status', '==', 'approved').get(),
       profilesRef.where('status', '==', 'blocked').get(),
     ]);
 
     const pending = pendingSnap.docs.map((doc) => ({ uid: doc.id, ...(doc.data() || {}) }));
+    const approved = approvedSnap.docs.map((doc) => ({ uid: doc.id, ...(doc.data() || {}) }));
     const blocked = blockedSnap.docs.map((doc) => ({ uid: doc.id, ...(doc.data() || {}) }));
 
     renderAccessManagerList(accessManagerPendingList, pending, accessManagerPendingEmpty, 'pending');
+    renderAccessManagerList(accessManagerApprovedList, approved, accessManagerApprovedEmpty, 'approved');
     renderAccessManagerList(accessManagerBlockedList, blocked, accessManagerBlockedEmpty, 'blocked');
 
     if (accessManagerPendingCount) {
       accessManagerPendingCount.textContent = pending.length ? `${pending.length}` : '';
+    }
+    if (accessManagerApprovedCount) {
+      accessManagerApprovedCount.textContent = approved.length ? `${approved.length}` : '';
     }
     if (accessManagerBlockedCount) {
       accessManagerBlockedCount.textContent = blocked.length ? `${blocked.length}` : '';
@@ -3708,6 +3771,9 @@ async function loadAccessManagerLists() {
     if (error?.code === 'permission-denied') {
       if (accessManagerPendingEmpty) {
         showFirestoreRulesHelp(accessManagerPendingEmpty);
+      }
+      if (accessManagerApprovedEmpty) {
+        showFirestoreRulesHelp(accessManagerApprovedEmpty);
       }
       if (accessManagerBlockedEmpty) {
         showFirestoreRulesHelp(accessManagerBlockedEmpty);
@@ -3724,6 +3790,10 @@ async function loadAccessManagerLists() {
     if (accessManagerPendingEmpty) {
       accessManagerPendingEmpty.textContent = errorMessage;
       accessManagerPendingEmpty.classList.remove('hidden');
+    }
+    if (accessManagerApprovedEmpty) {
+      accessManagerApprovedEmpty.textContent = errorMessage;
+      accessManagerApprovedEmpty.classList.remove('hidden');
     }
     if (accessManagerBlockedEmpty) {
       accessManagerBlockedEmpty.textContent = errorMessage;
