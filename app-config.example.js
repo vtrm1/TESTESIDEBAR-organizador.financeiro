@@ -1,5 +1,6 @@
 // Copie este arquivo para app-config.js e preencha com os valores reais
-// Antes de publicar, defina somente as chaves necessárias.
+// Caso hospede na Vercel, você pode definir as mesmas chaves como variáveis de ambiente
+// (FIREBASE_API_KEY, FIREBASE_AUTH_DOMAIN, etc.) em vez de manter este arquivo no servidor.
 
 window.__FIREBASE_CONFIG__ = {
   apiKey: 'SUA_API_KEY',
