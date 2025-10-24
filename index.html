@@ -17,6 +17,7 @@
 
 <!-- Manifest PWA -->
 <link rel="manifest" href="manifest.json" />
+<script src="app-config.js"></script>
 <!-- Theme-color para Light e Dark Mode -->
 <meta name="theme-color" content="#4ade80" media="(prefers-color-scheme: light)" />
 <meta name="theme-color" content="#1f2937" media="(prefers-color-scheme: dark)" />
@@ -728,6 +729,23 @@ html.dark .mobile-tab-button {
 
 </head>
 <body class="bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-900 dark:to-gray-800 min-h-screen text-gray-800 dark:text-gray-100 transition-colors duration-300">
+
+<!-- FIREBASE CONFIG ALERT -->
+<div id="firebase-config-overlay" class="hidden fixed inset-0 z-[11000] bg-slate-900/95 backdrop-blur-md flex items-center justify-center px-6 py-8">
+  <div class="w-full max-w-md space-y-4 rounded-2xl border border-red-300/60 dark:border-red-500/40 bg-white/95 dark:bg-slate-900/95 p-6 shadow-2xl">
+    <div class="flex items-start gap-3">
+      <span class="mt-1 inline-flex h-9 w-9 items-center justify-center rounded-full bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-300">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+      </span>
+      <div class="space-y-2">
+        <h2 class="text-lg font-semibold text-red-700 dark:text-red-200">Configuração do Firebase ausente</h2>
+        <p class="text-sm leading-relaxed text-gray-600 dark:text-gray-300">Crie um arquivo <code class="rounded bg-gray-100 px-1 py-0.5 text-xs text-gray-800 dark:bg-gray-800 dark:text-gray-200">app-config.js</code> no mesmo diretório do <code class="rounded bg-gray-100 px-1 py-0.5 text-xs text-gray-800 dark:bg-gray-800 dark:text-gray-200">index.html</code> e defina <code class="rounded bg-gray-100 px-1 py-0.5 text-xs text-gray-800 dark:bg-gray-800 dark:text-gray-200">window.__FIREBASE_CONFIG__</code> com as chaves do seu projeto.</p>
+        <p class="text-sm leading-relaxed text-gray-600 dark:text-gray-300">Para facilitar, copie <strong>app-config.example.js</strong>, renomeie para <strong>app-config.js</strong> e substitua os valores de exemplo antes de publicar.</p>
+      </div>
+    </div>
+    <p class="text-xs text-gray-500 dark:text-gray-400">As credenciais do Firebase são públicas por padrão em apps web. Garanta a segurança aplicando regras no Firestore e restrições de API no Console do Google Cloud.</p>
+  </div>
+</div>
 
 <!-- AUTH OVERLAY -->
 <div id="auth-overlay" class="hidden fixed inset-0 z-[10000] bg-slate-900/90 backdrop-blur flex items-center justify-center px-4 py-8">
@@ -1964,17 +1982,22 @@ if ("serviceWorker" in navigator) {
 
 <script>
 /* ===========================
-   CONFIG FIREBASE (sua config)
+   CONFIG FIREBASE (externa)
    =========================== */
-const firebaseConfig = {
-  apiKey: "AIzaSyCpBfq801WlkxgHhWwORDvnKWpXGXz3k4c",
-  authDomain: "organizacao-financeira1.firebaseapp.com",
-  projectId: "organizacao-financeira1",
-  storageBucket: "organizacao-financeira1.firebasestorage.app",
-  messagingSenderId: "896359450111",
-  appId: "1:896359450111:web:bd8d7c2f2e35d4f27a93ca",
-  measurementId: "G-58ZVECNK3B"
+const resolveFirebaseConfig = () => {
+  const config = window.__FIREBASE_CONFIG__ || (window.__APP_CONFIG__ && window.__APP_CONFIG__.firebase && window.__APP_CONFIG__.firebase.client);
+  if (config && typeof config === 'object' && Object.keys(config).length) {
+    return config;
+  }
+
+  const overlay = document.getElementById('firebase-config-overlay');
+  if (overlay) {
+    overlay.classList.remove('hidden');
+  }
+  throw new Error('Firebase config ausente. Defina window.__FIREBASE_CONFIG__ em app-config.js.');
 };
+
+const firebaseConfig = resolveFirebaseConfig();
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const auth = firebase.auth();
