@@ -925,7 +925,7 @@ html.dark .mobile-tab-button {
 </header>
 
 <!-- MOBILE QUICK SUMMARY + NAV -->
-<section id="mobile-quickbar" class="lg:hidden sticky z-30 px-4 py-3 space-y-2 bg-white/90 dark:bg-gray-900/90 backdrop-blur border-b border-gray-200/70 dark:border-gray-700/60 shadow-sm">
+<section id="mobile-quickbar" class="lg:hidden sticky z-30 px-3 py-2 space-y-1.5 bg-white/90 dark:bg-gray-900/90 backdrop-blur border-b border-gray-200/70 dark:border-gray-700/60 shadow-sm">
   <div class="flex items-center justify-between text-[0.7rem] uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
     <span>Visão geral</span>
     <span class="font-semibold text-blue-600 dark:text-blue-300">Mobile</span>
@@ -1303,11 +1303,15 @@ html.dark .mobile-tab-button {
       <div class="section-card">
       <div class="flex items-center justify-between mb-3">
         <h3 class="text-lg font-bold">Histórico (mês)</h3>
-        <div class="flex items-center gap-2">
-          <button id="btn-historico-graficos" class="bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-200 px-3 py-1 rounded text-sm hover:bg-blue-200 dark:hover:bg-blue-900/40 transition-colors">
-            <i class="fa fa-chart-pie mr-1"></i>Gráficos
+        <div class="flex items-center gap-2 text-[0.7rem] font-semibold uppercase tracking-wide">
+          <button id="btn-historico-graficos" class="inline-flex items-center gap-1 rounded-full border border-blue-200/80 dark:border-blue-900/50 bg-blue-50/80 dark:bg-blue-900/10 px-3 py-1 text-blue-700 dark:text-blue-200 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors">
+            <i class="fa fa-chart-pie text-[0.65rem]"></i>
+            Gráficos
           </button>
-          <button id="exportar-csv" class="bg-green-600 dark:bg-green-700 text-white px-3 py-1 rounded hover:bg-green-700 dark:hover:bg-green-800 transition-colors">Exportar CSV (mês)</button>
+          <button id="exportar-csv" class="inline-flex items-center gap-1 rounded-full border border-emerald-200/70 dark:border-emerald-700/60 bg-emerald-50/80 dark:bg-emerald-500/10 px-3 py-1 text-emerald-700 dark:text-emerald-200 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 transition-colors">
+            <i class="fa fa-file-arrow-down text-[0.65rem]"></i>
+            CSV (mês)
+          </button>
         </div>
       </div>
 
