@@ -4336,6 +4336,7 @@ let allInvestimentosDocs = [];
 const painelFinanceiroState = {
   entradasMes: 0,
   entradasTotais: 0,
+  entradasFiltroTodos: false,
   investimentosMes: 0,
   investimentosTotais: 0,
   investimentosProjetados: 0,
@@ -5969,6 +5970,7 @@ function atualizarResumoUI(){
   document.getElementById('resumo-parcelas-mes').textContent = moeda(resumo.parcelasMes||0);
 
   painelFinanceiroState.totalGastosMes = totalGastosPrevistosMes;
+  atualizarSaldoLiquidoEntradas();
   atualizarResumoRapido();
   atualizarResumoSaidasCard(totalGastosPrevistosMes);
   atualizarSaudeFinanceira();
@@ -6160,24 +6162,38 @@ function renderEntradasSidebar(docs = []) {
   totalMesEl.textContent = moeda(totalMes);
   totalGeralEl.textContent = moeda(totalRegistrado);
 
-  const saldoMesEl = document.getElementById('entradas-saldo-mes');
-  const saldoHintEl = document.getElementById('entradas-saldo-hint');
-  if (saldoMesEl) {
-    if (mostrarTodos) {
-      saldoMesEl.textContent = '--';
-      if (saldoHintEl) saldoHintEl.textContent = 'Selecione um mês específico para calcular o saldo líquido.';
-    } else {
-      const gastosPeriodo = painelFinanceiroState.totalGastosMes || 0;
-      saldoMesEl.textContent = moeda(totalMes - gastosPeriodo);
-      if (saldoHintEl) saldoHintEl.textContent = 'Entradas menos saídas previstas do período selecionado.';
-    }
-  }
-
   painelFinanceiroState.entradasMes = totalMes;
   painelFinanceiroState.entradasTotais = totalRegistrado;
+  painelFinanceiroState.entradasFiltroTodos = mostrarTodos;
+  atualizarSaldoLiquidoEntradas();
   atualizarResumoRapido();
   atualizarSaudeFinanceira();
   atualizarFiltroMeses();
+}
+
+function atualizarSaldoLiquidoEntradas() {
+  const saldoMesEl = document.getElementById('entradas-saldo-mes');
+  const saldoHintEl = document.getElementById('entradas-saldo-hint');
+  if (!saldoMesEl) return;
+
+  if (painelFinanceiroState.entradasFiltroTodos) {
+    saldoMesEl.textContent = '--';
+    if (saldoHintEl) {
+      saldoHintEl.textContent = 'Selecione um mês específico para calcular o saldo líquido.';
+    }
+    return;
+  }
+
+  const entradasMes = painelFinanceiroState.entradasMes || 0;
+  const gastosPeriodo = painelFinanceiroState.totalGastosMes || 0;
+  const saldo = entradasMes - gastosPeriodo;
+
+  saldoMesEl.textContent = moeda(saldo);
+  if (saldoHintEl) {
+    saldoHintEl.textContent = saldo >= 0
+      ? 'Entradas menos saídas previstas do período selecionado.'
+      : 'Déficit: saídas previstas superam as entradas do período.';
+  }
 }
 
 function renderInvestimentosSidebar(docs = []) {
