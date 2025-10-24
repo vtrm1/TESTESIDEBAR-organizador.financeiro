@@ -855,30 +855,54 @@ html.dark .mobile-tab-button {
           Aprove ou bloqueie contas antes de liberar o painel. Convide clientes apenas depois de validar e-mails e permissões.
         </p>
       </div>
-      <div class="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-        <section class="space-y-3">
-          <header class="flex items-center justify-between">
-            <h3 class="text-sm font-semibold text-emerald-600 dark:text-emerald-300 uppercase tracking-wide">Pendentes</h3>
-            <span id="access-manager-pending-count" class="text-xs text-gray-400"></span>
-          </header>
-          <ul id="access-manager-pending" class="space-y-3"></ul>
-          <p id="access-manager-pending-empty" class="hidden text-xs text-gray-500 dark:text-gray-400 leading-relaxed">Nenhuma conta aguardando aprovação no momento.</p>
+      <div class="space-y-4">
+        <section class="rounded-2xl border border-emerald-100 dark:border-emerald-900/40 bg-emerald-50/40 dark:bg-emerald-500/5 overflow-hidden">
+          <button type="button" class="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-emerald-100/60 dark:hover:bg-emerald-500/10" data-access-section-toggle="pending" aria-expanded="true" aria-controls="access-manager-pending-body">
+            <span class="flex items-center gap-2 text-sm font-semibold text-emerald-700 dark:text-emerald-200 uppercase tracking-wide">
+              <i class="fa-solid fa-hourglass-half"></i>
+              Pendentes
+            </span>
+            <span class="flex items-center gap-2 text-xs text-emerald-700 dark:text-emerald-200">
+              <span id="access-manager-pending-count"></span>
+              <i class="fa-solid fa-chevron-down transition-transform duration-200 transform" data-access-section-caret="pending"></i>
+            </span>
+          </button>
+          <div id="access-manager-pending-body" class="space-y-3 border-t border-emerald-100 dark:border-emerald-900/40 px-4 pb-4 pt-3" data-access-section-body="pending">
+            <ul id="access-manager-pending" class="space-y-3"></ul>
+            <p id="access-manager-pending-empty" class="hidden text-xs text-emerald-800/80 dark:text-emerald-200/80 leading-relaxed">Nenhuma conta aguardando aprovação no momento.</p>
+          </div>
         </section>
-        <section class="space-y-3">
-          <header class="flex items-center justify-between">
-            <h3 class="text-sm font-semibold text-emerald-700 dark:text-emerald-200 uppercase tracking-wide">Ativos</h3>
-            <span id="access-manager-approved-count" class="text-xs text-gray-400"></span>
-          </header>
-          <ul id="access-manager-approved" class="space-y-3"></ul>
-          <p id="access-manager-approved-empty" class="hidden text-xs text-gray-500 dark:text-gray-400 leading-relaxed">Nenhuma conta liberada além da sua.</p>
+        <section class="rounded-2xl border border-emerald-100 dark:border-emerald-900/40 bg-white dark:bg-gray-900/40 overflow-hidden" data-access-default="collapsed">
+          <button type="button" class="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-emerald-50/70 dark:hover:bg-gray-800/70" data-access-section-toggle="approved" aria-expanded="false" aria-controls="access-manager-approved-body">
+            <span class="flex items-center gap-2 text-sm font-semibold text-emerald-700 dark:text-emerald-200 uppercase tracking-wide">
+              <i class="fa-solid fa-user-check"></i>
+              Ativos
+            </span>
+            <span class="flex items-center gap-2 text-xs text-emerald-700 dark:text-emerald-200">
+              <span id="access-manager-approved-count"></span>
+              <i class="fa-solid fa-chevron-down transition-transform duration-200 transform" data-access-section-caret="approved"></i>
+            </span>
+          </button>
+          <div id="access-manager-approved-body" class="hidden space-y-3 border-t border-emerald-100 dark:border-emerald-900/40 px-4 pb-4 pt-3" data-access-section-body="approved">
+            <ul id="access-manager-approved" class="space-y-3"></ul>
+            <p id="access-manager-approved-empty" class="hidden text-xs text-gray-500 dark:text-gray-400 leading-relaxed">Nenhuma conta liberada além da sua.</p>
+          </div>
         </section>
-        <section class="space-y-3">
-          <header class="flex items-center justify-between">
-            <h3 class="text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wide">Bloqueadas</h3>
-            <span id="access-manager-blocked-count" class="text-xs text-gray-400"></span>
-          </header>
-          <ul id="access-manager-blocked" class="space-y-3"></ul>
-          <p id="access-manager-blocked-empty" class="hidden text-xs text-gray-500 dark:text-gray-400 leading-relaxed">Nenhuma conta bloqueada.</p>
+        <section class="rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900/40 overflow-hidden" data-access-default="collapsed">
+          <button type="button" class="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-gray-100 dark:hover:bg-gray-800" data-access-section-toggle="blocked" aria-expanded="false" aria-controls="access-manager-blocked-body">
+            <span class="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wide">
+              <i class="fa-solid fa-user-lock"></i>
+              Bloqueadas
+            </span>
+            <span class="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-300">
+              <span id="access-manager-blocked-count"></span>
+              <i class="fa-solid fa-chevron-down transition-transform duration-200 transform" data-access-section-caret="blocked"></i>
+            </span>
+          </button>
+          <div id="access-manager-blocked-body" class="hidden space-y-3 border-t border-gray-200 dark:border-gray-700 px-4 pb-4 pt-3" data-access-section-body="blocked">
+            <ul id="access-manager-blocked" class="space-y-3"></ul>
+            <p id="access-manager-blocked-empty" class="hidden text-xs text-gray-500 dark:text-gray-400 leading-relaxed">Nenhuma conta bloqueada.</p>
+          </div>
         </section>
       </div>
       <footer class="rounded-xl bg-emerald-50/70 dark:bg-emerald-500/10 border border-emerald-200/60 dark:border-emerald-500/30 px-4 py-3 text-xs text-gray-600 dark:text-gray-300 leading-relaxed">
@@ -2558,6 +2582,11 @@ const accessManagerBlockedEmpty = document.getElementById('access-manager-blocke
 const accessManagerPendingCount = document.getElementById('access-manager-pending-count');
 const accessManagerApprovedCount = document.getElementById('access-manager-approved-count');
 const accessManagerBlockedCount = document.getElementById('access-manager-blocked-count');
+const accessManagerSectionToggles = Array.from(document.querySelectorAll('[data-access-section-toggle]'));
+const accessManagerSectionBodies = {};
+const accessManagerSectionCarets = {};
+const accessManagerSectionState = {};
+initAccessManagerSectionControls();
 const FIRESTORE_RULES_SNIPPET = String.raw`rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -2693,6 +2722,12 @@ const bibleVerses = [
     text: 'O homem bom deixa herança para os filhos dos seus filhos.',
     reference: 'Provérbios 13:22'
   }
+];
+
+const ACCESS_PLAN_OPTIONS = [
+  { value: 'monthly', label: 'Mensal • 30 dias', months: 1 },
+  { value: 'semiannual', label: 'Semestral • 6 meses', months: 6 },
+  { value: 'annual', label: 'Anual • 12 meses', months: 12 },
 ];
 
 const lastVerseReferences = {
@@ -3613,6 +3648,50 @@ function createAccessManagerListItem(entry, type) {
     timelineRows.push(`Bloqueado: <strong class="text-gray-700 dark:text-gray-200">${blockedAt}</strong>`);
   }
 
+  const planInfo = resolveAccessPlanInfo(entry);
+  const planSummaryHtml = `
+      <div class="rounded-xl border border-emerald-100 dark:border-emerald-900/30 bg-emerald-50/40 dark:bg-emerald-500/5 px-3 py-3 text-xs space-y-2">
+        <div class="flex items-center justify-between gap-2">
+          <span class="font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wide">Plano de acesso</span>
+          <span class="font-semibold ${planInfo.statusClass}">${planInfo.statusLabel}</span>
+        </div>
+        <ul class="list-disc list-inside space-y-1 text-[0.7rem] text-gray-600 dark:text-gray-300">
+          ${planInfo.details.map((detail) => `<li>${detail}</li>`).join('')}
+        </ul>
+      </div>`;
+
+  let planControlsHtml = '';
+  if (type === 'approved') {
+    const defaultSelection = getDefaultPlanSelection(entry);
+    const optionsHtml = ACCESS_PLAN_OPTIONS.map((option) => `<option value="${option.value}" ${defaultSelection === option.value ? 'selected' : ''}>${option.label}</option>`).join('');
+    const customSelected = defaultSelection === 'custom';
+    const planEndsDate = parseFirestoreDate(entry.planEndsAt);
+    const customValue = customSelected && planEndsDate ? formatDateInputValue(planEndsDate) : '';
+    const minDate = formatDateInputValue(new Date());
+
+    planControlsHtml = `
+      <div class="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/60 dark:bg-gray-900/40 px-3 py-3 text-xs space-y-3">
+        <div class="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
+          <span class="font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wide">Renovar ou definir validade</span>
+          <span class="text-[0.68rem] text-gray-500 dark:text-gray-400">Escolha um período para manter o acesso liberado.</span>
+        </div>
+        <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <div class="flex-1 flex flex-col gap-2 sm:flex-row sm:items-center">
+            <select data-plan-select class="w-full sm:w-auto flex-1 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-2.5 py-2 text-sm text-gray-700 dark:text-gray-100">
+              ${optionsHtml}
+              <option value="custom" ${customSelected ? 'selected' : ''}>Personalizado</option>
+            </select>
+            <input type="date" data-plan-custom class="flex-1 rounded-lg border border-emerald-200 dark:border-emerald-700 bg-white dark:bg-gray-800 px-2.5 py-2 text-sm text-gray-700 dark:text-gray-100 ${customSelected ? '' : 'hidden'}" value="${customValue}" min="${minDate}" />
+          </div>
+          <div class="flex gap-2 sm:justify-end">
+            <button data-action="apply-plan" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white transition-colors">Aplicar</button>
+            ${planInfo.planEndsAt ? '<button data-action="clear-plan" class="px-3 py-1.5 text-xs font-semibold rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">Remover</button>' : ''}
+          </div>
+        </div>
+        <p class="text-[0.68rem] text-gray-500 dark:text-gray-400">Ao aplicar, o vencimento é calculado a partir de hoje. Planos personalizados usam a data escolhida.</p>
+      </div>`;
+  }
+
   li.innerHTML = `
     <div class="flex flex-col gap-2">
       <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
@@ -3627,6 +3706,8 @@ function createAccessManagerListItem(entry, type) {
         ${timelineRows.map((row) => `<span>${row}</span>`).join('')}
       </div>
       ${blockedReason ? `<p class="text-xs text-red-500 dark:text-red-300 leading-relaxed">Motivo: ${blockedReason}</p>` : ''}
+      ${planSummaryHtml}
+      ${planControlsHtml}
       <div class="flex flex-wrap gap-2 pt-1">
         ${type === 'pending' ? '<button data-action="approve" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white transition-colors">Aprovar</button>' : ''}
         ${type === 'pending' ? '<button data-action="block" class="px-3 py-1.5 text-xs font-semibold rounded-lg border border-red-200 dark:border-red-500/40 text-red-600 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors">Bloquear</button>' : ''}
@@ -3638,6 +3719,10 @@ function createAccessManagerListItem(entry, type) {
 
   const approveButton = li.querySelector('[data-action="approve"]');
   const blockButton = li.querySelector('[data-action="block"]');
+  const planApplyButton = li.querySelector('[data-action="apply-plan"]');
+  const planClearButton = li.querySelector('[data-action="clear-plan"]');
+  const planSelect = li.querySelector('[data-plan-select]');
+  const planCustomInput = li.querySelector('[data-plan-custom]');
   const isSelf = entry.uid === currentUser?.uid;
 
   const setButtonLoading = (button, isLoading) => {
@@ -3694,6 +3779,104 @@ function createAccessManagerListItem(entry, type) {
         }
       });
     }
+  }
+
+  if (planSelect) {
+    const syncCustomVisibility = () => {
+      if (!planCustomInput) return;
+      const isCustom = planSelect.value === 'custom';
+      planCustomInput.classList.toggle('hidden', !isCustom);
+      if (isCustom && !planCustomInput.value) {
+        const existing = parseFirestoreDate(entry.planEndsAt);
+        const fallbackDate = existing || addMonthsPreserveDay(new Date(), 1) || new Date();
+        planCustomInput.value = formatDateInputValue(fallbackDate);
+      }
+    };
+    planSelect.addEventListener('change', syncCustomVisibility);
+    syncCustomVisibility();
+  }
+
+  if (planApplyButton) {
+    planApplyButton.addEventListener('click', async () => {
+      const selection = planSelect ? planSelect.value : null;
+      let planConfig = null;
+      const startedAt = new Date();
+
+      if (selection && selection !== 'custom') {
+        const option = getAccessPlanOption(selection);
+        if (!option) {
+          showToast('Selecione um plano válido.', 'error');
+          return;
+        }
+        const projectedEnd = addMonthsPreserveDay(startedAt, option.months);
+        const endsAt = toEndOfDay(projectedEnd || startedAt);
+        planConfig = {
+          type: option.value,
+          label: option.label,
+          months: option.months,
+          startedAt,
+          endsAt,
+        };
+      } else {
+        const customDate = planCustomInput ? parseDateInput(planCustomInput.value) : null;
+        if (!customDate) {
+          showToast('Informe uma data final válida para o plano personalizado.', 'error');
+          return;
+        }
+        planConfig = {
+          type: 'custom',
+          label: 'Plano personalizado',
+          months: null,
+          startedAt,
+          endsAt: toEndOfDay(customDate) || customDate,
+        };
+      }
+
+      setButtonLoading(planApplyButton, true);
+      if (planClearButton) {
+        planClearButton.disabled = true;
+        planClearButton.classList.add('opacity-60', 'cursor-not-allowed');
+      }
+
+      try {
+        await updateUserAccessPlan(entry.uid, planConfig);
+        await loadAccessManagerLists();
+        showToast('Plano atualizado com sucesso!', 'success');
+      } catch (error) {
+        console.error('Erro ao atualizar plano:', error);
+        showToast('Não foi possível atualizar o plano agora.', 'error');
+      } finally {
+        setButtonLoading(planApplyButton, false);
+        if (planClearButton) {
+          planClearButton.disabled = false;
+          planClearButton.classList.remove('opacity-60', 'cursor-not-allowed');
+        }
+      }
+    });
+  }
+
+  if (planClearButton) {
+    planClearButton.addEventListener('click', async () => {
+      setButtonLoading(planClearButton, true);
+      if (planApplyButton) {
+        planApplyButton.disabled = true;
+        planApplyButton.classList.add('opacity-60', 'cursor-not-allowed');
+      }
+      try {
+        await clearUserAccessPlan(entry.uid);
+        await loadAccessManagerLists();
+        showToast('Plano removido.', 'info');
+      } catch (error) {
+        console.error('Erro ao remover plano:', error);
+        showToast('Não foi possível remover o plano agora.', 'error');
+      } finally {
+        setButtonLoading(planClearButton, false);
+        if (planApplyButton) {
+          planApplyButton.disabled = false;
+          planApplyButton.classList.remove('opacity-60', 'cursor-not-allowed');
+        }
+      }
+    });
   }
 
   return li;
@@ -3847,12 +4030,76 @@ async function updateUserAccessStatus(uid, status) {
   }
 }
 
+async function updateUserAccessPlan(uid, planConfig) {
+  if (!isCurrentUserAdmin()) {
+    throw new Error('Sem permissão para alterar planos.');
+  }
+  if (!uid) {
+    throw new Error('Usuário inválido.');
+  }
+  if (!planConfig?.endsAt || !(planConfig.endsAt instanceof Date) || Number.isNaN(planConfig.endsAt.getTime())) {
+    throw new Error('Plano sem data final válida.');
+  }
+
+  const now = firebase.firestore.Timestamp.now();
+  const planEndsAt = firebase.firestore.Timestamp.fromDate(planConfig.endsAt);
+  const planStartedAt = planConfig.startedAt instanceof Date && !Number.isNaN(planConfig.startedAt.getTime())
+    ? firebase.firestore.Timestamp.fromDate(planConfig.startedAt)
+    : now;
+  const isActive = planConfig.endsAt.getTime() >= Date.now();
+
+  const updates = {
+    updatedAt: now,
+    planType: planConfig.type || 'custom',
+    planLabel: planConfig.label || 'Plano personalizado',
+    planMonths: typeof planConfig.months === 'number' ? planConfig.months : FieldValue.delete(),
+    planStartedAt,
+    planEndsAt,
+    planStatus: isActive ? 'active' : 'expired',
+  };
+
+  await db.collection('profiles').doc(uid).set(updates, { merge: true });
+
+  if (uid === currentUser?.uid) {
+    const profile = await refreshAccessProfile();
+    applyAccessPolicy(profile, { allowAppStart: true, forceReload: true });
+  }
+}
+
+async function clearUserAccessPlan(uid) {
+  if (!isCurrentUserAdmin()) {
+    throw new Error('Sem permissão para remover planos.');
+  }
+  if (!uid) {
+    throw new Error('Usuário inválido.');
+  }
+
+  const now = firebase.firestore.Timestamp.now();
+  const updates = {
+    updatedAt: now,
+    planType: FieldValue.delete(),
+    planLabel: FieldValue.delete(),
+    planMonths: FieldValue.delete(),
+    planStartedAt: FieldValue.delete(),
+    planEndsAt: FieldValue.delete(),
+    planStatus: FieldValue.delete(),
+  };
+
+  await db.collection('profiles').doc(uid).set(updates, { merge: true });
+
+  if (uid === currentUser?.uid) {
+    const profile = await refreshAccessProfile();
+    applyAccessPolicy(profile, { allowAppStart: true, forceReload: true });
+  }
+}
+
 async function openAccessManagerModal() {
   if (!accessManagerModal) return;
   if (!isCurrentUserAdmin()) {
     showToast('Somente administradores podem gerenciar acessos.', 'error');
     return;
   }
+  resetAccessManagerSectionDefaults();
   accessManagerModal.classList.remove('hidden');
   lockBodyScroll();
   await loadAccessManagerLists();
@@ -4267,6 +4514,164 @@ const formatDateTime = (value) => {
   }
   return date.toLocaleString('pt-BR', { hour12: false });
 };
+
+const addMonthsPreserveDay = (date, months) => {
+  const base = date instanceof Date ? new Date(date.getTime()) : new Date(date);
+  if (Number.isNaN(base.getTime())) return null;
+  const result = new Date(base.getTime());
+  result.setMonth(result.getMonth() + months);
+  return result;
+};
+
+const toEndOfDay = (date) => {
+  if (!(date instanceof Date)) return null;
+  const copy = new Date(date.getTime());
+  copy.setHours(23, 59, 59, 999);
+  return copy;
+};
+
+const parseFirestoreDate = (value) => {
+  if (!value) return null;
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? null : value;
+  }
+  if (typeof value.toDate === 'function') {
+    const converted = value.toDate();
+    return Number.isNaN(converted?.getTime?.()) ? null : converted;
+  }
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
+
+const parseDateInput = (value) => {
+  if (!value || typeof value !== 'string') return null;
+  const [year, month, day] = value.split('-').map(Number);
+  if (!year || !month || !day) return null;
+  return new Date(year, month - 1, day, 23, 59, 59, 999);
+};
+
+const getAccessPlanOption = (value) => ACCESS_PLAN_OPTIONS.find((option) => option.value === value) || null;
+
+const getDefaultPlanSelection = (entry = {}) => {
+  if (entry.planType) {
+    if (getAccessPlanOption(entry.planType)) {
+      return entry.planType;
+    }
+    if (entry.planType === 'custom') {
+      return 'custom';
+    }
+  }
+  if (!entry.planType && entry.planEndsAt) {
+    return 'custom';
+  }
+  return 'monthly';
+};
+
+const resolveAccessPlanInfo = (entry = {}) => {
+  const now = new Date();
+  const planEndsAt = parseFirestoreDate(entry.planEndsAt);
+  const planStartedAt = parseFirestoreDate(entry.planStartedAt);
+  const option = getAccessPlanOption(entry.planType);
+  const planLabel = entry.planLabel || option?.label || (entry.planType ? capitalize(entry.planType) : '');
+
+  let status = 'missing';
+  if (planEndsAt) {
+    status = planEndsAt.getTime() >= now.getTime() ? 'active' : 'expired';
+  }
+
+  const statusMeta = {
+    missing: {
+      label: 'Sem plano configurado',
+      className: 'text-gray-500 dark:text-gray-400',
+    },
+    active: {
+      label: 'Plano ativo',
+      className: 'text-emerald-600 dark:text-emerald-300',
+    },
+    expired: {
+      label: 'Plano expirado',
+      className: 'text-red-500 dark:text-red-300',
+    },
+  }[status];
+
+  const details = [];
+  if (planLabel) {
+    details.push(`Plano: <strong class="text-gray-700 dark:text-gray-200">${planLabel}</strong>`);
+  }
+
+  if (planStartedAt) {
+    details.push(`Início: <strong class="text-gray-700 dark:text-gray-200">${formatDate(planStartedAt)}</strong>`);
+  }
+
+  if (planEndsAt) {
+    const diffMs = planEndsAt.getTime() - now.getTime();
+    const diffDays = Math.ceil(Math.abs(diffMs) / (1000 * 60 * 60 * 24));
+    const daysLabel = diffDays === 1 ? 'dia' : 'dias';
+    if (diffMs >= 0) {
+      details.push(`Válido até <strong class="text-gray-700 dark:text-gray-200">${formatDate(planEndsAt)}</strong> • ${diffDays} ${daysLabel} restantes`);
+    } else {
+      details.push(`Expirou em <strong class="text-gray-700 dark:text-gray-200">${formatDate(planEndsAt)}</strong> • há ${diffDays} ${daysLabel}`);
+    }
+  } else {
+    details.push('Nenhum período configurado. Defina abaixo para controlar o acesso.');
+  }
+
+  return {
+    status,
+    statusLabel: statusMeta.label,
+    statusClass: statusMeta.className,
+    details,
+    planLabel,
+    planEndsAt,
+    planStartedAt,
+  };
+};
+
+function setAccessManagerSectionState(type, isOpen) {
+  accessManagerSectionState[type] = isOpen;
+  const body = accessManagerSectionBodies[type];
+  if (body) {
+    body.classList.toggle('hidden', !isOpen);
+  }
+  const toggle = accessManagerSectionToggles.find((button) => button?.dataset?.accessSectionToggle === type);
+  if (toggle) {
+    toggle.setAttribute('aria-expanded', String(isOpen));
+  }
+  const caret = accessManagerSectionCarets[type];
+  if (caret) {
+    caret.classList.toggle('rotate-180', isOpen);
+  }
+}
+
+function toggleAccessManagerSection(type) {
+  const current = !!accessManagerSectionState[type];
+  setAccessManagerSectionState(type, !current);
+}
+
+function initAccessManagerSectionControls() {
+  accessManagerSectionToggles.forEach((button) => {
+    const type = button?.dataset?.accessSectionToggle;
+    if (!type) return;
+    const body = document.querySelector(`[data-access-section-body="${type}"]`);
+    const caret = document.querySelector(`[data-access-section-caret="${type}"]`);
+    accessManagerSectionBodies[type] = body;
+    accessManagerSectionCarets[type] = caret;
+    const sectionEl = button.closest('section');
+    const defaultCollapsed = sectionEl?.dataset?.accessDefault === 'collapsed';
+    setAccessManagerSectionState(type, !defaultCollapsed);
+    button.addEventListener('click', () => toggleAccessManagerSection(type));
+  });
+}
+
+function resetAccessManagerSectionDefaults() {
+  accessManagerSectionToggles.forEach((button) => {
+    const type = button?.dataset?.accessSectionToggle;
+    if (!type) return;
+    const sectionEl = button.closest('section');
+    const defaultCollapsed = sectionEl?.dataset?.accessDefault === 'collapsed';
+    setAccessManagerSectionState(type, !defaultCollapsed);
+  });
+}
 
 const capitalize = (str = '') => str ? str.charAt(0).toUpperCase() + str.slice(1) : '';
 const isPlainObject = value => value && typeof value === 'object' && !Array.isArray(value);
