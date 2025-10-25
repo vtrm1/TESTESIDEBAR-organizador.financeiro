@@ -9,21 +9,34 @@ export default function handler(req, res) {
     measurementId: process.env.FIREBASE_MEASUREMENT_ID,
   };
 
-  const hasAnyValue = Object.values(firebaseConfig).some((value) => typeof value === 'string' && value.length > 0);
+  const sanitizedConfig = Object.fromEntries(
+    Object.entries(firebaseConfig).filter(([, value]) => typeof value === 'string' && value.length > 0)
+  );
 
-  res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+  const wantsJson =
+    (req.query?.format && String(req.query.format).toLowerCase() === 'json') ||
+    (req.headers?.accept && req.headers.accept.includes('application/json'));
+
   res.setHeader('Cache-Control', 'no-store, max-age=0');
 
-  if (!hasAnyValue) {
-    res.status(200).send(
-      "console.warn('Firebase config ausente nas variáveis de ambiente. Defina FIREBASE_API_KEY e demais chaves no painel da Vercel.');"
-    );
+  if (!Object.keys(sanitizedConfig).length) {
+    if (wantsJson) {
+      res.status(204).end();
+    } else {
+      res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+      res
+        .status(200)
+        .send("console.warn('Firebase config ausente nas variáveis de ambiente. Defina FIREBASE_API_KEY e demais chaves no painel da Vercel.');");
+    }
     return;
   }
 
-  const sanitizedConfig = Object.fromEntries(
-    Object.entries(firebaseConfig).filter(([, value]) => value != null && value !== '')
-  );
+  if (wantsJson) {
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.status(200).json(sanitizedConfig);
+    return;
+  }
 
+  res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
   res.status(200).send(`window.__FIREBASE_CONFIG__ = ${JSON.stringify(sanitizedConfig)};`);
 }

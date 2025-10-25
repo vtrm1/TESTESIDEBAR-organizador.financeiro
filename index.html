@@ -17,7 +17,53 @@
 
 <!-- Manifest PWA -->
 <link rel="manifest" href="manifest.json" />
-<script src="app-config.js"></script>
+<script>
+  (function preloadFirebaseConfig() {
+    if (window.__FIREBASE_CONFIG__) {
+      return;
+    }
+    if (window.__APP_CONFIG__ && window.__APP_CONFIG__.firebase && window.__APP_CONFIG__.firebase.client) {
+      window.__FIREBASE_CONFIG__ = window.__APP_CONFIG__.firebase.client;
+      return;
+    }
+
+    try {
+      var request = new XMLHttpRequest();
+      request.open('GET', '/app-config.js?format=json', false);
+      request.setRequestHeader('Accept', 'application/json');
+      request.send(null);
+
+      if (request.status >= 200 && request.status < 300 && request.responseText) {
+        try {
+          var parsed = JSON.parse(request.responseText);
+          if (parsed && typeof parsed === 'object') {
+            window.__FIREBASE_CONFIG__ = parsed;
+            return;
+          }
+        } catch (jsonError) {
+          console.warn('Falha ao interpretar configuração Firebase como JSON.', jsonError);
+        }
+      }
+
+      // Se não veio JSON válido, tenta carregar o script tradicional
+      request = new XMLHttpRequest();
+      request.open('GET', '/app-config.js', false);
+      request.send(null);
+      if (request.status >= 200 && request.status < 300 && request.responseText) {
+        try {
+          new Function(request.responseText)();
+          if (window.__FIREBASE_CONFIG__) {
+            return;
+          }
+        } catch (scriptError) {
+          console.warn('Falha ao executar app-config.js padrão.', scriptError);
+        }
+      }
+    } catch (networkError) {
+      console.warn('Não foi possível carregar app-config.js do servidor.', networkError);
+    }
+  })();
+</script>
 <!-- Theme-color para Light e Dark Mode -->
 <meta name="theme-color" content="#4ade80" media="(prefers-color-scheme: light)" />
 <meta name="theme-color" content="#1f2937" media="(prefers-color-scheme: dark)" />
