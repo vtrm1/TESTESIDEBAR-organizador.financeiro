@@ -5223,7 +5223,7 @@ function goToPanelAndFocus(panelId, inputSelector) {
 }
 
 // NOVO: Função para calcular o mês de referência da fatura
-function calcularMesFatura(dataTransacao, diaFechamento, offset = 0) {  // Adicionado offset com default 0
+function calcularMesFatura(dataTransacao, diaFechamento, offset = 1) {
   const data = new Date(dataTransacao);
   const ano = data.getFullYear();
   const mes = data.getMonth(); // 0-11
@@ -5231,13 +5231,21 @@ function calcularMesFatura(dataTransacao, diaFechamento, offset = 0) {  // Adici
     // Para PIX ou sem fechamento: sempre mês atual
     return yyyymm(new Date(ano, mes, 1));
   }
-  if (data.getDate() > diaFechamento) {
-    // Após fechamento: adiciona o offset (0 = mesmo mês; 1 = próximo)
+  if (data.getDate() >= diaFechamento) {
+    // Após ou no fechamento: adiciona o offset (0 = mesmo mês; 1 = próximo)
     return yyyymm(new Date(ano, mes + offset, 1));
   } else {
     // Antes/na data de fechamento: mês atual
     return yyyymm(new Date(ano, mes, 1));
   }
+}
+
+function obterOffsetCartao(configCartao) {
+  if (!configCartao || configCartao.mesVencimentoOffset === undefined || configCartao.mesVencimentoOffset === null) {
+    return 1;
+  }
+  const parsed = Number(configCartao.mesVencimentoOffset);
+  return Number.isFinite(parsed) ? parsed : 1;
 }
 
 // Função para mostrar toast message
@@ -8280,7 +8288,8 @@ function atualizarMesFaturaEstimado() {
   if (cartaoSelecionado && cartaoSelecionado !== 'pix' && cartaoSelecionado !== '') {
     const configCartao = cartoesCfg[cartaoSelecionado];
     if (configCartao && configCartao.fechamento !== null && configCartao.fechamento !== undefined) {
-      const mesFatura = calcularMesFatura(hoje, configCartao.fechamento);
+      const offset = obterOffsetCartao(configCartao);
+      const mesFatura = calcularMesFatura(hoje, configCartao.fechamento, offset);
       mesFaturaDisplay = mmYYYY(mesFatura);
     }
   } else if (cartaoSelecionado === 'pix' || cartaoSelecionado === '') {
@@ -8348,7 +8357,8 @@ formAddGastoModal.addEventListener('submit', e => {
   } else {
     const configCartao = cartoesCfg[cartaoSelecionado];
     if (configCartao && configCartao.fechamento !== null && configCartao.fechamento !== undefined) {
-      mesFaturaCalculado = calcularMesFatura(hoje, configCartao.fechamento);
+      const offset = obterOffsetCartao(configCartao);
+      mesFaturaCalculado = calcularMesFatura(hoje, configCartao.fechamento, offset);
     } else {
       mesFaturaCalculado = yyyymm(hoje); // Fallback para mês atual se não houver fechamento
     }
@@ -9993,7 +10003,8 @@ function updateFloatingMenuVisibility() {
       } else {
         const configCartao = cartoesCfg[cartaoSelecionado];
         if (configCartao && configCartao.fechamento !== null && configCartao.fechamento !== undefined) {
-          mesFaturaCalculado = calcularMesFatura(hoje, configCartao.fechamento);
+          const offset = obterOffsetCartao(configCartao);
+          mesFaturaCalculado = calcularMesFatura(hoje, configCartao.fechamento, offset);
         } else {
           mesFaturaCalculado = yyyymm(hoje);
         }
@@ -10053,7 +10064,7 @@ if (cartaoSelecionado === 'pix' || cartaoSelecionado === '') {
 } else {
   const configCartao = cartoesCfg[cartaoSelecionado];
   const fechamento = configCartao ? configCartao.fechamento : null;
-  const offset = configCartao ? (configCartao.mesVencimentoOffset || 0) : 0;  // <-- NOVO: Pega o offset
+  const offset = obterOffsetCartao(configCartao);
   if (fechamento !== null && fechamento !== undefined) {
     mesFaturaCalculado = calcularMesFatura(hoje, fechamento, offset);  // <-- NOVO: Passa offset
   } else {
