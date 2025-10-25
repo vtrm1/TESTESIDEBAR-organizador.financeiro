@@ -1592,13 +1592,27 @@ html.dark .mobile-tab-button {
           <p class="text-[10px] sm:text-[11px] text-emerald-700/80 dark:text-emerald-200/70 mt-2" id="historico-media-hint">Selecione um mês para ver a média diária.</p>
         </div>
         <div class="md:col-span-2 rounded-2xl bg-slate-100/80 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/60 p-4 shadow-sm">
-          <div class="flex items-center justify-between mb-3">
-            <h4 class="text-sm font-semibold text-slate-800 dark:text-slate-100">Gastos por semana</h4>
-            <span class="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400">Mês selecionado</span>
+          <div class="flex items-center justify-between gap-3 mb-3">
+            <div>
+              <h4 class="text-sm font-semibold text-slate-800 dark:text-slate-100">Gastos semanais</h4>
+              <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">Visualize o peso de cada semana e identifique picos rapidamente.</p>
+            </div>
+            <select id="historico-semanas-modo" class="text-[11px] font-semibold uppercase tracking-wide border border-slate-200 dark:border-slate-600 rounded-lg bg-white/80 dark:bg-slate-900/40 px-2 py-1 text-slate-600 dark:text-slate-200">
+              <option value="selected">Mês selecionado</option>
+              <option value="rolling">Últimas 8 semanas</option>
+            </select>
           </div>
-          <div id="historico-semanas-scroll" class="scroll-shell overflow-x-auto pb-1 -mx-1 px-1">
-            <div id="historico-semanas-list" class="flex gap-2">
-              <div class="text-xs text-slate-500 dark:text-slate-400">Escolha um mês específico para destravar o resumo semanal.</div>
+          <button type="button" id="toggle-historico-semanas" class="w-full flex items-center justify-between text-sm font-semibold text-indigo-700 dark:text-indigo-200 bg-indigo-50/80 dark:bg-indigo-900/20 px-3 py-2 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition" aria-expanded="true" aria-controls="historico-semanas-container">
+            <span class="flex items-center gap-2"><i class="fa fa-chart-column text-indigo-500"></i><span>Resumo semanal</span></span>
+            <span class="flex items-center gap-2 text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400">
+              <span id="historico-semanas-janela">Mês selecionado</span>
+              <i id="historico-semanas-toggle-icon" class="fa fa-chevron-down transition-transform duration-200"></i>
+            </span>
+          </button>
+          <div id="historico-semanas-container" class="mt-3 space-y-2" role="region" aria-live="polite" aria-hidden="false">
+            <div class="relative h-48">
+              <canvas id="grafico-historico-semanal" class="w-full h-full"></canvas>
+              <div id="historico-semanas-empty" class="absolute inset-0 flex items-center justify-center text-xs text-slate-500 dark:text-slate-400 px-4 text-center">Selecione um mês específico para destravar o resumo semanal.</div>
             </div>
           </div>
         </div>
@@ -5649,45 +5663,220 @@ function renderHistoricoWithFilters() {
 }
 
 function updateHistoricoInsights(docs, mesSel) {
+  historicoInsightsCache = { docs, mesSel };
+
   const mediaEl = document.getElementById('historico-media-diaria');
   const hintEl = document.getElementById('historico-media-hint');
-  const weeksContainer = document.getElementById('historico-semanas-list');
-  if (!mediaEl || !hintEl || !weeksContainer) return;
+  const canvas = document.getElementById('grafico-historico-semanal');
+  const emptyState = document.getElementById('historico-semanas-empty');
+  const janelaEl = document.getElementById('historico-semanas-janela');
+  if (!mediaEl || !hintEl || !canvas || !emptyState) return;
 
-  if (!mesSel || mesSel === 'all') {
-    mediaEl.textContent = 'R$ 0,00';
-    hintEl.textContent = 'Selecione um mês para ver a média diária.';
-    weeksContainer.innerHTML = '<div class="text-xs text-slate-500 dark:text-slate-400">Escolha um mês específico para destravar o resumo semanal.</div>';
+  const modoSelect = document.getElementById('historico-semanas-modo');
+  const modo = modoSelect ? modoSelect.value : 'selected';
+
+  const monthStats = {
+    valid: false,
+    ano: null,
+    mes: null,
+    diasNoMes: 0,
+    totalMes: 0,
+    label: '',
+  };
+
+  if (mesSel && mesSel !== 'all') {
+    const [anoStr, mesStr] = mesSel.split('-');
+    const ano = parseInt(anoStr, 10);
+    const mes = parseInt(mesStr, 10);
+    if (!isNaN(ano) && !isNaN(mes)) {
+      monthStats.valid = true;
+      monthStats.ano = ano;
+      monthStats.mes = mes;
+      monthStats.diasNoMes = new Date(ano, mes, 0).getDate();
+      monthStats.totalMes = (docs || []).reduce((sum, doc) => sum + (doc.data().valor || 0), 0);
+      monthStats.label = String(mes).padStart(2, '0');
+    }
+  }
+
+  if (modo !== 'rolling') {
+    if (monthStats.valid) {
+      const hoje = new Date();
+      let diasConsiderados = monthStats.diasNoMes;
+      if (hoje.getFullYear() === monthStats.ano && (hoje.getMonth() + 1) === monthStats.mes) {
+        diasConsiderados = Math.max(1, Math.min(monthStats.diasNoMes, hoje.getDate()));
+        hintEl.textContent = `Com base nos primeiros ${diasConsiderados} dia${diasConsiderados > 1 ? 's' : ''} deste mês.`;
+      } else {
+        hintEl.textContent = `Distribuição em ${monthStats.diasNoMes} dia${monthStats.diasNoMes > 1 ? 's' : ''} do mês selecionado.`;
+      }
+      const media = diasConsiderados ? monthStats.totalMes / diasConsiderados : 0;
+      mediaEl.textContent = `R$ ${moeda(media)}`;
+      if (!docs || !docs.length) {
+        hintEl.textContent = `Nenhum gasto lançado em ${monthStats.label}/${String(monthStats.ano).slice(-2)} até o momento.`;
+      }
+    } else {
+      mediaEl.textContent = 'R$ 0,00';
+      hintEl.textContent = 'Selecione um mês para ver a média diária.';
+    }
+  }
+
+  if (janelaEl) {
+    if (modo === 'rolling') {
+      janelaEl.textContent = 'Últimas 8 semanas';
+    } else if (monthStats.valid) {
+      janelaEl.textContent = `${monthStats.label}/${String(monthStats.ano).slice(-2)}`;
+    } else {
+      janelaEl.textContent = 'Selecione um mês';
+    }
+  }
+
+  const ctx = canvas.getContext('2d');
+
+  const hideChart = (mensagem) => {
+    emptyState.textContent = mensagem;
+    emptyState.classList.remove('hidden');
+    if (chartHistoricoSemanal) {
+      chartHistoricoSemanal.destroy();
+      chartHistoricoSemanal = null;
+    }
+  };
+
+  const showChart = (labels, valores) => {
+    emptyState.classList.add('hidden');
+    const maxValor = Math.max(...valores, 0);
+    const baseColor = html.classList.contains('dark') ? 'rgba(129, 140, 248, 0.55)' : 'rgba(99, 102, 241, 0.55)';
+    const destaqueColor = html.classList.contains('dark') ? 'rgba(251, 191, 36, 0.75)' : 'rgba(245, 158, 11, 0.75)';
+    const borderColor = html.classList.contains('dark') ? '#6366f1' : '#4f46e5';
+    const backgrounds = valores.map(v => (v === maxValor && maxValor > 0 ? destaqueColor : baseColor));
+    const borders = valores.map(() => borderColor);
+
+    if (chartHistoricoSemanal) {
+      chartHistoricoSemanal.data.labels = labels;
+      chartHistoricoSemanal.data.datasets[0].data = valores;
+      chartHistoricoSemanal.data.datasets[0].backgroundColor = backgrounds;
+      chartHistoricoSemanal.data.datasets[0].borderColor = borders;
+      chartHistoricoSemanal.update();
+      return;
+    }
+
+    chartHistoricoSemanal = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: 'Total da semana',
+          data: valores,
+          backgroundColor: backgrounds,
+          borderColor: borders,
+          borderWidth: 1.5,
+          borderRadius: 6,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              callback: val => `R$ ${moeda(val)}`,
+              color: html.classList.contains('dark') ? '#d1d5db' : '#1f2937',
+            },
+            grid: {
+              color: html.classList.contains('dark') ? '#374151' : '#e5e7eb',
+            },
+          },
+          x: {
+            ticks: {
+              color: html.classList.contains('dark') ? '#d1d5db' : '#1f2937',
+            },
+            grid: {
+              display: false,
+            },
+          },
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              title: items => {
+                const item = items[0];
+                if (!item) return '';
+                const raw = item.chart?.data?.labels?.[item.dataIndex];
+                if (Array.isArray(raw)) {
+                  return raw[0] || '';
+                }
+                return raw || '';
+              },
+              afterBody: items => {
+                const item = items[0];
+                if (!item) return '';
+                const raw = item.chart?.data?.labels?.[item.dataIndex];
+                if (Array.isArray(raw) && raw[1]) {
+                  return raw[1];
+                }
+                return '';
+              },
+              label: context => `R$ ${moeda(context.parsed.y)}`,
+            },
+          },
+        },
+      },
+    });
+  };
+
+  if (modo === 'rolling') {
+    const baseDocs = Array.isArray(allGastosDocs) ? allGastosDocs : [];
+    if (!baseDocs.length) {
+      mediaEl.textContent = 'R$ 0,00';
+      hintEl.textContent = 'Ainda não há lançamentos suficientes para o comparativo das últimas semanas.';
+      hideChart('Nenhum gasto registrado para calcular as últimas semanas.');
+      return;
+    }
+
+    const semanas = buildRollingWeeks(8);
+    baseDocs.forEach(doc => {
+      const dados = doc.data();
+      const dataGasto = extrairDataGasto(dados);
+      if (!dataGasto) return;
+      semanas.forEach(semana => {
+        if (dataGasto >= semana.start && dataGasto <= semana.end) {
+          semana.total += dados.valor || 0;
+        }
+      });
+    });
+
+    const valores = semanas.map(semana => semana.total);
+    const totalRolling = valores.reduce((sum, v) => sum + v, 0);
+    const diasConsiderados = semanas.length * 7;
+    const mediaRolling = diasConsiderados ? totalRolling / diasConsiderados : 0;
+    mediaEl.textContent = `R$ ${moeda(mediaRolling)}`;
+    hintEl.textContent = 'Média diária considerando as últimas 8 semanas.';
+
+    const hasValores = valores.some(v => v > 0);
+    if (!hasValores) {
+      hideChart('As últimas semanas ainda não possuem gastos registrados.');
+      return;
+    }
+
+    const labels = semanas.map((semana, idx) => [
+      `Sem ${idx + 1}`,
+      `${formatarDiaMes(semana.start)}–${formatarDiaMes(semana.end)}`,
+    ]);
+    showChart(labels, valores);
     return;
   }
 
-  const [anoStr, mesStr] = mesSel.split('-');
-  const ano = parseInt(anoStr, 10);
-  const mes = parseInt(mesStr, 10);
-  if (!ano || !mes) {
-    mediaEl.textContent = 'R$ 0,00';
-    hintEl.textContent = 'Selecione um mês válido para calcular a média diária.';
-    weeksContainer.innerHTML = '<div class="text-xs text-slate-500 dark:text-slate-400">Não foi possível calcular o resumo semanal.</div>';
+  if (!monthStats.valid) {
+    hideChart('Escolha um mês específico para destravar o resumo semanal.');
     return;
   }
 
-  const diasNoMes = new Date(ano, mes, 0).getDate();
-  const totalMes = docs.reduce((sum, doc) => sum + (doc.data().valor || 0), 0);
-  const mesLabel = String(mes).padStart(2, '0');
-
-  const hoje = new Date();
-  let diasConsiderados = diasNoMes;
-  if (hoje.getFullYear() === ano && (hoje.getMonth() + 1) === mes) {
-    diasConsiderados = Math.max(1, Math.min(diasNoMes, hoje.getDate()));
-    hintEl.textContent = `Com base nos primeiros ${diasConsiderados} dia${diasConsiderados > 1 ? 's' : ''} deste mês.`;
-  } else {
-    hintEl.textContent = `Distribuição em ${diasNoMes} dia${diasNoMes > 1 ? 's' : ''} do mês selecionado.`;
+  if (!docs || !docs.length) {
+    hideChart(`Sem gastos registrados no mês ${monthStats.label}/${String(monthStats.ano).slice(-2)}.`);
+    return;
   }
 
-  const media = diasConsiderados ? totalMes / diasConsiderados : 0;
-  mediaEl.textContent = `R$ ${moeda(media)}`;
-
-  const semanas = buildWeeksForMonth(diasNoMes);
+  const semanas = buildWeeksForMonth(monthStats.diasNoMes);
   docs.forEach(doc => {
     const dados = doc.data();
     const dataResumo = resolveDateForWeekSummary(dados, mesSel);
@@ -5697,27 +5886,18 @@ function updateHistoricoInsights(docs, mesSel) {
     semanas[indice].total += dados.valor || 0;
   });
 
-  weeksContainer.innerHTML = '';
-
-  if (!docs.length) {
-    hintEl.textContent = `Nenhum gasto lançado em ${mesLabel}/${anoStr.slice(-2)} até o momento.`;
-    weeksContainer.innerHTML = '<div class="text-xs text-slate-500 dark:text-slate-400">Sem gastos registrados no mês selecionado.</div>';
+  const valores = semanas.map(semana => semana.total);
+  const possuiValor = valores.some(v => v > 0);
+  if (!possuiValor) {
+    hideChart(`Sem lançamentos no mês ${monthStats.label}/${String(monthStats.ano).slice(-2)}.`);
     return;
   }
 
-  semanas.forEach((semana, idx) => {
-    const percentual = totalMes ? Math.round((semana.total / totalMes) * 100) : 0;
-    const chip = document.createElement('div');
-    chip.className = 'week-chip flex shrink-0 flex-col gap-1 bg-white/90 dark:bg-slate-800/70 border border-slate-200/70 dark:border-slate-700/60 shadow-sm';
-    const intervalo = `${semana.start}&ndash;${semana.end}`;
-    chip.innerHTML = `
-      <strong class="text-sm font-semibold text-slate-800 dark:text-slate-100">Semana ${idx + 1}</strong>
-      <span class="text-slate-500 dark:text-slate-300">${intervalo} / ${mesLabel}/${anoStr.slice(-2)}</span>
-      <span class="font-semibold text-slate-900 dark:text-slate-100">R$ ${moeda(semana.total)}</span>
-      <span class="text-[11px] text-slate-500 dark:text-slate-400">${percentual}% do mês</span>
-    `;
-    weeksContainer.appendChild(chip);
-  });
+  const labels = semanas.map((semana, idx) => [
+    `Semana ${idx + 1}`,
+    `${String(semana.start).padStart(2, '0')}–${String(semana.end).padStart(2, '0')}/${String(monthStats.ano).slice(-2)}`,
+  ]);
+  showChart(labels, valores);
 }
 
 function resolveDateForWeekSummary(dados, mesSel) {
@@ -5760,6 +5940,57 @@ function buildWeeksForMonth(diasNoMes) {
     diaAtual = fim + 1;
   }
   return semanas;
+}
+
+function buildRollingWeeks(total = 8, referenceDate = new Date()) {
+  const semanas = [];
+  const inicioReferencia = startOfWeek(referenceDate);
+  for (let i = total - 1; i >= 0; i--) {
+    const inicio = new Date(inicioReferencia);
+    inicio.setDate(inicioReferencia.getDate() - (i * 7));
+    const fim = new Date(inicio);
+    fim.setDate(inicio.getDate() + 6);
+    inicio.setHours(0, 0, 0, 0);
+    fim.setHours(23, 59, 59, 999);
+    semanas.push({ start: inicio, end: fim, total: 0 });
+  }
+  return semanas;
+}
+
+function startOfWeek(date) {
+  const base = new Date(date);
+  base.setHours(0, 0, 0, 0);
+  const day = base.getDay();
+  const diff = (day + 6) % 7; // Inicia na segunda-feira
+  base.setDate(base.getDate() - diff);
+  return base;
+}
+
+function extrairDataGasto(dados) {
+  if (!dados) return null;
+  const candidatos = [dados.data, dados.dataTransacao, dados.dataLancamento];
+  for (const value of candidatos) {
+    if (!value) continue;
+    let date = null;
+    if (value instanceof Date) {
+      date = value;
+    } else if (typeof value?.toDate === 'function') {
+      date = value.toDate();
+    } else {
+      date = new Date(value);
+    }
+    if (date && !isNaN(date)) {
+      return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0, 0);
+    }
+  }
+  return null;
+}
+
+function formatarDiaMes(date) {
+  if (!(date instanceof Date) || isNaN(date)) return '';
+  const dia = String(date.getDate()).padStart(2, '0');
+  const mes = String(date.getMonth() + 1).padStart(2, '0');
+  return `${dia}/${mes}`;
 }
 
 function renderHistoricoNormal(docs) {
@@ -8090,6 +8321,43 @@ if (toggleParceladosBtn) {
   });
 }
 
+const toggleHistoricoSemanasBtn = document.getElementById('toggle-historico-semanas');
+if (toggleHistoricoSemanasBtn) {
+  const historicoSemanasContainer = document.getElementById('historico-semanas-container');
+  const historicoSemanasIcon = document.getElementById('historico-semanas-toggle-icon');
+  toggleHistoricoSemanasBtn.addEventListener('click', () => {
+    if (!historicoSemanasContainer) return;
+    const hidden = historicoSemanasContainer.classList.toggle('hidden');
+    toggleHistoricoSemanasBtn.setAttribute('aria-expanded', (!hidden).toString());
+    historicoSemanasContainer.setAttribute('aria-hidden', hidden ? 'true' : 'false');
+    if (historicoSemanasIcon) {
+      historicoSemanasIcon.classList.toggle('rotate-180', !hidden);
+    }
+    if (!hidden && chartHistoricoSemanal) {
+      setTimeout(() => {
+        if (chartHistoricoSemanal) {
+          chartHistoricoSemanal.resize();
+        }
+      }, 120);
+    }
+  });
+}
+
+const historicoSemanasModoSelect = document.getElementById('historico-semanas-modo');
+if (historicoSemanasModoSelect) {
+  historicoSemanasModoSelect.addEventListener('change', () => {
+    const cacheDocs = historicoInsightsCache.docs || [];
+    updateHistoricoInsights(cacheDocs, historicoInsightsCache.mesSel);
+    if (chartHistoricoSemanal) {
+      setTimeout(() => {
+        if (chartHistoricoSemanal) {
+          chartHistoricoSemanal.resize();
+        }
+      }, 120);
+    }
+  });
+}
+
 /* ===========================
    ENTRADAS & INVESTIMENTOS SIDEBAR
    =========================== */
@@ -8824,6 +9092,8 @@ let chartCartoes = null;
 let chartTendenciaCategorias = null; // NOVO: Variável para o gráfico de tendência
 let chartInvestimentos = null; // NOVO: Gráfico de evolução dos investimentos
 let chartHistoricoMensal = null; // NOVO: Gráfico de resumo mensal do histórico
+let chartHistoricoSemanal = null;
+let historicoInsightsCache = { docs: [], mesSel: null };
 let chartParceladosProjecao = null; // NOVO: Projeção de parcelados
 const modalGraficos = document.getElementById('modal-graficos');
 const modalGraficosClose = document.getElementById('modal-graficos-close');
