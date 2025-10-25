@@ -1528,62 +1528,47 @@ html.dark .mobile-tab-button {
       </div>
     </div>
 
-    <!-- FIXOS E CARTÕES: layout principal no desktop -->
-    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
-      <section class="mobile-panel section-card hidden lg:block xl:col-span-2 space-y-4" id="painel-fixos">
-        <div class="flex flex-wrap items-center justify-between gap-3">
-          <h3 class="font-semibold text-lg">Fixos recorrentes</h3>
-          <div class="flex gap-2 text-sm">
-            <button id="btn-graficos-fixos" class="inline-flex items-center gap-1 rounded-full border border-blue-200/70 dark:border-blue-900/40 bg-blue-50/70 dark:bg-blue-900/10 px-3 py-1 text-blue-700 dark:text-blue-200 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors">
-              <i class="fa fa-chart-pie text-[0.7rem]"></i>
-              Gráficos
-            </button>
-            <button id="add-fixo-open" class="inline-flex items-center gap-1 rounded-full border border-purple-200/70 dark:border-purple-900/40 bg-purple-50/70 dark:bg-purple-900/10 px-3 py-1 text-purple-700 dark:text-purple-200 hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors">
-              <i class="fa fa-plus text-[0.7rem]"></i>
-              Novo fixo
-            </button>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div class="rounded-lg bg-green-50 dark:bg-green-900/20 p-3">
-            <div class="text-xs uppercase tracking-wide text-green-700 dark:text-green-200">Ativos</div>
-            <div class="text-xl font-bold text-green-800 dark:text-green-400" id="resumo-fixos-ativos">R$ 0,00</div>
-          </div>
-          <div class="rounded-lg bg-slate-100 dark:bg-gray-700 p-3">
-            <div class="text-xs uppercase tracking-wide text-slate-600 dark:text-slate-300">Inativos</div>
-            <div class="text-xl font-bold text-slate-800 dark:text-slate-100" id="resumo-fixos-inativos">R$ 0,00</div>
-          </div>
-        </div>
-
-        <div class="relative">
-          <div id="fixos-loading-spinner" class="loading-spinner spinner-hidden">
-            <i class="fa fa-spinner fa-spin"></i> Carregando fixos...
-          </div>
-          <div class="overflow-y-auto max-h-80 xl:max-h-[28rem] pr-1">
-            <div id="fixos-cards-container" class="space-y-2">
-              <!-- Cards de fixos serão inseridos aqui -->
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section class="mobile-panel section-card hidden lg:block space-y-4" id="painel-cartoes">
-        <div class="flex items-center justify-between gap-3">
-          <h3 class="font-semibold text-lg">Cartões</h3>
-          <button id="btn-gerenciar-cartoes" class="inline-flex items-center gap-1 rounded-full border border-blue-200/70 dark:border-blue-900/40 bg-blue-50/70 dark:bg-blue-900/10 px-3 py-1 text-blue-700 dark:text-blue-200 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors">
-            <i class="fa fa-pen-to-square text-[0.7rem]"></i>
-            Gerenciar
+    <!-- FIXOS posicionados abaixo dos parcelados no desktop -->
+    <section class="mobile-panel section-card hidden lg:block space-y-5" id="painel-fixos">
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <h3 class="text-xl font-bold flex items-center gap-2">
+          <i class="fa fa-repeat text-blue-500 text-lg"></i>
+          Fixos recorrentes
+        </h3>
+        <div class="flex gap-2 text-sm md:text-base">
+          <button id="btn-graficos-fixos" class="inline-flex items-center gap-2 rounded-full border border-blue-200/70 dark:border-blue-900/40 bg-blue-50/70 dark:bg-blue-900/10 px-4 py-2 text-blue-700 dark:text-blue-200 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors">
+            <i class="fa fa-chart-pie text-sm"></i>
+            Gráficos
+          </button>
+          <button id="add-fixo-open" class="inline-flex items-center gap-2 rounded-full border border-purple-200/70 dark:border-purple-900/40 bg-purple-50/70 dark:bg-purple-900/10 px-4 py-2 text-purple-700 dark:text-purple-200 hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors">
+            <i class="fa fa-plus text-sm"></i>
+            Novo fixo
           </button>
         </div>
-        <div id="cartoes-container" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div id="cartoes-loading-spinner" class="loading-spinner spinner-hidden col-span-full">
-            <i class="fa fa-spinner fa-spin"></i> Carregando cartões...
-          </div>
-          <!-- Cards de cartão serão inseridos aqui -->
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="rounded-xl bg-green-50 dark:bg-green-900/20 p-4">
+          <div class="text-xs uppercase tracking-wide text-green-700 dark:text-green-200">Ativos</div>
+          <div class="text-2xl font-bold text-green-800 dark:text-green-400" id="resumo-fixos-ativos">R$ 0,00</div>
         </div>
-      </section>
-    </div>
+        <div class="rounded-xl bg-slate-100 dark:bg-gray-700 p-4">
+          <div class="text-xs uppercase tracking-wide text-slate-600 dark:text-slate-300">Inativos</div>
+          <div class="text-2xl font-bold text-slate-800 dark:text-slate-100" id="resumo-fixos-inativos">R$ 0,00</div>
+        </div>
+      </div>
+
+      <div class="relative">
+        <div id="fixos-loading-spinner" class="loading-spinner spinner-hidden">
+          <i class="fa fa-spinner fa-spin"></i> Carregando fixos...
+        </div>
+        <div class="overflow-y-auto max-h-80 xl:max-h-[28rem] pr-1">
+          <div id="fixos-cards-container" class="space-y-3">
+            <!-- Cards de fixos serão inseridos aqui -->
+          </div>
+        </div>
+      </div>
+    </section>
 
     <!-- NOVA SEÇÃO: GASTOS POR CATEGORIA -->
     <div class="section-card">
@@ -1693,6 +1678,23 @@ html.dark .mobile-tab-button {
         </div>
       </div>
     </div>
+
+    <!-- Cartões -->
+    <section class="mobile-panel hidden lg:block section-card space-y-4" id="painel-cartoes">
+      <div class="flex items-center justify-between gap-3">
+        <h3 class="font-semibold text-lg">Cartões</h3>
+        <button id="btn-gerenciar-cartoes" class="inline-flex items-center gap-1 rounded-full border border-blue-200/70 dark:border-blue-900/40 bg-blue-50/70 dark:bg-blue-900/10 px-3 py-1 text-blue-700 dark:text-blue-200 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors">
+          <i class="fa fa-pen-to-square text-[0.7rem]"></i>
+          Gerenciar
+        </button>
+      </div>
+      <div id="cartoes-container" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div id="cartoes-loading-spinner" class="loading-spinner spinner-hidden col-span-full">
+          <i class="fa fa-spinner fa-spin"></i> Carregando cartões...
+        </div>
+        <!-- Cards de cartão serão inseridos aqui -->
+      </div>
+    </section>
 
     <!-- NOVO: Investimentos -->
     <div class="mobile-panel hidden lg:block section-card space-y-4" id="painel-investimentos">
