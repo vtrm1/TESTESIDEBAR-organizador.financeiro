@@ -1320,9 +1320,9 @@ html.dark .mobile-tab-button {
   </div>
 </div>
 
-<main class="container mx-auto px-4 py-4 pb-24 md:pb-16 grid grid-cols-1 lg:grid-cols-4 gap-6">
+<main class="container mx-auto px-4 py-4 pb-24 md:pb-16 grid grid-cols-1 lg:grid-cols-[minmax(0,1.7fr)_minmax(0,0.7fr)] gap-6">
 
-  <div id="main-stream" class="flex flex-col gap-6 lg:col-span-3">
+  <div id="main-stream" class="flex flex-col gap-6 lg:col-span-1">
 
   <!-- LEFT: main (resumo + histórico + parcelados) -->
   <section id="painel-gastos" class="mobile-panel hidden lg:block space-y-6">
@@ -1807,23 +1807,6 @@ html.dark .mobile-tab-button {
       </div>
     </div>
 
-    <!-- Cartões -->
-    <section class="mobile-panel hidden lg:block section-card space-y-4" id="painel-cartoes">
-      <div class="flex items-center justify-between gap-3">
-        <h3 class="font-semibold text-lg">Cartões</h3>
-        <button id="btn-gerenciar-cartoes" class="inline-flex items-center gap-1 rounded-full border border-blue-200/70 dark:border-blue-900/40 bg-blue-50/70 dark:bg-blue-900/10 px-3 py-1 text-blue-700 dark:text-blue-200 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors">
-          <i class="fa fa-pen-to-square text-[0.7rem]"></i>
-          Gerenciar
-        </button>
-      </div>
-      <div id="cartoes-container" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div id="cartoes-loading-spinner" class="loading-spinner spinner-hidden col-span-full">
-          <i class="fa fa-spinner fa-spin"></i> Carregando cartões...
-        </div>
-        <!-- Cards de cartão serão inseridos aqui -->
-      </div>
-    </section>
-
     <!-- NOVO: Investimentos -->
     <div class="mobile-panel hidden lg:block section-card space-y-4" id="painel-investimentos">
       <div class="flex items-center justify-between">
@@ -1935,6 +1918,23 @@ html.dark .mobile-tab-button {
         </div>
       </div>
     </div>
+
+    <!-- Cartões -->
+    <section class="mobile-panel hidden lg:block section-card space-y-4" id="painel-cartoes">
+      <div class="flex items-center justify-between gap-3">
+        <h3 class="font-semibold text-lg">Cartões</h3>
+        <button id="btn-gerenciar-cartoes" class="inline-flex items-center gap-1 rounded-full border border-blue-200/70 dark:border-blue-900/40 bg-blue-50/70 dark:bg-blue-900/10 px-3 py-1 text-blue-700 dark:text-blue-200 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors">
+          <i class="fa fa-pen-to-square text-[0.7rem]"></i>
+          Gerenciar
+        </button>
+      </div>
+      <div id="cartoes-container" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div id="cartoes-loading-spinner" class="loading-spinner spinner-hidden col-span-full">
+          <i class="fa fa-spinner fa-spin"></i> Carregando cartões...
+        </div>
+        <!-- Cards de cartão serão inseridos aqui -->
+      </div>
+    </section>
 
     <!-- NOVO: Indicador de saúde financeira -->
     <div class="mobile-panel hidden lg:block section-card space-y-4" id="painel-saude-financeira">
