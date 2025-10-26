@@ -2576,11 +2576,11 @@ function stampWorkspaceCreation(data = {}) {
   const ownerUid = getWorkspaceOwnerUid() || currentUser?.uid || null;
   const workspaceId = getActiveWorkspaceId();
 
-  if (ownerUid && !('ownerUid' in base)) {
+  if (ownerUid && base.ownerUid !== ownerUid) {
     base.ownerUid = ownerUid;
   }
 
-  if (workspaceId && !('workspaceId' in base)) {
+  if (workspaceId && base.workspaceId !== workspaceId) {
     base.workspaceId = workspaceId;
   }
 
@@ -2609,11 +2609,11 @@ function stampWorkspaceUpdate(data = {}) {
   const ownerUid = getWorkspaceOwnerUid() || currentUser?.uid || null;
   const workspaceId = getActiveWorkspaceId();
 
-  if (ownerUid && !('ownerUid' in base)) {
+  if (ownerUid && base.ownerUid !== ownerUid) {
     base.ownerUid = ownerUid;
   }
 
-  if (workspaceId && !('workspaceId' in base)) {
+  if (workspaceId && base.workspaceId !== workspaceId) {
     base.workspaceId = workspaceId;
   }
 
@@ -3277,9 +3277,13 @@ service cloud.firestore {
     }
 
     function workspaceFromData(data) {
-      return data.workspaceId != null
-        ? data.workspaceId
-        : (data.ownerUid != null ? data.ownerUid : data.userId);
+      return data == null
+        ? null
+        : (data.workspaceId != null && data.workspaceId != ''
+          ? data.workspaceId
+          : (data.ownerUid != null && data.ownerUid != ''
+            ? data.ownerUid
+            : data.userId));
     }
 
     // 👤 Perfis de acesso (aprovação, bloqueio, etc.)
@@ -12739,6 +12743,8 @@ updateHeaderOffset();
 
     const timestamp = firebase.firestore.FieldValue.serverTimestamp();
 
+    const resolvedWorkspaceId = state.workspaceId || (typeof getActiveWorkspaceId === 'function' ? getActiveWorkspaceId() : null) || state.ownerUid || null;
+
     for (const row of rows) {
       if (!row.dedupKey) {
         stats.skipped += 1;
@@ -12750,7 +12756,7 @@ updateHeaderOffset();
         _id: row.dedupKey,
         userId: currentUser?.uid || state.ownerUid,
         ownerUid: state.ownerUid,
-        workspaceId: state.workspaceId || null,
+        workspaceId: resolvedWorkspaceId,
         accountId: row.accountId,
         date: row.date,
         amount: row.amount,
@@ -12822,6 +12828,7 @@ updateHeaderOffset();
     const timestamp = firebase.firestore.FieldValue.serverTimestamp();
     const updates = Array.from(state.aliasUpdates.entries());
     state.aliasUpdates.clear();
+    const resolvedWorkspaceId = state.workspaceId || (typeof getActiveWorkspaceId === 'function' ? getActiveWorkspaceId() : null) || state.ownerUid || null;
 
     const batches = [];
     let currentBatch = db.batch();
@@ -12833,7 +12840,7 @@ updateHeaderOffset();
       const ref = db.collection('merchantAliases').doc(`${state.ownerUid}_${safeId}`);
       currentBatch.set(ref, stampWorkspaceUpdate({
         userId: state.ownerUid,
-        workspaceId: state.workspaceId || null,
+        workspaceId: resolvedWorkspaceId,
         normalized: normalizedDescription,
         category: payload.category || null,
         tags: Array.isArray(payload.tags) ? payload.tags : [],
@@ -12862,9 +12869,10 @@ updateHeaderOffset();
     if (!db) return;
     const now = new Date();
     const sessionRef = db.collection('importSessions').doc(importSessionId);
+    const resolvedWorkspaceId = state.workspaceId || (typeof getActiveWorkspaceId === 'function' ? getActiveWorkspaceId() : null) || state.ownerUid || null;
     const data = stampWorkspaceCreation({
       userId: state.ownerUid,
-      workspaceId: state.workspaceId || null,
+      workspaceId: resolvedWorkspaceId,
       bank: state.sourceBank || null,
       accountId: state.accountId,
       startedAt: firebase.firestore.FieldValue.serverTimestamp(),
