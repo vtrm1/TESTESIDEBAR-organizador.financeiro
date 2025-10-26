@@ -1086,7 +1086,7 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
         </h2>
         <p id="workspace-owner-hint" class="mt-2 text-gray-500 dark:text-gray-400 text-sm leading-relaxed"></p>
       </div>
-      <div id="workspace-share-scroll-container" class="flex-1 min-h-0 overflow-y-auto pr-1 sm:pr-2 -mr-1 sm:-mr-2 scroll-area">
+      <div id="workspace-share-scroll-container" class="flex-1 min-h-0 overflow-y-auto pr-1 sm:pr-2 -mr-1 sm:-mr-2 scroll-area max-h-[calc(100vh-12rem)] sm:max-h-full overscroll-contain touch-pan-y">
         <div class="space-y-5 pb-2">
           <div class="rounded-xl border border-emerald-200/70 dark:border-emerald-500/30 bg-emerald-50/60 dark:bg-emerald-500/10 p-4 space-y-3">
             <div class="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">Código do seu espaço</div>
@@ -1666,14 +1666,14 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
               <option value="rolling">Últimas 8 semanas</option>
             </select>
           </div>
-          <button type="button" id="toggle-historico-semanas" class="w-full flex items-center justify-between text-sm font-semibold text-indigo-700 dark:text-indigo-200 bg-indigo-50/80 dark:bg-indigo-900/20 px-3 py-2 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition" aria-expanded="true" aria-controls="historico-semanas-container">
+          <button type="button" id="toggle-historico-semanas" class="w-full flex items-center justify-between text-sm font-semibold text-indigo-700 dark:text-indigo-200 bg-indigo-50/80 dark:bg-indigo-900/20 px-3 py-2 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/30 transition" aria-expanded="false" aria-controls="historico-semanas-container">
             <span class="flex items-center gap-2"><i class="fa fa-chart-column text-indigo-500"></i><span>Resumo semanal</span></span>
             <span class="flex items-center gap-2 text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400">
               <span id="historico-semanas-janela">Mês selecionado</span>
               <i id="historico-semanas-toggle-icon" class="fa fa-chevron-down transition-transform duration-200"></i>
             </span>
           </button>
-          <div id="historico-semanas-container" class="mt-3 space-y-2" role="region" aria-live="polite" aria-hidden="false">
+          <div id="historico-semanas-container" class="mt-3 space-y-2 hidden" role="region" aria-live="polite" aria-hidden="true">
             <div class="relative h-48">
               <canvas id="grafico-historico-semanal" class="w-full h-full"></canvas>
               <div id="historico-semanas-empty" class="absolute inset-0 flex items-center justify-center text-xs text-slate-500 dark:text-slate-400 px-4 text-center">Selecione um mês específico para destravar o resumo semanal.</div>
@@ -2859,7 +2859,12 @@ async function ensureUserWorkspace(user) {
     }
 
     const normalizedMemberUids = Array.from(new Set([...rawMemberUids, ownerUid, user.uid]));
-    const memberDetails = sharedData.memberDetails && typeof sharedData.memberDetails === 'object' ? { ...sharedData.memberDetails } : {};
+    const rawMemberDetails = sharedData.memberDetails && typeof sharedData.memberDetails === 'object' ? { ...sharedData.memberDetails } : {};
+    const memberDetails = {};
+    Object.entries(rawMemberDetails).forEach(([uid, detail]) => {
+      if (!uid || !detail || typeof detail !== 'object') return;
+      memberDetails[uid] = normalizeWorkspaceProfileData(uid, detail);
+    });
     let workspaceDisplayName = sanitizeWorkspaceName(sharedData.displayName);
     const workspaceIdLower = (workspaceId || '').toLowerCase();
 
@@ -3468,15 +3473,38 @@ function buildWorkspaceMemberDetails(user, profile = null) {
     return {};
   }
   const details = {};
-  const displayName = (profile?.displayName || user?.displayName || '').trim();
-  if (displayName) {
-    details.displayName = displayName;
+  const nameCandidates = [
+    profile?.displayName,
+    profile?.name,
+    profile?.fullName,
+    profile?.fullname,
+    profile?.nome,
+    profile?.firstName && profile?.lastName ? `${profile.firstName} ${profile.lastName}` : null,
+    profile?.firstName,
+    user?.displayName,
+  ];
+  for (const candidate of nameCandidates) {
+    if (typeof candidate === 'string') {
+      const trimmed = candidate.trim();
+      if (trimmed) {
+        details.displayName = trimmed;
+        details.name = trimmed;
+        break;
+      }
+    }
   }
-  const email = (profile?.email || user?.email || '').trim();
+  const email = (profile?.email || profile?.mail || user?.email || '').trim();
   if (email) {
     details.email = email;
+    if (!details.displayName) {
+      const derived = extractNameFromEmail(email);
+      if (derived) {
+        details.displayName = derived;
+        details.name = derived;
+      }
+    }
   }
-  return details;
+  return normalizeWorkspaceProfileData(user?.uid || profile?.uid || '', details);
 }
 
 const DEFAULT_WORKSPACE_NAME = 'Espaço familiar';
@@ -3512,6 +3540,45 @@ function sanitizeWorkspaceName(name = '') {
     return '';
   }
   return normalized.slice(0, 60);
+}
+
+function normalizeWorkspaceProfileData(uid, data = {}) {
+  const normalized = { ...(data || {}) };
+  if (!normalized.email && typeof normalized.mail === 'string') {
+    normalized.email = normalized.mail;
+  }
+  const nameCandidates = [
+    normalized.displayName,
+    normalized.name,
+    normalized.fullName,
+    normalized.fullname,
+    normalized.nome,
+    normalized.firstName && normalized.lastName ? `${normalized.firstName} ${normalized.lastName}` : null,
+    normalized.firstName,
+  ];
+  let resolvedName = '';
+  for (const candidate of nameCandidates) {
+    if (typeof candidate === 'string') {
+      const trimmed = candidate.trim();
+      if (trimmed) {
+        resolvedName = trimmed;
+        break;
+      }
+    }
+  }
+  if (!resolvedName && normalized.email) {
+    const derived = extractNameFromEmail(normalized.email);
+    if (derived) {
+      resolvedName = derived;
+    }
+  }
+  if (resolvedName) {
+    normalized.displayName = resolvedName;
+    if (!normalized.name) {
+      normalized.name = resolvedName;
+    }
+  }
+  return normalized;
 }
 
 function deriveWorkspaceDisplayName(details = null, fallbackUser = null) {
@@ -3556,7 +3623,7 @@ function updateWorkspaceProfileCacheFromDetails(details = {}) {
     if (!uid || !data || typeof data !== 'object') {
       return;
     }
-    workspaceProfilesCache.set(uid, { ...data, uid });
+    workspaceProfilesCache.set(uid, normalizeWorkspaceProfileData(uid, data));
   });
 }
 
@@ -3681,7 +3748,12 @@ async function handleSharedWorkspaceSnapshot(snapshot) {
   const ownerUid = data.ownerUid || snapshot.id;
   const workspaceId = data.workspaceId || snapshot.id;
   const memberUids = Array.isArray(data.memberUids) ? data.memberUids.filter(Boolean) : [];
-  const memberDetails = data.memberDetails && typeof data.memberDetails === 'object' ? data.memberDetails : {};
+  const rawMemberDetails = data.memberDetails && typeof data.memberDetails === 'object' ? data.memberDetails : {};
+  const memberDetails = {};
+  Object.entries(rawMemberDetails).forEach(([uid, detail]) => {
+    if (!uid || !detail || typeof detail !== 'object') return;
+    memberDetails[uid] = normalizeWorkspaceProfileData(uid, detail);
+  });
   let workspaceDisplayName = sanitizeWorkspaceName(data.displayName);
   const workspaceIdLower = (workspaceId || '').toLowerCase();
   const isOwner = ownerUid === currentUser.uid;
@@ -3740,26 +3812,31 @@ async function handleSharedWorkspaceSnapshot(snapshot) {
 async function fetchWorkspaceProfile(uid) {
   if (!uid) return null;
   if (workspaceProfilesCache.has(uid)) {
-    const cached = workspaceProfilesCache.get(uid) || {};
+    const cached = normalizeWorkspaceProfileData(uid, workspaceProfilesCache.get(uid) || {});
+    workspaceProfilesCache.set(uid, cached);
     return { uid, ...cached };
   }
   const memberDetails = activeWorkspace?.memberDetails?.[uid];
   if (memberDetails && typeof memberDetails === 'object') {
-    workspaceProfilesCache.set(uid, memberDetails);
-    return { uid, ...memberDetails };
+    const normalizedMember = normalizeWorkspaceProfileData(uid, memberDetails);
+    workspaceProfilesCache.set(uid, normalizedMember);
+    return { uid, ...normalizedMember };
   }
   try {
     const snap = await db.collection('profiles').doc(uid).get();
     if (snap.exists) {
       const data = snap.data() || {};
-      workspaceProfilesCache.set(uid, data);
-      return { uid, ...data };
+      const normalizedData = normalizeWorkspaceProfileData(uid, data);
+      workspaceProfilesCache.set(uid, normalizedData);
+      return { uid, ...normalizedData };
     }
   } catch (error) {
     console.error('Erro ao carregar perfil do workspace:', error);
   }
   if (memberDetails && typeof memberDetails === 'object') {
-    return { uid, ...memberDetails };
+    const normalizedFallback = normalizeWorkspaceProfileData(uid, memberDetails);
+    workspaceProfilesCache.set(uid, normalizedFallback);
+    return { uid, ...normalizedFallback };
   }
   return { uid };
 }
@@ -4007,6 +4084,7 @@ function closeWorkspaceShareModal() {
   document.body.classList.remove('workspace-share-open');
   unlockBodyScrollIfAllowed();
   resetWorkspaceFeedback();
+  setHistoricoSemanasVisibility(false);
   setTimeout(() => {
     window.dispatchEvent(new Event('resize'));
   }, 120);
@@ -9110,23 +9188,37 @@ if (toggleParceladosBtn) {
 }
 
 const toggleHistoricoSemanasBtn = document.getElementById('toggle-historico-semanas');
+const historicoSemanasContainer = document.getElementById('historico-semanas-container');
+const historicoSemanasIcon = document.getElementById('historico-semanas-toggle-icon');
+
+function setHistoricoSemanasVisibility(visible) {
+  if (!historicoSemanasContainer || !toggleHistoricoSemanasBtn) {
+    return;
+  }
+  historicoSemanasContainer.classList.toggle('hidden', !visible);
+  historicoSemanasContainer.setAttribute('aria-hidden', visible ? 'false' : 'true');
+  toggleHistoricoSemanasBtn.setAttribute('aria-expanded', visible ? 'true' : 'false');
+  if (historicoSemanasIcon) {
+    historicoSemanasIcon.classList.toggle('rotate-180', visible);
+  }
+  if (visible && chartHistoricoSemanal) {
+    setTimeout(() => {
+      if (chartHistoricoSemanal) {
+        chartHistoricoSemanal.resize();
+      }
+    }, 120);
+  }
+}
+
 if (toggleHistoricoSemanasBtn) {
-  const historicoSemanasContainer = document.getElementById('historico-semanas-container');
-  const historicoSemanasIcon = document.getElementById('historico-semanas-toggle-icon');
+  setHistoricoSemanasVisibility(false);
   toggleHistoricoSemanasBtn.addEventListener('click', () => {
-    if (!historicoSemanasContainer) return;
-    const hidden = historicoSemanasContainer.classList.toggle('hidden');
-    toggleHistoricoSemanasBtn.setAttribute('aria-expanded', (!hidden).toString());
-    historicoSemanasContainer.setAttribute('aria-hidden', hidden ? 'true' : 'false');
-    if (historicoSemanasIcon) {
-      historicoSemanasIcon.classList.toggle('rotate-180', !hidden);
-    }
-    if (!hidden && chartHistoricoSemanal) {
-      setTimeout(() => {
-        if (chartHistoricoSemanal) {
-          chartHistoricoSemanal.resize();
-        }
-      }, 120);
+    const currentlyExpanded = toggleHistoricoSemanasBtn.getAttribute('aria-expanded') === 'true';
+    setHistoricoSemanasVisibility(!currentlyExpanded);
+    if (!currentlyExpanded) {
+      requestAnimationFrame(() => {
+        window.dispatchEvent(new Event('resize'));
+      });
     }
   });
 }
