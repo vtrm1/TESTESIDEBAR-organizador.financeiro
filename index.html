@@ -11437,20 +11437,28 @@ updateHeaderOffset();
 
     state.metadataLoaded = false;
 
-    const rulesPromise = db.collection('categoryRules')
-      .where('userId', '==', state.ownerUid)
+    const rulesPromise = buildImporterMetadataQuery('categoryRules')
       .get()
       .then((snapshot) => {
         const rules = snapshot.docs.map((doc) => ({ id: doc.id, ...(doc.data() || {}) }));
         state.categoryRules = normalizeCategoryRules(rules);
       })
-      .catch((error) => {
+      .catch(async (error) => {
         console.error('Erro ao carregar regras de categoria:', error);
+        if (error?.code === 'permission-denied' && state.ownerUid) {
+          try {
+            const fallbackSnapshot = await buildImporterMetadataQuery('categoryRules', { forceOwner: true }).get();
+            const rules = fallbackSnapshot.docs.map((doc) => ({ id: doc.id, ...(doc.data() || {}) }));
+            state.categoryRules = normalizeCategoryRules(rules);
+            return;
+          } catch (fallbackError) {
+            console.error('Fallback de regras de categoria também falhou:', fallbackError);
+          }
+        }
         state.categoryRules = [];
       });
 
-    const aliasesPromise = db.collection('merchantAliases')
-      .where('userId', '==', state.ownerUid)
+    const aliasesPromise = buildImporterMetadataQuery('merchantAliases')
       .get()
       .then((snapshot) => {
         const map = new Map();
@@ -11464,8 +11472,26 @@ updateHeaderOffset();
         });
         state.merchantAliases = map;
       })
-      .catch((error) => {
+      .catch(async (error) => {
         console.error('Erro ao carregar aliases de lojista:', error);
+        if (error?.code === 'permission-denied' && state.ownerUid) {
+          try {
+            const fallbackSnapshot = await buildImporterMetadataQuery('merchantAliases', { forceOwner: true }).get();
+            const map = new Map();
+            fallbackSnapshot.docs.forEach((doc) => {
+              const data = doc.data() || {};
+              if (!data.normalized) return;
+              map.set(String(data.normalized), {
+                category: data.category || null,
+                tags: Array.isArray(data.tags) ? data.tags.filter(Boolean) : [],
+              });
+            });
+            state.merchantAliases = map;
+            return;
+          } catch (fallbackError) {
+            console.error('Fallback de aliases também falhou:', fallbackError);
+          }
+        }
         state.merchantAliases = new Map();
       });
 
@@ -11496,20 +11522,24 @@ updateHeaderOffset();
 
     try {
       let snapshot = null;
+      const workspaceKey = state.workspaceId || state.ownerUid || null;
       try {
-        snapshot = await db
-          .collection('importSessions')
-          .where('userId', '==', state.ownerUid)
-          .orderBy('startedAtMs', 'desc')
-          .limit(20)
-          .get();
+        let query = db.collection('importSessions');
+        if (workspaceKey) {
+          query = query.where('workspaceId', '==', workspaceKey);
+        } else {
+          query = query.where('userId', '==', state.ownerUid);
+        }
+        snapshot = await query.orderBy('startedAtMs', 'desc').limit(20).get();
       } catch (error) {
         if (error?.code === 'failed-precondition') {
-          snapshot = await db
-            .collection('importSessions')
-            .where('userId', '==', state.ownerUid)
-            .limit(50)
-            .get();
+          let fallback = db.collection('importSessions');
+          if (workspaceKey) {
+            fallback = fallback.where('workspaceId', '==', workspaceKey);
+          } else {
+            fallback = fallback.where('userId', '==', state.ownerUid);
+          }
+          snapshot = await fallback.limit(50).get();
         } else {
           throw error;
         }
@@ -13067,6 +13097,29 @@ updateHeaderOffset();
       ownerUid: typeof getWorkspaceOwnerUid === 'function' ? getWorkspaceOwnerUid() : currentUser?.uid || null,
       workspaceId: typeof getActiveWorkspaceId === 'function' ? getActiveWorkspaceId() : null,
     };
+  }
+
+  function buildImporterMetadataQuery(collectionName, options = {}) {
+    const workspaceKey = options.forceOwner
+      ? null
+      : state.workspaceId || (typeof getActiveWorkspaceId === 'function' ? getActiveWorkspaceId() : null);
+    const ownerUid = state.ownerUid || (typeof getWorkspaceOwnerUid === 'function' ? getWorkspaceOwnerUid() : currentUser?.uid || null);
+    let query = db.collection(collectionName);
+
+    if (workspaceKey) {
+      try {
+        query = query.where('workspaceId', '==', workspaceKey);
+      } catch (error) {
+        console.warn(`Filtro por workspaceId indisponível em ${collectionName}, aplicando fallback.`, error);
+        if (ownerUid) {
+          query = query.where('userId', '==', ownerUid);
+        }
+      }
+    } else if (ownerUid) {
+      query = query.where('userId', '==', ownerUid);
+    }
+
+    return query;
   }
 })();
 
