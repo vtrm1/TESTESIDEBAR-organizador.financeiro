@@ -1114,7 +1114,7 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
           <input id="workspace-join-code" type="text" class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-gray-800 dark:text-gray-100 placeholder-gray-400" placeholder="Cole o código ou e-mail da conta administradora" autocomplete="off" />
           <p id="workspace-join-helper" class="hidden text-xs text-gray-500 dark:text-gray-400 leading-relaxed">Essa área aparece para quem entra com outra conta. Peça para o familiar acessar o app com o login dele(a) e colar o código acima.</p>
         </div>
-        <button id="workspace-join-submit" type="submit" class="w-full py-2.5 rounded-lg font-semibold text-white bg-blue-500 hover:bg-blue-600 dark:bg-blue-500 dark:hover:bg-blue-400 shadow-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-400">Usar esse espaço</button>
+        <button id="workspace-join-submit" type="submit" class="w-full py-2.5 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400 shadow-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500">Usar esse espaço</button>
       </form>
       <button id="workspace-leave-button" type="button" class="hidden w-full py-2.5 rounded-lg font-semibold border border-red-200 dark:border-red-500/40 text-red-600 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors">Voltar para meu espaço individual</button>
       <p id="workspace-share-feedback" class="hidden text-sm"></p>
@@ -1323,7 +1323,7 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
 </div>
 
 <!-- NOVO: Modal de Confirmação Customizado -->
-<div id="modal-confirmacao" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+<div id="modal-confirmacao" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[10000] hidden">
   <div class="bg-white rounded-lg p-6 w-11/12 max-w-sm mx-auto relative shadow-lg modal-content">
     <h2 class="text-xl font-bold mb-4 text-gray-800" id="modal-confirmacao-title">Confirmar Ação</h2>
     <p class="text-gray-700 mb-6" id="modal-confirmacao-message">Você tem certeza que deseja realizar esta ação?</p>
@@ -2343,11 +2343,13 @@ firebase.firestore().enablePersistence({ synchronizeTabs: true }).catch((error) 
 let currentUser = null;
 let appBootstrapped = false;
 let workspaceInitialized = false;
-let activeWorkspace = { workspaceId: null, ownerUid: null, memberUids: [], isOwner: false };
+let activeWorkspace = { workspaceId: null, ownerUid: null, memberUids: [], isOwner: false, memberDetails: {} };
 const workspaceProfilesCache = new Map();
 let currentUserProfile = null;
 let appReadyForCurrentUser = false;
 let appStartInProgress = false;
+let sharedWorkspaceUnsubscribe = null;
+let sharedWorkspaceObservedId = null;
 let accessProfileUnsubscribe = null;
 let accessGuardMode = null;
 let workspaceMetadataNormalizationExecuted = false;
@@ -2797,15 +2799,27 @@ async function ensureUserWorkspace(user) {
     let sharedData = sharedSnap && sharedSnap.exists ? (sharedSnap.data() || {}) : {};
 
     if (!sharedSnap || !sharedSnap.exists) {
+      const ownerDetails = buildWorkspaceMemberDetails(user, currentUserProfile);
+      const creationData = {
+        workspaceId,
+        ownerUid,
+        memberUids: [ownerUid],
+        createdAt: firebase.firestore.Timestamp.now(),
+        updatedAt: firebase.firestore.Timestamp.now(),
+      };
+      if (Object.keys(ownerDetails).length) {
+        creationData[`memberDetails.${ownerUid}`] = {
+          ...ownerDetails,
+          updatedAt: firebase.firestore.Timestamp.now(),
+        };
+      }
+      await sharedWorkspaceRef.set(creationData, { merge: true });
       sharedData = {
         workspaceId,
         ownerUid,
         memberUids: [ownerUid],
+        memberDetails: Object.keys(ownerDetails).length ? { [ownerUid]: ownerDetails } : {},
       };
-      await sharedWorkspaceRef.set({
-        ...sharedData,
-        createdAt: firebase.firestore.Timestamp.now(),
-      }, { merge: true });
     } else {
       if (sharedData.ownerUid && sharedData.ownerUid !== ownerUid) {
         ownerUid = sharedData.ownerUid;
@@ -2817,18 +2831,26 @@ async function ensureUserWorkspace(user) {
       }
     }
 
-    const memberSet = new Set(Array.isArray(sharedData.memberUids) ? sharedData.memberUids : []);
-    memberSet.add(ownerUid);
-    memberSet.add(user.uid);
+    const rawMemberUids = Array.isArray(sharedData.memberUids) ? sharedData.memberUids.filter(Boolean) : [];
+    const isOwner = ownerUid === user.uid;
+    const isMember = isOwner || rawMemberUids.includes(user.uid);
 
-    if (!sharedData.memberUids || !sharedData.memberUids.includes(ownerUid)) {
+    if (!isOwner && !isMember) {
+      await restorePersonalWorkspace({ user, skipReload: true });
+      return;
+    }
+
+    const normalizedMemberUids = Array.from(new Set([...rawMemberUids, ownerUid, user.uid]));
+    const memberDetails = sharedData.memberDetails && typeof sharedData.memberDetails === 'object' ? { ...sharedData.memberDetails } : {};
+
+    if (!rawMemberUids.includes(ownerUid)) {
       await sharedWorkspaceRef.set({
         memberUids: FieldValue.arrayUnion(ownerUid),
         updatedAt: firebase.firestore.Timestamp.now(),
       }, { merge: true });
     }
 
-    if (!sharedData.memberUids || !sharedData.memberUids.includes(user.uid)) {
+    if (!isOwner && !rawMemberUids.includes(user.uid)) {
       await sharedWorkspaceRef.set({
         memberUids: FieldValue.arrayUnion(user.uid),
         updatedAt: firebase.firestore.Timestamp.now(),
@@ -2839,13 +2861,40 @@ async function ensureUserWorkspace(user) {
       await sharedWorkspaceRef.set({ ownerUid }, { merge: true });
     }
 
+    const selfDetails = buildWorkspaceMemberDetails(user, currentUserProfile);
+    if (Object.keys(selfDetails).length) {
+      const detailUpdate = {};
+      detailUpdate[`memberDetails.${user.uid}`] = {
+        ...selfDetails,
+        updatedAt: firebase.firestore.Timestamp.now(),
+      };
+      await sharedWorkspaceRef.set(detailUpdate, { merge: true });
+      memberDetails[user.uid] = { ...selfDetails };
+    }
+
+    if (isOwner) {
+      const ownerDetails = buildWorkspaceMemberDetails(user, currentUserProfile);
+      if (Object.keys(ownerDetails).length) {
+        const ownerUpdate = {};
+        ownerUpdate[`memberDetails.${ownerUid}`] = {
+          ...ownerDetails,
+          updatedAt: firebase.firestore.Timestamp.now(),
+        };
+        await sharedWorkspaceRef.set(ownerUpdate, { merge: true });
+        memberDetails[ownerUid] = { ...ownerDetails };
+      }
+    }
+
     workspaceMetadataNormalizationExecuted = false;
     activeWorkspace = {
       workspaceId,
       ownerUid,
-      memberUids: Array.from(memberSet),
-      isOwner: ownerUid === user.uid,
+      memberUids: normalizedMemberUids,
+      isOwner,
+      memberDetails,
     };
+
+    updateWorkspaceProfileCacheFromDetails(memberDetails);
 
     const migratedFlag = workspaceData.migrated || await maybeMigrateLegacyData(user);
 
@@ -2859,6 +2908,7 @@ async function ensureUserWorkspace(user) {
 
     workspaceInitialized = true;
     updateWorkspaceContextUI();
+    attachSharedWorkspaceListener(workspaceId);
     ensureWorkspaceMetadataForCollections().catch(err => console.error('Falha ao garantir metadados de workspace:', err));
   } catch (err) {
     console.error('Erro ao preparar workspace do usuário:', err);
@@ -3322,11 +3372,193 @@ function formatUid(uid = '') {
   return uid.length <= 12 ? uid : `${uid.slice(0, 4)}…${uid.slice(-4)}`;
 }
 
+function buildWorkspaceMemberDetails(user, profile = null) {
+  if (!user && !profile) {
+    return {};
+  }
+  const details = {};
+  const displayName = (profile?.displayName || user?.displayName || '').trim();
+  if (displayName) {
+    details.displayName = displayName;
+  }
+  const email = (profile?.email || user?.email || '').trim();
+  if (email) {
+    details.email = email;
+  }
+  return details;
+}
+
+function updateWorkspaceProfileCacheFromDetails(details = {}) {
+  if (!details || typeof details !== 'object') {
+    return;
+  }
+  Object.entries(details).forEach(([uid, data]) => {
+    if (!uid || !data || typeof data !== 'object') {
+      return;
+    }
+    workspaceProfilesCache.set(uid, { ...data, uid });
+  });
+}
+
+function detachSharedWorkspaceListener() {
+  if (typeof sharedWorkspaceUnsubscribe === 'function') {
+    sharedWorkspaceUnsubscribe();
+  }
+  sharedWorkspaceUnsubscribe = null;
+  sharedWorkspaceObservedId = null;
+}
+
+async function restorePersonalWorkspace(options = {}) {
+  const { user = currentUser, showMessage = false, message = null, skipReload = false } = options;
+  if (!user) {
+    return;
+  }
+
+  detachSharedWorkspaceListener();
+
+  const uid = user.uid;
+  const details = buildWorkspaceMemberDetails(user, currentUserProfile);
+
+  try {
+    const workspaceMetaRef = db.collection('users').doc(uid).collection('metadata').doc('workspace');
+    await workspaceMetaRef.set({
+      sharedWorkspaceId: uid,
+      sharedOwnerUid: uid,
+      updatedAt: firebase.firestore.Timestamp.now(),
+    }, { merge: true });
+
+    const sharedRef = db.collection('sharedWorkspaces').doc(uid);
+    const updateData = {
+      workspaceId: uid,
+      ownerUid: uid,
+      memberUids: [uid],
+      updatedAt: firebase.firestore.Timestamp.now(),
+    };
+    if (Object.keys(details).length) {
+      updateData[`memberDetails.${uid}`] = {
+        ...details,
+        updatedAt: firebase.firestore.Timestamp.now(),
+      };
+    }
+    await sharedRef.set(updateData, { merge: true });
+  } catch (error) {
+    console.error('Erro ao restaurar o workspace pessoal:', error);
+  }
+
+  activeWorkspace = {
+    workspaceId: uid,
+    ownerUid: uid,
+    memberUids: [uid],
+    isOwner: true,
+    memberDetails: Object.keys(details).length ? { [uid]: details } : {},
+  };
+
+  workspaceInitialized = true;
+  workspaceMetadataNormalizationExecuted = false;
+  workspaceProfilesCache.clear();
+  updateWorkspaceProfileCacheFromDetails(activeWorkspace.memberDetails);
+  updateWorkspaceContextUI();
+
+  if (workspaceShareModal && !workspaceShareModal.classList.contains('hidden')) {
+    await renderWorkspaceSharingDetails();
+  }
+
+  attachSharedWorkspaceListener(uid);
+
+  if (!skipReload) {
+    appReadyForCurrentUser = false;
+    startAppForCurrentUser(true);
+  }
+
+  if (showMessage && message) {
+    showToast(message);
+  }
+}
+
+function attachSharedWorkspaceListener(workspaceId) {
+  if (!workspaceId || !currentUser) {
+    detachSharedWorkspaceListener();
+    return;
+  }
+
+  if (sharedWorkspaceObservedId === workspaceId && typeof sharedWorkspaceUnsubscribe === 'function') {
+    return;
+  }
+
+  detachSharedWorkspaceListener();
+
+  const sharedRef = db.collection('sharedWorkspaces').doc(workspaceId);
+  sharedWorkspaceObservedId = workspaceId;
+  sharedWorkspaceUnsubscribe = sharedRef.onSnapshot(
+    (snapshot) => {
+      handleSharedWorkspaceSnapshot(snapshot);
+    },
+    (error) => {
+      console.error('Erro ao acompanhar espaço compartilhado:', error);
+    },
+  );
+}
+
+async function handleSharedWorkspaceSnapshot(snapshot) {
+  if (!currentUser) {
+    return;
+  }
+
+  if (!snapshot || !snapshot.exists) {
+    await restorePersonalWorkspace({
+      showMessage: true,
+      message: 'O espaço familiar foi desconectado. Voltamos ao seu espaço individual.',
+    });
+    return;
+  }
+
+  const data = snapshot.data() || {};
+  const ownerUid = data.ownerUid || snapshot.id;
+  const workspaceId = data.workspaceId || snapshot.id;
+  const memberUids = Array.isArray(data.memberUids) ? data.memberUids.filter(Boolean) : [];
+  const memberDetails = data.memberDetails && typeof data.memberDetails === 'object' ? data.memberDetails : {};
+  const isOwner = ownerUid === currentUser.uid;
+  const isMember = isOwner || memberUids.includes(currentUser.uid);
+
+  if (!isMember) {
+    await restorePersonalWorkspace({
+      showMessage: true,
+      message: 'Seu acesso ao espaço familiar foi encerrado. Voltamos ao seu espaço individual.',
+    });
+    return;
+  }
+
+  const normalizedMembers = Array.from(new Set([...memberUids, ownerUid]));
+  if (!normalizedMembers.includes(currentUser.uid)) {
+    normalizedMembers.push(currentUser.uid);
+  }
+
+  activeWorkspace = {
+    workspaceId,
+    ownerUid,
+    memberUids: normalizedMembers,
+    isOwner,
+    memberDetails,
+  };
+
+  updateWorkspaceProfileCacheFromDetails(memberDetails);
+  updateWorkspaceContextUI();
+
+  if (workspaceShareModal && !workspaceShareModal.classList.contains('hidden')) {
+    await renderWorkspaceSharingDetails();
+  }
+}
+
 async function fetchWorkspaceProfile(uid) {
   if (!uid) return null;
   if (workspaceProfilesCache.has(uid)) {
     const cached = workspaceProfilesCache.get(uid) || {};
     return { uid, ...cached };
+  }
+  const memberDetails = activeWorkspace?.memberDetails?.[uid];
+  if (memberDetails && typeof memberDetails === 'object') {
+    workspaceProfilesCache.set(uid, memberDetails);
+    return { uid, ...memberDetails };
   }
   try {
     const snap = await db.collection('profiles').doc(uid).get();
@@ -3337,6 +3569,9 @@ async function fetchWorkspaceProfile(uid) {
     }
   } catch (error) {
     console.error('Erro ao carregar perfil do workspace:', error);
+  }
+  if (memberDetails && typeof memberDetails === 'object') {
+    return { uid, ...memberDetails };
   }
   return { uid };
 }
@@ -3381,21 +3616,13 @@ async function renderWorkspaceSharingDetails() {
       workspaceOwnerHint.textContent = 'Você administra este espaço familiar. Compartilhe o código acima com outras contas de confiança para que enxerguem os mesmos dados.';
     } else {
       const ownerProfile = await fetchWorkspaceProfile(activeWorkspace?.ownerUid);
-      const ownerLabel = ownerProfile?.email || ownerProfile?.displayName || formatUid(activeWorkspace?.ownerUid || '');
+      const ownerLabel = ownerProfile?.displayName || ownerProfile?.email || formatUid(activeWorkspace?.ownerUid || '');
       workspaceOwnerHint.innerHTML = `Este espaço pertence a <strong>${ownerLabel || 'seu parceiro(a)'}</strong>. Todas as contas listadas abaixo enxergam e editam os mesmos lançamentos.`;
     }
   }
 
-  if (workspaceJoinForm) {
-    workspaceJoinForm.classList.toggle('opacity-60', isOwnerOfPersonalWorkspace);
-  }
-
   if (workspaceJoinHelper) {
     workspaceJoinHelper.classList.toggle('hidden', !isOwnerOfPersonalWorkspace);
-  }
-
-  if (workspaceJoinSubmit) {
-    workspaceJoinSubmit.classList.toggle('opacity-60', isOwnerOfPersonalWorkspace);
   }
 
   if (!isOwnerOfPersonalWorkspace && workspaceJoinCodeInput) {
@@ -3505,14 +3732,21 @@ async function removeWorkspaceMember(uid, memberLabel) {
 
   try {
     resetWorkspaceFeedback();
-    await db.collection('sharedWorkspaces').doc(workspaceId).set({
+    const sharedRef = db.collection('sharedWorkspaces').doc(workspaceId);
+    const updateData = {
       memberUids: FieldValue.arrayRemove(uid),
       updatedAt: firebase.firestore.Timestamp.now(),
-    }, { merge: true });
+    };
+    updateData[`memberDetails.${uid}`] = FieldValue.delete();
+    await sharedRef.set(updateData, { merge: true });
 
     if (Array.isArray(activeWorkspace.memberUids)) {
       activeWorkspace.memberUids = activeWorkspace.memberUids.filter((memberUid) => memberUid !== uid);
     }
+    if (activeWorkspace.memberDetails && Object.prototype.hasOwnProperty.call(activeWorkspace.memberDetails, uid)) {
+      delete activeWorkspace.memberDetails[uid];
+    }
+    workspaceProfilesCache.delete(uid);
 
     await renderWorkspaceSharingDetails();
     showWorkspaceFeedback(`${memberLabel || 'Integrante'} removido do espaço.`, true);
@@ -3585,11 +3819,19 @@ async function attemptWorkspaceSelfEnrollment(sharedRef, workspaceId) {
   }
 
   try {
-    await sharedRef.set({
+    const details = buildWorkspaceMemberDetails(currentUser, currentUserProfile);
+    const updateData = {
       workspaceId,
       memberUids: FieldValue.arrayUnion(currentUser.uid),
       updatedAt: firebase.firestore.Timestamp.now(),
-    }, { merge: true });
+    };
+    if (Object.keys(details).length) {
+      updateData[`memberDetails.${currentUser.uid}`] = {
+        ...details,
+        updatedAt: firebase.firestore.Timestamp.now(),
+      };
+    }
+    await sharedRef.set(updateData, { merge: true });
     return await sharedRef.get();
   } catch (error) {
     if (error?.code === 'permission-denied') {
@@ -3639,16 +3881,30 @@ async function joinWorkspaceById(workspaceId) {
 
   if (!Array.isArray(sharedData.memberUids) || !sharedData.memberUids.includes(currentUser.uid)) {
     try {
-      await sharedRef.set({
+      const details = buildWorkspaceMemberDetails(currentUser, currentUserProfile);
+      const updateData = {
         ownerUid,
         workspaceId: sharedData.workspaceId || trimmed,
         memberUids: FieldValue.arrayUnion(currentUser.uid),
         updatedAt: firebase.firestore.Timestamp.now(),
-      }, { merge: true });
+      };
+      if (Object.keys(details).length) {
+        updateData[`memberDetails.${currentUser.uid}`] = {
+          ...details,
+          updatedAt: firebase.firestore.Timestamp.now(),
+        };
+      }
+      await sharedRef.set(updateData, { merge: true });
       if (!sharedData.memberUids) {
         sharedData.memberUids = [currentUser.uid];
       } else {
         sharedData.memberUids = Array.from(new Set([...sharedData.memberUids, currentUser.uid]));
+      }
+      if (Object.keys(details).length) {
+        if (!sharedData.memberDetails || typeof sharedData.memberDetails !== 'object') {
+          sharedData.memberDetails = {};
+        }
+        sharedData.memberDetails[currentUser.uid] = { ...details };
       }
     } catch (error) {
       if (error?.code === 'permission-denied' || error?.code === 'workspace-permission-denied') {
@@ -3692,18 +3948,23 @@ async function leaveSharedWorkspace() {
 
   const previousWorkspaceId = activeWorkspace.workspaceId;
 
+  const timestamp = firebase.firestore.Timestamp.now();
+
   await db.collection('users').doc(currentUser.uid).collection('metadata').doc('workspace').set({
     sharedWorkspaceId: currentUser.uid,
     sharedOwnerUid: currentUser.uid,
-    updatedAt: firebase.firestore.Timestamp.now(),
+    updatedAt: timestamp,
   }, { merge: true });
 
-  await db.collection('sharedWorkspaces').doc(previousWorkspaceId).set({
+  const sharedRef = db.collection('sharedWorkspaces').doc(previousWorkspaceId);
+  const updateData = {
     memberUids: FieldValue.arrayRemove(currentUser.uid),
-    updatedAt: firebase.firestore.Timestamp.now(),
-  }, { merge: true });
+    updatedAt: timestamp,
+  };
+  updateData[`memberDetails.${currentUser.uid}`] = FieldValue.delete();
+  await sharedRef.set(updateData, { merge: true });
 
-  await ensureUserWorkspace(currentUser);
+  await restorePersonalWorkspace({ skipReload: true });
   carregarEnvelopes();
   startObservers();
   await renderWorkspaceSharingDetails();
@@ -4745,9 +5006,10 @@ function handleUserSignedOut() {
     accessProfileUnsubscribe();
     accessProfileUnsubscribe = null;
   }
+  detachSharedWorkspaceListener();
   workspaceInitialized = false;
   workspaceMetadataNormalizationExecuted = false;
-  activeWorkspace = { workspaceId: null, ownerUid: null, memberUids: [], isOwner: false };
+  activeWorkspace = { workspaceId: null, ownerUid: null, memberUids: [], isOwner: false, memberDetails: {} };
   workspaceProfilesCache.clear();
   closeWorkspaceShareModal();
   closeAccessManagerModal();
