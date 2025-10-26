@@ -1114,7 +1114,7 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
           <input id="workspace-join-code" type="text" class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-gray-800 dark:text-gray-100 placeholder-gray-400" placeholder="Cole o código ou e-mail da conta administradora" autocomplete="off" />
           <p id="workspace-join-helper" class="hidden text-xs text-gray-500 dark:text-gray-400 leading-relaxed">Essa área aparece para quem entra com outra conta. Peça para o familiar acessar o app com o login dele(a) e colar o código acima.</p>
         </div>
-        <button id="workspace-join-submit" type="submit" class="w-full py-2.5 rounded-lg font-semibold bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600 text-white transition-colors">Usar esse espaço</button>
+        <button id="workspace-join-submit" type="submit" class="w-full py-2.5 rounded-lg font-semibold text-white bg-blue-500 hover:bg-blue-600 dark:bg-blue-500 dark:hover:bg-blue-400 shadow-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-400">Usar esse espaço</button>
       </form>
       <button id="workspace-leave-button" type="button" class="hidden w-full py-2.5 rounded-lg font-semibold border border-red-200 dark:border-red-500/40 text-red-600 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors">Voltar para meu espaço individual</button>
       <p id="workspace-share-feedback" class="hidden text-sm"></p>
@@ -3579,6 +3579,28 @@ async function resolveWorkspaceIdentifier(identifier) {
   return raw;
 }
 
+async function attemptWorkspaceSelfEnrollment(sharedRef, workspaceId) {
+  if (!currentUser) {
+    throw new Error('Faça login para conectar-se a um espaço compartilhado.');
+  }
+
+  try {
+    await sharedRef.set({
+      workspaceId,
+      memberUids: FieldValue.arrayUnion(currentUser.uid),
+      updatedAt: firebase.firestore.Timestamp.now(),
+    }, { merge: true });
+    return await sharedRef.get();
+  } catch (error) {
+    if (error?.code === 'permission-denied') {
+      const friendly = new Error('Peça ao administrador para liberar seu acesso em Família > Quem tem acesso e tente novamente com o mesmo código.');
+      friendly.code = 'workspace-permission-denied';
+      throw friendly;
+    }
+    throw error;
+  }
+}
+
 async function joinWorkspaceById(workspaceId) {
   if (!currentUser) {
     throw new Error('Faça login para conectar-se a um espaço compartilhado.');
@@ -3594,23 +3616,47 @@ async function joinWorkspaceById(workspaceId) {
   }
 
   const sharedRef = db.collection('sharedWorkspaces').doc(trimmed);
-  const sharedSnap = await sharedRef.get();
-  if (!sharedSnap.exists) {
+  let sharedSnap;
+  try {
+    sharedSnap = await sharedRef.get();
+  } catch (error) {
+    if (error?.code === 'permission-denied') {
+      sharedSnap = await attemptWorkspaceSelfEnrollment(sharedRef, trimmed);
+    } else {
+      throw error;
+    }
+  }
+
+  if (!sharedSnap || !sharedSnap.exists) {
     throw new Error('Nenhum espaço compartilhado encontrado com esse código.');
   }
 
   const sharedData = sharedSnap.data() || {};
-  const ownerUid = sharedData.ownerUid || trimmed;
+  const ownerUid = sharedData.ownerUid || sharedData.workspaceId || trimmed;
   if (ownerUid === currentUser.uid) {
     throw new Error('Este código corresponde ao seu próprio espaço.');
   }
 
-  await sharedRef.set({
-    ownerUid,
-    workspaceId: trimmed,
-    memberUids: FieldValue.arrayUnion(currentUser.uid),
-    updatedAt: firebase.firestore.Timestamp.now(),
-  }, { merge: true });
+  if (!Array.isArray(sharedData.memberUids) || !sharedData.memberUids.includes(currentUser.uid)) {
+    try {
+      await sharedRef.set({
+        ownerUid,
+        workspaceId: sharedData.workspaceId || trimmed,
+        memberUids: FieldValue.arrayUnion(currentUser.uid),
+        updatedAt: firebase.firestore.Timestamp.now(),
+      }, { merge: true });
+      if (!sharedData.memberUids) {
+        sharedData.memberUids = [currentUser.uid];
+      } else {
+        sharedData.memberUids = Array.from(new Set([...sharedData.memberUids, currentUser.uid]));
+      }
+    } catch (error) {
+      if (error?.code === 'permission-denied' || error?.code === 'workspace-permission-denied') {
+        throw new Error('Peça ao administrador para liberar seu acesso em Família > Quem tem acesso e tente novamente com o mesmo código.');
+      }
+      throw error;
+    }
+  }
 
   await db.collection('users').doc(currentUser.uid).collection('metadata').doc('workspace').set({
     sharedWorkspaceId: trimmed,
