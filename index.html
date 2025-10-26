@@ -1075,8 +1075,8 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
 </div>
 
 <!-- MODAL: Compartilhamento do espaço financeiro -->
-<div id="modal-workspace-share" class="fixed inset-0 z-[9500] hidden items-center justify-center bg-slate-900/80 backdrop-blur px-4 py-8">
-  <div class="relative w-full max-w-xl bg-white dark:bg-gray-900 border border-gray-200/80 dark:border-gray-700 rounded-2xl shadow-2xl p-6 sm:p-8">
+<div id="modal-workspace-share" class="fixed inset-0 z-[9500] hidden flex items-start justify-center bg-slate-900/80 backdrop-blur px-4 py-8 overflow-y-auto sm:items-center">
+  <div class="relative w-full max-w-xl bg-white dark:bg-gray-900 border border-gray-200/80 dark:border-gray-700 rounded-2xl shadow-2xl p-6 sm:p-8 max-h-[92vh] sm:max-h-[88vh] overflow-y-auto">
     <button id="workspace-share-close" class="absolute top-3 right-3 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-2xl leading-none" aria-label="Fechar modal">&times;</button>
     <div class="space-y-6 text-sm">
       <div>
@@ -1103,7 +1103,7 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
           <span class="text-[0.7rem] text-gray-500 dark:text-gray-400">Arraste para ver todos os integrantes</span>
         </div>
         <div class="rounded-xl border border-gray-200/70 dark:border-gray-700/60 bg-white/80 dark:bg-gray-900/40">
-          <div id="workspace-members-scroll" class="max-h-64 overflow-y-auto scroll-area pr-1 py-2">
+          <div id="workspace-members-scroll" class="max-h-[45vh] sm:max-h-64 overflow-y-auto scroll-area pr-1 py-2">
             <ul id="workspace-members-list" class="space-y-2 text-sm px-1"></ul>
           </div>
         </div>
@@ -1519,32 +1519,18 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
       <div class="envelopes-carousel flex gap-4 overflow-x-auto snap-x snap-mandatory pb-2 -mx-4 px-4" id="envelopes-grid">
         <div class="envelope-card border-l-4 border-blue-500 bg-blue-50/70 dark:bg-slate-800/60 rounded-lg p-4 flex flex-col gap-3 shrink-0 basis-[85%] sm:basis-[70%] lg:basis-[45%] xl:basis-[32%] min-w-[18rem] snap-start" data-envelope-card="fixo">
           <div class="flex flex-col gap-3">
-            <div class="flex flex-wrap items-start justify-between gap-4">
-              <div class="space-y-2 min-w-0 flex-1">
+            <div class="flex items-start justify-between gap-3">
+              <div class="space-y-1">
                 <div class="font-semibold text-blue-700 dark:text-blue-200 flex items-center gap-2"><i class="fa fa-house"></i><span>Custo Fixo</span></div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-y-1 gap-x-4 text-xs text-slate-500 dark:text-slate-400">
-                  <span>Limite mensal: R$ <span id="meta-fixo">0,00</span></span>
-                  <span class="sm:text-right">Gasto no mês: R$ <span id="gasto-fixo">0,00</span></span>
-                </div>
-                <div class="flex flex-wrap items-center gap-2 text-[0.75rem] text-slate-600 dark:text-slate-300">
-                  <span class="inline-flex items-center gap-1 rounded-full border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/50 px-2 py-1">
-                    <i class="fa-solid fa-flag text-[0.6rem] text-slate-400"></i>
-                    Reserva planejada: <span class="font-semibold text-slate-700 dark:text-slate-100">R$ <span id="reserva-fixo">0,00</span></span>
-                  </span>
-                  <span class="inline-flex items-center gap-1 rounded-full border border-emerald-200/70 dark:border-emerald-500/30 bg-emerald-50/70 dark:bg-emerald-500/10 px-2 py-1 text-emerald-700 dark:text-emerald-200">
-                    <i class="fa-solid fa-leaf text-[0.6rem]"></i>
-                    Margem livre: R$ <span class="font-semibold"><span id="limite-livre-fixo">0,00</span></span>
-                  </span>
-                </div>
+                <div class="text-xs text-slate-500 dark:text-slate-400">Limite mensal: R$ <span id="meta-fixo">0,00</span></div>
+                <div class="text-lg font-bold text-slate-900 dark:text-slate-100">Gasto no mês: R$ <span id="gasto-fixo">0,00</span></div>
                 <div class="text-xs text-red-600 dark:text-red-300 hidden" id="excedente-fixo-wrapper">Acima do limite: R$ <span id="excedente-fixo">0,00</span></div>
               </div>
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs w-full sm:w-auto sm:max-w-[20rem]">
-                <label class="block font-semibold text-slate-600 dark:text-slate-300">
-                  <span>Limite mensal</span>
+              <div class="space-y-2 text-xs w-32">
+                <label class="block font-semibold text-slate-600 dark:text-slate-300">Limite mensal
                   <input id="envelope-fixo-meta" type="number" min="0" step="0.01" class="mt-1 w-full border px-2 py-1 rounded text-right bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" />
                 </label>
-                <label class="block font-semibold text-slate-600 dark:text-slate-300">
-                  <span>Reserva planejada</span>
+                <label class="block font-semibold text-slate-600 dark:text-slate-300">Reserva planejada
                   <input id="envelope-fixo-reserva" type="number" min="0" step="0.01" class="mt-1 w-full border px-2 py-1 rounded text-right bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" />
                 </label>
               </div>
@@ -1553,10 +1539,11 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
               <div class="w-full bg-white/60 dark:bg-gray-700 rounded-full h-2 shadow-inner">
                 <div id="progress-fixo" class="progress-bar h-2 rounded-full bg-blue-500" style="width:0%"></div>
               </div>
-              <div class="flex flex-wrap items-center justify-between gap-2 text-[0.7rem] text-slate-500 dark:text-slate-400 mt-1">
+              <div class="flex justify-between text-[0.7rem] text-slate-500 dark:text-slate-400 mt-1">
                 <span>Comprometido: <strong id="percentual-fixo">0%</strong></span>
-                <span class="inline-flex items-center gap-1 rounded-full bg-white/70 dark:bg-gray-800/70 px-2 py-0.5">Sobra prevista: R$ <span id="disponivel-fixo">0,00</span></span>
+                <span>Margem disponível: R$ <span id="disponivel-fixo">0,00</span></span>
               </div>
+              <div class="text-[0.7rem] text-slate-500 dark:text-slate-400 mt-1">Reserva planejada: R$ <span id="reserva-fixo">0,00</span></div>
             </div>
             <div class="flex flex-wrap gap-2 text-xs">
               <button data-envelope-action="liberar" data-envelope="fixo" type="button" class="px-3 py-1 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-100 hover:bg-gray-300 dark:hover:bg-gray-600 transition">Liberar reserva</button>
@@ -1566,32 +1553,18 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
 
         <div class="envelope-card border-l-4 border-green-500 bg-emerald-50/70 dark:bg-emerald-900/30 rounded-lg p-4 flex flex-col gap-3 shrink-0 basis-[85%] sm:basis-[70%] lg:basis-[45%] xl:basis-[32%] min-w-[18rem] snap-start" data-envelope-card="parcelado">
           <div class="flex flex-col gap-3">
-            <div class="flex flex-wrap items-start justify-between gap-4">
-              <div class="space-y-2 min-w-0 flex-1">
+            <div class="flex items-start justify-between gap-3">
+              <div class="space-y-1">
                 <div class="font-semibold text-emerald-700 dark:text-emerald-200 flex items-center gap-2"><i class="fa fa-receipt"></i><span>Parcelados do mês</span></div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-y-1 gap-x-4 text-xs text-slate-500 dark:text-slate-400">
-                  <span>Limite mensal: R$ <span id="meta-parcelado">0,00</span></span>
-                  <span class="sm:text-right">Gasto no mês: R$ <span id="gasto-parcelado">0,00</span></span>
-                </div>
-                <div class="flex flex-wrap items-center gap-2 text-[0.75rem] text-slate-600 dark:text-slate-300">
-                  <span class="inline-flex items-center gap-1 rounded-full border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/50 px-2 py-1">
-                    <i class="fa-solid fa-flag text-[0.6rem] text-slate-400"></i>
-                    Reserva planejada: <span class="font-semibold text-slate-700 dark:text-slate-100">R$ <span id="reserva-parcelado">0,00</span></span>
-                  </span>
-                  <span class="inline-flex items-center gap-1 rounded-full border border-emerald-200/70 dark:border-emerald-500/30 bg-emerald-50/70 dark:bg-emerald-500/10 px-2 py-1 text-emerald-700 dark:text-emerald-200">
-                    <i class="fa-solid fa-leaf text-[0.6rem]"></i>
-                    Margem livre: R$ <span class="font-semibold"><span id="limite-livre-parcelado">0,00</span></span>
-                  </span>
-                </div>
-                <div class="text-xs text-red-600 dark:text-red-300 hidden" id="excedente-parcelado-wrapper">Acima do limite: R$<span id="excedente-parcelado">0,00</span></div>
+                <div class="text-xs text-slate-500 dark:text-slate-400">Limite mensal: R$ <span id="meta-parcelado">0,00</span></div>
+                <div class="text-lg font-bold text-slate-900 dark:text-slate-100">Gasto no mês: R$ <span id="gasto-parcelado">0,00</span></div>
+                <div class="text-xs text-red-600 dark:text-red-300 hidden" id="excedente-parcelado-wrapper">Acima do limite: R$ <span id="excedente-parcelado">0,00</span></div>
               </div>
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs w-full sm:w-auto sm:max-w-[20rem]">
-                <label class="block font-semibold text-slate-600 dark:text-slate-300">
-                  <span>Limite mensal</span>
+              <div class="space-y-2 text-xs w-32">
+                <label class="block font-semibold text-slate-600 dark:text-slate-300">Limite mensal
                   <input id="envelope-parcelado-meta" type="number" min="0" step="0.01" class="mt-1 w-full border px-2 py-1 rounded text-right bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" />
                 </label>
-                <label class="block font-semibold text-slate-600 dark:text-slate-300">
-                  <span>Reserva planejada</span>
+                <label class="block font-semibold text-slate-600 dark:text-slate-300">Reserva planejada
                   <input id="envelope-parcelado-reserva" type="number" min="0" step="0.01" class="mt-1 w-full border px-2 py-1 rounded text-right bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" />
                 </label>
               </div>
@@ -1600,10 +1573,11 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
               <div class="w-full bg-white/60 dark:bg-gray-700 rounded-full h-2 shadow-inner">
                 <div id="progress-parcelado" class="progress-bar h-2 rounded-full bg-green-500" style="width:0%"></div>
               </div>
-              <div class="flex flex-wrap items-center justify-between gap-2 text-[0.7rem] text-slate-500 dark:text-slate-400 mt-1">
+              <div class="flex justify-between text-[0.7rem] text-slate-500 dark:text-slate-400 mt-1">
                 <span>Comprometido: <strong id="percentual-parcelado">0%</strong></span>
-                <span class="inline-flex items-center gap-1 rounded-full bg-white/70 dark:bg-gray-800/70 px-2 py-0.5">Sobra prevista: R$ <span id="disponivel-parcelado">0,00</span></span>
+                <span>Margem disponível: R$ <span id="disponivel-parcelado">0,00</span></span>
               </div>
+              <div class="text-[0.7rem] text-slate-500 dark:text-slate-400 mt-1">Reserva planejada: R$ <span id="reserva-parcelado">0,00</span></div>
             </div>
             <div class="flex flex-wrap gap-2 text-xs">
               <button data-envelope-action="liberar" data-envelope="parcelado" type="button" class="px-3 py-1 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-100 hover:bg-gray-300 dark:hover:bg-gray-600 transition">Liberar reserva</button>
@@ -1612,32 +1586,18 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
         </div>
         <div class="envelope-card border-l-4 border-orange-500 bg-amber-50/80 dark:bg-amber-900/30 rounded-lg p-4 flex flex-col gap-3 shrink-0 basis-[85%] sm:basis-[70%] lg:basis-[45%] xl:basis-[32%] min-w-[18rem] snap-start" data-envelope-card="variavel">
           <div class="flex flex-col gap-3">
-            <div class="flex flex-wrap items-start justify-between gap-4">
-              <div class="space-y-2 min-w-0 flex-1">
+            <div class="flex items-start justify-between gap-3">
+              <div class="space-y-1">
                 <div class="font-semibold text-amber-700 dark:text-amber-200 flex items-center gap-2"><i class="fa fa-basket-shopping"></i><span>Variáveis</span></div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-y-1 gap-x-4 text-xs text-slate-500 dark:text-slate-400">
-                  <span>Limite mensal: R$ <span id="meta-variavel">0,00</span></span>
-                  <span class="sm:text-right">Gasto no mês: R$ <span id="gasto-variavel">0,00</span></span>
-                </div>
-                <div class="flex flex-wrap items-center gap-2 text-[0.75rem] text-slate-600 dark:text-slate-300">
-                  <span class="inline-flex items-center gap-1 rounded-full border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/50 px-2 py-1">
-                    <i class="fa-solid fa-flag text-[0.6rem] text-slate-400"></i>
-                    Reserva planejada: <span class="font-semibold text-slate-700 dark:text-slate-100">R$ <span id="reserva-variavel">0,00</span></span>
-                  </span>
-                  <span class="inline-flex items-center gap-1 rounded-full border border-amber-200/70 dark:border-amber-500/30 bg-amber-50/80 dark:bg-amber-500/10 text-amber-700 dark:text-amber-200 px-2 py-1">
-                    <i class="fa-solid fa-leaf text-[0.6rem]"></i>
-                    Margem livre: R$ <span class="font-semibold"><span id="limite-livre-variavel">0,00</span></span>
-                  </span>
-                </div>
+                <div class="text-xs text-slate-500 dark:text-slate-400">Limite mensal: R$ <span id="meta-variavel">0,00</span></div>
+                <div class="text-lg font-bold text-slate-900 dark:text-slate-100">Gasto no mês: R$ <span id="gasto-variavel">0,00</span></div>
                 <div class="text-xs text-red-600 dark:text-red-300 hidden" id="excedente-variavel-wrapper">Acima do limite: R$ <span id="excedente-variavel">0,00</span></div>
               </div>
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs w-full sm:w-auto sm:max-w-[20rem]">
-                <label class="block font-semibold text-slate-600 dark:text-slate-300">
-                  <span>Limite mensal</span>
+              <div class="space-y-2 text-xs w-32">
+                <label class="block font-semibold text-slate-600 dark:text-slate-300">Limite mensal
                   <input id="envelope-variavel-meta" type="number" min="0" step="0.01" class="mt-1 w-full border px-2 py-1 rounded text-right bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" />
                 </label>
-                <label class="block font-semibold text-slate-600 dark:text-slate-300">
-                  <span>Reserva planejada</span>
+                <label class="block font-semibold text-slate-600 dark:text-slate-300">Reserva planejada
                   <input id="envelope-variavel-reserva" type="number" min="0" step="0.01" class="mt-1 w-full border px-2 py-1 rounded text-right bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" />
                 </label>
               </div>
@@ -1646,10 +1606,11 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
               <div class="w-full bg-white/60 dark:bg-gray-700 rounded-full h-2 shadow-inner">
                 <div id="progress-variavel" class="progress-bar h-2 rounded-full bg-orange-500" style="width:0%"></div>
               </div>
-              <div class="flex flex-wrap items-center justify-between gap-2 text-[0.7rem] text-slate-500 dark:text-slate-400 mt-1">
+              <div class="flex justify-between text-[0.7rem] text-slate-500 dark:text-slate-400 mt-1">
                 <span>Comprometido: <strong id="percentual-variavel">0%</strong></span>
-                <span class="inline-flex items-center gap-1 rounded-full bg-white/70 dark:bg-gray-800/70 px-2 py-0.5">Sobra prevista: R$ <span id="disponivel-variavel">0,00</span></span>
+                <span>Margem disponível: R$ <span id="disponivel-variavel">0,00</span></span>
               </div>
+              <div class="text-[0.7rem] text-slate-500 dark:text-slate-400 mt-1">Reserva planejada: R$ <span id="reserva-variavel">0,00</span></div>
             </div>
             <div class="flex flex-wrap gap-2 text-xs">
               <button data-envelope-action="liberar" data-envelope="variavel" type="button" class="px-3 py-1 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-100 hover:bg-gray-300 dark:hover:bg-gray-600 transition">Liberar reserva</button>
@@ -1659,7 +1620,6 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
 
       </div>
     </div>
-
     <!-- HISTÓRICO (variáveis + fixos avulsos) -->
       <div class="section-card">
       <div class="flex items-center justify-between mb-3">
@@ -3595,14 +3555,25 @@ async function resolveWorkspaceIdentifier(identifier) {
     if (!normalized) {
       throw new Error('Informe um e-mail válido.');
     }
-    const querySnap = await db.collection('profiles').where('normalizedEmail', '==', normalized).limit(1).get();
-    if (querySnap.empty) {
-      throw new Error('Não encontramos nenhuma conta com esse e-mail.');
+    try {
+      const querySnap = await db.collection('profiles').where('normalizedEmail', '==', normalized).limit(1).get();
+      if (querySnap.empty) {
+        throw new Error('Não encontramos nenhuma conta com esse e-mail.');
+      }
+      const ownerUid = querySnap.docs[0].id;
+      const ownerWorkspaceSnap = await db.collection('users').doc(ownerUid).collection('metadata').doc('workspace').get();
+      const ownerWorkspaceData = ownerWorkspaceSnap.exists ? (ownerWorkspaceSnap.data() || {}) : {};
+      return ownerWorkspaceData.sharedWorkspaceId || ownerWorkspaceData.linkedOwnerUid || ownerUid;
+    } catch (error) {
+      if (error?.message === 'Não encontramos nenhuma conta com esse e-mail.') {
+        throw error;
+      }
+      if (error?.code === 'permission-denied') {
+        throw new Error('Não foi possível consultar esse e-mail. Peça ao administrador para enviar o código do espaço.');
+      }
+      console.error('Erro ao localizar workspace pelo e-mail:', error);
+      throw new Error('Não foi possível localizar esse e-mail agora. Use o código compartilhado pelo administrador.');
     }
-    const ownerUid = querySnap.docs[0].id;
-    const ownerWorkspaceSnap = await db.collection('users').doc(ownerUid).collection('metadata').doc('workspace').get();
-    const ownerWorkspaceData = ownerWorkspaceSnap.exists ? (ownerWorkspaceSnap.data() || {}) : {};
-    return ownerWorkspaceData.sharedWorkspaceId || ownerWorkspaceData.linkedOwnerUid || ownerUid;
   }
 
   return raw;
@@ -7672,7 +7643,6 @@ function atualizarBarra(tipo, gasto){
 
   const progressEl = document.getElementById(`progress-${tipo}`);
   const gastoEl = document.getElementById(`gasto-${tipo}`);
-  const limiteLivreEl = document.getElementById(`limite-livre-${tipo}`);
   const reservaEl = document.getElementById(`reserva-${tipo}`);
   const disponivelEl = document.getElementById(`disponivel-${tipo}`);
   const percentualEl = document.getElementById(`percentual-${tipo}`);
@@ -7684,7 +7654,6 @@ function atualizarBarra(tipo, gasto){
   if (progressEl) progressEl.style.width = `${percentBar}%`;
   if (gastoEl) gastoEl.textContent = moeda(gastoAtual);
   if (metaEl) metaEl.textContent = moeda(meta);
-  if (limiteLivreEl) limiteLivreEl.textContent = moeda(limiteLivre);
   if (reservaEl) reservaEl.textContent = moeda(reservado);
   if (disponivelEl) disponivelEl.textContent = moeda(limiteLivre);
   if (percentualEl) percentualEl.textContent = `${percentual.toFixed(1)}%`;
