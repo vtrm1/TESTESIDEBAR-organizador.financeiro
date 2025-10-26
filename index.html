@@ -1076,9 +1076,9 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
 
 <!-- MODAL: Compartilhamento do espaço financeiro -->
 <div id="modal-workspace-share" class="fixed inset-0 z-[9500] hidden flex items-start justify-center bg-slate-900/80 backdrop-blur px-4 py-8 overflow-y-auto sm:items-center">
-  <div class="relative w-full max-w-xl bg-white dark:bg-gray-900 border border-gray-200/80 dark:border-gray-700 rounded-2xl shadow-2xl p-6 sm:p-8 max-h-[92vh] sm:max-h-[88vh] overflow-y-auto">
+  <div class="relative w-full max-w-xl bg-white dark:bg-gray-900 border border-gray-200/80 dark:border-gray-700 rounded-2xl shadow-2xl p-6 sm:p-8 max-h-[92vh] sm:max-h-[88vh] overflow-hidden">
     <button id="workspace-share-close" class="absolute top-3 right-3 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-2xl leading-none" aria-label="Fechar modal">&times;</button>
-    <div class="space-y-6 text-sm">
+    <div class="flex h-full flex-col gap-6 text-sm">
       <div>
         <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
           <i class="fa-solid fa-people-roof text-emerald-500"></i>
@@ -1086,38 +1086,51 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
         </h2>
         <p id="workspace-owner-hint" class="mt-2 text-gray-500 dark:text-gray-400 text-sm leading-relaxed"></p>
       </div>
-      <div class="rounded-xl border border-emerald-200/70 dark:border-emerald-500/30 bg-emerald-50/60 dark:bg-emerald-500/10 p-4 space-y-3">
-        <div class="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">Código do seu espaço</div>
-        <div class="flex flex-col sm:flex-row sm:items-center gap-3">
-          <code id="workspace-share-code" class="flex-1 text-lg sm:text-xl font-semibold text-emerald-700 dark:text-emerald-300 break-all bg-white dark:bg-gray-900 px-3 py-1.5 rounded-lg border border-emerald-200/60 dark:border-emerald-500/40 shadow-inner">—</code>
-          <div class="flex items-center gap-2 self-start sm:self-auto">
-            <button id="workspace-copy-code" type="button" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white transition-colors">Copiar</button>
-            <button id="workspace-share-invite" type="button" class="px-3 py-1.5 text-xs font-semibold rounded-lg border border-emerald-400/70 dark:border-emerald-500/40 text-emerald-700 dark:text-emerald-200 hover:bg-emerald-100/60 dark:hover:bg-emerald-500/10 transition-colors">Enviar convite</button>
+      <div id="workspace-share-scroll-container" class="flex-1 overflow-y-auto pr-1 sm:pr-2 -mr-1 sm:-mr-2 scroll-area">
+        <div class="space-y-5 pb-2">
+          <div class="rounded-xl border border-emerald-200/70 dark:border-emerald-500/30 bg-emerald-50/60 dark:bg-emerald-500/10 p-4 space-y-3">
+            <div class="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">Código do seu espaço</div>
+            <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+              <code id="workspace-share-code" class="flex-1 text-lg sm:text-xl font-semibold text-emerald-700 dark:text-emerald-300 break-all bg-white dark:bg-gray-900 px-3 py-1.5 rounded-lg border border-emerald-200/60 dark:border-emerald-500/40 shadow-inner">—</code>
+              <div class="flex items-center gap-2 self-start sm:self-auto">
+                <button id="workspace-copy-code" type="button" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white transition-colors">Copiar</button>
+                <button id="workspace-share-invite" type="button" class="px-3 py-1.5 text-xs font-semibold rounded-lg border border-emerald-400/70 dark:border-emerald-500/40 text-emerald-700 dark:text-emerald-200 hover:bg-emerald-100/60 dark:hover:bg-emerald-500/10 transition-colors">Enviar convite</button>
+              </div>
+            </div>
+            <p class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">Compartilhe este código com quem também precisa enxergar e editar esses dados. Após inserir o código, a outra conta passará a usar o mesmo ambiente financeiro.</p>
           </div>
-        </div>
-        <p class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">Compartilhe este código com quem também precisa enxergar e editar esses dados. Após inserir o código, a outra conta passará a usar o mesmo ambiente financeiro.</p>
-      </div>
-      <div class="space-y-3">
-        <div class="flex flex-wrap items-center justify-between gap-2">
-          <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wide">Quem tem acesso</h3>
-          <span class="text-[0.7rem] text-gray-500 dark:text-gray-400">Arraste para ver todos os integrantes</span>
-        </div>
-        <div class="rounded-xl border border-gray-200/70 dark:border-gray-700/60 bg-white/80 dark:bg-gray-900/40">
-          <div id="workspace-members-scroll" class="max-h-[45vh] sm:max-h-64 overflow-y-auto scroll-area pr-1 py-2">
-            <ul id="workspace-members-list" class="space-y-2 text-sm px-1"></ul>
+          <form id="workspace-name-form" class="space-y-2">
+            <label for="workspace-name-input" class="text-sm font-medium text-gray-700 dark:text-gray-200">Nome do espaço</label>
+            <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+              <input id="workspace-name-input" type="text" maxlength="60" autocomplete="off" class="flex-1 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-gray-800 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-400" placeholder="Ex: Família Silva" />
+              <button id="workspace-name-submit" type="submit" class="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-emerald-500">Salvar nome</button>
+            </div>
+            <p id="workspace-name-helper" class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">Esse nome aparece para todos que acessarem o espaço compartilhado.</p>
+            <p id="workspace-name-feedback" class="hidden text-xs"></p>
+          </form>
+          <div class="space-y-3">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wide">Quem tem acesso</h3>
+              <span class="text-[0.7rem] text-gray-500 dark:text-gray-400">Arraste para ver todos os integrantes</span>
+            </div>
+            <div class="rounded-xl border border-gray-200/70 dark:border-gray-700/60 bg-white/80 dark:bg-gray-900/40">
+              <div id="workspace-members-scroll" class="max-h-[45vh] sm:max-h-64 overflow-y-auto scroll-area pr-1 py-2">
+                <ul id="workspace-members-list" class="space-y-2 text-sm px-1"></ul>
+              </div>
+            </div>
           </div>
+          <form id="workspace-join-form" class="space-y-3">
+            <div class="space-y-2">
+              <label for="workspace-join-code" class="text-sm font-medium text-gray-700 dark:text-gray-200">Recebeu um código familiar?</label>
+              <input id="workspace-join-code" type="text" class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-gray-800 dark:text-gray-100 placeholder-gray-400" placeholder="Cole o código ou e-mail da conta administradora" autocomplete="off" />
+              <p id="workspace-join-helper" class="hidden text-xs text-gray-500 dark:text-gray-400 leading-relaxed">Essa área aparece para quem entra com outra conta. Peça para o familiar acessar o app com o login dele(a) e colar o código acima.</p>
+            </div>
+            <button id="workspace-join-submit" type="submit" class="w-full py-2.5 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400 shadow-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500">Usar esse espaço</button>
+          </form>
+          <button id="workspace-leave-button" type="button" class="hidden w-full py-2.5 rounded-lg font-semibold border border-red-200 dark:border-red-500/40 text-red-600 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors">Voltar para meu espaço individual</button>
+          <p id="workspace-share-feedback" class="hidden text-sm"></p>
         </div>
       </div>
-      <form id="workspace-join-form" class="space-y-3">
-        <div class="space-y-2">
-          <label for="workspace-join-code" class="text-sm font-medium text-gray-700 dark:text-gray-200">Recebeu um código familiar?</label>
-          <input id="workspace-join-code" type="text" class="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-gray-800 dark:text-gray-100 placeholder-gray-400" placeholder="Cole o código ou e-mail da conta administradora" autocomplete="off" />
-          <p id="workspace-join-helper" class="hidden text-xs text-gray-500 dark:text-gray-400 leading-relaxed">Essa área aparece para quem entra com outra conta. Peça para o familiar acessar o app com o login dele(a) e colar o código acima.</p>
-        </div>
-        <button id="workspace-join-submit" type="submit" class="w-full py-2.5 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400 shadow-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500">Usar esse espaço</button>
-      </form>
-      <button id="workspace-leave-button" type="button" class="hidden w-full py-2.5 rounded-lg font-semibold border border-red-200 dark:border-red-500/40 text-red-600 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors">Voltar para meu espaço individual</button>
-      <p id="workspace-share-feedback" class="hidden text-sm"></p>
     </div>
   </div>
 </div>
@@ -2343,7 +2356,7 @@ firebase.firestore().enablePersistence({ synchronizeTabs: true }).catch((error) 
 let currentUser = null;
 let appBootstrapped = false;
 let workspaceInitialized = false;
-let activeWorkspace = { workspaceId: null, ownerUid: null, memberUids: [], isOwner: false, memberDetails: {} };
+let activeWorkspace = { workspaceId: null, ownerUid: null, memberUids: [], isOwner: false, memberDetails: {}, displayName: '' };
 const workspaceProfilesCache = new Map();
 let currentUserProfile = null;
 let appReadyForCurrentUser = false;
@@ -2800,6 +2813,7 @@ async function ensureUserWorkspace(user) {
 
     if (!sharedSnap || !sharedSnap.exists) {
       const ownerDetails = buildWorkspaceMemberDetails(user, currentUserProfile);
+      const defaultWorkspaceName = sanitizeWorkspaceName(deriveWorkspaceDisplayName(ownerDetails, user));
       const creationData = {
         workspaceId,
         ownerUid,
@@ -2813,12 +2827,16 @@ async function ensureUserWorkspace(user) {
           updatedAt: firebase.firestore.Timestamp.now(),
         };
       }
+      if (defaultWorkspaceName) {
+        creationData.displayName = defaultWorkspaceName;
+      }
       await sharedWorkspaceRef.set(creationData, { merge: true });
       sharedData = {
         workspaceId,
         ownerUid,
         memberUids: [ownerUid],
         memberDetails: Object.keys(ownerDetails).length ? { [ownerUid]: ownerDetails } : {},
+        displayName: defaultWorkspaceName || '',
       };
     } else {
       if (sharedData.ownerUid && sharedData.ownerUid !== ownerUid) {
@@ -2842,6 +2860,7 @@ async function ensureUserWorkspace(user) {
 
     const normalizedMemberUids = Array.from(new Set([...rawMemberUids, ownerUid, user.uid]));
     const memberDetails = sharedData.memberDetails && typeof sharedData.memberDetails === 'object' ? { ...sharedData.memberDetails } : {};
+    let workspaceDisplayName = sanitizeWorkspaceName(sharedData.displayName);
 
     if (!rawMemberUids.includes(ownerUid)) {
       await sharedWorkspaceRef.set({
@@ -2883,15 +2902,25 @@ async function ensureUserWorkspace(user) {
         await sharedWorkspaceRef.set(ownerUpdate, { merge: true });
         memberDetails[ownerUid] = { ...ownerDetails };
       }
+      if (!workspaceDisplayName) {
+        workspaceDisplayName = deriveWorkspaceDisplayName(memberDetails[ownerUid] || ownerDetails, user);
+        if (workspaceDisplayName) {
+          await sharedWorkspaceRef.set({ displayName: workspaceDisplayName }, { merge: true });
+        }
+      }
     }
 
     workspaceMetadataNormalizationExecuted = false;
+    if (!workspaceDisplayName) {
+      workspaceDisplayName = deriveWorkspaceDisplayName(memberDetails[ownerUid], isOwner ? user : null);
+    }
     activeWorkspace = {
       workspaceId,
       ownerUid,
       memberUids: normalizedMemberUids,
       isOwner,
       memberDetails,
+      displayName: workspaceDisplayName,
     };
 
     updateWorkspaceProfileCacheFromDetails(memberDetails);
@@ -2962,6 +2991,11 @@ const workspaceShareClose = document.getElementById('workspace-share-close');
 const workspaceShareCode = document.getElementById('workspace-share-code');
 const workspaceCopyCode = document.getElementById('workspace-copy-code');
 const workspaceShareInvite = document.getElementById('workspace-share-invite');
+const workspaceNameForm = document.getElementById('workspace-name-form');
+const workspaceNameInput = document.getElementById('workspace-name-input');
+const workspaceNameSubmit = document.getElementById('workspace-name-submit');
+const workspaceNameHelper = document.getElementById('workspace-name-helper');
+const workspaceNameFeedback = document.getElementById('workspace-name-feedback');
 const workspaceMembersList = document.getElementById('workspace-members-list');
 const workspaceJoinForm = document.getElementById('workspace-join-form');
 const workspaceJoinCodeInput = document.getElementById('workspace-join-code');
@@ -3242,16 +3276,40 @@ function setVerificationButtonsDisabled(isDisabled) {
   });
 }
 
-function resetWorkspaceFeedback() {
-  if (!workspaceShareFeedback) return;
-  workspaceShareFeedback.classList.add('hidden');
-  workspaceShareFeedback.textContent = '';
-  workspaceShareFeedback.classList.remove(
+function resetWorkspaceNameFeedback() {
+  if (!workspaceNameFeedback) return;
+  workspaceNameFeedback.classList.add('hidden');
+  workspaceNameFeedback.textContent = '';
+  workspaceNameFeedback.classList.remove(
     'text-emerald-600',
     'dark:text-emerald-300',
     'text-red-500',
     'dark:text-red-400'
   );
+}
+
+function showWorkspaceNameFeedback(message, isSuccess = true) {
+  if (!workspaceNameFeedback) return;
+  workspaceNameFeedback.textContent = message;
+  workspaceNameFeedback.classList.remove('hidden');
+  workspaceNameFeedback.classList.toggle('text-emerald-600', isSuccess);
+  workspaceNameFeedback.classList.toggle('dark:text-emerald-300', isSuccess);
+  workspaceNameFeedback.classList.toggle('text-red-500', !isSuccess);
+  workspaceNameFeedback.classList.toggle('dark:text-red-400', !isSuccess);
+}
+
+function resetWorkspaceFeedback() {
+  if (workspaceShareFeedback) {
+    workspaceShareFeedback.classList.add('hidden');
+    workspaceShareFeedback.textContent = '';
+    workspaceShareFeedback.classList.remove(
+      'text-emerald-600',
+      'dark:text-emerald-300',
+      'text-red-500',
+      'dark:text-red-400'
+    );
+  }
+  resetWorkspaceNameFeedback();
 }
 
 function showWorkspaceFeedback(message, isSuccess = true) {
@@ -3340,8 +3398,24 @@ function hideAccessGuardOverlay() {
   unlockBodyScrollIfAllowed();
 }
 
+const workspaceNameSubmitDefault = workspaceNameSubmit ? workspaceNameSubmit.textContent : '';
 const workspaceJoinSubmitDefault = workspaceJoinSubmit ? workspaceJoinSubmit.textContent : '';
 const workspaceLeaveDefault = workspaceLeaveButton ? workspaceLeaveButton.textContent : '';
+
+function setWorkspaceNameLoading(isLoading) {
+  if (workspaceNameSubmit) {
+    workspaceNameSubmit.disabled = isLoading;
+    workspaceNameSubmit.textContent = isLoading
+      ? 'Salvando...'
+      : (workspaceNameSubmitDefault || 'Salvar nome');
+    workspaceNameSubmit.classList.toggle('opacity-60', isLoading);
+    workspaceNameSubmit.classList.toggle('cursor-not-allowed', isLoading);
+  }
+  if (workspaceNameInput && activeWorkspace?.isOwner) {
+    workspaceNameInput.readOnly = isLoading;
+    workspaceNameInput.classList.toggle('opacity-60', isLoading);
+  }
+}
 
 function setWorkspaceJoinLoading(isLoading) {
   if (workspaceJoinSubmit) {
@@ -3388,6 +3462,75 @@ function buildWorkspaceMemberDetails(user, profile = null) {
   return details;
 }
 
+const DEFAULT_WORKSPACE_NAME = 'Espaço familiar';
+
+function extractNameFromEmail(email = '') {
+  if (typeof email !== 'string') {
+    return '';
+  }
+  const [localPart] = email.split('@');
+  if (!localPart) {
+    return '';
+  }
+  const cleaned = localPart.replace(/[._-]+/g, ' ').replace(/\s+/g, ' ').trim();
+  if (!cleaned) {
+    return '';
+  }
+  return cleaned
+    .split(' ')
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+}
+
+function sanitizeWorkspaceName(name = '') {
+  if (typeof name !== 'string') {
+    return '';
+  }
+  const normalized = name
+    .replace(/[\u0000-\u001F<>]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!normalized) {
+    return '';
+  }
+  return normalized.slice(0, 60);
+}
+
+function deriveWorkspaceDisplayName(details = null, fallbackUser = null) {
+  const candidates = [];
+  if (details && typeof details === 'object') {
+    candidates.push(details.displayName, details.name, details.fullName);
+    if (details.email) {
+      candidates.push(extractNameFromEmail(details.email), details.email);
+    }
+  }
+  if (fallbackUser) {
+    candidates.push(fallbackUser.displayName);
+    if (fallbackUser.email) {
+      candidates.push(extractNameFromEmail(fallbackUser.email), fallbackUser.email);
+    }
+  }
+  for (const candidate of candidates) {
+    const sanitized = sanitizeWorkspaceName(candidate);
+    if (sanitized) {
+      return sanitized;
+    }
+  }
+  return DEFAULT_WORKSPACE_NAME;
+}
+
+function getActiveWorkspaceDisplayName() {
+  if (activeWorkspace?.displayName) {
+    const sanitized = sanitizeWorkspaceName(activeWorkspace.displayName);
+    if (sanitized) {
+      return sanitized;
+    }
+  }
+  const ownerDetails = activeWorkspace?.memberDetails?.[activeWorkspace?.ownerUid];
+  return deriveWorkspaceDisplayName(ownerDetails, currentUser);
+}
+
 function updateWorkspaceProfileCacheFromDetails(details = {}) {
   if (!details || typeof details !== 'object') {
     return;
@@ -3418,6 +3561,7 @@ async function restorePersonalWorkspace(options = {}) {
 
   const uid = user.uid;
   const details = buildWorkspaceMemberDetails(user, currentUserProfile);
+  const personalWorkspaceName = sanitizeWorkspaceName(deriveWorkspaceDisplayName(details, user));
 
   try {
     const workspaceMetaRef = db.collection('users').doc(uid).collection('metadata').doc('workspace');
@@ -3440,6 +3584,9 @@ async function restorePersonalWorkspace(options = {}) {
         updatedAt: firebase.firestore.Timestamp.now(),
       };
     }
+    if (personalWorkspaceName) {
+      updateData.displayName = personalWorkspaceName;
+    }
     await sharedRef.set(updateData, { merge: true });
   } catch (error) {
     console.error('Erro ao restaurar o workspace pessoal:', error);
@@ -3451,6 +3598,7 @@ async function restorePersonalWorkspace(options = {}) {
     memberUids: [uid],
     isOwner: true,
     memberDetails: Object.keys(details).length ? { [uid]: details } : {},
+    displayName: personalWorkspaceName || DEFAULT_WORKSPACE_NAME,
   };
 
   workspaceInitialized = true;
@@ -3517,6 +3665,7 @@ async function handleSharedWorkspaceSnapshot(snapshot) {
   const workspaceId = data.workspaceId || snapshot.id;
   const memberUids = Array.isArray(data.memberUids) ? data.memberUids.filter(Boolean) : [];
   const memberDetails = data.memberDetails && typeof data.memberDetails === 'object' ? data.memberDetails : {};
+  let workspaceDisplayName = sanitizeWorkspaceName(data.displayName);
   const isOwner = ownerUid === currentUser.uid;
   const isMember = isOwner || memberUids.includes(currentUser.uid);
 
@@ -3533,12 +3682,17 @@ async function handleSharedWorkspaceSnapshot(snapshot) {
     normalizedMembers.push(currentUser.uid);
   }
 
+  if (!workspaceDisplayName) {
+    workspaceDisplayName = deriveWorkspaceDisplayName(memberDetails[ownerUid], isOwner ? currentUser : null);
+  }
+
   activeWorkspace = {
     workspaceId,
     ownerUid,
     memberUids: normalizedMembers,
     isOwner,
     memberDetails,
+    displayName: workspaceDisplayName,
   };
 
   updateWorkspaceProfileCacheFromDetails(memberDetails);
@@ -3597,9 +3751,37 @@ async function renderWorkspaceSharingDetails() {
     return;
   }
 
+  resetWorkspaceNameFeedback();
+
   const workspaceId = activeWorkspace?.workspaceId || currentUser.uid;
   if (workspaceShareCode) {
     workspaceShareCode.textContent = workspaceId || '—';
+  }
+
+  const workspaceDisplayName = getActiveWorkspaceDisplayName();
+  const canEditWorkspaceName = Boolean(activeWorkspace?.isOwner);
+
+  if (workspaceNameInput) {
+    workspaceNameInput.value = workspaceDisplayName;
+    workspaceNameInput.readOnly = !canEditWorkspaceName;
+    workspaceNameInput.classList.toggle('bg-white', canEditWorkspaceName);
+    workspaceNameInput.classList.toggle('dark:bg-gray-800', canEditWorkspaceName);
+    workspaceNameInput.classList.toggle('opacity-60', !canEditWorkspaceName);
+    workspaceNameInput.classList.toggle('cursor-not-allowed', !canEditWorkspaceName);
+    workspaceNameInput.classList.toggle('bg-gray-100', !canEditWorkspaceName);
+    workspaceNameInput.classList.toggle('dark:bg-gray-800/60', !canEditWorkspaceName);
+    workspaceNameInput.setAttribute('aria-readonly', (!canEditWorkspaceName).toString());
+  }
+
+  if (workspaceNameSubmit) {
+    workspaceNameSubmit.classList.toggle('hidden', !canEditWorkspaceName);
+    workspaceNameSubmit.disabled = !canEditWorkspaceName;
+  }
+
+  if (workspaceNameHelper) {
+    workspaceNameHelper.textContent = canEditWorkspaceName
+      ? 'Esse nome aparece para todos que acessarem o espaço compartilhado.'
+      : 'Esse é o nome definido pelo administrador do espaço compartilhado. Peça a ele para alterar se precisar.';
   }
 
   const isOwnerOfPersonalWorkspace = Boolean(activeWorkspace?.isOwner && activeWorkspace.workspaceId === currentUser.uid);
@@ -3612,12 +3794,24 @@ async function renderWorkspaceSharingDetails() {
   }
 
   if (workspaceOwnerHint) {
+    workspaceOwnerHint.textContent = '';
     if (activeWorkspace?.isOwner) {
-      workspaceOwnerHint.textContent = 'Você administra este espaço familiar. Compartilhe o código acima com outras contas de confiança para que enxerguem os mesmos dados.';
+      const prefix = document.createTextNode('Você administra este espaço familiar. Personalize o nome acima para que todos reconheçam ');
+      const nameStrong = document.createElement('strong');
+      nameStrong.textContent = workspaceDisplayName;
+      const suffix = document.createTextNode(' e compartilhe o código abaixo com pessoas de confiança.');
+      workspaceOwnerHint.append(prefix, nameStrong, suffix);
     } else {
       const ownerProfile = await fetchWorkspaceProfile(activeWorkspace?.ownerUid);
       const ownerLabel = ownerProfile?.displayName || ownerProfile?.email || formatUid(activeWorkspace?.ownerUid || '');
-      workspaceOwnerHint.innerHTML = `Este espaço pertence a <strong>${ownerLabel || 'seu parceiro(a)'}</strong>. Todas as contas listadas abaixo enxergam e editam os mesmos lançamentos.`;
+      const intro = document.createTextNode('Você participa do espaço ');
+      const nameStrong = document.createElement('strong');
+      nameStrong.textContent = workspaceDisplayName;
+      const middle = document.createTextNode(', administrado por ');
+      const ownerStrong = document.createElement('strong');
+      ownerStrong.textContent = ownerLabel || 'seu familiar';
+      const outro = document.createTextNode('. Todas as contas listadas abaixo enxergam e editam os mesmos lançamentos.');
+      workspaceOwnerHint.append(intro, nameStrong, middle, ownerStrong, outro);
     }
   }
 
@@ -5009,7 +5203,7 @@ function handleUserSignedOut() {
   detachSharedWorkspaceListener();
   workspaceInitialized = false;
   workspaceMetadataNormalizationExecuted = false;
-  activeWorkspace = { workspaceId: null, ownerUid: null, memberUids: [], isOwner: false, memberDetails: {} };
+  activeWorkspace = { workspaceId: null, ownerUid: null, memberUids: [], isOwner: false, memberDetails: {}, displayName: '' };
   workspaceProfilesCache.clear();
   closeWorkspaceShareModal();
   closeAccessManagerModal();
@@ -5280,10 +5474,61 @@ function initAuthFlow() {
     });
   }
 
-  if (workspaceJoinForm) {
-    workspaceJoinForm.addEventListener('submit', async (event) => {
-      event.preventDefault();
-      if (!workspaceJoinCodeInput) return;
+if (workspaceNameForm) {
+  workspaceNameForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    resetWorkspaceNameFeedback();
+    if (!activeWorkspace || !activeWorkspace.isOwner) {
+      showWorkspaceNameFeedback('Somente o administrador pode renomear o espaço.', false);
+      return;
+    }
+    if (!workspaceNameInput) {
+      return;
+    }
+    const rawName = workspaceNameInput.value || '';
+    const sanitizedName = sanitizeWorkspaceName(rawName);
+    if (!sanitizedName) {
+      showWorkspaceNameFeedback('Informe um nome com pelo menos uma letra.', false);
+      workspaceNameInput.focus();
+      return;
+    }
+    const currentName = sanitizeWorkspaceName(activeWorkspace.displayName);
+    if (sanitizedName === currentName) {
+      showWorkspaceNameFeedback('Esse já é o nome atual do espaço.', true);
+      return;
+    }
+    const workspaceId = activeWorkspace.workspaceId || currentUser?.uid;
+    if (!workspaceId) {
+      showWorkspaceNameFeedback('Não foi possível identificar o espaço atual.', false);
+      return;
+    }
+    try {
+      setWorkspaceNameLoading(true);
+      await db.collection('sharedWorkspaces').doc(workspaceId).set({
+        displayName: sanitizedName,
+        updatedAt: firebase.firestore.Timestamp.now(),
+      }, { merge: true });
+      activeWorkspace.displayName = sanitizedName;
+      await renderWorkspaceSharingDetails();
+      showWorkspaceNameFeedback('Nome do espaço atualizado para todos os integrantes.', true);
+      showToast('Nome do espaço atualizado.', 'info');
+      if (workspaceNameInput) {
+        workspaceNameInput.focus();
+        workspaceNameInput.select();
+      }
+    } catch (error) {
+      console.error('Erro ao atualizar nome do espaço:', error);
+      showWorkspaceNameFeedback('Não foi possível atualizar o nome agora. Tente novamente.', false);
+    } finally {
+      setWorkspaceNameLoading(false);
+    }
+  });
+}
+
+if (workspaceJoinForm) {
+  workspaceJoinForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (!workspaceJoinCodeInput) return;
       const identifier = workspaceJoinCodeInput.value;
       if (!identifier || !identifier.trim()) {
         showWorkspaceFeedback('Informe um código ou e-mail válido para conectar.', false);
