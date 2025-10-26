@@ -17,53 +17,6 @@
 
 <!-- Manifest PWA -->
 <link rel="manifest" href="manifest.json" />
-<script>
-  (function preloadFirebaseConfig() {
-    if (window.__FIREBASE_CONFIG__) {
-      return;
-    }
-    if (window.__APP_CONFIG__ && window.__APP_CONFIG__.firebase && window.__APP_CONFIG__.firebase.client) {
-      window.__FIREBASE_CONFIG__ = window.__APP_CONFIG__.firebase.client;
-      return;
-    }
-
-    try {
-      var request = new XMLHttpRequest();
-      request.open('GET', '/app-config.js?format=json', false);
-      request.setRequestHeader('Accept', 'application/json');
-      request.send(null);
-
-      if (request.status >= 200 && request.status < 300 && request.responseText) {
-        try {
-          var parsed = JSON.parse(request.responseText);
-          if (parsed && typeof parsed === 'object') {
-            window.__FIREBASE_CONFIG__ = parsed;
-            return;
-          }
-        } catch (jsonError) {
-          console.warn('Falha ao interpretar configuração Firebase como JSON.', jsonError);
-        }
-      }
-
-      // Se não veio JSON válido, tenta carregar o script tradicional
-      request = new XMLHttpRequest();
-      request.open('GET', '/app-config.js', false);
-      request.send(null);
-      if (request.status >= 200 && request.status < 300 && request.responseText) {
-        try {
-          new Function(request.responseText)();
-          if (window.__FIREBASE_CONFIG__) {
-            return;
-          }
-        } catch (scriptError) {
-          console.warn('Falha ao executar app-config.js padrão.', scriptError);
-        }
-      }
-    } catch (networkError) {
-      console.warn('Não foi possível carregar app-config.js do servidor.', networkError);
-    }
-  })();
-</script>
 <!-- Theme-color para Light e Dark Mode -->
 <meta name="theme-color" content="#4ade80" media="(prefers-color-scheme: light)" />
 <meta name="theme-color" content="#1f2937" media="(prefers-color-scheme: dark)" />
@@ -72,10 +25,10 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <!-- NOVO: Modal de Gráficos Interativos com filtros -->
-<div id="modal-graficos" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+<div id="modal-graficos" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden" role="dialog" aria-modal="true" aria-labelledby="modal-graficos-title">
   <div class="bg-white dark:bg-gray-800 rounded-lg p-6 w-11/12 max-w-3xl mx-auto relative shadow-lg modal-content max-h-[90vh] overflow-y-auto">
     <button id="modal-graficos-close" class="absolute top-3 right-3 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 text-2xl font-bold" aria-label="Fechar modal">&times;</button>
-    <h2 class="text-xl font-bold mb-4 text-gray-800 dark:text-gray-100">Gráficos Interativos</h2>
+    <h2 id="modal-graficos-title" class="text-xl font-bold mb-4 text-gray-800 dark:text-gray-100">Gráficos Interativos</h2>
 
     <!-- NOVO: Resumo de Totais no Modal -->
     <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-4 bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
@@ -196,10 +149,10 @@
 </div>
 
 <!-- NOVO: Modal de Gráficos dos Fixos -->
-<div id="modal-graficos-fixos" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+<div id="modal-graficos-fixos" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden" role="dialog" aria-modal="true" aria-labelledby="modal-graficos-fixos-title">
   <div class="bg-white dark:bg-gray-800 rounded-lg p-6 w-11/12 max-w-2xl mx-auto relative shadow-lg modal-content max-h-[90vh] overflow-y-auto">
     <button id="modal-graficos-fixos-close" class="absolute top-3 right-3 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 text-2xl font-bold" aria-label="Fechar modal">&times;</button>
-    <h2 class="text-xl font-bold mb-4 text-gray-800 dark:text-gray-100">Análise dos Gastos Fixos</h2>
+    <h2 id="modal-graficos-fixos-title" class="text-xl font-bold mb-4 text-gray-800 dark:text-gray-100">Análise dos Gastos Fixos</h2>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
       <div class="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
@@ -233,11 +186,11 @@
 </div>
 
 <!-- NOVO: Modal de planejamento das metas dos envelopes -->
-<div id="modal-planejamento-envelopes" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+<div id="modal-planejamento-envelopes" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden" role="dialog" aria-modal="true" aria-labelledby="modal-planejamento-title">
   <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 w-11/12 max-w-xl mx-auto relative shadow-2xl modal-content space-y-5">
     <button id="modal-planejamento-envelopes-close" class="absolute top-3 right-3 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 text-2xl font-bold" aria-label="Fechar modal">&times;</button>
     <div>
-      <h2 class="text-xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+      <h2 id="modal-planejamento-title" class="text-xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
         <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-900/50 dark:text-emerald-300">
           <i class="fa fa-bullseye"></i>
         </span>
@@ -384,11 +337,11 @@
   
   /* Transições suaves para o botão flutuante */
   body {
-    padding-bottom: 4.5rem;
+    padding-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
   }
   @media (min-width: 768px) {
     body {
-      padding-bottom: 5.25rem;
+      padding-bottom: calc(5.25rem + env(safe-area-inset-bottom, 0px));
     }
   }
 
@@ -398,10 +351,12 @@
 
   #floating-menu {
     transition: transform 0.3s ease, opacity 0.3s ease;
+    bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
   }
 
   #floating-menu nav {
     pointer-events: auto;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
   
   /* Melhorias visuais para o modal */
@@ -473,23 +428,43 @@
   }
 
   /* NOVO: Estilo para o Toast de feedback */
-  #toast-message {
+  .toast {
     position: fixed;
-    bottom: 20px;
+    bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
     left: 50%;
-    transform: translateX(-50%);
-    background-color: #333;
-    color: white;
-    padding: 10px 20px;
-    border-radius: 5px;
+    transform: translate(-50%, 1.5rem);
+    background-color: #1f2937;
+    color: #f8fafc;
+    padding: 0.75rem 1.25rem;
+    border-radius: 9999px;
     opacity: 0;
-    transition: opacity 0.3s ease-in-out;
-    z-index: 1000;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    z-index: 10500;
     font-size: 0.9rem;
-  
+    box-shadow: 0 15px 40px -20px rgba(15, 23, 42, 0.6);
+    pointer-events: none;
   }
-  #toast-message.show {
+  .toast.show {
     opacity: 1;
+    transform: translate(-50%, 0);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+    .toast {
+      transform: translate(-50%, 0) !important;
+    }
+    .motion-safe\:animate-ping {
+      animation: none !important;
+    }
+    .resumo-slider-track {
+      transition: none !important;
+    }
   }
 
   /* NOVO: Estilos para cards de fixos melhorados */
@@ -889,9 +864,10 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
   html.dark .loading-spinner {
     color: #9ca3af; /* dark:gray-400 */
   }
-  html.dark #toast-message {
-    background-color: #f3f4f6; /* dark:bg-gray-200 */
-    color: #111827; /* dark:text-gray-900 */
+  html.dark .toast {
+    background-color: #f8fafc;
+    color: #0f172a;
+    box-shadow: 0 15px 35px -18px rgba(148, 163, 184, 0.55);
   }
   html.dark .pill {
     background-color: #374151; /* dark:bg-gray-700 */
@@ -982,6 +958,16 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
 </head>
 <body class="bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-900 dark:to-gray-800 min-h-screen text-gray-800 dark:text-gray-100 transition-colors duration-300">
 
+<div id="app-loading-overlay" class="pointer-events-none fixed inset-x-0 top-0 z-[10500] hidden flex justify-center px-4 pt-5" role="status" aria-live="polite" aria-atomic="true">
+  <div class="inline-flex items-center gap-3 rounded-full bg-white/90 px-4 py-2 text-sm font-medium text-slate-700 shadow-lg dark:bg-slate-900/85 dark:text-slate-100">
+    <span class="relative flex h-2.5 w-2.5">
+      <span class="motion-safe:animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75"></span>
+      <span class="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500"></span>
+    </span>
+    <span id="app-loading-message">Carregando configurações…</span>
+  </div>
+</div>
+
 <!-- FIREBASE CONFIG ALERT -->
 <div id="firebase-config-overlay" class="hidden fixed inset-0 z-[11000] bg-slate-900/95 backdrop-blur-md flex items-center justify-center px-6 py-8">
   <div class="w-full max-w-md space-y-4 rounded-2xl border border-red-300/60 dark:border-red-500/40 bg-white/95 dark:bg-slate-900/95 p-6 shadow-2xl">
@@ -1001,7 +987,7 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
 </div>
 
 <!-- AUTH OVERLAY -->
-<div id="auth-overlay" class="hidden fixed inset-0 z-[10000] bg-slate-900/90 backdrop-blur flex items-center justify-center px-4 py-8">
+<div id="auth-overlay" class="hidden fixed inset-0 z-[10000] bg-slate-900/90 backdrop-blur flex items-center justify-center px-4 py-8" role="dialog" aria-modal="true" aria-labelledby="auth-title" aria-describedby="auth-description">
   <div class="w-full max-w-sm bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-emerald-200/60 dark:border-emerald-900/40 p-6 space-y-6">
     <div class="text-center space-y-2">
       <h2 id="auth-title" class="text-2xl font-bold text-emerald-600 dark:text-emerald-400">Acessar sua conta</h2>
@@ -1055,7 +1041,7 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
 </div>
 
 <!-- ACCESS GUARD OVERLAY -->
-<div id="access-guard-overlay" class="hidden fixed inset-0 z-[9999] bg-slate-900/95 backdrop-blur-sm flex items-center justify-center px-4 py-8">
+<div id="access-guard-overlay" class="hidden fixed inset-0 z-[9999] bg-slate-900/95 backdrop-blur-sm flex items-center justify-center px-4 py-8" role="dialog" aria-modal="true" aria-labelledby="access-guard-title" aria-describedby="access-guard-message">
   <div class="w-full max-w-md bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-emerald-200/60 dark:border-emerald-900/40 p-6 space-y-4 text-center">
     <div class="flex items-center justify-center w-14 h-14 rounded-full mx-auto bg-emerald-100 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-300">
       <i id="access-guard-icon" class="fa-solid fa-shield-halved text-2xl"></i>
@@ -1075,18 +1061,18 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
 </div>
 
 <!-- MODAL: Compartilhamento do espaço financeiro -->
-<div id="modal-workspace-share" class="fixed inset-0 z-[9500] hidden flex items-start justify-center bg-slate-900/80 backdrop-blur px-4 py-8 overflow-y-auto sm:items-center">
-  <div class="relative w-full max-w-xl bg-white dark:bg-gray-900 border border-gray-200/80 dark:border-gray-700 rounded-2xl shadow-2xl p-6 sm:p-8 max-h-[92vh] sm:max-h-[88vh] overflow-y-auto">
+<div id="modal-workspace-share" class="fixed inset-0 z-[9500] hidden flex items-start justify-center bg-slate-900/80 backdrop-blur px-4 py-8 overflow-y-auto sm:items-center" role="dialog" aria-modal="true" aria-labelledby="workspace-share-title" aria-describedby="workspace-owner-hint">
+  <div class="relative flex w-full max-w-xl flex-col bg-white dark:bg-gray-900 border border-gray-200/80 dark:border-gray-700 rounded-2xl shadow-2xl p-6 sm:p-8 max-h-[92vh] sm:max-h-[88vh] overflow-hidden">
     <button id="workspace-share-close" class="absolute top-3 right-3 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-2xl leading-none" aria-label="Fechar modal">&times;</button>
-    <div class="space-y-6 text-sm">
+    <div class="flex min-h-0 flex-col gap-6 text-sm">
       <div>
-        <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+        <h2 id="workspace-share-title" class="text-xl font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
           <i class="fa-solid fa-people-roof text-emerald-500"></i>
           Espaço familiar
         </h2>
         <p id="workspace-owner-hint" class="mt-2 text-gray-500 dark:text-gray-400 text-sm leading-relaxed"></p>
       </div>
-      <div id="workspace-share-scroll-container" class="space-y-5 pb-2">
+      <div id="workspace-share-scroll-container" class="min-h-0 flex-1 space-y-5 overflow-y-auto pb-2 pr-1">
           <div class="rounded-xl border border-emerald-200/70 dark:border-emerald-500/30 bg-emerald-50/60 dark:bg-emerald-500/10 p-4 space-y-3">
             <div class="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">Código do seu espaço</div>
             <div class="flex flex-col sm:flex-row sm:items-center gap-3">
@@ -1135,12 +1121,12 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
 </div>
 
 <!-- MODAL: Controle de acesso -->
-<div id="modal-access-manager" class="fixed inset-0 z-[9400] hidden items-center justify-center bg-slate-900/80 backdrop-blur px-4 py-8 overflow-y-auto">
+<div id="modal-access-manager" class="fixed inset-0 z-[9400] hidden items-center justify-center bg-slate-900/80 backdrop-blur px-4 py-8 overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="access-manager-title">
   <div class="relative w-full max-w-3xl bg-white dark:bg-gray-900 border border-gray-200/80 dark:border-gray-700 rounded-2xl shadow-2xl p-6 sm:p-8 max-h-[88vh] overflow-y-auto">
     <button id="access-manager-close" class="absolute top-3 right-3 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-2xl leading-none" aria-label="Fechar modal">&times;</button>
     <div class="space-y-6 text-sm">
       <div>
-        <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
+        <h2 id="access-manager-title" class="text-xl font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
           <i class="fa-solid fa-user-shield text-emerald-500"></i>
           Controle de acesso
         </h2>
@@ -1335,7 +1321,7 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
 </div>
 
 <!-- NOVO: Modal de Confirmação Customizado -->
-<div id="modal-confirmacao" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[10000] hidden">
+<div id="modal-confirmacao" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[10000] hidden" role="dialog" aria-modal="true" aria-labelledby="modal-confirmacao-title" aria-describedby="modal-confirmacao-message">
   <div class="bg-white rounded-lg p-6 w-11/12 max-w-sm mx-auto relative shadow-lg modal-content">
     <h2 class="text-xl font-bold mb-4 text-gray-800" id="modal-confirmacao-title">Confirmar Ação</h2>
     <p class="text-gray-700 mb-6" id="modal-confirmacao-message">Você tem certeza que deseja realizar esta ação?</p>
@@ -2298,7 +2284,7 @@ if ("serviceWorker" in navigator) {
 </script>
 
 <!-- NOVO: Toast Message para feedback -->
-<div id="toast-message" class="hidden"></div>
+<div id="toast-message" class="toast hidden" role="status" aria-live="polite" aria-atomic="true"></div>
 
 <footer class="text-center text-xs sm:text-sm text-gray-500 dark:text-gray-400 py-6 space-y-3">
   <div id="footer-verse" class="max-w-2xl mx-auto text-[0.75rem] sm:text-sm text-gray-600 dark:text-gray-300 italic leading-relaxed"></div>
@@ -2312,11 +2298,101 @@ if ("serviceWorker" in navigator) {
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 
 <script>
+  (function setupFirebaseConfigLoader() {
+    const ensureConfig = (candidate) => {
+      if (candidate && typeof candidate === 'object' && Object.keys(candidate).length) {
+        window.__FIREBASE_CONFIG__ = candidate;
+        return candidate;
+      }
+      return null;
+    };
+
+    const overlay = document.getElementById('app-loading-overlay');
+    const overlayMessage = document.getElementById('app-loading-message');
+
+    const showLoader = (message) => {
+      if (!overlay) return;
+      if (overlayMessage && message) {
+        overlayMessage.textContent = message;
+      }
+      overlay.classList.remove('hidden');
+    };
+
+    const hideLoader = () => {
+      if (!overlay) return;
+      overlay.classList.add('hidden');
+    };
+
+    if (ensureConfig(window.__FIREBASE_CONFIG__)) {
+      window.__firebaseConfigPromise = Promise.resolve(window.__FIREBASE_CONFIG__);
+      return;
+    }
+
+    if (window.__APP_CONFIG__ && window.__APP_CONFIG__.firebase && window.__APP_CONFIG__.firebase.client) {
+      const embedded = ensureConfig(window.__APP_CONFIG__.firebase.client);
+      if (embedded) {
+        window.__firebaseConfigPromise = Promise.resolve(embedded);
+        return;
+      }
+    }
+
+    async function fetchJsonConfig() {
+      try {
+        const response = await fetch('/app-config.js?format=json', {
+          cache: 'no-store',
+          credentials: 'same-origin',
+          headers: { Accept: 'application/json' },
+        });
+        if (!response.ok) return null;
+        const data = await response.json().catch(() => null);
+        return ensureConfig(data);
+      } catch (error) {
+        console.warn('Falha ao buscar app-config.json.', error);
+        return null;
+      }
+    }
+
+    async function fetchScriptConfig() {
+      try {
+        const response = await fetch('/app-config.js', { cache: 'no-store', credentials: 'same-origin' });
+        if (!response.ok) return null;
+        const scriptText = await response.text();
+        try {
+          new Function(scriptText)();
+        } catch (error) {
+          console.warn('Falha ao avaliar app-config.js.', error);
+          return null;
+        }
+        return ensureConfig(window.__FIREBASE_CONFIG__);
+      } catch (error) {
+        console.warn('Não foi possível carregar app-config.js.', error);
+        return null;
+      }
+    }
+
+    async function loadFirebaseConfig() {
+      showLoader('Carregando configurações do Firebase…');
+      const jsonConfig = await fetchJsonConfig();
+      if (jsonConfig) {
+        return jsonConfig;
+      }
+      const scriptConfig = await fetchScriptConfig();
+      if (scriptConfig) {
+        return scriptConfig;
+      }
+      return ensureConfig(window.__FIREBASE_CONFIG__);
+    }
+
+    window.__firebaseConfigPromise = loadFirebaseConfig().finally(hideLoader);
+  })();
+</script>
+
+<script>
 /* ===========================
    CONFIG FIREBASE (externa)
    =========================== */
-const resolveFirebaseConfig = () => {
-  const config = window.__FIREBASE_CONFIG__ || (window.__APP_CONFIG__ && window.__APP_CONFIG__.firebase && window.__APP_CONFIG__.firebase.client);
+const resolveFirebaseConfig = (loadedConfig) => {
+  const config = loadedConfig || window.__FIREBASE_CONFIG__ || (window.__APP_CONFIG__ && window.__APP_CONFIG__.firebase && window.__APP_CONFIG__.firebase.client);
   if (config && typeof config === 'object' && Object.keys(config).length) {
     return config;
   }
@@ -2328,29 +2404,47 @@ const resolveFirebaseConfig = () => {
   throw new Error('Firebase config ausente. Defina window.__FIREBASE_CONFIG__ em app-config.js.');
 };
 
-const firebaseConfig = resolveFirebaseConfig();
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-const auth = firebase.auth();
-const googleAuthProvider = new firebase.auth.GoogleAuthProvider();
-googleAuthProvider.setCustomParameters({ prompt: 'select_account' });
+let db;
+let auth;
+let googleAuthProvider;
+let messaging;
+let FieldValue;
+let FieldPath;
 const authEnvironment = {
   isFileProtocol: window.location.protocol === 'file:',
   host: window.location.host,
 };
-const messaging = firebase.messaging(); // Inicializa o Messaging
-const FieldValue = firebase.firestore.FieldValue;
-const FieldPath = firebase.firestore.FieldPath;
 
-firebase.firestore().enablePersistence({ synchronizeTabs: true }).catch((error) => {
-  if (error?.code === 'failed-precondition') {
-    console.warn('Persistência offline não habilitada: múltiplas abas abertas do app.');
-  } else if (error?.code === 'unimplemented') {
-    console.warn('Persistência offline não é suportada neste navegador.');
-  } else if (error) {
-    console.error('Falha ao habilitar persistência offline:', error);
+const firebaseReady = (async () => {
+  const configCandidate = (window.__firebaseConfigPromise && typeof window.__firebaseConfigPromise.then === 'function')
+    ? await window.__firebaseConfigPromise.catch(() => null)
+    : window.__FIREBASE_CONFIG__;
+  const firebaseConfig = resolveFirebaseConfig(configCandidate);
+  firebase.initializeApp(firebaseConfig);
+  db = firebase.firestore();
+  auth = firebase.auth();
+  googleAuthProvider = new firebase.auth.GoogleAuthProvider();
+  googleAuthProvider.setCustomParameters({ prompt: 'select_account' });
+  messaging = firebase.messaging();
+  FieldValue = firebase.firestore.FieldValue;
+  FieldPath = firebase.firestore.FieldPath;
+
+  try {
+    await firebase.firestore().enablePersistence({ synchronizeTabs: true });
+  } catch (error) {
+    if (error?.code === 'failed-precondition') {
+      console.warn('Persistência offline não habilitada: múltiplas abas abertas do app.');
+    } else if (error?.code === 'unimplemented') {
+      console.warn('Persistência offline não é suportada neste navegador.');
+    } else if (error) {
+      console.error('Falha ao habilitar persistência offline:', error);
+    }
   }
-});
+
+  return firebaseConfig;
+})();
+
+window.__firebaseReady = firebaseReady;
 
 let currentUser = null;
 let appBootstrapped = false;
@@ -3357,6 +3451,111 @@ function unlockBodyScrollIfAllowed() {
   }
 }
 
+const dialogFocusStore = new WeakMap();
+const focusableSelector = 'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])';
+
+function getFocusableElements(container) {
+  if (!container) return [];
+  return Array.from(container.querySelectorAll(focusableSelector))
+    .filter((element) => {
+      if (element.hasAttribute('disabled')) return false;
+      if (element.getAttribute('aria-hidden') === 'true') return false;
+      const tabIndex = element.getAttribute('tabindex');
+      if (tabIndex && Number(tabIndex) < 0) return false;
+      return element.offsetParent !== null || getComputedStyle(element).position === 'fixed';
+    });
+}
+
+function activateDialog(modal, { initialFocus } = {}) {
+  if (!modal) return;
+  modal.setAttribute('role', modal.getAttribute('role') || 'dialog');
+  modal.setAttribute('aria-modal', 'true');
+
+  const previous = document.activeElement && document.activeElement !== document.body
+    ? document.activeElement
+    : null;
+
+  const state = {
+    previous,
+  };
+
+  const focusTarget = typeof initialFocus === 'string' ? modal.querySelector(initialFocus) : initialFocus;
+  const focus = () => {
+    const elements = getFocusableElements(modal);
+    const candidate = focusTarget && typeof focusTarget.focus === 'function' ? focusTarget : elements[0];
+    if (candidate && typeof candidate.focus === 'function') {
+      try {
+        candidate.focus({ preventScroll: true });
+      } catch (error) {
+        candidate.focus();
+      }
+    }
+  };
+
+  const handleKeyDown = (event) => {
+    if (event.key !== 'Tab') return;
+    const elements = getFocusableElements(modal);
+    if (!elements.length) {
+      event.preventDefault();
+      return;
+    }
+    const first = elements[0];
+    const last = elements[elements.length - 1];
+    if (event.shiftKey) {
+      if (document.activeElement === first || !modal.contains(document.activeElement)) {
+        event.preventDefault();
+        last.focus();
+      }
+    } else if (document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  };
+
+  const enforceFocus = (event) => {
+    if (!modal.contains(event.target)) {
+      const elements = getFocusableElements(modal);
+      if (elements.length) {
+        event.stopPropagation();
+        elements[0].focus();
+      }
+    }
+  };
+
+  state.handleKeyDown = handleKeyDown;
+  state.enforceFocus = enforceFocus;
+
+  modal.addEventListener('keydown', handleKeyDown);
+  document.addEventListener('focusin', enforceFocus);
+
+  dialogFocusStore.set(modal, state);
+
+  requestAnimationFrame(() => {
+    focus();
+  });
+}
+
+function deactivateDialog(modal) {
+  if (!modal) return;
+  const state = dialogFocusStore.get(modal);
+  if (state) {
+    if (state.handleKeyDown) {
+      modal.removeEventListener('keydown', state.handleKeyDown);
+    }
+    if (state.enforceFocus) {
+      document.removeEventListener('focusin', state.enforceFocus);
+    }
+    if (state.previous && typeof state.previous.focus === 'function') {
+      try {
+        state.previous.focus({ preventScroll: true });
+      } catch (error) {
+        state.previous.focus();
+      }
+    }
+  }
+  dialogFocusStore.delete(modal);
+}
+
 function showAccessGuardOverlay(mode = 'pending', profile = {}) {
   if (!accessGuardOverlay) return;
   accessGuardMode = mode;
@@ -3410,10 +3609,12 @@ function showAccessGuardOverlay(mode = 'pending', profile = {}) {
 
   accessGuardOverlay.classList.remove('hidden');
   lockBodyScroll();
+  activateDialog(accessGuardOverlay, { initialFocus: accessGuardRefresh });
 }
 
 function hideAccessGuardOverlay() {
   if (!accessGuardOverlay) return;
+  deactivateDialog(accessGuardOverlay);
   accessGuardOverlay.classList.add('hidden');
   accessGuardMode = null;
   unlockBodyScrollIfAllowed();
@@ -4067,6 +4268,11 @@ async function removeWorkspaceMember(uid, memberLabel) {
 
 async function openWorkspaceShareModal() {
   if (!workspaceShareModal) return;
+  await firebaseReady.catch(() => null);
+  if (!db) {
+    showToast('Não foi possível carregar o compartilhamento agora.', 'error');
+    return;
+  }
   if (!currentUser) {
     showAuthOverlay();
     return;
@@ -4076,6 +4282,7 @@ async function openWorkspaceShareModal() {
   workspaceShareModal.classList.remove('hidden');
   lockBodyScroll();
   document.body.classList.add('workspace-share-open');
+  activateDialog(workspaceShareModal, { initialFocus: workspaceJoinCodeInput || workspaceNameInput });
   requestAnimationFrame(() => {
     window.dispatchEvent(new Event('resize'));
   });
@@ -4083,6 +4290,7 @@ async function openWorkspaceShareModal() {
 
 function closeWorkspaceShareModal() {
   if (!workspaceShareModal) return;
+  deactivateDialog(workspaceShareModal);
   workspaceShareModal.classList.add('hidden');
   document.body.classList.remove('workspace-share-open');
   unlockBodyScrollIfAllowed();
@@ -4337,9 +4545,11 @@ function showAuthOverlay() {
   updateAuthVerse();
   authOverlay.classList.remove('hidden');
   lockBodyScroll();
+  activateDialog(authOverlay, { initialFocus: authEmailInput });
 }
 
 function hideAuthOverlay() {
+  deactivateDialog(authOverlay);
   authOverlay.classList.add('hidden');
   unlockBodyScrollIfAllowed();
   authError.classList.add('hidden');
@@ -4776,6 +4986,7 @@ async function refreshAccessProfile() {
 
 function closeAccessManagerModal() {
   if (!accessManagerModal) return;
+  deactivateDialog(accessManagerModal);
   accessManagerModal.classList.add('hidden');
   unlockBodyScrollIfAllowed();
 }
@@ -5281,6 +5492,11 @@ async function clearUserAccessPlan(uid) {
 
 async function openAccessManagerModal() {
   if (!accessManagerModal) return;
+  await firebaseReady.catch(() => null);
+  if (!db) {
+    showToast('Banco de dados indisponível no momento.', 'error');
+    return;
+  }
   if (!isCurrentUserAdmin()) {
     showToast('Somente administradores podem gerenciar acessos.', 'error');
     return;
@@ -5288,6 +5504,7 @@ async function openAccessManagerModal() {
   resetAccessManagerSectionDefaults();
   accessManagerModal.classList.remove('hidden');
   lockBodyScroll();
+  activateDialog(accessManagerModal, { initialFocus: accessManagerClose });
   await loadAccessManagerLists();
 }
 
@@ -6201,7 +6418,8 @@ function obterOffsetCartao(configCartao) {
 // Função para mostrar toast message
 function showToast(message, type = 'success') {
   const toast = document.getElementById('toast-message');
-  
+  if (!toast) return;
+
   // Define ícone baseado no tipo
   let icon = '';
   switch(type) {
@@ -6213,8 +6431,9 @@ function showToast(message, type = 'success') {
   }
   
   toast.textContent = icon + message;
-  toast.className = 'show'; // Remove 'hidden' e adiciona 'show'
-  
+  toast.classList.remove('hidden');
+  toast.classList.add('show');
+
   // Define cor baseada no tipo
   switch(type) {
     case 'error':
@@ -6230,11 +6449,16 @@ function showToast(message, type = 'success') {
       toast.style.backgroundColor = '#059669'; // green-600
       break;
   }
-  
-  setTimeout(() => {
+
+  if (toast.hideTimeout) {
+    clearTimeout(toast.hideTimeout);
+  }
+
+  toast.hideTimeout = setTimeout(() => {
     toast.classList.remove('show');
-    toast.classList.add('hidden'); // Esconde após a transição
-  }, 3000); // Esconde após 3 segundos
+    toast.classList.add('hidden');
+    toast.hideTimeout = null;
+  }, 3200);
 }
 
 // Variáveis e função para o modal de confirmação customizado
@@ -6254,10 +6478,12 @@ function abrirModalConfirmacao(title, message, callback, modalOrigemId = null) {
   modalConfirmacaoMessage.textContent = message;
   confirmCallback = callback; // Armazena o callback
   modalConfirmacao.classList.remove('hidden');
+  activateDialog(modalConfirmacao, { initialFocus: btnConfirmarAcao });
   updateFloatingMenuVisibility(); // Esconde o menu flutuante se estiver aberto
 }
 
 function fecharModalConfirmacao() {
+  deactivateDialog(modalConfirmacao);
   modalConfirmacao.classList.add('hidden');
   confirmCallback = null; // Limpa o callback
   
@@ -7668,13 +7894,21 @@ function renderDetalhesFixos(fixosAtivos) {
 }
 
 // Event listeners para gráficos dos fixos
-document.getElementById('btn-graficos-fixos').addEventListener('click', () => {
-  document.getElementById('modal-graficos-fixos').classList.remove('hidden');
+const modalGraficosFixosEl = document.getElementById('modal-graficos-fixos');
+const modalGraficosFixosClose = document.getElementById('modal-graficos-fixos-close');
+const btnGraficosFixos = document.getElementById('btn-graficos-fixos');
+
+btnGraficosFixos?.addEventListener('click', () => {
+  if (!modalGraficosFixosEl) return;
+  modalGraficosFixosEl.classList.remove('hidden');
+  activateDialog(modalGraficosFixosEl, { initialFocus: modalGraficosFixosClose });
   renderGraficosFixos();
 });
 
-document.getElementById('modal-graficos-fixos-close').addEventListener('click', () => {
-  document.getElementById('modal-graficos-fixos').classList.add('hidden');
+modalGraficosFixosClose?.addEventListener('click', () => {
+  if (!modalGraficosFixosEl) return;
+  deactivateDialog(modalGraficosFixosEl);
+  modalGraficosFixosEl.classList.add('hidden');
   if (chartFixosCategoria) {
     chartFixosCategoria.destroy();
     chartFixosCategoria = null;
@@ -7802,12 +8036,21 @@ function renderParcelados(docs){
 }
 
 function fecharTodosOsModais() {
-  document.getElementById('modal-add-gasto').classList.add('hidden');
-  document.getElementById('modal-fixo').classList.add('hidden');
-  document.getElementById('modal-parcelado').classList.add('hidden');
-  document.getElementById('modal-graficos').classList.add('hidden');
-  document.getElementById('modal-graficos-fixos').classList.add('hidden');
-  document.getElementById('modal-gerenciar-cartoes').classList.add('hidden');
+  const modalsToClose = [
+    'modal-add-gasto',
+    'modal-fixo',
+    'modal-parcelado',
+    'modal-graficos',
+    'modal-graficos-fixos',
+    'modal-gerenciar-cartoes',
+  ];
+
+  modalsToClose.forEach((modalId) => {
+    const element = document.getElementById(modalId);
+    if (!element) return;
+    deactivateDialog(element);
+    element.classList.add('hidden');
+  });
 }
 
 function editarParceladoPrompt(id){
@@ -9066,6 +9309,12 @@ function initResumoSlider() {
   let startX = 0;
   let pointerId = null;
 
+  slider.setAttribute('tabindex', '0');
+  slider.setAttribute('role', 'region');
+  slider.setAttribute('aria-label', 'Resumo financeiro');
+  slider.setAttribute('aria-live', 'polite');
+  slider.setAttribute('data-active-slide', '0');
+
   const getClientX = (event) => (typeof event.clientX === 'number' ? event.clientX : startX);
 
   const clampIndex = (index) => Math.max(0, Math.min(slides.length - 1, index));
@@ -9076,8 +9325,17 @@ function initResumoSlider() {
 
   const updateButtons = () => {
     const check = btn => Number(btn.dataset.slide) === activeIndex;
-    mainButtons.forEach(btn => btn.classList.toggle('is-active', check(btn)));
-    dotButtons.forEach(btn => btn.classList.toggle('is-active', check(btn)));
+    mainButtons.forEach(btn => {
+      const isActive = check(btn);
+      btn.classList.toggle('is-active', isActive);
+      btn.setAttribute('aria-pressed', String(isActive));
+    });
+    dotButtons.forEach(btn => {
+      const isActive = check(btn);
+      btn.classList.toggle('is-active', isActive);
+      btn.setAttribute('aria-pressed', String(isActive));
+    });
+    slider.setAttribute('data-active-slide', String(activeIndex));
   };
 
   const goTo = (index) => {
@@ -9133,6 +9391,16 @@ function initResumoSlider() {
   slider.addEventListener('pointerleave', (event) => {
     if (!pointerActive) return;
     finishPointer(event);
+  });
+
+  slider.addEventListener('keydown', (event) => {
+    if (event.key === 'ArrowRight') {
+      event.preventDefault();
+      goTo(activeIndex + 1);
+    } else if (event.key === 'ArrowLeft') {
+      event.preventDefault();
+      goTo(activeIndex - 1);
+    }
   });
 
   window.addEventListener('resize', () => {
@@ -9416,11 +9684,13 @@ function abrirModalPlanejamentoEnvelopes() {
   if (!modalPlanejamentoEnvelopes) return;
   atualizarBarrasVisuais();
   modalPlanejamentoEnvelopes.classList.remove('hidden');
+  activateDialog(modalPlanejamentoEnvelopes, { initialFocus: btnPlanejamentoReservar });
   updateFloatingMenuVisibility();
 }
 
 function fecharModalPlanejamentoEnvelopes() {
   if (!modalPlanejamentoEnvelopes) return;
+  deactivateDialog(modalPlanejamentoEnvelopes);
   modalPlanejamentoEnvelopes.classList.add('hidden');
   updateFloatingMenuVisibility();
 }
@@ -9839,6 +10109,12 @@ async function solicitarPermissaoNotificacoes() {
   }
 
   try {
+    await firebaseReady.catch(() => null);
+    if (!messaging) {
+      console.warn('Firebase Messaging indisponível no momento.');
+      return null;
+    }
+
     const permission = await Notification.requestPermission();
     if (permission !== 'granted') {
       console.log('Permissão para notificações não concedida.');
@@ -9908,11 +10184,12 @@ function requestServiceWorkerActivation(registration) {
 // Registrar service worker e preparar funcionalidades offline/PWA
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js')
-    .then(registration => {
+    .then(async (registration) => {
       serviceWorkerRegistrationRef = registration;
       console.log('✅ Service Worker registrado para PWA:', registration.scope);
 
-      if (typeof messaging.useServiceWorker === 'function') {
+      await firebaseReady.catch(() => null);
+      if (messaging && typeof messaging.useServiceWorker === 'function') {
         try {
           messaging.useServiceWorker(registration);
         } catch (error) {
@@ -9938,9 +10215,10 @@ if ('serviceWorker' in navigator) {
       console.error('❌ Erro ao registrar Service Worker:', err);
     });
 
-  navigator.serviceWorker.ready.then(registration => {
+  navigator.serviceWorker.ready.then(async (registration) => {
     serviceWorkerRegistrationRef = registration;
-    if (typeof messaging.useServiceWorker === 'function') {
+    await firebaseReady.catch(() => null);
+    if (messaging && typeof messaging.useServiceWorker === 'function') {
       try {
         messaging.useServiceWorker(registration);
       } catch (error) {
@@ -10762,6 +11040,7 @@ function limparFiltros() {
 function abrirModalGraficos() {
   if (!modalGraficos) return;
   modalGraficos.classList.remove('hidden');
+  activateDialog(modalGraficos, { initialFocus: filtroPeriodoGraficos });
   updateFloatingMenuVisibility();
 
   const cartoesUnicos = Array.from(new Set((allGastosDocs || []).map(doc => (doc.data().cartao || '').toLowerCase()).filter(c => c)));
@@ -10785,6 +11064,7 @@ function abrirModalGraficos() {
 btnHistoricoGraficos?.addEventListener('click', abrirModalGraficos);
 
 modalGraficosClose.addEventListener('click', () => {
+  deactivateDialog(modalGraficos);
   modalGraficos.classList.add('hidden');
   updateFloatingMenuVisibility();
   if (chartCategorias) {
@@ -11633,21 +11913,24 @@ document.addEventListener('keydown', (e) => {
   if ((e.ctrlKey || e.metaKey) && e.key === 'g') {
     e.preventDefault();
     if (window.innerWidth > 768) {
-      document.getElementById('modal-graficos').classList.remove('hidden');
+      abrirModalGraficos();
       showToast('Atalho: Ctrl+G para gráficos', 'info');
     }
   }
 
   // ESC = Fechar modals e dropdowns
   if (e.key === 'Escape') {
-    document.getElementById('modal-add-gasto').classList.add('hidden');
-    document.getElementById('modal-fixo').classList.add('hidden');
-    document.getElementById('modal-parcelado').classList.add('hidden');
-    document.getElementById('modal-graficos').classList.add('hidden');
-    document.getElementById('modal-graficos-fixos').classList.add('hidden');
-    document.getElementById('modal-planejamento-envelopes').classList.add('hidden');
-    document.getElementById('modal-confirmacao').classList.add('hidden');
-    document.getElementById('modal-gerenciar-cartoes').classList.add('hidden');
+    ['modal-add-gasto', 'modal-fixo', 'modal-parcelado', 'modal-graficos', 'modal-graficos-fixos', 'modal-planejamento-envelopes', 'modal-confirmacao', 'modal-gerenciar-cartoes']
+      .forEach((modalId) => {
+        if (modalId === 'modal-confirmacao') {
+          fecharModalConfirmacao();
+          return;
+        }
+        const modalElement = document.getElementById(modalId);
+        if (!modalElement) return;
+        deactivateDialog(modalElement);
+        modalElement.classList.add('hidden');
+      });
     closeUserMenu();
     updateFloatingMenuVisibility();
   }
@@ -11659,12 +11942,18 @@ window.addEventListener('resize', () => {
 });
 
 /* start */
-initResumoSlider();
-initMobilePanels();
-initSimuladorInvestimentos();
-atualizarResumoRapido();
-initAuthFlow();
-updateFooterVerse();
-updateHeaderOffset();
+firebaseReady
+  .then(() => {
+    initResumoSlider();
+    initMobilePanels();
+    initSimuladorInvestimentos();
+    atualizarResumoRapido();
+    initAuthFlow();
+    updateFooterVerse();
+    updateHeaderOffset();
+  })
+  .catch((error) => {
+    console.error('Falha ao inicializar o aplicativo:', error);
+  });
 
 </script>
