@@ -1393,6 +1393,55 @@ html.dark .mobile-tab-button {
   </div>
 </div>
 
+<!-- Modal para importação de CSV -->
+<div id="modal-importar-csv" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+  <div class="bg-white dark:bg-gray-800 rounded-lg p-6 w-11/12 max-w-2xl mx-auto relative shadow-lg modal-content max-h-[90vh] overflow-y-auto">
+    <button id="modal-importar-csv-close" class="absolute top-3 right-3 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 text-2xl font-bold" aria-label="Fechar modal">&times;</button>
+    <div class="space-y-5">
+      <header class="space-y-2">
+        <h2 class="text-xl font-bold text-gray-800 dark:text-gray-100">Importar extrato bancário (.csv)</h2>
+        <p class="text-sm text-gray-600 dark:text-gray-300">Faça o upload do arquivo exportado pelo seu banco para analisar e classificar as transações antes de lançar nos seus gastos.</p>
+      </header>
+      <form id="form-importar-csv" class="space-y-4" novalidate>
+        <div class="space-y-2">
+          <label for="input-importar-csv" class="block text-sm font-medium text-gray-700 dark:text-gray-200">Arquivo CSV</label>
+          <input id="input-importar-csv" type="file" accept=".csv,text/csv" class="block w-full text-sm text-gray-700 dark:text-gray-100 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 dark:file:bg-indigo-500/20 dark:file:text-indigo-200" />
+          <p class="text-xs text-gray-500 dark:text-gray-400">Aceitamos arquivos com separador por vírgula ou ponto e vírgula. As colunas mais comuns (data, descrição, valor, tipo) são detectadas automaticamente.</p>
+        </div>
+
+        <div class="bg-indigo-50/60 dark:bg-indigo-900/30 border border-indigo-200/60 dark:border-indigo-700/50 rounded-lg p-3 text-xs text-indigo-800 dark:text-indigo-200 space-y-2">
+          <p class="font-semibold uppercase tracking-wide">Dicas rápidas</p>
+          <ul class="list-disc list-inside space-y-1">
+            <li>Garanta que o arquivo esteja em formato <strong>.csv</strong> exportado pelo seu banco.</li>
+            <li>Caso o arquivo tenha colunas de crédito/débito separadas, informaremos o sinal automaticamente.</li>
+            <li>Você poderá revisar os dados após a importação dentro da aba de transações.</li>
+          </ul>
+        </div>
+
+        <div id="import-csv-preview-wrapper" class="hidden space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-200">Pré-visualização</h3>
+            <span id="import-csv-preview-count" class="text-xs text-gray-500 dark:text-gray-400"></span>
+          </div>
+          <div class="overflow-x-auto border border-gray-200 dark:border-gray-700 rounded-lg">
+            <table class="min-w-full text-xs text-left text-gray-700 dark:text-gray-200">
+              <thead class="bg-gray-100 dark:bg-gray-700" id="import-csv-preview-head"></thead>
+              <tbody id="import-csv-preview-body" class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <p id="import-csv-feedback" class="hidden text-sm"></p>
+
+        <div class="flex justify-end gap-3 pt-2">
+          <button type="button" id="modal-importar-csv-cancel" class="px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">Cancelar</button>
+          <button type="submit" id="btn-importar-csv-confirm" class="px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-400 disabled:opacity-60 disabled:cursor-not-allowed">Importar transações</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 <main class="container mx-auto px-4 py-4 pb-24 md:pb-16 grid grid-cols-1 lg:grid-cols-[minmax(0,1.7fr)_minmax(0,0.7fr)] gap-6">
 
   <div id="main-stream" class="flex flex-col gap-6 lg:col-span-1">
@@ -1604,6 +1653,10 @@ html.dark .mobile-tab-button {
           <button id="btn-historico-graficos" class="inline-flex items-center gap-1 rounded-full border border-blue-200/80 dark:border-blue-900/50 bg-blue-50/80 dark:bg-blue-900/10 px-3 py-1 text-blue-700 dark:text-blue-200 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors">
             <i class="fa fa-chart-pie text-[0.65rem]"></i>
             Gráficos
+          </button>
+          <button id="btn-importar-csv" class="inline-flex items-center gap-1 rounded-full border border-indigo-200/70 dark:border-indigo-800/60 bg-indigo-50/80 dark:bg-indigo-500/10 px-3 py-1 text-indigo-700 dark:text-indigo-200 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 transition-colors">
+            <i class="fa fa-file-import text-[0.65rem]"></i>
+            Importar CSV
           </button>
           <button id="exportar-csv" class="inline-flex items-center gap-1 rounded-full border border-emerald-200/70 dark:border-emerald-700/60 bg-emerald-50/80 dark:bg-emerald-500/10 px-3 py-1 text-emerald-700 dark:text-emerald-200 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 transition-colors">
             <i class="fa fa-file-arrow-down text-[0.65rem]"></i>
@@ -10737,6 +10790,620 @@ formParcelado.addEventListener('submit', e => {
       });
   }
 });
+
+
+/* ===========================
+   IMPORTAÇÃO DE CSV BANCÁRIO
+   =========================== */
+(function initImportacaoCsv() {
+  const btnOpen = document.getElementById('btn-importar-csv');
+  const modal = document.getElementById('modal-importar-csv');
+  if (!btnOpen || !modal) {
+    return;
+  }
+
+  const fileInput = document.getElementById('input-importar-csv');
+  const form = document.getElementById('form-importar-csv');
+  const btnConfirm = document.getElementById('btn-importar-csv-confirm');
+  const btnClose = document.getElementById('modal-importar-csv-close');
+  const btnCancel = document.getElementById('modal-importar-csv-cancel');
+  const previewWrapper = document.getElementById('import-csv-preview-wrapper');
+  const previewHead = document.getElementById('import-csv-preview-head');
+  const previewBody = document.getElementById('import-csv-preview-body');
+  const previewCount = document.getElementById('import-csv-preview-count');
+  const feedback = document.getElementById('import-csv-feedback');
+
+  const defaultButtonLabel = btnConfirm ? btnConfirm.textContent : 'Importar transações';
+
+  const state = {
+    headers: [],
+    rows: [],
+    fileName: null,
+  };
+
+  const ESCAPE_CLASSES = ['text-red-500', 'dark:text-red-400', 'text-emerald-600', 'dark:text-emerald-300', 'text-indigo-600', 'dark:text-indigo-300'];
+
+  const NORMALIZED_DATE_KEYS = ['data', 'data_do_lancamento', 'data_lancamento', 'data_competencia', 'data_transacao', 'data_movimento', 'data_da_transacao', 'data_pagamento', 'data_compra', 'dt_lancamento', 'date'];
+  const NORMALIZED_DESCRIPTION_KEYS = ['descricao', 'historico', 'descricao_do_lancamento', 'descricao_transacao', 'detalhe', 'lancamento', 'descricao_resumida', 'memo', 'historico_da_transacao'];
+  const NORMALIZED_TYPE_KEYS = ['tipo', 'natureza', 'dc', 'debito_credito', 'indicador', 'categoria_lancamento', 'movimento', 'tipo_transacao'];
+  const NORMALIZED_AMOUNT_KEYS = ['valor', 'valor_transacao', 'valor_da_transacao', 'valor_do_lancamento', 'valor_lancamento', 'valor_total', 'valor_original', 'valor_debito', 'valor_credito', 'valor_compra', 'valor_pago'];
+  const NORMALIZED_CREDIT_KEYS = ['credito', 'valor_credito', 'entrada', 'receita', 'credito_rs', 'valor_credito_rs', 'valor_credito_total'];
+  const NORMALIZED_DEBIT_KEYS = ['debito', 'valor_debito', 'saida', 'pagamento', 'debito_rs', 'valor_debito_rs', 'valor_debito_total'];
+  const NORMALIZED_ACCOUNT_KEYS = ['conta', 'conta_corrente', 'conta_origem', 'conta_destino', 'conta_pagamento', 'nome_da_conta', 'conta_cartao', 'descricao_conta', 'numero_da_conta', 'card', 'cartao', 'final_cartao'];
+  const NORMALIZED_BANK_KEYS = ['banco', 'instituicao', 'instituicao_financeira', 'nome_do_banco'];
+  const NORMALIZED_CATEGORY_KEYS = ['categoria', 'categoria_lancamento', 'grupo', 'classe', 'categoria_da_transacao'];
+  const NORMALIZED_IDENTIFIER_KEYS = ['identificador', 'numero_documento', 'documento', 'id', 'id_transacao', 'n_documento'];
+
+  function cleanupFeedback() {
+    if (!feedback) return;
+    feedback.textContent = '';
+    feedback.classList.add('hidden');
+    feedback.classList.remove(...ESCAPE_CLASSES);
+  }
+
+  function showFeedback(message, variant = 'info') {
+    if (!feedback) return;
+    feedback.textContent = message || '';
+    feedback.classList.remove('hidden');
+    feedback.classList.remove(...ESCAPE_CLASSES);
+    if (variant === 'error') {
+      feedback.classList.add('text-red-500', 'dark:text-red-400');
+    } else if (variant === 'success') {
+      feedback.classList.add('text-emerald-600', 'dark:text-emerald-300');
+    } else {
+      feedback.classList.add('text-indigo-600', 'dark:text-indigo-300');
+    }
+  }
+
+  function escapeHtml(value) {
+    if (value === null || value === undefined) {
+      return '';
+    }
+    return String(value).replace(/[&<>"']/g, (char) => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;',
+    })[char] || char);
+  }
+
+  function normalizeKey(key = '') {
+    return String(key || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '');
+  }
+
+  function detectDelimiter(line = '') {
+    const comma = (line.match(/,/g) || []).length;
+    const semicolon = (line.match(/;/g) || []).length;
+    if (semicolon > comma) return ';';
+    if (comma > 0) return ',';
+    return semicolon > 0 ? ';' : ',';
+  }
+
+  function splitCsvLine(line = '', delimiter = ',') {
+    const cells = [];
+    let current = '';
+    let insideQuotes = false;
+    const content = String(line || '');
+    for (let idx = 0; idx < content.length; idx += 1) {
+      const char = content[idx];
+      if (char === '"') {
+        if (insideQuotes && content[idx + 1] === '"') {
+          current += '"';
+          idx += 1;
+        } else {
+          insideQuotes = !insideQuotes;
+        }
+      } else if (!insideQuotes && char === delimiter) {
+        cells.push(current.trim());
+        current = '';
+      } else if (!insideQuotes && (char === '\r' || char === '\n')) {
+        // ignora quebras de linha não encapsuladas
+      } else {
+        current += char;
+      }
+    }
+    cells.push(current.trim());
+    return cells;
+  }
+
+  function decodeFileBuffer(buffer) {
+    if (!(buffer instanceof ArrayBuffer)) {
+      return typeof buffer === 'string' ? buffer : '';
+    }
+    if (typeof TextDecoder === 'undefined') {
+      console.warn('TextDecoder não disponível neste navegador. Utilizando fallback simples.');
+      try {
+        return Array.from(new Uint8Array(buffer)).map((charCode) => String.fromCharCode(charCode)).join('');
+      } catch (fallbackError) {
+        console.warn('Fallback simples de decodificação falhou.', fallbackError);
+        return '';
+      }
+    }
+    try {
+      return new TextDecoder('utf-8', { fatal: false }).decode(buffer);
+    } catch (utfError) {
+      try {
+        return new TextDecoder('iso-8859-1', { fatal: false }).decode(buffer);
+      } catch (latinError) {
+        console.warn('Falha ao decodificar arquivo CSV:', utfError, latinError);
+        return '';
+      }
+    }
+  }
+
+  function parseCsvContent(content = '') {
+    const sanitized = String(content || '').replace(/\uFEFF/g, '');
+    const lines = sanitized.split(/\r?\n/).filter((line, index) => index === 0 || line.trim().length > 0);
+    if (!lines.length) {
+      return { headers: [], rows: [] };
+    }
+
+    const delimiter = detectDelimiter(lines[0]);
+    const headers = splitCsvLine(lines[0], delimiter).map((header) => header.trim());
+    const rows = [];
+
+    for (let lineIndex = 1; lineIndex < lines.length; lineIndex += 1) {
+      const rawLine = lines[lineIndex];
+      if (!rawLine || !rawLine.trim()) {
+        continue;
+      }
+      const cells = splitCsvLine(rawLine, delimiter);
+      if (cells.every((value) => !value || !value.trim())) {
+        continue;
+      }
+
+      const entry = {};
+      const normalized = {};
+      headers.forEach((header, idx) => {
+        const value = (cells[idx] !== undefined ? cells[idx] : '').trim();
+        entry[header] = value;
+        const normalizedKey = normalizeKey(header);
+        if (normalizedKey) {
+          normalized[normalizedKey] = value;
+        }
+      });
+      entry.__normalized = normalized;
+      entry.__lineNumber = rows.length + 1;
+      rows.push(entry);
+    }
+
+    return { headers, rows };
+  }
+
+  function getNormalizedValue(map, keys) {
+    if (!map) return null;
+    for (let idx = 0; idx < keys.length; idx += 1) {
+      const key = keys[idx];
+      if (key in map && map[key] !== undefined && map[key] !== '') {
+        return map[key];
+      }
+    }
+    return null;
+  }
+
+  function parseNumber(value) {
+    if (value === null || value === undefined) {
+      return null;
+    }
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return value;
+    }
+    let sanitized = String(value).trim();
+    if (!sanitized) {
+      return null;
+    }
+    sanitized = sanitized.replace(/\u00a0/g, '').replace(/\s+/g, '');
+    sanitized = sanitized.replace(/\u2212/g, '-');
+    if (sanitized.includes(',') && sanitized.includes('.')) {
+      sanitized = sanitized.replace(/\./g, '').replace(',', '.');
+    } else if (sanitized.includes(',')) {
+      sanitized = sanitized.replace(',', '.');
+    }
+    sanitized = sanitized.replace(/[^0-9+\-.]/g, '');
+    if (!sanitized) {
+      return null;
+    }
+    const parsed = Number(sanitized);
+    return Number.isNaN(parsed) ? null : parsed;
+  }
+
+  function parseDateValue(value) {
+    if (!value) {
+      return null;
+    }
+    const text = String(value).trim();
+    if (!text) {
+      return null;
+    }
+
+    const localized = text.replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim();
+
+    const match = localized.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})(?:\s+(\d{1,2})(?::(\d{2})(?::(\d{2}))?)?)?$/);
+    if (match) {
+      const day = parseInt(match[1], 10);
+      const month = parseInt(match[2], 10) - 1;
+      let year = parseInt(match[3], 10);
+      if (year < 100) {
+        year += year >= 70 ? 1900 : 2000;
+      }
+      const hours = match[4] !== undefined ? parseInt(match[4], 10) : 0;
+      const minutes = match[5] !== undefined ? parseInt(match[5], 10) : 0;
+      const seconds = match[6] !== undefined ? parseInt(match[6], 10) : 0;
+      const parsed = new Date(year, month, day, hours, minutes, seconds);
+      if (!Number.isNaN(parsed.getTime())) {
+        return parsed;
+      }
+    }
+
+    const iso = new Date(localized);
+    if (!Number.isNaN(iso.getTime())) {
+      return iso;
+    }
+    return null;
+  }
+
+  function deriveAmount(normalized) {
+    const baseValue = getNormalizedValue(normalized, NORMALIZED_AMOUNT_KEYS);
+    let amount = parseNumber(baseValue);
+
+    const credit = parseNumber(getNormalizedValue(normalized, NORMALIZED_CREDIT_KEYS));
+    const debit = parseNumber(getNormalizedValue(normalized, NORMALIZED_DEBIT_KEYS));
+
+    if (amount === null && (credit !== null || debit !== null)) {
+      amount = (credit || 0) - (debit || 0);
+    }
+
+    const typeValue = (getNormalizedValue(normalized, NORMALIZED_TYPE_KEYS) || '').toLowerCase();
+    if (amount !== null && typeValue) {
+      if (/(debito|débito|saida|saída|pagamento|pago|compra|d\b)/.test(typeValue) && !/(credito|crédito|entrada|c\b)/.test(typeValue)) {
+        amount = -Math.abs(amount);
+      } else if (/(credito|crédito|entrada|recebimento|deposito|depósito|c\b)/.test(typeValue)) {
+        amount = Math.abs(amount);
+      }
+    }
+
+    if (amount === null && baseValue && /^-/.test(baseValue)) {
+      const parsed = parseNumber(baseValue);
+      if (parsed !== null) {
+        amount = parsed;
+      }
+    }
+
+    return amount;
+  }
+
+  function deriveBankHint(normalized) {
+    const pieces = [];
+    [NORMALIZED_ACCOUNT_KEYS, NORMALIZED_BANK_KEYS].forEach((keys) => {
+      const value = getNormalizedValue(normalized, keys);
+      if (value) {
+        pieces.push(value.trim());
+      }
+    });
+    const unique = Array.from(new Set(pieces.filter(Boolean)));
+    return unique.length ? unique.join(' • ') : null;
+  }
+
+  function deriveCategory(normalized) {
+    const value = getNormalizedValue(normalized, NORMALIZED_CATEGORY_KEYS);
+    return value ? value.trim() : null;
+  }
+
+  function deriveIdentifier(normalized) {
+    const value = getNormalizedValue(normalized, NORMALIZED_IDENTIFIER_KEYS);
+    return value ? value.trim() : null;
+  }
+
+  function buildTransactionPayload(row) {
+    if (!row) {
+      return null;
+    }
+    const normalized = row.__normalized || {};
+    const descriptionRaw = getNormalizedValue(normalized, NORMALIZED_DESCRIPTION_KEYS);
+    const description = descriptionRaw ? descriptionRaw.trim() : null;
+    const typeValue = getNormalizedValue(normalized, NORMALIZED_TYPE_KEYS);
+    const amount = deriveAmount(normalized);
+    const bankHint = deriveBankHint(normalized);
+    const category = deriveCategory(normalized);
+    const identifier = deriveIdentifier(normalized);
+    const dateRaw = getNormalizedValue(normalized, NORMALIZED_DATE_KEYS);
+    const parsedDate = parseDateValue(dateRaw);
+
+    if (amount === null && !description && !Object.values(normalized).some((value) => value && value.trim())) {
+      return null;
+    }
+
+    const originalRow = Object.keys(row).reduce((acc, key) => {
+      if (!key.startsWith('__')) {
+        acc[key] = row[key];
+      }
+      return acc;
+    }, {});
+
+    const payload = {
+      source: 'bank_csv',
+      status: 'pending',
+      lineNumber: row.__lineNumber || null,
+      description,
+      rawDescription: descriptionRaw && descriptionRaw !== description ? descriptionRaw : undefined,
+      amount,
+      rawAmount: getNormalizedValue(normalized, NORMALIZED_AMOUNT_KEYS),
+      transactionType: typeValue || null,
+      bankAccount: bankHint,
+      category: category || null,
+      externalIdentifier: identifier || null,
+      raw: originalRow,
+      detectedKeys: Object.keys(normalized),
+    };
+
+    if (parsedDate) {
+      payload.date = firebase.firestore.Timestamp.fromDate(parsedDate);
+    } else if (dateRaw) {
+      payload.rawDate = dateRaw;
+    }
+
+    Object.keys(payload).forEach((key) => {
+      if (payload[key] === undefined) {
+        delete payload[key];
+      }
+    });
+
+    return payload;
+  }
+
+  function resetState() {
+    state.headers = [];
+    state.rows = [];
+    state.fileName = null;
+    if (fileInput) {
+      fileInput.value = '';
+    }
+    if (previewWrapper) {
+      previewWrapper.classList.add('hidden');
+    }
+    if (previewHead) {
+      previewHead.innerHTML = '';
+    }
+    if (previewBody) {
+      previewBody.innerHTML = '';
+    }
+    if (previewCount) {
+      previewCount.textContent = '';
+    }
+    cleanupFeedback();
+    if (btnConfirm) {
+      btnConfirm.disabled = false;
+      btnConfirm.textContent = defaultButtonLabel;
+    }
+  }
+
+  function openModal() {
+    resetState();
+    modal.classList.remove('hidden');
+    if (typeof updateFloatingMenuVisibility === 'function') {
+      updateFloatingMenuVisibility();
+    }
+    setTimeout(() => {
+      if (fileInput) {
+        fileInput.focus();
+      }
+    }, 50);
+  }
+
+  function closeModal() {
+    modal.classList.add('hidden');
+    resetState();
+    if (typeof updateFloatingMenuVisibility === 'function') {
+      updateFloatingMenuVisibility();
+    }
+  }
+
+  async function persistTransactions(rows) {
+    requireAuthContext();
+    const totalRows = rows.length;
+    const prepared = [];
+    let skipped = 0;
+    rows.forEach((row) => {
+      const payload = buildTransactionPayload(row);
+      if (payload) {
+        prepared.push(payload);
+      } else {
+        skipped += 1;
+      }
+    });
+
+    const sessionData = stampWorkspaceCreation({
+      type: 'bank_csv',
+      status: 'processing',
+      fileName: state.fileName || null,
+      totalRows,
+      processedRows: 0,
+      stats: { imported: 0, skipped, errors: 0 },
+      detectedHeaders: state.headers,
+    });
+
+    const sessionRef = await db.collection('importSessions').add(sessionData);
+    const transactionsRef = db.collection('transactions');
+
+    const CHUNK_SIZE = 250;
+    let imported = 0;
+    let errors = 0;
+
+    for (let index = 0; index < prepared.length; index += CHUNK_SIZE) {
+      const chunk = prepared.slice(index, index + CHUNK_SIZE);
+      if (!chunk.length) {
+        continue;
+      }
+      const batch = db.batch();
+      chunk.forEach((payload) => {
+        const docRef = transactionsRef.doc();
+        batch.set(docRef, stampWorkspaceCreation({ ...payload, importSessionId: sessionRef.id }));
+      });
+      try {
+        await batch.commit();
+        imported += chunk.length;
+      } catch (error) {
+        console.error('Erro ao salvar lote de transações importadas:', error);
+        errors += chunk.length;
+      }
+    }
+
+    const stats = { imported, skipped, errors };
+    await sessionRef.update(stampWorkspaceUpdate({
+      status: errors ? 'completed_with_errors' : 'completed',
+      processedRows: totalRows,
+      stats,
+      finishedAt: firebase.firestore.Timestamp.now(),
+    }));
+
+    return { sessionId: sessionRef.id, ...stats };
+  }
+
+  function renderPreview(headers, rows) {
+    if (!previewWrapper || !previewHead || !previewBody) {
+      return;
+    }
+    if (!headers.length || !rows.length) {
+      previewWrapper.classList.add('hidden');
+      previewHead.innerHTML = '';
+      previewBody.innerHTML = '';
+      if (previewCount) {
+        previewCount.textContent = '';
+      }
+      return;
+    }
+
+    const headHtml = `<tr>${headers.map((header) => `<th class="px-3 py-2 font-semibold whitespace-nowrap">${escapeHtml(header)}</th>`).join('')}</tr>`;
+    previewHead.innerHTML = headHtml;
+
+    const previewRows = rows.slice(0, 8).map((row) => {
+      const cells = headers.map((header) => `<td class="px-3 py-2 whitespace-nowrap">${escapeHtml(row[header] ?? '')}</td>`).join('');
+      return `<tr>${cells}</tr>`;
+    }).join('');
+    previewBody.innerHTML = previewRows;
+    previewWrapper.classList.remove('hidden');
+    if (previewCount) {
+      previewCount.textContent = rows.length > 8
+        ? `Mostrando ${Math.min(8, rows.length)} de ${rows.length} linhas`
+        : `${rows.length} linha${rows.length === 1 ? '' : 's'} detectada${rows.length === 1 ? '' : 's'}`;
+    }
+  }
+
+  btnOpen.addEventListener('click', () => {
+    if (!currentUser) {
+      showToast('Faça login para importar transações.', 'error');
+      return;
+    }
+    openModal();
+  });
+
+  if (btnClose) {
+    btnClose.addEventListener('click', closeModal);
+  }
+  if (btnCancel) {
+    btnCancel.addEventListener('click', closeModal);
+  }
+
+  modal.addEventListener('click', (event) => {
+    if (event.target === modal) {
+      closeModal();
+    }
+  });
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && !modal.classList.contains('hidden')) {
+      closeModal();
+    }
+  });
+
+  if (fileInput) {
+    fileInput.addEventListener('change', (event) => {
+      cleanupFeedback();
+      const [file] = event.target.files || [];
+      state.headers = [];
+      state.rows = [];
+      state.fileName = file ? file.name : null;
+      if (previewWrapper) {
+        previewWrapper.classList.add('hidden');
+      }
+      if (!file) {
+        showFeedback('Selecione um arquivo CSV para continuar.', 'info');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (loadEvent) => {
+        const buffer = loadEvent.target?.result;
+        const text = decodeFileBuffer(buffer);
+        if (!text) {
+          showFeedback('Não foi possível ler o conteúdo do arquivo. Tente novamente.', 'error');
+          return;
+        }
+        const { headers, rows } = parseCsvContent(text);
+        if (!headers.length || !rows.length) {
+          showFeedback('Nenhuma linha válida foi encontrada neste arquivo. Verifique se o CSV contém cabeçalho e dados.', 'error');
+          return;
+        }
+        state.headers = headers;
+        state.rows = rows;
+        renderPreview(headers, rows);
+        showFeedback(`Arquivo carregado: ${file.name}. ${rows.length} linha${rows.length === 1 ? '' : 's'} pronta${rows.length === 1 ? '' : 's'} para importar.`, 'success');
+      };
+      reader.onerror = () => {
+        showFeedback('Erro ao ler o arquivo selecionado. Tente novamente.', 'error');
+      };
+      reader.readAsArrayBuffer(file);
+    });
+  }
+
+  if (form) {
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault();
+      cleanupFeedback();
+      if (!currentUser) {
+        showToast('Faça login para importar transações.', 'error');
+        return;
+      }
+      if (!state.rows.length) {
+        showFeedback('Carregue um arquivo CSV válido antes de importar.', 'error');
+        return;
+      }
+      if (btnConfirm) {
+        btnConfirm.disabled = true;
+        btnConfirm.textContent = 'Importando...';
+      }
+      try {
+        const result = await persistTransactions(state.rows);
+        const resumo = [`${result.imported} importada${result.imported === 1 ? '' : 's'}`];
+        if (result.skipped) {
+          resumo.push(`${result.skipped} ignorada${result.skipped === 1 ? '' : 's'}`);
+        }
+        if (result.errors) {
+          resumo.push(`${result.errors} com erro`);
+        }
+        const mensagem = `Importação concluída (${resumo.join(', ')}).`;
+        showToast(mensagem, result.errors ? 'warning' : 'success');
+        showFeedback(`${mensagem} Você pode revisar as transações importadas na aba de histórico.`, result.errors ? 'info' : 'success');
+        if (!result.errors) {
+          setTimeout(closeModal, 800);
+        }
+      } catch (error) {
+        console.error('Falha ao importar CSV bancário:', error);
+        showFeedback('Não foi possível concluir a importação. Verifique sua conexão e tente novamente.', 'error');
+      } finally {
+        if (btnConfirm) {
+          btnConfirm.disabled = false;
+          btnConfirm.textContent = defaultButtonLabel;
+        }
+      }
+    });
+  }
+})();
 
 
 if (userMenuTrigger && userMenuDropdown) {
