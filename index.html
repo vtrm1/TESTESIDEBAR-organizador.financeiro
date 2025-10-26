@@ -1076,9 +1076,9 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
 
 <!-- MODAL: Compartilhamento do espaço financeiro -->
 <div id="modal-workspace-share" class="fixed inset-0 z-[9500] hidden flex items-start justify-center bg-slate-900/80 backdrop-blur px-4 py-8 overflow-y-auto sm:items-center">
-  <div class="relative w-full max-w-xl bg-white dark:bg-gray-900 border border-gray-200/80 dark:border-gray-700 rounded-2xl shadow-2xl p-6 sm:p-8 max-h-[92vh] sm:max-h-[88vh] overflow-hidden">
+  <div class="relative w-full max-w-xl bg-white dark:bg-gray-900 border border-gray-200/80 dark:border-gray-700 rounded-2xl shadow-2xl p-6 sm:p-8 max-h-[92vh] sm:max-h-[88vh] overflow-y-auto">
     <button id="workspace-share-close" class="absolute top-3 right-3 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-2xl leading-none" aria-label="Fechar modal">&times;</button>
-    <div class="flex h-full min-h-0 flex-col gap-6 text-sm">
+    <div class="space-y-6 text-sm">
       <div>
         <h2 class="text-xl font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-2">
           <i class="fa-solid fa-people-roof text-emerald-500"></i>
@@ -1086,8 +1086,7 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
         </h2>
         <p id="workspace-owner-hint" class="mt-2 text-gray-500 dark:text-gray-400 text-sm leading-relaxed"></p>
       </div>
-      <div id="workspace-share-scroll-container" class="flex-1 min-h-0 overflow-y-auto pr-1 sm:pr-2 -mr-1 sm:-mr-2 scroll-area max-h-[calc(100vh-12rem)] sm:max-h-full overscroll-contain touch-pan-y">
-        <div class="space-y-5 pb-2">
+      <div id="workspace-share-scroll-container" class="space-y-5 pb-2">
           <div class="rounded-xl border border-emerald-200/70 dark:border-emerald-500/30 bg-emerald-50/60 dark:bg-emerald-500/10 p-4 space-y-3">
             <div class="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">Código do seu espaço</div>
             <div class="flex flex-col sm:flex-row sm:items-center gap-3">
@@ -3605,9 +3604,13 @@ function deriveWorkspaceDisplayName(details = null, fallbackUser = null) {
 }
 
 function getActiveWorkspaceDisplayName() {
+  const workspaceIdSanitized = sanitizeWorkspaceName(activeWorkspace?.workspaceId || '');
   if (activeWorkspace?.displayName) {
     const sanitized = sanitizeWorkspaceName(activeWorkspace.displayName);
-    if (sanitized) {
+    if (
+      sanitized &&
+      (!workspaceIdSanitized || sanitized.toLowerCase() !== workspaceIdSanitized.toLowerCase())
+    ) {
       return sanitized;
     }
   }
