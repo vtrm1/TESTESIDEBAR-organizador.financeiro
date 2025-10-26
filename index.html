@@ -811,6 +811,24 @@ html.dark .mobile-tab-button {
   scrollbar-width: none;
 }
 
+.scroll-area {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.45) transparent;
+}
+
+.scroll-area::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scroll-area::-webkit-scrollbar-thumb {
+  background-color: rgba(148, 163, 184, 0.45);
+  border-radius: 9999px;
+}
+
+html.dark .scroll-area::-webkit-scrollbar-thumb {
+  background-color: rgba(148, 163, 184, 0.3);
+}
+
 /* NOVO: Estilos para filtro de busca no histórico */
 .search-highlight {
   background-color: #fef3c7;
@@ -1072,13 +1090,23 @@ html.dark .mobile-tab-button {
         <div class="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">Código do seu espaço</div>
         <div class="flex flex-col sm:flex-row sm:items-center gap-3">
           <code id="workspace-share-code" class="flex-1 text-lg sm:text-xl font-semibold text-emerald-700 dark:text-emerald-300 break-all bg-white dark:bg-gray-900 px-3 py-1.5 rounded-lg border border-emerald-200/60 dark:border-emerald-500/40 shadow-inner">—</code>
-          <button id="workspace-copy-code" type="button" class="self-start sm:self-auto px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white transition-colors">Copiar</button>
+          <div class="flex items-center gap-2 self-start sm:self-auto">
+            <button id="workspace-copy-code" type="button" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white transition-colors">Copiar</button>
+            <button id="workspace-share-invite" type="button" class="px-3 py-1.5 text-xs font-semibold rounded-lg border border-emerald-400/70 dark:border-emerald-500/40 text-emerald-700 dark:text-emerald-200 hover:bg-emerald-100/60 dark:hover:bg-emerald-500/10 transition-colors">Enviar convite</button>
+          </div>
         </div>
         <p class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">Compartilhe este código com quem também precisa enxergar e editar esses dados. Após inserir o código, a outra conta passará a usar o mesmo ambiente financeiro.</p>
       </div>
       <div class="space-y-3">
-        <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wide">Quem tem acesso</h3>
-        <ul id="workspace-members-list" class="space-y-2 text-sm"></ul>
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-200 uppercase tracking-wide">Quem tem acesso</h3>
+          <span class="text-[0.7rem] text-gray-500 dark:text-gray-400">Arraste para ver todos os integrantes</span>
+        </div>
+        <div class="rounded-xl border border-gray-200/70 dark:border-gray-700/60 bg-white/80 dark:bg-gray-900/40">
+          <div id="workspace-members-scroll" class="max-h-64 overflow-y-auto scroll-area pr-1 py-2">
+            <ul id="workspace-members-list" class="space-y-2 text-sm px-1"></ul>
+          </div>
+        </div>
       </div>
       <form id="workspace-join-form" class="space-y-3">
         <div class="space-y-2">
@@ -1491,20 +1519,32 @@ html.dark .mobile-tab-button {
       <div class="envelopes-carousel flex gap-4 overflow-x-auto snap-x snap-mandatory pb-2 -mx-4 px-4" id="envelopes-grid">
         <div class="envelope-card border-l-4 border-blue-500 bg-blue-50/70 dark:bg-slate-800/60 rounded-lg p-4 flex flex-col gap-3 shrink-0 basis-[85%] sm:basis-[70%] lg:basis-[45%] xl:basis-[32%] min-w-[18rem] snap-start" data-envelope-card="fixo">
           <div class="flex flex-col gap-3">
-            <div class="flex items-start justify-between gap-3">
-              <div class="space-y-1">
+            <div class="flex flex-wrap items-start justify-between gap-4">
+              <div class="space-y-2 min-w-0 flex-1">
                 <div class="font-semibold text-blue-700 dark:text-blue-200 flex items-center gap-2"><i class="fa fa-house"></i><span>Custo Fixo</span></div>
-                <div class="text-xs text-slate-500 dark:text-slate-400">Limite mensal: R$ <span id="meta-fixo">0,00</span></div>
-                <div class="text-lg font-bold text-slate-900 dark:text-slate-100">Gasto no mês: R$ <span id="gasto-fixo">0,00</span></div>
-                <div class="text-xs text-slate-500 dark:text-slate-400">Margem disponível: R$ <span id="limite-livre-fixo">0,00</span></div>
-                <div class="text-xs text-slate-500 dark:text-slate-400">Reserva planejada: R$ <span id="reserva-fixo">0,00</span></div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-y-1 gap-x-4 text-xs text-slate-500 dark:text-slate-400">
+                  <span>Limite mensal: R$ <span id="meta-fixo">0,00</span></span>
+                  <span class="sm:text-right">Gasto no mês: R$ <span id="gasto-fixo">0,00</span></span>
+                </div>
+                <div class="flex flex-wrap items-center gap-2 text-[0.75rem] text-slate-600 dark:text-slate-300">
+                  <span class="inline-flex items-center gap-1 rounded-full border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/50 px-2 py-1">
+                    <i class="fa-solid fa-flag text-[0.6rem] text-slate-400"></i>
+                    Reserva planejada: <span class="font-semibold text-slate-700 dark:text-slate-100">R$ <span id="reserva-fixo">0,00</span></span>
+                  </span>
+                  <span class="inline-flex items-center gap-1 rounded-full border border-emerald-200/70 dark:border-emerald-500/30 bg-emerald-50/70 dark:bg-emerald-500/10 px-2 py-1 text-emerald-700 dark:text-emerald-200">
+                    <i class="fa-solid fa-leaf text-[0.6rem]"></i>
+                    Margem livre: R$ <span class="font-semibold"><span id="limite-livre-fixo">0,00</span></span>
+                  </span>
+                </div>
                 <div class="text-xs text-red-600 dark:text-red-300 hidden" id="excedente-fixo-wrapper">Acima do limite: R$ <span id="excedente-fixo">0,00</span></div>
               </div>
-              <div class="space-y-2 text-xs w-32">
-                <label class="block font-semibold text-slate-600 dark:text-slate-300">Limite mensal
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs w-full sm:w-auto sm:max-w-[20rem]">
+                <label class="block font-semibold text-slate-600 dark:text-slate-300">
+                  <span>Limite mensal</span>
                   <input id="envelope-fixo-meta" type="number" min="0" step="0.01" class="mt-1 w-full border px-2 py-1 rounded text-right bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" />
                 </label>
-                <label class="block font-semibold text-slate-600 dark:text-slate-300">Reserva planejada
+                <label class="block font-semibold text-slate-600 dark:text-slate-300">
+                  <span>Reserva planejada</span>
                   <input id="envelope-fixo-reserva" type="number" min="0" step="0.01" class="mt-1 w-full border px-2 py-1 rounded text-right bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" />
                 </label>
               </div>
@@ -1513,9 +1553,9 @@ html.dark .mobile-tab-button {
               <div class="w-full bg-white/60 dark:bg-gray-700 rounded-full h-2 shadow-inner">
                 <div id="progress-fixo" class="progress-bar h-2 rounded-full bg-blue-500" style="width:0%"></div>
               </div>
-              <div class="flex justify-between text-[0.7rem] text-slate-500 dark:text-slate-400 mt-1">
+              <div class="flex flex-wrap items-center justify-between gap-2 text-[0.7rem] text-slate-500 dark:text-slate-400 mt-1">
                 <span>Comprometido: <strong id="percentual-fixo">0%</strong></span>
-                <span>Margem disponível: R$ <span id="disponivel-fixo">0,00</span></span>
+                <span class="inline-flex items-center gap-1 rounded-full bg-white/70 dark:bg-gray-800/70 px-2 py-0.5">Sobra prevista: R$ <span id="disponivel-fixo">0,00</span></span>
               </div>
             </div>
             <div class="flex flex-wrap gap-2 text-xs">
@@ -1526,20 +1566,32 @@ html.dark .mobile-tab-button {
 
         <div class="envelope-card border-l-4 border-green-500 bg-emerald-50/70 dark:bg-emerald-900/30 rounded-lg p-4 flex flex-col gap-3 shrink-0 basis-[85%] sm:basis-[70%] lg:basis-[45%] xl:basis-[32%] min-w-[18rem] snap-start" data-envelope-card="parcelado">
           <div class="flex flex-col gap-3">
-            <div class="flex items-start justify-between gap-3">
-              <div class="space-y-1">
+            <div class="flex flex-wrap items-start justify-between gap-4">
+              <div class="space-y-2 min-w-0 flex-1">
                 <div class="font-semibold text-emerald-700 dark:text-emerald-200 flex items-center gap-2"><i class="fa fa-receipt"></i><span>Parcelados do mês</span></div>
-                <div class="text-xs text-slate-500 dark:text-slate-400">Limite mensal: R$ <span id="meta-parcelado">0,00</span></div>
-                <div class="text-lg font-bold text-slate-900 dark:text-slate-100">Gasto no mês: R$ <span id="gasto-parcelado">0,00</span></div>
-                <div class="text-xs text-slate-500 dark:text-slate-400">Margem disponível: R$ <span id="limite-livre-parcelado">0,00</span></div>
-                <div class="text-xs text-slate-500 dark:text-slate-400">Reserva planejada: R$ <span id="reserva-parcelado">0,00</span></div>
-                <div class="text-xs text-red-600 dark:text-red-300 hidden" id="excedente-parcelado-wrapper">Acima do limite: R$ <span id="excedente-parcelado">0,00</span></div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-y-1 gap-x-4 text-xs text-slate-500 dark:text-slate-400">
+                  <span>Limite mensal: R$ <span id="meta-parcelado">0,00</span></span>
+                  <span class="sm:text-right">Gasto no mês: R$ <span id="gasto-parcelado">0,00</span></span>
+                </div>
+                <div class="flex flex-wrap items-center gap-2 text-[0.75rem] text-slate-600 dark:text-slate-300">
+                  <span class="inline-flex items-center gap-1 rounded-full border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/50 px-2 py-1">
+                    <i class="fa-solid fa-flag text-[0.6rem] text-slate-400"></i>
+                    Reserva planejada: <span class="font-semibold text-slate-700 dark:text-slate-100">R$ <span id="reserva-parcelado">0,00</span></span>
+                  </span>
+                  <span class="inline-flex items-center gap-1 rounded-full border border-emerald-200/70 dark:border-emerald-500/30 bg-emerald-50/70 dark:bg-emerald-500/10 px-2 py-1 text-emerald-700 dark:text-emerald-200">
+                    <i class="fa-solid fa-leaf text-[0.6rem]"></i>
+                    Margem livre: R$ <span class="font-semibold"><span id="limite-livre-parcelado">0,00</span></span>
+                  </span>
+                </div>
+                <div class="text-xs text-red-600 dark:text-red-300 hidden" id="excedente-parcelado-wrapper">Acima do limite: R$<span id="excedente-parcelado">0,00</span></div>
               </div>
-              <div class="space-y-2 text-xs w-32">
-                <label class="block font-semibold text-slate-600 dark:text-slate-300">Limite mensal
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs w-full sm:w-auto sm:max-w-[20rem]">
+                <label class="block font-semibold text-slate-600 dark:text-slate-300">
+                  <span>Limite mensal</span>
                   <input id="envelope-parcelado-meta" type="number" min="0" step="0.01" class="mt-1 w-full border px-2 py-1 rounded text-right bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" />
                 </label>
-                <label class="block font-semibold text-slate-600 dark:text-slate-300">Reserva planejada
+                <label class="block font-semibold text-slate-600 dark:text-slate-300">
+                  <span>Reserva planejada</span>
                   <input id="envelope-parcelado-reserva" type="number" min="0" step="0.01" class="mt-1 w-full border px-2 py-1 rounded text-right bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" />
                 </label>
               </div>
@@ -1548,9 +1600,9 @@ html.dark .mobile-tab-button {
               <div class="w-full bg-white/60 dark:bg-gray-700 rounded-full h-2 shadow-inner">
                 <div id="progress-parcelado" class="progress-bar h-2 rounded-full bg-green-500" style="width:0%"></div>
               </div>
-              <div class="flex justify-between text-[0.7rem] text-slate-500 dark:text-slate-400 mt-1">
+              <div class="flex flex-wrap items-center justify-between gap-2 text-[0.7rem] text-slate-500 dark:text-slate-400 mt-1">
                 <span>Comprometido: <strong id="percentual-parcelado">0%</strong></span>
-                <span>Margem disponível: R$ <span id="disponivel-parcelado">0,00</span></span>
+                <span class="inline-flex items-center gap-1 rounded-full bg-white/70 dark:bg-gray-800/70 px-2 py-0.5">Sobra prevista: R$ <span id="disponivel-parcelado">0,00</span></span>
               </div>
             </div>
             <div class="flex flex-wrap gap-2 text-xs">
@@ -1558,23 +1610,34 @@ html.dark .mobile-tab-button {
             </div>
           </div>
         </div>
-
         <div class="envelope-card border-l-4 border-orange-500 bg-amber-50/80 dark:bg-amber-900/30 rounded-lg p-4 flex flex-col gap-3 shrink-0 basis-[85%] sm:basis-[70%] lg:basis-[45%] xl:basis-[32%] min-w-[18rem] snap-start" data-envelope-card="variavel">
           <div class="flex flex-col gap-3">
-            <div class="flex items-start justify-between gap-3">
-              <div class="space-y-1">
+            <div class="flex flex-wrap items-start justify-between gap-4">
+              <div class="space-y-2 min-w-0 flex-1">
                 <div class="font-semibold text-amber-700 dark:text-amber-200 flex items-center gap-2"><i class="fa fa-basket-shopping"></i><span>Variáveis</span></div>
-                <div class="text-xs text-slate-500 dark:text-slate-400">Limite mensal: R$ <span id="meta-variavel">0,00</span></div>
-                <div class="text-lg font-bold text-slate-900 dark:text-slate-100">Gasto no mês: R$ <span id="gasto-variavel">0,00</span></div>
-                <div class="text-xs text-slate-500 dark:text-slate-400">Margem disponível: R$ <span id="limite-livre-variavel">0,00</span></div>
-                <div class="text-xs text-slate-500 dark:text-slate-400">Reserva planejada: R$ <span id="reserva-variavel">0,00</span></div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-y-1 gap-x-4 text-xs text-slate-500 dark:text-slate-400">
+                  <span>Limite mensal: R$ <span id="meta-variavel">0,00</span></span>
+                  <span class="sm:text-right">Gasto no mês: R$ <span id="gasto-variavel">0,00</span></span>
+                </div>
+                <div class="flex flex-wrap items-center gap-2 text-[0.75rem] text-slate-600 dark:text-slate-300">
+                  <span class="inline-flex items-center gap-1 rounded-full border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/50 px-2 py-1">
+                    <i class="fa-solid fa-flag text-[0.6rem] text-slate-400"></i>
+                    Reserva planejada: <span class="font-semibold text-slate-700 dark:text-slate-100">R$ <span id="reserva-variavel">0,00</span></span>
+                  </span>
+                  <span class="inline-flex items-center gap-1 rounded-full border border-amber-200/70 dark:border-amber-500/30 bg-amber-50/80 dark:bg-amber-500/10 text-amber-700 dark:text-amber-200 px-2 py-1">
+                    <i class="fa-solid fa-leaf text-[0.6rem]"></i>
+                    Margem livre: R$ <span class="font-semibold"><span id="limite-livre-variavel">0,00</span></span>
+                  </span>
+                </div>
                 <div class="text-xs text-red-600 dark:text-red-300 hidden" id="excedente-variavel-wrapper">Acima do limite: R$ <span id="excedente-variavel">0,00</span></div>
               </div>
-              <div class="space-y-2 text-xs w-32">
-                <label class="block font-semibold text-slate-600 dark:text-slate-300">Limite mensal
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs w-full sm:w-auto sm:max-w-[20rem]">
+                <label class="block font-semibold text-slate-600 dark:text-slate-300">
+                  <span>Limite mensal</span>
                   <input id="envelope-variavel-meta" type="number" min="0" step="0.01" class="mt-1 w-full border px-2 py-1 rounded text-right bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" />
                 </label>
-                <label class="block font-semibold text-slate-600 dark:text-slate-300">Reserva planejada
+                <label class="block font-semibold text-slate-600 dark:text-slate-300">
+                  <span>Reserva planejada</span>
                   <input id="envelope-variavel-reserva" type="number" min="0" step="0.01" class="mt-1 w-full border px-2 py-1 rounded text-right bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" />
                 </label>
               </div>
@@ -1583,9 +1646,9 @@ html.dark .mobile-tab-button {
               <div class="w-full bg-white/60 dark:bg-gray-700 rounded-full h-2 shadow-inner">
                 <div id="progress-variavel" class="progress-bar h-2 rounded-full bg-orange-500" style="width:0%"></div>
               </div>
-              <div class="flex justify-between text-[0.7rem] text-slate-500 dark:text-slate-400 mt-1">
+              <div class="flex flex-wrap items-center justify-between gap-2 text-[0.7rem] text-slate-500 dark:text-slate-400 mt-1">
                 <span>Comprometido: <strong id="percentual-variavel">0%</strong></span>
-                <span>Margem disponível: R$ <span id="disponivel-variavel">0,00</span></span>
+                <span class="inline-flex items-center gap-1 rounded-full bg-white/70 dark:bg-gray-800/70 px-2 py-0.5">Sobra prevista: R$ <span id="disponivel-variavel">0,00</span></span>
               </div>
             </div>
             <div class="flex flex-wrap gap-2 text-xs">
@@ -1593,6 +1656,7 @@ html.dark .mobile-tab-button {
             </div>
           </div>
         </div>
+
       </div>
     </div>
 
@@ -2887,6 +2951,7 @@ const workspaceShareModal = document.getElementById('modal-workspace-share');
 const workspaceShareClose = document.getElementById('workspace-share-close');
 const workspaceShareCode = document.getElementById('workspace-share-code');
 const workspaceCopyCode = document.getElementById('workspace-copy-code');
+const workspaceShareInvite = document.getElementById('workspace-share-invite');
 const workspaceMembersList = document.getElementById('workspace-members-list');
 const workspaceJoinForm = document.getElementById('workspace-join-form');
 const workspaceJoinCodeInput = document.getElementById('workspace-join-code');
@@ -3395,7 +3460,10 @@ async function renderWorkspaceSharingDetails() {
     } else {
       profiles.forEach(profile => {
         const li = document.createElement('li');
-        li.className = 'flex items-center justify-between gap-3 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50/70 dark:bg-gray-800/50 px-3 py-2';
+        li.className = 'rounded-xl border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-800/60 px-3 py-2 shadow-sm';
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between';
 
         const info = document.createElement('div');
         info.className = 'min-w-0';
@@ -3408,22 +3476,90 @@ async function renderWorkspaceSharingDetails() {
         info.appendChild(name);
         info.appendChild(email);
 
+        const controls = document.createElement('div');
+        controls.className = 'flex flex-wrap items-center gap-2 sm:justify-end';
+
         const badgesWrap = document.createElement('div');
-        badgesWrap.className = 'flex items-center gap-2 shrink-0';
+        badgesWrap.className = 'flex flex-wrap items-center gap-2';
         if (profile.uid === activeWorkspace?.ownerUid) {
           badgesWrap.appendChild(createWorkspaceBadge('Admin', 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-200'));
         }
         if (profile.uid === currentUser.uid) {
           badgesWrap.appendChild(createWorkspaceBadge('Você', 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-200'));
         }
-
-        li.appendChild(info);
         if (badgesWrap.childNodes.length > 0) {
-          li.appendChild(badgesWrap);
+          controls.appendChild(badgesWrap);
         }
+
+        const actionsWrap = document.createElement('div');
+        actionsWrap.className = 'flex items-center gap-2';
+        const canRemove = Boolean(activeWorkspace?.isOwner && profile.uid !== activeWorkspace.ownerUid);
+        if (canRemove) {
+          const removeButton = document.createElement('button');
+          removeButton.type = 'button';
+          removeButton.className = 'inline-flex items-center gap-1 text-xs font-semibold text-red-600 dark:text-red-300 hover:text-red-700 dark:hover:text-red-200 transition-colors';
+          removeButton.dataset.memberAction = 'remove';
+          removeButton.dataset.memberUid = profile.uid;
+          removeButton.dataset.memberName = profile.displayName || profile.email || formatUid(profile.uid);
+          removeButton.innerHTML = '<i class="fa-solid fa-user-xmark text-[0.7rem]"></i><span>Remover</span>';
+          actionsWrap.appendChild(removeButton);
+        }
+        if (actionsWrap.childNodes.length > 0) {
+          controls.appendChild(actionsWrap);
+        }
+
+        wrapper.appendChild(info);
+        if (controls.childNodes.length > 0) {
+          wrapper.appendChild(controls);
+        }
+
+        li.appendChild(wrapper);
         workspaceMembersList.appendChild(li);
       });
     }
+  }
+}
+
+function confirmRemoveWorkspaceMember(uid, memberLabel) {
+  if (!uid) return;
+  const readableLabel = memberLabel || 'este integrante';
+  abrirModalConfirmacao(
+    'Remover integrante',
+    `Deseja remover ${readableLabel} do espaço familiar compartilhado?`,
+    () => removeWorkspaceMember(uid, readableLabel),
+    'modal-workspace-share'
+  );
+}
+
+async function removeWorkspaceMember(uid, memberLabel) {
+  if (!currentUser || !activeWorkspace?.isOwner) {
+    showWorkspaceFeedback('Somente o administrador pode remover integrantes.', false);
+    return;
+  }
+  if (!uid || uid === activeWorkspace.ownerUid) {
+    showWorkspaceFeedback('Não é possível remover o administrador do espaço.', false);
+    return;
+  }
+
+  const workspaceId = activeWorkspace.workspaceId || currentUser.uid;
+
+  try {
+    resetWorkspaceFeedback();
+    await db.collection('sharedWorkspaces').doc(workspaceId).set({
+      memberUids: FieldValue.arrayRemove(uid),
+      updatedAt: firebase.firestore.Timestamp.now(),
+    }, { merge: true });
+
+    if (Array.isArray(activeWorkspace.memberUids)) {
+      activeWorkspace.memberUids = activeWorkspace.memberUids.filter((memberUid) => memberUid !== uid);
+    }
+
+    await renderWorkspaceSharingDetails();
+    showWorkspaceFeedback(`${memberLabel || 'Integrante'} removido do espaço.`, true);
+    showToast('Integrante removido do espaço.', 'info');
+  } catch (error) {
+    console.error('Erro ao remover integrante do workspace:', error);
+    showWorkspaceFeedback('Não foi possível remover o integrante agora. Tente novamente.', false);
   }
 }
 
@@ -4817,6 +4953,54 @@ function initAuthFlow() {
     });
   }
 
+  if (workspaceShareInvite) {
+    workspaceShareInvite.addEventListener('click', async () => {
+      if (!currentUser) {
+        showAuthOverlay();
+        return;
+      }
+      if (!workspaceShareCode) return;
+      resetWorkspaceFeedback();
+      const code = (workspaceShareCode.textContent || '').trim();
+      if (!code || code === '—') {
+        showWorkspaceFeedback('Compartilhe o espaço após carregar o código acima.', false);
+        return;
+      }
+
+      const appUrl = window.location?.origin || window.location?.href || '';
+      const inviteMessage = `Olá! Estou compartilhando o Organizador Financeiro com você. Use o código ${code} e acesse ${appUrl} para entrar no mesmo espaço em Família > Usar esse espaço.`;
+
+      try {
+        if (navigator.share) {
+          try {
+            await navigator.share({
+              title: 'Convite — Organizador Financeiro',
+              text: inviteMessage,
+              url: appUrl || undefined,
+            });
+            showWorkspaceFeedback('Convite enviado! Compartilhe novamente quando quiser.', true);
+            return;
+          } catch (shareError) {
+            if (shareError?.name === 'AbortError') {
+              return;
+            }
+            console.warn('Compartilhamento nativo indisponível:', shareError);
+          }
+        }
+
+        if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(inviteMessage);
+          showWorkspaceFeedback('Convite copiado! Cole a mensagem no app que preferir.', true);
+        } else {
+          showWorkspaceFeedback(`Copie e compartilhe manualmente: ${inviteMessage}`, true);
+        }
+      } catch (error) {
+        console.error('Erro ao preparar convite do workspace:', error);
+        showWorkspaceFeedback('Não foi possível gerar o convite agora. Compartilhe o código manualmente.', false);
+      }
+    });
+  }
+
   if (workspaceJoinForm) {
     workspaceJoinForm.addEventListener('submit', async (event) => {
       event.preventDefault();
@@ -4837,6 +5021,21 @@ function initAuthFlow() {
         showWorkspaceFeedback(message, false);
       } finally {
         setWorkspaceJoinLoading(false);
+      }
+    });
+  }
+
+  if (workspaceMembersList) {
+    workspaceMembersList.addEventListener('click', (event) => {
+      const actionButton = event.target.closest('[data-member-action]');
+      if (!actionButton) {
+        return;
+      }
+      const action = actionButton.dataset.memberAction;
+      if (action === 'remove') {
+        const uid = actionButton.dataset.memberUid;
+        const label = actionButton.dataset.memberName || 'este integrante';
+        confirmRemoveWorkspaceMember(uid, label);
       }
     });
   }
@@ -5401,8 +5600,10 @@ const btnCancelarConfirmacao = document.getElementById('btn-cancelar-confirmacao
 const btnConfirmarAcao = document.getElementById('btn-confirmar-acao');
 
 let confirmCallback = null; // Variável para armazenar a função a ser executada na confirmação
+let modalAnteriorAberto = null;
 
 function abrirModalConfirmacao(title, message, callback, modalOrigemId = null) {
+  modalAnteriorAberto = modalOrigemId;
   fecharTodosOsModais(); // <--- NOVO: Fecha todos os outros modais antes de abrir a confirmação
   modalConfirmacaoTitle.textContent = title;
   modalConfirmacaoMessage.textContent = message;
