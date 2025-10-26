@@ -3159,13 +3159,9 @@ service cloud.firestore {
     }
 
     function workspaceFromData(data) {
-      if (data.workspaceId != null) {
-        return data.workspaceId;
-      }
-      if (data.ownerUid != null) {
-        return data.ownerUid;
-      }
-      return data.userId;
+      return data.workspaceId != null
+        ? data.workspaceId
+        : (data.ownerUid != null ? data.ownerUid : data.userId);
     }
 
     // 👤 Perfis de acesso (aprovação, bloqueio, etc.)
