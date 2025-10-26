@@ -1564,7 +1564,7 @@ html.dark .mobile-tab-button {
               </div>
               <div class="flex justify-between text-[0.7rem] text-slate-500 dark:text-slate-400 mt-1">
                 <span>Comprometido: <strong id="percentual-fixo">0%</strong></span>
-                <span>Margem disponível: R$ <span id="disponivel-fixo">0,00</span></span>
+                <span>Total comprometido: R$ <span id="comprometido-fixo">0,00</span></span>
               </div>
             </div>
             <div class="flex flex-wrap gap-2 text-xs">
@@ -1599,7 +1599,7 @@ html.dark .mobile-tab-button {
               </div>
               <div class="flex justify-between text-[0.7rem] text-slate-500 dark:text-slate-400 mt-1">
                 <span>Comprometido: <strong id="percentual-parcelado">0%</strong></span>
-                <span>Margem disponível: R$ <span id="disponivel-parcelado">0,00</span></span>
+                <span>Total comprometido: R$ <span id="comprometido-parcelado">0,00</span></span>
               </div>
             </div>
             <div class="flex flex-wrap gap-2 text-xs">
@@ -1634,7 +1634,7 @@ html.dark .mobile-tab-button {
               </div>
               <div class="flex justify-between text-[0.7rem] text-slate-500 dark:text-slate-400 mt-1">
                 <span>Comprometido: <strong id="percentual-variavel">0%</strong></span>
-                <span>Margem disponível: R$ <span id="disponivel-variavel">0,00</span></span>
+                <span>Total comprometido: R$ <span id="comprometido-variavel">0,00</span></span>
               </div>
             </div>
             <div class="flex flex-wrap gap-2 text-xs">
@@ -7526,7 +7526,7 @@ function atualizarBarra(tipo, gasto){
   const gastoEl = document.getElementById(`gasto-${tipo}`);
   const limiteLivreEl = document.getElementById(`limite-livre-${tipo}`);
   const reservaEl = document.getElementById(`reserva-${tipo}`);
-  const disponivelEl = document.getElementById(`disponivel-${tipo}`);
+  const comprometidoEl = document.getElementById(`comprometido-${tipo}`);
   const percentualEl = document.getElementById(`percentual-${tipo}`);
   const metaEl = document.getElementById(`meta-${tipo}`);
   const excedenteWrapper = document.getElementById(`excedente-${tipo}-wrapper`);
@@ -7538,7 +7538,7 @@ function atualizarBarra(tipo, gasto){
   if (metaEl) metaEl.textContent = moeda(meta);
   if (limiteLivreEl) limiteLivreEl.textContent = moeda(limiteLivre);
   if (reservaEl) reservaEl.textContent = moeda(reservado);
-  if (disponivelEl) disponivelEl.textContent = moeda(limiteLivre);
+  if (comprometidoEl) comprometidoEl.textContent = moeda(comprometido);
   if (percentualEl) percentualEl.textContent = `${percentual.toFixed(1)}%`;
   if (excedenteWrapper && excedenteEl) {
     if (excedente > 0) {
