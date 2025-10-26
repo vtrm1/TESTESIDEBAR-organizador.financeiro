@@ -2701,9 +2701,127 @@ async function ensureWorkspaceMetadataForCollections(force = false) {
         lastDoc = snapshot.docs[snapshot.docs.length - 1];
       }
     }
+
+    await normalizeImporterWorkspaceMetadata({ ownerUid, workspaceId, batchSize });
   } catch (err) {
     console.error('Erro ao normalizar metadados de workspace:', err);
     workspaceMetadataNormalizationExecuted = false;
+  }
+}
+
+async function normalizeImporterWorkspaceMetadata({ ownerUid, workspaceId, batchSize = 200 }) {
+  if (!ownerUid) {
+    return;
+  }
+
+  const collections = [
+    { name: 'transactions', ensureUser: true },
+    { name: 'importSessions', ensureUser: true },
+    { name: 'categoryRules', ensureUser: true },
+    { name: 'merchantAliases', ensureUser: true },
+  ];
+
+  const serverTimestamp = firebase.firestore.FieldValue.serverTimestamp();
+
+  for (const { name, ensureUser } of collections) {
+    const collectionRef = db.collection(name);
+    const seen = new Set();
+
+    const filters = [
+      workspaceId ? { field: 'workspaceId', value: workspaceId } : null,
+      { field: 'ownerUid', value: ownerUid },
+      ensureUser ? { field: 'userId', value: ownerUid } : null,
+    ].filter(Boolean);
+
+    for (const filter of filters) {
+      let lastDoc = null;
+      let more = true;
+
+      while (more) {
+        let query = collectionRef.orderBy(FieldPath.documentId()).limit(batchSize);
+        if (filter?.field && filter.value != null) {
+          try {
+            query = collectionRef.where(filter.field, '==', filter.value).orderBy(FieldPath.documentId()).limit(batchSize);
+          } catch (error) {
+            console.warn(`Ignorando filtro ${filter.field} em ${name}:`, error);
+            break;
+          }
+        }
+        if (lastDoc) {
+          query = query.startAfter(lastDoc);
+        }
+
+        let snapshot;
+        try {
+          snapshot = await query.get();
+        } catch (error) {
+          console.warn(`Falha ao normalizar ${name} (${filter?.field || 'sem filtro'}):`, error);
+          break;
+        }
+
+        if (snapshot.empty) {
+          break;
+        }
+
+        const batch = db.batch();
+        let updates = 0;
+
+        snapshot.docs.forEach((docSnap) => {
+          if (seen.has(docSnap.id)) {
+            return;
+          }
+          seen.add(docSnap.id);
+
+          const data = docSnap.data() || {};
+          const patch = {};
+
+          if (!data.ownerUid || data.ownerUid !== ownerUid) {
+            patch.ownerUid = ownerUid;
+          }
+
+          if (ensureUser && (!data.userId || data.userId !== ownerUid)) {
+            patch.userId = ownerUid;
+          }
+
+          if (!data.workspaceId || data.workspaceId !== workspaceId) {
+            patch.workspaceId = workspaceId || ownerUid;
+          }
+
+          if (!data.createdAt) {
+            patch.createdAt = serverTimestamp;
+          }
+
+          if (name === 'transactions') {
+            if (!data.meta) {
+              patch.meta = {};
+            }
+            if (!data.importSessionId) {
+              patch.importSessionId = null;
+            }
+          }
+
+          if (Object.keys(patch).length > 0) {
+            patch.updatedAt = serverTimestamp;
+            batch.set(docSnap.ref, patch, { merge: true });
+            updates += 1;
+          }
+        });
+
+        if (updates > 0) {
+          try {
+            await batch.commit();
+          } catch (error) {
+            console.error(`Erro ao aplicar metadados em ${name}:`, error);
+          }
+        }
+
+        if (snapshot.size < batchSize) {
+          break;
+        }
+
+        lastDoc = snapshot.docs[snapshot.docs.length - 1];
+      }
+    }
   }
 }
 
@@ -11373,21 +11491,39 @@ updateHeaderOffset();
     }
 
     try {
-      let query = db.collection('importSessions').where('userId', '==', state.ownerUid);
-      if (state.workspaceId) {
-        try {
-          query = query.where('workspaceId', '==', state.workspaceId);
-        } catch (error) {
-          console.warn('Não foi possível filtrar sessões de importação pelo workspace:', error);
+      let snapshot = null;
+      try {
+        snapshot = await db
+          .collection('importSessions')
+          .where('userId', '==', state.ownerUid)
+          .orderBy('startedAtMs', 'desc')
+          .limit(20)
+          .get();
+      } catch (error) {
+        if (error?.code === 'failed-precondition') {
+          snapshot = await db
+            .collection('importSessions')
+            .where('userId', '==', state.ownerUid)
+            .limit(50)
+            .get();
+        } else {
+          throw error;
         }
       }
-      query = query.orderBy('startedAtMs', 'desc').limit(1);
-      const snapshot = await query.get();
-      if (snapshot.empty) {
+
+      if (!snapshot || snapshot.empty) {
         state.lastImportSession = null;
         return;
       }
-      const doc = snapshot.docs[0];
+
+      let doc = snapshot.docs[0];
+      if (state.workspaceId) {
+        doc = snapshot.docs.find((candidate) => {
+          const data = candidate.data() || {};
+          return data.workspaceId === state.workspaceId || data.ownerUid === state.ownerUid;
+        }) || doc;
+      }
+
       const data = doc.data() || {};
       state.lastImportSession = {
         id: doc.id,
