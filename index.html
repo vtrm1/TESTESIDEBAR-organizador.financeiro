@@ -2874,14 +2874,27 @@ async function syncUserProfile(user) {
     const snapshot = await profileRef.get();
     const existingProfile = snapshot.exists ? (snapshot.data() || {}) : {};
     const now = firebase.firestore.Timestamp.now();
-    const updates = {
-      email: user.email || existingProfile.email || null,
-      normalizedEmail: normalized || existingProfile.normalizedEmail || null,
-      displayName: user.displayName || existingProfile.displayName || null,
-      photoURL: user.photoURL || existingProfile.photoURL || null,
-      lastLoginAt: now,
-      updatedAt: now,
-    };
+    const updates = {};
+
+    function setIfChanged(key, value) {
+      const existingValue = existingProfile[key];
+      if (
+        value === undefined ||
+        (existingValue === value ||
+          (existingValue instanceof firebase.firestore.Timestamp && value instanceof firebase.firestore.Timestamp &&
+            existingValue.isEqual(value)))
+      ) {
+        return;
+      }
+      updates[key] = value;
+    }
+
+    setIfChanged('email', user.email || existingProfile.email || null);
+    setIfChanged('normalizedEmail', normalized || existingProfile.normalizedEmail || null);
+    setIfChanged('displayName', user.displayName || existingProfile.displayName || null);
+    setIfChanged('photoURL', user.photoURL || existingProfile.photoURL || null);
+    updates.lastLoginAt = now;
+    updates.updatedAt = now;
 
     if (!existingProfile.createdAt) {
       updates.createdAt = now;
@@ -2969,7 +2982,77 @@ async function syncUserProfile(user) {
 
     updates.status = status;
 
-    await profileRef.set(updates, { merge: true });
+    const isExistingProfile = snapshot.exists;
+    const existingStatus = existingProfile.status || null;
+    const existingRole = existingProfile.role || null;
+    const canAlterRestrictedFields =
+      !isExistingProfile ||
+      forcedFirstApproval ||
+      shouldGrantAdmin ||
+      existingRole === 'admin' ||
+      existingStatus === 'pending';
+
+    if (!canAlterRestrictedFields) {
+      const restrictedFields = [
+        'status',
+        'role',
+        'approvedAt',
+        'approvedBy',
+        'pendingAt',
+        'blockedAt',
+        'blockedBy',
+        'blockedReason',
+      ];
+      for (const field of restrictedFields) {
+        if (!(field in updates)) continue;
+        const newValue = updates[field];
+        if (newValue === FieldValue.delete()) {
+          delete updates[field];
+          continue;
+        }
+        const existingValue = existingProfile[field];
+        const unchanged =
+          newValue === existingValue ||
+          (newValue instanceof firebase.firestore.Timestamp &&
+            existingValue instanceof firebase.firestore.Timestamp &&
+            newValue.isEqual(existingValue));
+        if (!unchanged) {
+          delete updates[field];
+        }
+      }
+    }
+
+    const keys = Object.keys(updates);
+    if (keys.length > 0) {
+      let hasActualChanges = false;
+      for (const key of keys) {
+        const newValue = updates[key];
+        const oldValue = existingProfile[key];
+        if (newValue === FieldValue.delete()) {
+          hasActualChanges = true;
+          break;
+        }
+        if (oldValue instanceof firebase.firestore.Timestamp && newValue instanceof firebase.firestore.Timestamp) {
+          if (!oldValue.isEqual(newValue)) {
+            hasActualChanges = true;
+            break;
+          }
+        } else if (Array.isArray(oldValue) || Array.isArray(newValue)) {
+          if (JSON.stringify(oldValue) !== JSON.stringify(newValue)) {
+            hasActualChanges = true;
+            break;
+          }
+        } else if (oldValue !== newValue) {
+          hasActualChanges = true;
+          break;
+        }
+      }
+
+      if (hasActualChanges) {
+        await profileRef.set(updates, { merge: true });
+      }
+    }
+
     const mergedProfile = { ...existingProfile, ...updates, status, role };
     workspaceProfilesCache.set(user.uid, mergedProfile);
     return { uid: user.uid, ...mergedProfile };
