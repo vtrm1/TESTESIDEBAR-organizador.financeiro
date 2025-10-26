@@ -3148,13 +3148,24 @@ service cloud.firestore {
     function workspaceAllowed(workspaceId) {
       return isSignedIn() &&
         (workspaceId == request.auth.uid ||
-         (exists(/databases/$(database)/documents/sharedWorkspaces/$(workspaceId)) &&
+         (workspaceId != null &&
+          exists(/databases/$(database)/documents/sharedWorkspaces/$(workspaceId)) &&
           request.auth.uid in
             get(/databases/$(database)/documents/sharedWorkspaces/$(workspaceId)).data.memberUids));
     }
 
     function ownerFromData(data) {
       return data.ownerUid != null ? data.ownerUid : data.userId;
+    }
+
+    function workspaceFromData(data) {
+      if (data.workspaceId != null) {
+        return data.workspaceId;
+      }
+      if (data.ownerUid != null) {
+        return data.ownerUid;
+      }
+      return data.userId;
     }
 
     // 👤 Perfis de acesso (aprovação, bloqueio, etc.)
@@ -3187,36 +3198,36 @@ service cloud.firestore {
 
     // 💳 Transações importadas
     match /transactions/{id} {
-      allow read: if isSignedIn() && workspaceAllowed(ownerFromData(resource.data));
-      allow create: if isSignedIn() && workspaceAllowed(ownerFromData(request.resource.data));
+      allow read: if isSignedIn() && workspaceAllowed(workspaceFromData(resource.data));
+      allow create: if isSignedIn() && workspaceAllowed(workspaceFromData(request.resource.data));
       allow update: if isSignedIn() &&
-        workspaceAllowed(ownerFromData(resource.data)) &&
+        workspaceAllowed(workspaceFromData(resource.data)) &&
         request.resource.data.diff(resource.data).changedKeys()
           .hasOnly(['category', 'tags', 'updatedAt', 'deletedAt', 'meta', 'importSessionId']);
     }
 
     // 🗂️ Sessões de importação
     match /importSessions/{id} {
-      allow read: if isSignedIn() && workspaceAllowed(ownerFromData(resource.data));
-      allow create: if isSignedIn() && workspaceAllowed(ownerFromData(request.resource.data));
+      allow read: if isSignedIn() && workspaceAllowed(workspaceFromData(resource.data));
+      allow create: if isSignedIn() && workspaceAllowed(workspaceFromData(request.resource.data));
       allow update: if isSignedIn() &&
-        workspaceAllowed(ownerFromData(resource.data)) &&
+        workspaceAllowed(workspaceFromData(resource.data)) &&
         request.resource.data.diff(resource.data).changedKeys()
           .hasOnly(['undoneAt', 'stats']);
     }
 
     // 🏷️ Regras de categoria
     match /categoryRules/{id} {
-      allow read: if isSignedIn() && workspaceAllowed(ownerFromData(resource.data));
-      allow create: if isSignedIn() && workspaceAllowed(ownerFromData(request.resource.data));
-      allow update: if isSignedIn() && workspaceAllowed(ownerFromData(resource.data));
+      allow read: if isSignedIn() && workspaceAllowed(workspaceFromData(resource.data));
+      allow create: if isSignedIn() && workspaceAllowed(workspaceFromData(request.resource.data));
+      allow update: if isSignedIn() && workspaceAllowed(workspaceFromData(resource.data));
     }
 
     // 🛍️ Aliases de lojista
     match /merchantAliases/{id} {
-      allow read: if isSignedIn() && workspaceAllowed(ownerFromData(resource.data));
-      allow create: if isSignedIn() && workspaceAllowed(ownerFromData(request.resource.data));
-      allow update: if isSignedIn() && workspaceAllowed(ownerFromData(resource.data));
+      allow read: if isSignedIn() && workspaceAllowed(workspaceFromData(resource.data));
+      allow create: if isSignedIn() && workspaceAllowed(workspaceFromData(request.resource.data));
+      allow update: if isSignedIn() && workspaceAllowed(workspaceFromData(resource.data));
     }
 
     // 💼 Dados financeiros do workspace legado
