@@ -11218,18 +11218,9 @@ formParcelado.addEventListener('submit', e => {
       }
     });
 
-    const sessionData = stampWorkspaceCreation({
-      type: 'bank_csv',
-      status: 'processing',
-      fileName: state.fileName || null,
-      totalRows,
-      processedRows: 0,
-      stats: { imported: 0, skipped, errors: 0 },
-      detectedHeaders: state.headers,
-    });
-
-    const sessionRef = await db.collection('importSessions').add(sessionData);
+    const sessionRef = db.collection('importSessions').doc();
     const transactionsRef = db.collection('transactions');
+    const startedAt = firebase.firestore.Timestamp.now();
 
     const CHUNK_SIZE = 250;
     let imported = 0;
@@ -11254,13 +11245,23 @@ formParcelado.addEventListener('submit', e => {
       }
     }
 
+    const finishedAt = firebase.firestore.Timestamp.now();
     const stats = { imported, skipped, errors };
-    await sessionRef.update(stampWorkspaceUpdate({
+    const sessionData = stampWorkspaceCreation({
+      type: 'bank_csv',
       status: errors ? 'completed_with_errors' : 'completed',
+      fileName: state.fileName || null,
+      totalRows,
       processedRows: totalRows,
       stats,
-      finishedAt: firebase.firestore.Timestamp.now(),
-    }));
+      detectedHeaders: state.headers,
+      startedAt,
+      finishedAt,
+      createdAt: startedAt,
+      updatedAt: finishedAt,
+    });
+
+    await sessionRef.set(sessionData);
 
     return { sessionId: sessionRef.id, ...stats };
   }
