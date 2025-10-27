@@ -1256,6 +1256,7 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
       <button type="button" class="mobile-tab-button" data-panel-target="painel-gastos">Gastos</button>
       <button type="button" class="mobile-tab-button" data-panel-target="painel-saidas">Saídas</button>
       <button type="button" class="mobile-tab-button" data-panel-target="painel-entradas">Entradas</button>
+      <button type="button" class="mobile-tab-button" data-panel-target="painel-carteira">Carteira</button>
       <button type="button" class="mobile-tab-button" data-panel-target="painel-investimentos">Invest.</button>
       <button type="button" class="mobile-tab-button" data-panel-target="painel-saude-financeira">Saúde</button>
       <button type="button" class="mobile-tab-button" data-panel-target="painel-fixos">Fixos</button>
@@ -1881,6 +1882,18 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
         <input id="entrada-valor" type="number" step="0.01" min="0.01" class="px-3 py-2 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" placeholder="Valor (R$)" required />
         <input id="entrada-data" type="date" class="px-3 py-2 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" required />
         <input id="entrada-desc" type="text" class="px-3 py-2 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" placeholder="Descrição (opcional)" />
+        <div class="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <label class="flex items-center gap-2 px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-100">
+            <input id="entrada-adiciona-carteira" type="checkbox" class="h-4 w-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500" />
+            <span class="text-xs sm:text-sm">Adicionar saldo diretamente na carteira consolidada</span>
+          </label>
+          <div class="relative">
+            <select id="entrada-conta-carteira" class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-100 disabled:opacity-60 disabled:cursor-not-allowed">
+              <option value="">Selecione a conta destino</option>
+            </select>
+            <p id="entrada-conta-helper" class="mt-1 text-[11px] text-gray-500 dark:text-gray-400">Escolha a conta que deve receber esta entrada.</p>
+          </div>
+        </div>
         <button type="submit" class="sm:col-span-2 bg-green-600 dark:bg-green-700 text-white px-3 py-2 rounded hover:bg-green-700 dark:hover:bg-green-800 transition">Adicionar entrada</button>
       </form>
       <div>
@@ -1907,7 +1920,11 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
           </h3>
           <p class="text-sm text-gray-500 dark:text-gray-400">Monitore o saldo acumulado real (saldo anterior + entradas - saídas) e compare com o valor disponível nas contas cadastradas.</p>
         </div>
-        <div class="flex items-center gap-2">
+        <div class="flex flex-wrap items-center gap-2">
+          <button id="btn-transferir-carteira" class="inline-flex items-center gap-2 rounded-full border border-emerald-200/70 dark:border-emerald-800/60 bg-emerald-50/70 dark:bg-emerald-900/20 px-3 py-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-200 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors">
+            <i class="fa-solid fa-arrow-right-arrow-left text-sm"></i>
+            Transferir entre contas
+          </button>
           <button id="btn-gerenciar-carteira" class="inline-flex items-center gap-2 rounded-full border border-amber-200/70 dark:border-amber-900/50 bg-amber-50/70 dark:bg-amber-900/20 px-3 py-1.5 text-xs font-semibold text-amber-700 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors">
             <i class="fa-solid fa-list-check text-sm"></i>
             Gerenciar contas
@@ -1941,6 +1958,16 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
           <div class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Diferença vs. projetado</div>
           <div id="wallet-diferenca" class="text-lg font-semibold text-gray-800 dark:text-gray-100">R$ 0,00</div>
           <p id="wallet-diferenca-legenda" class="text-xs text-gray-500 dark:text-gray-400 mt-1">Mantenha saldos alinhados para facilitar a conciliação.</p>
+        </div>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div class="flex items-center justify-between gap-2">
+          <h4 class="text-sm font-semibold text-slate-700 dark:text-slate-200">Evolução da carteira (últimos 6 meses)</h4>
+          <span id="wallet-timeline-last-sync" class="text-[11px] text-slate-500 dark:text-slate-400"></span>
+        </div>
+        <div id="wallet-timeline" class="space-y-2 rounded-xl border border-slate-200/70 dark:border-slate-700/60 bg-white/60 dark:bg-slate-800/40 p-3">
+          <div class="text-slate-500 dark:text-slate-400">Nenhum fechamento registrado ainda. Feche o mês atual para começar o histórico.</div>
         </div>
       </div>
     </div>
@@ -2209,6 +2236,10 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
           <input id="wallet-account-color" type="color" class="h-10 w-full rounded border border-slate-300 dark:border-slate-700 bg-transparent" value="#2563EB" />
         </label>
       </div>
+      <label class="inline-flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-300">
+        <input id="wallet-account-include" type="checkbox" class="h-4 w-4 rounded border-slate-300 dark:border-slate-600 text-emerald-600 focus:ring-emerald-500" checked />
+        Incluir este saldo no consolidado
+      </label>
       <div class="flex flex-wrap items-center gap-3">
         <button id="wallet-account-submit" type="submit" class="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-semibold transition-colors">
           <i class="fa-solid fa-floppy-disk"></i>
@@ -3267,6 +3298,7 @@ const accessManagerSectionBodies = {};
 const accessManagerSectionCarets = {};
 const accessManagerSectionState = {};
 const walletManageButton = document.getElementById('btn-gerenciar-carteira');
+const walletTransferButton = document.getElementById('btn-transferir-carteira');
 const walletAccountsModal = document.getElementById('modal-wallet-accounts');
 const walletAccountsClose = document.getElementById('wallet-accounts-close');
 const walletAccountForm = document.getElementById('wallet-account-form');
@@ -3274,6 +3306,7 @@ const walletAccountName = document.getElementById('wallet-account-name');
 const walletAccountInstitution = document.getElementById('wallet-account-institution');
 const walletAccountBalance = document.getElementById('wallet-account-balance');
 const walletAccountColor = document.getElementById('wallet-account-color');
+const walletAccountInclude = document.getElementById('wallet-account-include');
 const walletAccountSubmit = document.getElementById('wallet-account-submit');
 const walletAccountReset = document.getElementById('wallet-account-reset');
 const walletAccountFeedback = document.getElementById('wallet-account-feedback');
@@ -3283,6 +3316,8 @@ const walletSettingsInitialBalance = document.getElementById('wallet-settings-in
 const walletSettingsAutoCarry = document.getElementById('wallet-settings-auto-carry');
 const walletSettingsFeedback = document.getElementById('wallet-settings-feedback');
 const walletSettingsSubmit = document.getElementById('wallet-settings-submit');
+const walletTimelineContainer = document.getElementById('wallet-timeline');
+const walletTimelineLastSync = document.getElementById('wallet-timeline-last-sync');
 initAccessManagerSectionControls();
 const FIRESTORE_RULES_SNIPPET = String.raw`rules_version = '2';
 service cloud.firestore {
@@ -6143,6 +6178,12 @@ if (walletManageButton && walletAccountsModal) {
   });
 }
 
+if (walletTransferButton) {
+  walletTransferButton.addEventListener('click', () => {
+    showToast('Transferências entre contas estarão disponíveis em breve.', 'info');
+  });
+}
+
 if (walletAccountsClose) {
   walletAccountsClose.addEventListener('click', () => {
     closeWalletAccountsModal();
@@ -6170,6 +6211,7 @@ if (walletAccountReset) {
 
 if (walletAccountsList) {
   walletAccountsList.addEventListener('click', handleWalletAccountListClick);
+  walletAccountsList.addEventListener('change', handleWalletAccountToggleChange);
 }
 
 if (walletSettingsForm) {
@@ -8457,10 +8499,11 @@ function exportarCSVtudo(){
    =========================== */
 
 let unsubLimits, unsubFixos, unsubGastos, unsubParcelados, unsubConfig, unsubEntradas, unsubInvestimentos;
-let unsubWalletSettings, unsubWalletAccounts, unsubWalletSnapshot;
+let unsubWalletSettings, unsubWalletAccounts, unsubWalletSnapshot, unsubWalletTimeline;
 let allParceladosDocs = [];
 let allGastosDocs = [];
 let walletAccountsDocs = [];
+let walletTimelineDocs = [];
 let walletSnapshotSyncTimeout = null;
 const walletSettingsEnsureCache = new Set();
 const walletSnapshotEnsureCache = new Set();
@@ -8486,20 +8529,26 @@ function resetWalletState({ resetUI = true } = {}) {
   if (typeof unsubWalletSnapshot === 'function') {
     unsubWalletSnapshot();
   }
+  if (typeof unsubWalletTimeline === 'function') {
+    unsubWalletTimeline();
+  }
   unsubWalletSettings = null;
   unsubWalletAccounts = null;
   unsubWalletSnapshot = null;
+  unsubWalletTimeline = null;
   if (walletSnapshotSyncTimeout) {
     clearTimeout(walletSnapshotSyncTimeout);
     walletSnapshotSyncTimeout = null;
   }
   walletAccountsDocs = [];
+  walletTimelineDocs = [];
   walletState = createDefaultWalletState();
   walletSettingsEnsureCache.clear();
   walletSnapshotEnsureCache.clear();
   if (resetUI) {
     updateWalletSummaryUI();
     renderWalletAccountsList();
+    renderWalletTimeline();
   }
 }
 function renderWalletAccountsList() {
@@ -8515,6 +8564,8 @@ function renderWalletAccountsList() {
 
   if (!count) {
     emptyEl.classList.remove('hidden');
+    renderWalletAccountOptions();
+    refreshEntradaCarteiraControls();
     return;
   }
 
@@ -8525,7 +8576,8 @@ function renderWalletAccountsList() {
       id,
       name,
       institution,
-      currentBalance,
+      balance,
+      include,
       color,
       updatedAt,
     } = account;
@@ -8548,19 +8600,44 @@ function renderWalletAccountsList() {
     title.textContent = name || 'Conta sem nome';
     textBlock.appendChild(title);
     const subtitle = document.createElement('div');
-    subtitle.className = 'text-xs text-slate-500 dark:text-slate-400';
+    subtitle.className = 'text-xs text-slate-500 dark:text-slate-400 flex flex-wrap items-center gap-x-2 gap-y-1';
     const instLabel = institution ? institution : 'Saldo manual';
-    const updatedLabel = updatedAt ? ` • Atualizado em ${formatDateTime(updatedAt)}` : '';
-    subtitle.textContent = `${instLabel}${updatedLabel}`;
+    const updatedLabel = updatedAt ? `Atualizado em ${formatDateTime(updatedAt)}` : 'Sem registro recente';
+    const instSpan = document.createElement('span');
+    instSpan.textContent = instLabel;
+    subtitle.appendChild(instSpan);
+    const updatedSpan = document.createElement('span');
+    updatedSpan.textContent = updatedLabel;
+    subtitle.appendChild(updatedSpan);
+    if (!include) {
+      const hiddenBadge = document.createElement('span');
+      hiddenBadge.className = 'inline-flex items-center gap-1 rounded-full bg-slate-200/70 dark:bg-slate-700/70 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300';
+      hiddenBadge.innerHTML = '<i class="fa-solid fa-eye-slash"></i>Fora do consolidado';
+      subtitle.appendChild(hiddenBadge);
+    }
     textBlock.appendChild(subtitle);
     details.appendChild(textBlock);
 
     const actions = document.createElement('div');
-    actions.className = 'flex flex-col sm:items-end gap-2 sm:text-right';
-    const balance = document.createElement('div');
-    balance.className = 'text-lg font-semibold text-slate-900 dark:text-slate-100';
-    balance.textContent = `R$ ${moeda(currentBalance)}`;
-    actions.appendChild(balance);
+    actions.className = 'flex flex-col sm:items-end gap-3 sm:text-right';
+    const balanceEl = document.createElement('div');
+    balanceEl.className = 'text-lg font-semibold text-slate-900 dark:text-slate-100';
+    balanceEl.textContent = `R$ ${moeda(balance)}`;
+    actions.appendChild(balanceEl);
+
+    const controlsRow = document.createElement('div');
+    controlsRow.className = 'flex flex-wrap items-center gap-3 justify-between sm:justify-end';
+    const includeLabel = document.createElement('label');
+    includeLabel.className = 'inline-flex items-center gap-2 text-[11px] sm:text-[12px] text-slate-600 dark:text-slate-300';
+    includeLabel.innerHTML = '<span>Incluir no consolidado</span>';
+    const includeInput = document.createElement('input');
+    includeInput.type = 'checkbox';
+    includeInput.className = 'h-4 w-4 rounded border-slate-300 dark:border-slate-600 text-emerald-600 focus:ring-emerald-500';
+    includeInput.checked = include !== false;
+    includeInput.dataset.walletAccountToggle = id;
+    includeInput.setAttribute('aria-label', 'Incluir no consolidado');
+    includeLabel.prepend(includeInput);
+    controlsRow.appendChild(includeLabel);
 
     const buttonsWrapper = document.createElement('div');
     buttonsWrapper.className = 'flex items-center gap-2';
@@ -8568,22 +8645,121 @@ function renderWalletAccountsList() {
     editButton.className = 'inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors';
     editButton.dataset.walletAccountAction = 'edit';
     editButton.dataset.accountId = id;
-    editButton.innerHTML = '<i class="fa-solid fa-pen"></i><span>Editar</span>';
+    editButton.innerHTML = '<i class="fa-solid fa-pen"></i><span class="hidden sm:inline">Editar</span>';
+    buttonsWrapper.appendChild(editButton);
     const removeButton = document.createElement('button');
-    removeButton.className = 'inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-rose-200 dark:border-rose-800 text-rose-600 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-900/40 transition-colors';
+    removeButton.className = 'inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-rose-200 dark:border-rose-800 text-rose-600 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-900/30 transition-colors';
     removeButton.dataset.walletAccountAction = 'remove';
     removeButton.dataset.accountId = id;
-    removeButton.dataset.accountName = name || 'esta conta';
-    removeButton.innerHTML = '<i class="fa-solid fa-trash"></i><span>Excluir</span>';
-    buttonsWrapper.appendChild(editButton);
+    removeButton.dataset.accountName = name || '';
+    removeButton.innerHTML = '<i class="fa-solid fa-trash"></i><span class="hidden sm:inline">Excluir</span>';
     buttonsWrapper.appendChild(removeButton);
-    actions.appendChild(buttonsWrapper);
+    controlsRow.appendChild(buttonsWrapper);
+
+    actions.appendChild(controlsRow);
 
     card.appendChild(details);
     card.appendChild(actions);
     listEl.appendChild(card);
   });
+
+  renderWalletAccountOptions();
+  refreshEntradaCarteiraControls();
 }
+
+function renderWalletAccountOptions() {
+  if (!entradaCarteiraSelect) return;
+  const previousValue = entradaCarteiraSelect.value;
+  entradaCarteiraSelect.innerHTML = '';
+
+  const defaultOption = document.createElement('option');
+  defaultOption.value = '';
+  defaultOption.textContent = 'Selecione a conta destino';
+  entradaCarteiraSelect.appendChild(defaultOption);
+
+  (walletAccountsDocs || []).forEach((account) => {
+    const option = document.createElement('option');
+    option.value = account.id;
+    const labelParts = [account.name || 'Conta sem nome'];
+    if (account.institution) {
+      labelParts.push(account.institution);
+    }
+    option.textContent = labelParts.join(' • ');
+    entradaCarteiraSelect.appendChild(option);
+  });
+
+  if (walletAccountsDocs && walletAccountsDocs.some((acc) => acc.id === previousValue)) {
+    entradaCarteiraSelect.value = previousValue;
+  } else {
+    entradaCarteiraSelect.value = '';
+  }
+}
+
+function getWalletAccountLabel(accountId) {
+  if (!accountId) return null;
+  const account = (walletAccountsDocs || []).find((item) => item.id === accountId);
+  if (!account) return null;
+  const parts = [account.name || 'Conta'];
+  if (account.institution) {
+    parts.push(account.institution);
+  }
+  return parts.join(' • ');
+}
+
+function renderWalletTimeline() {
+  if (!walletTimelineContainer) return;
+  walletTimelineContainer.innerHTML = '';
+  const docs = Array.isArray(walletTimelineDocs) ? [...walletTimelineDocs] : [];
+
+  if (!docs.length) {
+    const empty = document.createElement('div');
+    empty.className = 'text-slate-500 dark:text-slate-400';
+    empty.textContent = 'Nenhum fechamento registrado ainda. Feche o mês atual para começar o histórico.';
+    walletTimelineContainer.appendChild(empty);
+    if (walletTimelineLastSync) {
+      walletTimelineLastSync.textContent = '';
+    }
+    return;
+  }
+
+  docs.sort((a, b) => {
+    if (a.month > b.month) return -1;
+    if (a.month < b.month) return 1;
+    return 0;
+  });
+
+  docs.forEach((item) => {
+    const row = document.createElement('div');
+    row.className = 'flex items-center justify-between gap-3 rounded-lg bg-slate-100/80 dark:bg-slate-800/80 px-3 py-2';
+    const monthLabel = item.month ? mmYYYY(item.month) : 'Mês';
+    const net = Number(item.netFlow) || 0;
+    const netClass = net > 0
+      ? 'text-emerald-600 dark:text-emerald-300'
+      : net < 0
+        ? 'text-rose-600 dark:text-rose-300'
+        : 'text-slate-600 dark:text-slate-300';
+
+    row.innerHTML = `
+      <div>
+        <div class="text-sm font-semibold text-slate-700 dark:text-slate-200">${monthLabel}</div>
+        <div class="text-[11px] text-slate-500 dark:text-slate-400">Saldo final: R$ ${moeda(item.closingBalance || 0)}</div>
+      </div>
+      <div class="text-right">
+        <div class="text-xs font-semibold ${netClass}">${moedaSigned(net)}</div>
+        <div class="text-[11px] text-slate-500 dark:text-slate-400">Fluxo líquido</div>
+      </div>
+    `;
+    walletTimelineContainer.appendChild(row);
+  });
+
+  const latest = docs[0];
+  if (walletTimelineLastSync) {
+    walletTimelineLastSync.textContent = latest && latest.computedAt
+      ? `Atualizado em ${formatDateTime(latest.computedAt)}`
+      : '';
+  }
+}
+
 
 function computeWalletEntriesForMonth(monthKey) {
   if (!monthKey) return 0;
@@ -8678,7 +8854,10 @@ function updateWalletSummaryUI() {
   const closing = opening + net;
   walletState.closingBalance = closing;
 
-  const accountsTotal = (walletAccountsDocs || []).reduce((sum, account) => sum + (Number(account.currentBalance) || 0), 0);
+  const accountsTotal = (walletAccountsDocs || []).reduce((sum, account) => {
+    if (!account || account.include === false) return sum;
+    return sum + (Number(account.balance) || 0);
+  }, 0);
   walletState.accountsTotal = accountsTotal;
   const difference = accountsTotal - closing;
   walletState.difference = difference;
@@ -8890,6 +9069,9 @@ function resetWalletAccountForm() {
   if (walletAccountColor) {
     walletAccountColor.value = '#2563EB';
   }
+  if (walletAccountInclude) {
+    walletAccountInclude.checked = true;
+  }
   if (walletAccountSubmit) {
     walletAccountSubmit.innerHTML = '<i class="fa-solid fa-floppy-disk"></i><span>Salvar conta</span>';
   }
@@ -8988,22 +9170,31 @@ async function handleWalletAccountSubmit(event) {
   walletAccountSubmit?.classList.add('opacity-70', 'pointer-events-none');
 
   try {
+    const includeInTotal = walletAccountInclude ? walletAccountInclude.checked : true;
+    const timestamp = firebase.firestore.Timestamp.now();
     const payloadBase = {
+      nome: name,
       name,
+      instituicao: institution || null,
       institution: institution || null,
+      saldoAtual: balanceValue,
       currentBalance: balanceValue,
+      incluirNaSoma: includeInTotal,
+      includeInTotal,
+      cor: color || null,
       color: color || null,
-      updatedAt: firebase.firestore.Timestamp.now(),
+      ultimaAtualizacao: timestamp,
+      updatedAt: timestamp,
     };
 
     if (walletAccountEditingId) {
-      await userCollectionRef('walletAccounts').doc(walletAccountEditingId).set(
+      await userCollectionRef('wallets').doc(walletAccountEditingId).set(
         stampWorkspaceUpdate(payloadBase),
         { merge: true },
       );
       showToast('Conta atualizada com sucesso!', 'success');
     } else {
-      const docRef = userCollectionRef('walletAccounts').doc();
+      const docRef = userCollectionRef('wallets').doc();
       await docRef.set(stampWorkspaceCreation(payloadBase));
       showToast('Conta adicionada à carteira!', 'success');
     }
@@ -9028,8 +9219,9 @@ function handleWalletAccountListClick(event) {
     walletAccountEditingId = accountId;
     if (walletAccountName) walletAccountName.value = account.name || '';
     if (walletAccountInstitution) walletAccountInstitution.value = account.institution || '';
-    if (walletAccountBalance) walletAccountBalance.value = account.currentBalance != null ? String(account.currentBalance) : '';
+    if (walletAccountBalance) walletAccountBalance.value = account.balance != null ? String(account.balance) : '';
     if (walletAccountColor) walletAccountColor.value = account.color || '#2563EB';
+    if (walletAccountInclude) walletAccountInclude.checked = account.include !== false;
     if (walletAccountSubmit) {
       walletAccountSubmit.innerHTML = '<i class="fa-solid fa-floppy-disk"></i><span>Atualizar conta</span>';
     }
@@ -9051,7 +9243,7 @@ function handleWalletAccountListClick(event) {
       'Remover conta',
       `Deseja remover ${accountName || 'esta conta'} da carteira?`,
       () => {
-        userCollectionRef('walletAccounts').doc(accountId).delete()
+        userCollectionRef('wallets').doc(accountId).delete()
           .then(() => showToast('Conta removida da carteira.', 'success'))
           .catch((error) => {
             console.error('Erro ao remover conta:', error);
@@ -9061,6 +9253,29 @@ function handleWalletAccountListClick(event) {
       'modal-wallet-accounts',
     );
   }
+}
+
+function handleWalletAccountToggleChange(event) {
+  if (!event || !walletAccountsList) return;
+  const toggle = event.target.closest('input[data-wallet-account-toggle]');
+  if (!toggle) return;
+  const accountId = toggle.dataset.walletAccountToggle;
+  if (!accountId) return;
+  const checked = toggle.checked;
+  userCollectionRef('wallets').doc(accountId).set(
+    stampWorkspaceUpdate({
+      incluirNaSoma: checked,
+      includeInTotal: checked,
+      ultimaAtualizacao: firebase.firestore.Timestamp.now(),
+    }),
+    { merge: true },
+  ).then(() => {
+    showToast(checked ? 'Conta incluída no consolidado.' : 'Conta removida do consolidado.', 'success');
+  }).catch((error) => {
+    console.error('Erro ao atualizar visibilidade da conta:', error);
+    showToast('Não foi possível atualizar o consolidado agora.', 'error');
+    toggle.checked = !checked;
+  });
 }
 
 async function handleWalletSettingsSubmit(event) {
@@ -9107,6 +9322,7 @@ async function startObservers(){
   if (unsubWalletSettings) unsubWalletSettings();
   if (unsubWalletAccounts) unsubWalletAccounts();
   if (unsubWalletSnapshot) unsubWalletSnapshot();
+  if (unsubWalletTimeline) unsubWalletTimeline();
 
   // Mostrar spinners antes de carregar os dados
   showSpinner('historico-loading-spinner');
@@ -9141,16 +9357,47 @@ async function startObservers(){
     console.error('Erro ao acompanhar o snapshot da carteira:', error);
   });
 
-  unsubWalletAccounts = userCollectionRef('walletAccounts').orderBy('name', 'asc').onSnapshot((snap) => {
-    walletAccountsDocs = snap.docs.map((doc) => {
+  unsubWalletTimeline = userCollectionRef('walletSnapshots').orderBy('month', 'desc').limit(6).onSnapshot((snap) => {
+    walletTimelineDocs = snap.docs.map((doc) => {
       const data = doc.data() || {};
+      const computedRaw = data.computedAt || data.updatedAt || null;
+      const computedAt = computedRaw && typeof computedRaw.toDate === 'function'
+        ? computedRaw.toDate()
+        : (computedRaw instanceof Date ? computedRaw : null);
+      const month = data.month || doc.id;
+      const opening = Number(data.openingBalance ?? 0) || 0;
+      const entries = Number(data.entriesTotal ?? 0) || 0;
+      const expenses = Number(data.expensesTotal ?? 0) || 0;
+      const netFlow = Number(data.netFlow != null ? data.netFlow : (entries - expenses));
       return {
         id: doc.id,
-        name: data.name || 'Conta sem nome',
-        institution: data.institution || '',
-        currentBalance: Number(data.currentBalance) || 0,
-        color: data.color || null,
-        updatedAt: data.updatedAt && typeof data.updatedAt.toDate === 'function' ? data.updatedAt.toDate() : null,
+        month,
+        closingBalance: Number(data.closingBalance ?? (opening + netFlow)) || 0,
+        openingBalance: opening,
+        netFlow,
+        computedAt,
+      };
+    });
+    renderWalletTimeline();
+  }, (error) => {
+    console.error('Erro ao carregar histórico da carteira:', error);
+  });
+
+  unsubWalletAccounts = userCollectionRef('wallets').orderBy('nome', 'asc').onSnapshot((snap) => {
+    walletAccountsDocs = snap.docs.map((doc) => {
+      const data = doc.data() || {};
+      const updatedRaw = data.ultimaAtualizacao || data.updatedAt || null;
+      const updatedAt = updatedRaw && typeof updatedRaw.toDate === 'function'
+        ? updatedRaw.toDate()
+        : (updatedRaw instanceof Date ? updatedRaw : null);
+      return {
+        id: doc.id,
+        name: data.nome || data.name || 'Conta sem nome',
+        institution: data.instituicao || data.institution || '',
+        balance: Number(data.saldoAtual ?? data.currentBalance ?? 0) || 0,
+        include: data.incluirNaSoma !== false && data.includeInTotal !== false,
+        color: data.cor || data.color || null,
+        updatedAt,
       };
     });
     renderWalletAccountsList();
@@ -9578,6 +9825,9 @@ function renderEntradasSidebar(docs = []) {
     const valor = Number(data.valor) || 0;
     const tipo = data.tipo || 'outros';
     const descricao = (data.descricao || '').trim();
+    const adicionaCarteira = data.adicionaCarteira === true;
+    const contaDestino = adicionaCarteira ? (data.contaDestino || '') : '';
+    const contaLabel = adicionaCarteira && contaDestino ? getWalletAccountLabel(contaDestino) : null;
 
     totalRegistrado += valor;
 
@@ -9587,10 +9837,16 @@ function renderEntradasSidebar(docs = []) {
       totaisPorTipoPeriodo[tipo] = (totaisPorTipoPeriodo[tipo] || 0) + valor;
       const item = document.createElement('div');
       item.className = 'flex items-center gap-3 p-2 bg-gray-50 dark:bg-gray-700 rounded';
+      const detalhesParts = [formatDate(dt)];
+      if (descricao) detalhesParts.push(descricao);
+      if (contaLabel) detalhesParts.push(`Carteira: ${contaLabel}`);
       item.innerHTML = `
         <div class="flex-1">
-          <div class="font-semibold text-gray-700 dark:text-gray-100">${entradaTipoLabels[tipo] || tipo}</div>
-          <div class="text-xs text-gray-500 dark:text-gray-400">${formatDate(dt)}${descricao ? ` • ${descricao}` : ''}</div>
+          <div class="font-semibold text-gray-700 dark:text-gray-100 flex items-center gap-2">
+            <span>${entradaTipoLabels[tipo] || tipo}</span>
+            ${adicionaCarteira && contaLabel ? '<span class="inline-flex items-center gap-1 rounded-full bg-emerald-100/70 dark:bg-emerald-500/20 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-200"><i class="fa-solid fa-wallet"></i>Carteira</span>' : ''}
+          </div>
+          <div class="text-xs text-gray-500 dark:text-gray-400">${detalhesParts.join(' • ')}</div>
         </div>
         <div class="text-right">
           <div class="font-semibold text-green-600 dark:text-green-300">R$ ${moeda(valor)}</div>
@@ -10421,6 +10677,9 @@ if (historicoSemanasModoSelect) {
 const formEntrada = document.getElementById('form-entrada');
 const entradaDataInput = document.getElementById('entrada-data');
 const entradaValorInput = document.getElementById('entrada-valor');
+const entradaCarteiraCheckbox = document.getElementById('entrada-adiciona-carteira');
+const entradaCarteiraSelect = document.getElementById('entrada-conta-carteira');
+const entradaCarteiraHelper = document.getElementById('entrada-conta-helper');
 const formInvestimento = document.getElementById('form-investimento');
 const investimentoDataInput = document.getElementById('investimento-data');
 const investimentoValorInput = document.getElementById('investimento-valor');
@@ -10429,29 +10688,114 @@ const hojeIso = formatDateInputValue(new Date());
 if (entradaDataInput && !entradaDataInput.value) entradaDataInput.value = hojeIso;
 if (investimentoDataInput && !investimentoDataInput.value) investimentoDataInput.value = hojeIso;
 
+function refreshEntradaCarteiraControls() {
+  if (!formEntrada) return;
+  const hasAccounts = Array.isArray(walletAccountsDocs) && walletAccountsDocs.length > 0;
+  if (entradaCarteiraCheckbox) {
+    if (!hasAccounts) {
+      entradaCarteiraCheckbox.checked = false;
+    }
+    entradaCarteiraCheckbox.disabled = !hasAccounts;
+  }
+  if (entradaCarteiraSelect) {
+    const shouldEnable = hasAccounts && entradaCarteiraCheckbox && entradaCarteiraCheckbox.checked;
+    entradaCarteiraSelect.disabled = !shouldEnable;
+    if (!shouldEnable) {
+      entradaCarteiraSelect.value = '';
+    }
+  }
+  if (entradaCarteiraHelper) {
+    if (!hasAccounts) {
+      entradaCarteiraHelper.textContent = 'Cadastre contas na carteira para direcionar entradas automaticamente.';
+    } else if (entradaCarteiraCheckbox && entradaCarteiraCheckbox.checked) {
+      entradaCarteiraHelper.textContent = 'Selecione a conta que deve receber esta entrada.';
+    } else {
+      entradaCarteiraHelper.textContent = 'Marque a opção para somar o valor diretamente em uma conta da carteira.';
+    }
+  }
+}
+
 if (formEntrada) {
+  refreshEntradaCarteiraControls();
+  entradaCarteiraCheckbox?.addEventListener('change', () => {
+    refreshEntradaCarteiraControls();
+  });
+
   formEntrada.addEventListener('submit', e => {
     e.preventDefault();
     const tipo = document.getElementById('entrada-tipo')?.value || 'outros';
     const valor = parseFloat((entradaValorInput && entradaValorInput.value) || '0');
     const dataValor = entradaDataInput ? entradaDataInput.value : '';
     const descricao = (document.getElementById('entrada-desc')?.value || '').trim();
+    const adicionaCarteira = !!(entradaCarteiraCheckbox && entradaCarteiraCheckbox.checked);
+    const contaDestino = (entradaCarteiraSelect && entradaCarteiraSelect.value) ? entradaCarteiraSelect.value : '';
 
     if (!dataValor || valor <= 0) {
       showToast('Informe um valor e uma data válidos para a entrada.', 'error');
       return;
     }
 
+    if (adicionaCarteira && !contaDestino) {
+      showToast('Escolha a conta da carteira que deve receber o valor da entrada.', 'error');
+      if (entradaCarteiraSelect) {
+        entradaCarteiraSelect.focus();
+      }
+      return;
+    }
+
     const data = new Date(`${dataValor}T12:00:00`);
-    userCollectionRef('entradas').add(stampWorkspaceCreation({
+    const dataTimestamp = firebase.firestore.Timestamp.fromDate(data);
+    const payload = stampWorkspaceCreation({
       tipo,
       valor,
       descricao,
-      data: firebase.firestore.Timestamp.fromDate(data),
-    })).then(() => {
+      data: dataTimestamp,
+      adicionaCarteira,
+      contaDestino: adicionaCarteira ? contaDestino : null,
+    });
+
+    userCollectionRef('entradas').add(payload).then((docRef) => {
+      if (adicionaCarteira && contaDestino) {
+        const contaRef = userCollectionRef('wallets').doc(contaDestino);
+        const entradaTimestamp = dataTimestamp;
+        return firebase.firestore().runTransaction(async (transaction) => {
+          const contaSnap = await transaction.get(contaRef);
+          const contaData = contaSnap.exists ? contaSnap.data() || {} : {};
+          const saldoAnterior = Number(contaData.saldoAtual ?? contaData.currentBalance ?? 0) || 0;
+          const saldoAtualizado = saldoAnterior + valor;
+          const agora = firebase.firestore.Timestamp.now();
+
+          transaction.set(contaRef, stampWorkspaceUpdate({
+            saldoAtual: saldoAtualizado,
+            currentBalance: saldoAtualizado,
+            ultimaAtualizacao: agora,
+            updatedAt: agora,
+          }), { merge: true });
+
+          const movimentoPayload = stampWorkspaceCreation({
+            tipo: 'entrada',
+            type: 'entry',
+            walletId: contaDestino,
+            accountId: contaDestino,
+            amount: valor,
+            originCollection: 'entradas',
+            originId: docRef.id,
+            description: descricao || null,
+            occurredAt: entradaTimestamp,
+            balanceBefore: saldoAnterior,
+            balanceAfter: saldoAtualizado,
+          });
+
+          const movimentoRef = userCollectionRef('walletMovements').doc();
+          transaction.set(movimentoRef, movimentoPayload);
+        });
+      }
+      return null;
+    }).then(() => {
       showToast('Entrada registrada com sucesso!', 'success');
       formEntrada.reset();
       if (entradaDataInput) entradaDataInput.value = formatDateInputValue(new Date());
+      refreshEntradaCarteiraControls();
     }).catch(err => {
       console.error('Erro ao adicionar entrada:', err);
       showToast('Erro ao adicionar entrada.', 'error');
@@ -10465,8 +10809,58 @@ if (formEntrada) {
       if (!btn) return;
       const id = btn.getAttribute('data-remove-entrada');
       if (!id) return;
+      const snapshotDoc = Array.isArray(allEntradasDocs) ? allEntradasDocs.find((docSnap) => docSnap.id === id) : null;
+      const dataEntrada = snapshotDoc && typeof snapshotDoc.data === 'function' ? snapshotDoc.data() : null;
+      const valorEntrada = Number(dataEntrada?.valor) || 0;
+      const adicionaCarteira = dataEntrada?.adicionaCarteira === true;
+      const contaDestino = adicionaCarteira ? (dataEntrada?.contaDestino || '') : '';
       abrirModalConfirmacao('Remover entrada', 'Deseja remover esta entrada de dinheiro?', () => {
-        userCollectionRef('entradas').doc(id).delete()
+        const entradaRef = userCollectionRef('entradas').doc(id);
+        if (adicionaCarteira && contaDestino && valorEntrada > 0) {
+          const contaRef = userCollectionRef('wallets').doc(contaDestino);
+          firebase.firestore().runTransaction(async (transaction) => {
+            const contaSnap = await transaction.get(contaRef);
+            const contaData = contaSnap.exists ? contaSnap.data() || {} : {};
+            const saldoAnterior = Number(contaData.saldoAtual ?? contaData.currentBalance ?? 0) || 0;
+            const saldoAtualizado = saldoAnterior - valorEntrada;
+            const agora = firebase.firestore.Timestamp.now();
+
+            transaction.set(contaRef, stampWorkspaceUpdate({
+              saldoAtual: saldoAtualizado,
+              currentBalance: saldoAtualizado,
+              ultimaAtualizacao: agora,
+              updatedAt: agora,
+            }), { merge: true });
+
+            const descricaoReversao = (dataEntrada?.descricao || '').trim();
+            const movimentoPayload = stampWorkspaceCreation({
+              tipo: 'ajuste',
+              type: 'adjustment',
+              walletId: contaDestino,
+              accountId: contaDestino,
+              amount: -valorEntrada,
+              originCollection: 'entradas',
+              originId: id,
+              description: descricaoReversao ? `Estorno: ${descricaoReversao}` : 'Estorno de entrada removida',
+              occurredAt: agora,
+              balanceBefore: saldoAnterior,
+              balanceAfter: saldoAtualizado,
+              reversal: true,
+            });
+            const movimentoRef = userCollectionRef('walletMovements').doc();
+            transaction.set(movimentoRef, movimentoPayload);
+
+            transaction.delete(entradaRef);
+          }).then(() => {
+            showToast('Entrada removida!', 'success');
+          }).catch((err) => {
+            console.error('Erro ao remover entrada:', err);
+            showToast('Erro ao remover entrada.', 'error');
+          });
+          return;
+        }
+
+        entradaRef.delete()
           .then(() => showToast('Entrada removida!', 'success'))
           .catch(err => {
             console.error('Erro ao remover entrada:', err);
