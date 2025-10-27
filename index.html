@@ -1909,21 +1909,39 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
         <div class="space-y-1">
           <h3 class="font-semibold text-lg flex items-center gap-2 text-emerald-700 dark:text-emerald-200">
             <i class="fa-solid fa-circle-arrow-down text-base"></i>
-            Entradas de dinheiro
+            Entradas de recursos
           </h3>
-          <p class="text-xs text-gray-500 dark:text-gray-400 max-w-sm">Registre salários, vendas e extras. Se quiser, direcione o valor direto para uma conta da carteira.</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400 max-w-sm">Registre salários, vendas e extras. Se quiser, direcione o valor direto para uma conta da carteira ou automatize aportes para investimentos.</p>
         </div>
         <div class="text-right text-sm font-semibold text-emerald-700 dark:text-emerald-200">
           <div>Este mês: R$ <span id="entradas-total-mes">0,00</span></div>
-          <div class="text-xs text-gray-500 dark:text-gray-400">Acumulado: R$ <span id="entradas-total-geral">0,00</span></div>
+          <div class="text-xs text-gray-500 dark:text-gray-400">Última entrada em <span id="entradas-ultima-data">–</span></div>
         </div>
       </div>
 
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
         <div class="rounded-2xl bg-emerald-50/80 dark:bg-emerald-900/30 border border-emerald-100/70 dark:border-emerald-800/50 p-4 shadow-sm">
           <div class="text-[0.65rem] uppercase tracking-wide text-emerald-700 dark:text-emerald-200">Saldo líquido do período</div>
           <div id="entradas-saldo-mes" class="text-2xl font-bold text-emerald-900 dark:text-emerald-100">R$ 0,00</div>
           <p id="entradas-saldo-hint" class="text-[0.7rem] text-emerald-700/80 dark:text-emerald-200/80 mt-1">Selecione um mês para ver a diferença entre entradas e saídas.</p>
+        </div>
+        <div class="rounded-2xl bg-white/90 dark:bg-slate-900/40 border border-slate-200/70 dark:border-slate-700/60 p-4 shadow-sm flex flex-col">
+          <div class="flex items-center justify-between gap-3">
+            <div class="text-[0.65rem] uppercase tracking-wide text-slate-600 dark:text-slate-300">Resumo visual</div>
+            <label class="sr-only" for="entradas-mini-range">Período do resumo de entradas</label>
+            <select id="entradas-mini-range" class="text-xs px-2 py-1 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200">
+              <option value="3">Últimos 3 meses</option>
+              <option value="6">Últimos 6 meses</option>
+              <option value="12">Últimos 12 meses</option>
+            </select>
+          </div>
+          <div class="relative mt-3 flex-1 min-h-[120px]">
+            <canvas id="entradas-mini-chart" class="h-full w-full"></canvas>
+            <div id="entradas-mini-empty" class="absolute inset-0 flex items-center justify-center text-[0.7rem] text-slate-500 dark:text-slate-400 hidden">
+              Sem dados suficientes no período escolhido.
+            </div>
+          </div>
+          <p id="entradas-mini-total" class="text-[0.7rem] text-slate-600 dark:text-slate-300 mt-3">Total do período: R$ 0,00</p>
         </div>
         <div class="rounded-2xl bg-white/80 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/60 p-4 shadow-sm">
           <div class="text-[0.65rem] uppercase tracking-wide text-slate-600 dark:text-slate-300">Distribuição por tipo</div>
@@ -1970,17 +1988,87 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
             <input id="entrada-desc" type="text" class="px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100" placeholder="Ex.: bônus, venda de produto" />
           </label>
         </div>
-        <div class="rounded-xl border border-emerald-100 dark:border-emerald-900/40 bg-emerald-50/50 dark:bg-emerald-900/20 p-3 space-y-2">
-          <label class="inline-flex items-center gap-2 text-sm font-medium text-emerald-700 dark:text-emerald-200">
-            <input id="entrada-adiciona-carteira" type="checkbox" class="h-4 w-4 rounded border-emerald-300 dark:border-emerald-600 text-emerald-600 focus:ring-emerald-500" />
-            Adicionar este valor direto na carteira
-          </label>
-          <div class="grid grid-cols-1 sm:grid-cols-[minmax(0,260px)_1fr] gap-3">
-            <select id="entrada-conta-carteira" class="px-3 py-2 rounded border border-emerald-200 dark:border-emerald-700 bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-200 disabled:opacity-60 disabled:cursor-not-allowed" disabled>
-              <option value="">Selecione a conta de destino</option>
-            </select>
-            <p id="entrada-conta-helper" class="text-xs text-emerald-700/80 dark:text-emerald-200/70">Cadastre contas na carteira para direcionar entradas automaticamente.</p>
+        <div class="rounded-xl border border-emerald-100 dark:border-emerald-900/40 bg-emerald-50/50 dark:bg-emerald-900/20 p-3 space-y-3">
+          <div class="flex flex-col gap-2">
+            <label class="inline-flex items-center gap-2 text-sm font-medium text-emerald-700 dark:text-emerald-200">
+              <input id="entrada-adiciona-carteira" type="checkbox" class="h-4 w-4 rounded border-emerald-300 dark:border-emerald-600 text-emerald-600 focus:ring-emerald-500" />
+              Direcionar parte para a carteira
+            </label>
+            <div id="entrada-carteira-config" class="grid grid-cols-1 lg:grid-cols-[minmax(0,220px)_minmax(0,1fr)] gap-3 hidden">
+              <div class="space-y-2">
+                <label class="text-xs font-semibold uppercase tracking-wide text-emerald-800 dark:text-emerald-200" for="entrada-conta-carteira">Conta de destino</label>
+                <select id="entrada-conta-carteira" class="px-3 py-1.5 sm:py-1 rounded border border-emerald-200 dark:border-emerald-700 bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-200 disabled:opacity-60 disabled:cursor-not-allowed">
+                  <option value="">Selecione a conta de destino</option>
+                </select>
+                <p id="entrada-conta-helper" class="text-[0.7rem] text-emerald-700/80 dark:text-emerald-200/80">Cadastre contas na carteira para direcionar entradas automaticamente.</p>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <label class="text-xs font-semibold uppercase tracking-wide text-emerald-800 dark:text-emerald-200 flex flex-col gap-1">
+                  Percentual (%)
+                  <input id="entrada-percentual-carteira" type="number" min="0" max="100" step="1" class="px-3 py-1.5 rounded border border-emerald-200 dark:border-emerald-700 bg-white dark:bg-slate-900 text-right text-emerald-700 dark:text-emerald-200" value="100" />
+                </label>
+                <label class="text-xs font-semibold uppercase tracking-wide text-emerald-800 dark:text-emerald-200 flex flex-col gap-1 sm:col-span-2">
+                  Valor estimado (R$)
+                  <input id="entrada-valor-carteira" type="number" min="0" step="0.01" class="px-3 py-1.5 rounded border border-emerald-200 dark:border-emerald-700 bg-white dark:bg-slate-900 text-right text-emerald-700 dark:text-emerald-200" readonly />
+                </label>
+              </div>
+            </div>
           </div>
+          <div class="rounded-lg border border-emerald-100/60 dark:border-emerald-800/40 bg-white/60 dark:bg-slate-900/40 p-3 space-y-2">
+            <label class="inline-flex items-center gap-2 text-sm font-medium text-emerald-700 dark:text-emerald-200">
+              <input id="entrada-direciona-invest" type="checkbox" class="h-4 w-4 rounded border-emerald-300 dark:border-emerald-600 text-emerald-600 focus:ring-emerald-500" />
+              Reservar parte para investimentos
+            </label>
+            <div id="entrada-invest-config" class="grid grid-cols-1 lg:grid-cols-[minmax(0,220px)_minmax(0,1fr)] gap-3 hidden">
+              <div class="space-y-2">
+                <label class="text-xs font-semibold uppercase tracking-wide text-emerald-800 dark:text-emerald-200" for="entrada-invest-tipo">Tipo de investimento</label>
+                <select id="entrada-invest-tipo" class="px-3 py-1.5 sm:py-1 rounded border border-emerald-200 dark:border-emerald-700 bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-200">
+                  <option value="renda_fixa">Renda fixa</option>
+                  <option value="acoes">Ações</option>
+                  <option value="fundo_imobiliario">Fundos imobiliários</option>
+                  <option value="cripto">Cripto</option>
+                  <option value="outros">Outros</option>
+                </select>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <label class="text-xs font-semibold uppercase tracking-wide text-emerald-800 dark:text-emerald-200 flex flex-col gap-1">
+                  Percentual (%)
+                  <input id="entrada-percentual-invest" type="number" min="0" max="100" step="1" class="px-3 py-1.5 rounded border border-emerald-200 dark:border-emerald-700 bg-white dark:bg-slate-900 text-right text-emerald-700 dark:text-emerald-200" value="0" />
+                </label>
+                <label class="text-xs font-semibold uppercase tracking-wide text-emerald-800 dark:text-emerald-200 flex flex-col gap-1 sm:col-span-2">
+                  Valor estimado (R$)
+                  <input id="entrada-valor-invest" type="number" min="0" step="0.01" class="px-3 py-1.5 rounded border border-emerald-200 dark:border-emerald-700 bg-white dark:bg-slate-900 text-right text-emerald-700 dark:text-emerald-200" readonly />
+                </label>
+              </div>
+            </div>
+            <p id="entrada-invest-helper" class="text-[0.7rem] text-emerald-700/80 dark:text-emerald-200/80">Defina percentuais para automatizar aportes sem perder o controle do fluxo mensal.</p>
+          </div>
+          <p id="entrada-alocacao-alerta" class="text-[0.7rem] text-emerald-800 dark:text-emerald-200 font-semibold hidden"></p>
+        </div>
+        <div class="rounded-xl border border-emerald-100 dark:border-emerald-900/40 bg-white/70 dark:bg-slate-900/30 p-3 space-y-2">
+          <label class="inline-flex items-center gap-2 text-sm font-medium text-emerald-700 dark:text-emerald-200">
+            <input id="entrada-recorrente" type="checkbox" class="h-4 w-4 rounded border-emerald-300 dark:border-emerald-600 text-emerald-600 focus:ring-emerald-500" />
+            Tornar esta entrada recorrente
+          </label>
+          <div id="entrada-recorrente-config" class="grid grid-cols-1 lg:grid-cols-3 gap-3 hidden">
+            <label class="text-xs font-semibold uppercase tracking-wide text-emerald-800 dark:text-emerald-200 flex flex-col gap-1">
+              Frequência
+              <select id="entrada-recorrente-frequencia" class="px-3 py-1.5 rounded border border-emerald-200 dark:border-emerald-700 bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-200">
+                <option value="mensal">Mensal</option>
+                <option value="bimestral">Bimestral</option>
+                <option value="trimestral">Trimestral</option>
+              </select>
+            </label>
+            <label class="text-xs font-semibold uppercase tracking-wide text-emerald-800 dark:text-emerald-200 flex flex-col gap-1">
+              Dia de lançamento
+              <input id="entrada-recorrente-dia" type="number" min="1" max="28" class="px-3 py-1.5 rounded border border-emerald-200 dark:border-emerald-700 bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-200" />
+            </label>
+            <label class="text-xs font-semibold uppercase tracking-wide text-emerald-800 dark:text-emerald-200 flex flex-col gap-1">
+              Fim opcional
+              <input id="entrada-recorrente-fim" type="date" class="px-3 py-1.5 rounded border border-emerald-200 dark:border-emerald-700 bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-200" />
+            </label>
+          </div>
+          <p class="text-[0.7rem] text-emerald-700/80 dark:text-emerald-200/80">Salários e recebimentos fixos serão gerados automaticamente nos próximos meses.</p>
         </div>
         <div class="flex flex-wrap items-center gap-3 justify-end">
           <button type="submit" class="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-semibold transition">
@@ -2023,7 +2111,7 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
         <div class="p-3 bg-white/80 dark:bg-slate-800/60 rounded-xl border border-slate-200/70 dark:border-slate-700/60">
           <div class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Saldo inicial do mês</div>
           <div id="wallet-saldo-inicial" class="text-lg font-semibold text-gray-800 dark:text-gray-100">R$ 0,00</div>
-          <p class="text-xs text-gray-500 dark:text-gray-400 mt-1" id="wallet-saldo-inicial-label">Carregado automaticamente do fechamento anterior.</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400 mt-1" id="wallet-saldo-inicial-label">Resultado que sobrou do mês anterior. Direcione para contas ou investimentos.</p>
         </div>
         <div class="p-3 bg-white/80 dark:bg-slate-800/60 rounded-xl border border-slate-200/70 dark:border-slate-700/60">
           <div class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Fluxo líquido do mês</div>
@@ -2046,9 +2134,9 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
           <p id="wallet-patrimonio-legenda" class="text-xs text-gray-500 dark:text-gray-400 mt-1">Soma das contas com os investimentos ativos.</p>
         </div>
         <div id="wallet-diferenca-card" class="p-3 bg-slate-100 dark:bg-slate-800/70 rounded-xl border border-slate-200/70 dark:border-slate-700/60">
-          <div class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Diferença vs. planejado</div>
+          <div class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Variação vs. saldo projetado</div>
           <div id="wallet-diferenca" class="text-lg font-semibold text-gray-800 dark:text-gray-100">R$ 0,00</div>
-          <p id="wallet-diferenca-legenda" class="text-xs text-gray-500 dark:text-gray-400 mt-1">Mantenha saldos alinhados para facilitar a conciliação.</p>
+          <p id="wallet-diferenca-legenda" class="text-xs text-gray-500 dark:text-gray-400 mt-1">Compare o patrimônio atual com o saldo projetado para ajustar aportes e contas.</p>
         </div>
       </div>
 
@@ -6357,6 +6445,13 @@ const moedaSigned = (v) => {
 const pct = (a,b)=> b? Math.max(0,Math.min(100,(a/b)*100)) : 0;
 const yyyymm = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
 const mmYYYY = key => { const [y,m]=key.split('-'); return `${m}/${y}`; };
+const roundCurrency = (value) => Math.round((Number(value) || 0) * 100) / 100;
+const clampPercent = (value) => {
+  if (value === '' || value === null || value === undefined) return 0;
+  const num = Number(value);
+  if (!Number.isFinite(num)) return 0;
+  return Math.max(0, Math.min(100, num));
+};
 const parseMonthKeyToDate = (key) => {
   if (!key || typeof key !== 'string') return null;
   const [yearStr, monthStr] = key.split('-');
@@ -6920,6 +7015,9 @@ let mesesEntradasDisponiveis = new Set();
 let mesesInvestimentosDisponiveis = new Set();
 let allEntradasDocs = [];
 let allInvestimentosDocs = [];
+let entradasMiniDataset = {};
+let entradasMiniChartInstance = null;
+let entradaRecorrenciasDocs = [];
 
 const painelFinanceiroState = {
   entradasMes: 0,
@@ -6934,6 +7032,7 @@ const createDefaultWalletState = () => ({
   settings: null,
   monthKey: getCurrentWalletMonthKey(),
   openingBalance: 0,
+  openingSource: { type: 'default', month: null },
   closingBalance: 0,
   netFlow: 0,
   entriesMonth: 0,
@@ -8627,7 +8726,7 @@ function exportarCSVtudo(){
    ATUALIZAÇÕES & SNAPSHOTS
    =========================== */
 
-let unsubLimits, unsubFixos, unsubGastos, unsubParcelados, unsubConfig, unsubEntradas, unsubInvestimentos;
+let unsubLimits, unsubFixos, unsubGastos, unsubParcelados, unsubConfig, unsubEntradas, unsubInvestimentos, unsubEntradasRecorrentes;
 let unsubWalletSettings, unsubWalletAccounts, unsubWalletSnapshot, unsubWalletTimeline;
 let allParceladosDocs = [];
 let allGastosDocs = [];
@@ -9051,17 +9150,47 @@ function computeWalletExpensesForMonth(monthKey) {
   return variavel + parcelados + fixos;
 }
 
+function resolveWalletOpeningBalance(monthKey) {
+  if (walletState.currentSnapshot && typeof walletState.currentSnapshot.openingBalance === 'number') {
+    walletState.openingSource = { type: 'snapshot', month: monthKey };
+    return walletState.currentSnapshot.openingBalance;
+  }
+  const timeline = Array.isArray(walletTimelineDocs) ? walletTimelineDocs : [];
+  let candidate = null;
+  if (monthKey) {
+    timeline.forEach((doc) => {
+      const docMonth = doc?.month || doc?.id;
+      if (!docMonth) return;
+      if (docMonth < monthKey) {
+        if (!candidate || docMonth > candidate.month) {
+          candidate = { month: docMonth, closing: Number(doc.closingBalance || 0) || 0 };
+        }
+      }
+    });
+  }
+  if (!candidate && timeline.length) {
+    const latest = timeline[0];
+    if (latest && latest.month && (!monthKey || latest.month <= monthKey)) {
+      candidate = { month: latest.month, closing: Number(latest.closingBalance || 0) || 0 };
+    }
+  }
+  if (candidate) {
+    walletState.openingSource = { type: 'carry', month: candidate.month };
+    return candidate.closing;
+  }
+  if (walletState.settings && typeof walletState.settings.initialBalance === 'number') {
+    walletState.openingSource = { type: 'settings', month: null };
+    return walletState.settings.initialBalance;
+  }
+  walletState.openingSource = { type: 'default', month: null };
+  return 0;
+}
+
 function updateWalletSummaryUI() {
   const monthKey = getCurrentWalletMonthKey();
   walletState.monthKey = monthKey;
   const monthLabel = monthKey ? mmYYYY(monthKey) : '';
-  const opening = Number(
-    (walletState.currentSnapshot && typeof walletState.currentSnapshot.openingBalance === 'number')
-      ? walletState.currentSnapshot.openingBalance
-      : (walletState.settings && typeof walletState.settings.initialBalance === 'number'
-        ? walletState.settings.initialBalance
-        : 0)
-  );
+  const opening = Number(resolveWalletOpeningBalance(monthKey) || 0);
   walletState.openingBalance = opening;
 
   const entries = computeWalletEntriesForMonth(monthKey);
@@ -9100,10 +9229,15 @@ function updateWalletSummaryUI() {
   }
   const saldoInicialLabel = document.getElementById('wallet-saldo-inicial-label');
   if (saldoInicialLabel) {
-    if (walletState.currentSnapshot && typeof walletState.currentSnapshot.openingBalance === 'number') {
-      saldoInicialLabel.textContent = 'Carregado automaticamente do fechamento anterior.';
+    const origem = walletState.openingSource || { type: 'default', month: null };
+    if (origem.type === 'snapshot') {
+      saldoInicialLabel.textContent = 'Saldo herdado do fechamento anterior. Planeje para onde ele deve ir.';
+    } else if (origem.type === 'carry' && origem.month) {
+      saldoInicialLabel.textContent = `Resultado que sobrou em ${mmYYYY(origem.month)} e está disponível para distribuir.`;
+    } else if (origem.type === 'settings') {
+      saldoInicialLabel.textContent = 'Saldo inicial definido manualmente nas preferências da carteira.';
     } else {
-      saldoInicialLabel.textContent = 'Ajuste o saldo inicial nas preferências da carteira caso seja necessário.';
+      saldoInicialLabel.textContent = 'Cadastre o fechamento anterior ou informe um saldo inicial para começar.';
     }
   }
   const fluxoEl = document.getElementById('wallet-fluxo-liquido');
@@ -9740,6 +9874,7 @@ async function startObservers(){
   if (unsubGastos) unsubGastos();
   if (unsubParcelados) unsubParcelados();
   if (unsubEntradas) unsubEntradas();
+  if (unsubEntradasRecorrentes) unsubEntradasRecorrentes();
   if (unsubInvestimentos) unsubInvestimentos();
   if (unsubWalletSettings) unsubWalletSettings();
   if (unsubWalletAccounts) unsubWalletAccounts();
@@ -9856,6 +9991,19 @@ async function startObservers(){
   }, err => {
     console.error('Erro ao carregar entradas:', err);
     showToast('Erro ao carregar entradas.', 'error');
+  });
+
+  unsubEntradasRecorrentes = userCollectionRef('entradaRecorrencias').onSnapshot((snap) => {
+    entradaRecorrenciasDocs = snap.docs;
+    const filtroMesEl = document.getElementById('filtro-mes');
+    const selected = filtroMesEl && filtroMesEl.value && filtroMesEl.value !== 'all'
+      ? filtroMesEl.value
+      : getCurrentWalletMonthKey();
+    processRecurringEntries(selected).catch((error) => {
+      console.error('Erro ao processar entradas recorrentes:', error);
+    });
+  }, (error) => {
+    console.error('Erro ao carregar recorrências de entradas:', error);
   });
 
   unsubInvestimentos = userCollectionRef('investimentos').orderBy('data','desc').onSnapshot(snap => {
@@ -10204,6 +10352,7 @@ function renderCategorias(totaisPorCategoria){
 const entradaTipoLabels = {
   salario: 'Salário',
   venda: 'Venda',
+  extra: 'Renda extra',
   renda_extra: 'Renda extra',
   outros: 'Outros',
 };
@@ -10211,7 +10360,8 @@ const entradaTipoLabels = {
 const investimentoTipoLabels = {
   reserva: 'Reserva de emergência',
   renda_fixa: 'Renda fixa',
-  acoes: 'Ações/Fundos',
+  acoes: 'Ações',
+  fundo_imobiliario: 'Fundos imobiliários',
   cripto: 'Cripto',
   outros: 'Outros',
 };
@@ -10219,9 +10369,10 @@ const investimentoTipoLabels = {
 function renderEntradasSidebar(docs = []) {
   const lista = document.getElementById('entradas-lista');
   const totalMesEl = document.getElementById('entradas-total-mes');
-  const totalGeralEl = document.getElementById('entradas-total-geral');
   const tiposContainer = document.getElementById('entradas-tipos-resumo');
-  if (!lista || !totalMesEl || !totalGeralEl || !tiposContainer) return;
+  const ultimaDataEl = document.getElementById('entradas-ultima-data');
+  const totalGeralEl = document.getElementById('entradas-total-geral');
+  if (!lista || !totalMesEl || !tiposContainer) return;
 
   mesesEntradasDisponiveis = new Set();
   allEntradasDocs = docs;
@@ -10235,7 +10386,9 @@ function renderEntradasSidebar(docs = []) {
   let totalMes = 0;
   let totalRegistrado = 0;
   const totaisPorTipoPeriodo = {};
+  const totaisPorMesGeral = {};
   let itensPeriodo = 0;
+  let ultimaEntradaDate = null;
 
   docs.forEach(doc => {
     const data = doc.data();
@@ -10249,30 +10402,66 @@ function renderEntradasSidebar(docs = []) {
     const tipo = data.tipo || 'outros';
     const descricao = (data.descricao || '').trim();
     const adicionaCarteira = data.adicionaCarteira === true;
-    const contaDestino = adicionaCarteira ? (data.contaDestino || '') : '';
+    const contaDestino = adicionaCarteira ? (data.contaDestino || data.walletId || '') : '';
     const contaLabel = adicionaCarteira && contaDestino ? getWalletAccountLabel(contaDestino) : null;
+    const carteiraPercentual = adicionaCarteira ? clampPercent(data.carteiraPercentual ?? data.percentualCarteira ?? (data.carteiraValorAplicado ? (data.carteiraValorAplicado / valor) * 100 : 0)) : 0;
+    const carteiraValorAplicado = adicionaCarteira ? roundCurrency(data.carteiraValorAplicado ?? data.valorCarteiraAplicado ?? (valor * (carteiraPercentual / 100))) : 0;
+    const direcionaInvestimento = data.direcionaInvestimento === true || data.adicionaInvestimento === true;
+    const investimentoTipo = direcionaInvestimento ? (data.investimentoTipo || data.tipoInvestimento || '') : '';
+    const investimentoPercentual = direcionaInvestimento ? clampPercent(data.investimentoPercentual ?? data.percentualInvestimento ?? (data.investimentoValorAplicado ? (data.investimentoValorAplicado / valor) * 100 : 0)) : 0;
+    const investimentoValorAplicado = direcionaInvestimento ? roundCurrency(data.investimentoValorAplicado ?? data.valorInvestimento ?? (valor * (investimentoPercentual / 100))) : 0;
+    const recorrente = data.recorrente === true || !!data.recorrenciaId;
 
+    totaisPorMesGeral[key] = (totaisPorMesGeral[key] || 0) + valor;
     totalRegistrado += valor;
+    if (!ultimaEntradaDate || dt > ultimaEntradaDate) {
+      ultimaEntradaDate = dt;
+    }
 
     if (mostrarTodos || key === mesSel) {
       totalMes += valor;
       itensPeriodo += 1;
       totaisPorTipoPeriodo[tipo] = (totaisPorTipoPeriodo[tipo] || 0) + valor;
       const item = document.createElement('div');
-      item.className = 'flex items-center gap-3 p-2 bg-gray-50 dark:bg-gray-700 rounded';
+      item.className = 'flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700/70 rounded-xl border border-gray-200/60 dark:border-gray-600/50';
       const detalhesParts = [formatDate(dt)];
       if (descricao) detalhesParts.push(descricao);
-      if (contaLabel) detalhesParts.push(`Carteira: ${contaLabel}`);
+      if (adicionaCarteira && contaLabel) {
+        const carteiraInfo = carteiraValorAplicado > 0.005
+          ? `${contaLabel} • R$ ${moeda(carteiraValorAplicado)}`
+          : contaLabel;
+        detalhesParts.push(`Carteira: ${carteiraInfo}`);
+      }
+      if (direcionaInvestimento && investimentoValorAplicado > 0.005) {
+        const investLabel = investimentoTipoLabels[investimentoTipo] || investimentoTipo || 'Investimento';
+        detalhesParts.push(`Invest.: ${investLabel} • R$ ${moeda(investimentoValorAplicado)}`);
+      }
+      if (recorrente) {
+        detalhesParts.push('Lançamento recorrente');
+      }
+
+      const badges = [];
+      if (adicionaCarteira && contaLabel) {
+        badges.push('<span class="inline-flex items-center gap-1 rounded-full bg-emerald-100/80 dark:bg-emerald-500/20 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-200"><i class="fa-solid fa-wallet"></i>Carteira</span>');
+      }
+      if (direcionaInvestimento && investimentoValorAplicado > 0.005) {
+        badges.push('<span class="inline-flex items-center gap-1 rounded-full bg-indigo-100/80 dark:bg-indigo-500/20 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-indigo-700 dark:text-indigo-200"><i class="fa-solid fa-chart-line"></i>Invest.</span>');
+      }
+      if (recorrente) {
+        badges.push('<span class="inline-flex items-center gap-1 rounded-full bg-amber-100/80 dark:bg-amber-500/20 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-200"><i class="fa-solid fa-arrows-rotate"></i>Recorrente</span>');
+      }
+
       item.innerHTML = `
-        <div class="flex-1">
-          <div class="font-semibold text-gray-700 dark:text-gray-100 flex items-center gap-2">
+        <div class="flex-1 space-y-1">
+          <div class="font-semibold text-gray-700 dark:text-gray-100 flex flex-wrap items-center gap-2">
             <span>${entradaTipoLabels[tipo] || tipo}</span>
-            ${adicionaCarteira && contaLabel ? '<span class="inline-flex items-center gap-1 rounded-full bg-emerald-100/70 dark:bg-emerald-500/20 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-200"><i class="fa-solid fa-wallet"></i>Carteira</span>' : ''}
+            ${badges.join('')}
           </div>
-          <div class="text-xs text-gray-500 dark:text-gray-400">${detalhesParts.join(' • ')}</div>
+          <div class="text-xs text-gray-500 dark:text-gray-300 leading-snug">${detalhesParts.join(' • ')}</div>
         </div>
-        <div class="text-right">
+        <div class="text-right min-w-[96px] space-y-1">
           <div class="font-semibold text-green-600 dark:text-green-300">R$ ${moeda(valor)}</div>
+          ${direcionaInvestimento && investimentoValorAplicado > 0.005 ? `<div class="text-[0.7rem] text-indigo-600 dark:text-indigo-300">Invest.: R$ ${moeda(investimentoValorAplicado)}</div>` : ''}
         </div>
         <button class="text-gray-400 hover:text-red-500 transition" data-remove-entrada="${doc.id}" aria-label="Remover entrada">
           <i class="fa fa-times"></i>
@@ -10281,6 +10470,10 @@ function renderEntradasSidebar(docs = []) {
       lista.appendChild(item);
     }
   });
+
+  if (ultimaDataEl) {
+    ultimaDataEl.textContent = ultimaEntradaDate ? formatDate(ultimaEntradaDate) : '–';
+  }
 
   if (itensPeriodo === 0) {
     const empty = document.createElement('div');
@@ -10295,19 +10488,21 @@ function renderEntradasSidebar(docs = []) {
     emptyTipos.textContent = 'Cadastre entradas para ver a distribuição.';
     tiposContainer.appendChild(emptyTipos);
   } else {
-    Object.entries(totaisPorTipoPeriodo).sort((a, b) => b[1] - a[1]).forEach(([tipo, valor]) => {
+    Object.entries(totaisPorTipoPeriodo).sort((a, b) => b[1] - a[1]).forEach(([tipo, valorTipo]) => {
       const card = document.createElement('div');
       card.className = 'p-2 bg-green-50 dark:bg-green-900/10 rounded';
       card.innerHTML = `
         <div class="text-xs uppercase text-green-700 dark:text-green-200">${entradaTipoLabels[tipo] || tipo}</div>
-        <div class="text-sm font-semibold text-green-800 dark:text-green-300">R$ ${moeda(valor)}</div>
+        <div class="text-sm font-semibold text-green-800 dark:text-green-300">R$ ${moeda(valorTipo)}</div>
       `;
       tiposContainer.appendChild(card);
     });
   }
 
   totalMesEl.textContent = moeda(totalMes);
-  totalGeralEl.textContent = moeda(totalRegistrado);
+  if (totalGeralEl) {
+    totalGeralEl.textContent = moeda(totalRegistrado);
+  }
 
   painelFinanceiroState.entradasMes = totalMes;
   painelFinanceiroState.entradasTotais = totalRegistrado;
@@ -10316,7 +10511,105 @@ function renderEntradasSidebar(docs = []) {
   atualizarResumoRapido();
   atualizarSaudeFinanceira();
   atualizarFiltroMeses();
+  updateEntradasMiniChart(totaisPorMesGeral);
   updateWalletSummaryUI();
+}
+
+function updateEntradasMiniChart(dataset) {
+  if (dataset) {
+    entradasMiniDataset = { ...dataset };
+  }
+  const chartCanvas = document.getElementById('entradas-mini-chart');
+  const rangeSelect = document.getElementById('entradas-mini-range');
+  const emptyEl = document.getElementById('entradas-mini-empty');
+  const totalEl = document.getElementById('entradas-mini-total');
+
+  const entries = Object.entries(entradasMiniDataset || {}).sort(([a], [b]) => a.localeCompare(b));
+  const range = Number(rangeSelect?.value || 3);
+  const subset = entries.slice(-range);
+  const labels = subset.map(([key]) => mmYYYY(key));
+  const values = subset.map(([, value]) => roundCurrency(value));
+  const totalPeriodo = values.reduce((sum, value) => sum + value, 0);
+  if (totalEl) {
+    totalEl.textContent = `Total do período: R$ ${moeda(totalPeriodo)}`;
+  }
+  const hasData = values.some((value) => value > 0.005);
+  if (emptyEl) {
+    emptyEl.classList.toggle('hidden', hasData);
+  }
+
+  if (!chartCanvas || typeof Chart === 'undefined') {
+    if (!hasData && emptyEl) {
+      emptyEl.classList.remove('hidden');
+    }
+    return;
+  }
+
+  if (!hasData) {
+    if (entradasMiniChartInstance) {
+      entradasMiniChartInstance.destroy();
+      entradasMiniChartInstance = null;
+    }
+    return;
+  }
+
+  const ctx = chartCanvas.getContext('2d');
+  if (entradasMiniChartInstance) {
+    entradasMiniChartInstance.destroy();
+  }
+  const gradient = ctx.createLinearGradient(0, 0, 0, chartCanvas.height || chartCanvas.clientHeight || 120);
+  gradient.addColorStop(0, 'rgba(16, 185, 129, 0.35)');
+  gradient.addColorStop(1, 'rgba(16, 185, 129, 0)');
+
+  entradasMiniChartInstance = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Entradas',
+          data: values,
+          fill: true,
+          backgroundColor: gradient,
+          borderColor: '#10b981',
+          borderWidth: 2,
+          pointRadius: 3,
+          pointBackgroundColor: '#10b981',
+          pointBorderColor: '#0f766e',
+          tension: 0.35,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (context) => `R$ ${moeda(context.parsed.y || 0)}`,
+          },
+        },
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: {
+            color: '#64748b',
+            font: { size: 10 },
+          },
+        },
+        y: {
+          grid: { color: 'rgba(148, 163, 184, 0.15)' },
+          ticks: {
+            color: '#475569',
+            font: { size: 10 },
+            callback: (value) => `R$ ${moeda(value)}`,
+          },
+        },
+      },
+    },
+  });
 }
 
 function atualizarSaldoLiquidoEntradas() {
@@ -11105,6 +11398,21 @@ const entradaValorInput = document.getElementById('entrada-valor');
 const entradaCarteiraCheckbox = document.getElementById('entrada-adiciona-carteira');
 const entradaCarteiraSelect = document.getElementById('entrada-conta-carteira');
 const entradaCarteiraHelper = document.getElementById('entrada-conta-helper');
+const entradaCarteiraConfig = document.getElementById('entrada-carteira-config');
+const entradaCarteiraPercentInput = document.getElementById('entrada-percentual-carteira');
+const entradaCarteiraValorInput = document.getElementById('entrada-valor-carteira');
+const entradaInvestCheckbox = document.getElementById('entrada-direciona-invest');
+const entradaInvestConfig = document.getElementById('entrada-invest-config');
+const entradaInvestTipoSelect = document.getElementById('entrada-invest-tipo');
+const entradaInvestPercentInput = document.getElementById('entrada-percentual-invest');
+const entradaInvestValorInput = document.getElementById('entrada-valor-invest');
+const entradaAlocacaoAlerta = document.getElementById('entrada-alocacao-alerta');
+const entradaRecorrenteCheckbox = document.getElementById('entrada-recorrente');
+const entradaRecorrenteConfig = document.getElementById('entrada-recorrente-config');
+const entradaRecorrenteFreqSelect = document.getElementById('entrada-recorrente-frequencia');
+const entradaRecorrenteDiaInput = document.getElementById('entrada-recorrente-dia');
+const entradaRecorrenteFimInput = document.getElementById('entrada-recorrente-fim');
+const entradasMiniRangeSelect = document.getElementById('entradas-mini-range');
 const formInvestimento = document.getElementById('form-investimento');
 const investimentoDataInput = document.getElementById('investimento-data');
 const investimentoValorInput = document.getElementById('investimento-valor');
@@ -11122,26 +11430,340 @@ function refreshEntradaCarteiraControls() {
     }
     entradaCarteiraCheckbox.disabled = !hasAccounts;
   }
+  const carteiraAtiva = hasAccounts && entradaCarteiraCheckbox && entradaCarteiraCheckbox.checked;
   if (entradaCarteiraSelect) {
-    const shouldEnable = hasAccounts && entradaCarteiraCheckbox && entradaCarteiraCheckbox.checked;
-    entradaCarteiraSelect.disabled = !shouldEnable;
-    if (!shouldEnable) {
+    entradaCarteiraSelect.disabled = !carteiraAtiva;
+    if (!carteiraAtiva) {
       entradaCarteiraSelect.value = '';
     }
+  }
+  if (entradaCarteiraConfig) {
+    entradaCarteiraConfig.classList.toggle('hidden', !carteiraAtiva);
   }
   if (entradaCarteiraHelper) {
     if (!hasAccounts) {
       entradaCarteiraHelper.textContent = 'Cadastre contas na carteira para direcionar entradas automaticamente.';
-    } else if (entradaCarteiraCheckbox && entradaCarteiraCheckbox.checked) {
-      entradaCarteiraHelper.textContent = 'Selecione a conta que deve receber esta entrada.';
+    } else if (carteiraAtiva) {
+      entradaCarteiraHelper.textContent = 'Selecione a conta e defina quanto ficará disponível logo após o recebimento.';
     } else {
-      entradaCarteiraHelper.textContent = 'Marque a opção para somar o valor diretamente em uma conta da carteira.';
+      entradaCarteiraHelper.textContent = 'Marque a opção para direcionar parte da entrada direto para uma conta.';
+    }
+  }
+  if (entradaInvestConfig) {
+    const investAtivo = entradaInvestCheckbox && entradaInvestCheckbox.checked;
+    entradaInvestConfig.classList.toggle('hidden', !investAtivo);
+    if (!investAtivo && entradaInvestPercentInput) {
+      entradaInvestPercentInput.value = '0';
+    }
+  }
+  updateEntradaAllocationPreview();
+}
+
+function updateEntradaAllocationPreview() {
+  const valorBruto = Number(entradaValorInput?.value || 0);
+  const carteiraAtiva = entradaCarteiraCheckbox && entradaCarteiraCheckbox.checked && !entradaCarteiraCheckbox.disabled;
+  const investAtivo = entradaInvestCheckbox && entradaInvestCheckbox.checked;
+
+  let percentCarteira = carteiraAtiva && entradaCarteiraPercentInput
+    ? clampPercent(entradaCarteiraPercentInput.value)
+    : 0;
+  let percentInvest = investAtivo && entradaInvestPercentInput
+    ? clampPercent(entradaInvestPercentInput.value)
+    : 0;
+
+  if (entradaCarteiraPercentInput) {
+    entradaCarteiraPercentInput.value = carteiraAtiva ? String(percentCarteira) : '0';
+  }
+  if (entradaInvestPercentInput) {
+    entradaInvestPercentInput.value = investAtivo ? String(percentInvest) : '0';
+  }
+
+  const valorCarteira = carteiraAtiva ? roundCurrency(valorBruto * (percentCarteira / 100)) : 0;
+  const valorInvest = investAtivo ? roundCurrency(valorBruto * (percentInvest / 100)) : 0;
+
+  if (entradaCarteiraValorInput) {
+    entradaCarteiraValorInput.value = valorCarteira > 0 ? valorCarteira.toFixed(2) : '';
+  }
+  if (entradaInvestValorInput) {
+    entradaInvestValorInput.value = valorInvest > 0 ? valorInvest.toFixed(2) : '';
+  }
+
+  const totalPercent = percentCarteira + percentInvest;
+  if (entradaAlocacaoAlerta) {
+    if (totalPercent > 100) {
+      entradaAlocacaoAlerta.classList.remove('hidden');
+      entradaAlocacaoAlerta.textContent = 'A soma dos percentuais destinados à carteira e aos investimentos não pode ultrapassar 100%.';
+    } else if (totalPercent > 0) {
+      entradaAlocacaoAlerta.classList.remove('hidden');
+      entradaAlocacaoAlerta.textContent = `Destinando ${totalPercent.toFixed(0)}% (${moeda(valorBruto * totalPercent / 100)}) deste lançamento.`;
+    } else {
+      entradaAlocacaoAlerta.classList.add('hidden');
+      entradaAlocacaoAlerta.textContent = '';
+    }
+  }
+
+  return {
+    valorCarteira,
+    valorInvest,
+    percentCarteira,
+    percentInvest,
+    totalPercent,
+  };
+}
+
+async function aplicarEntradaNaCarteira({ contaDestino, valorCarteira, descricao, dataTimestamp, entryId, percentCarteira }) {
+  if (!contaDestino || !Number.isFinite(valorCarteira) || valorCarteira <= 0) return;
+  const contaRef = userCollectionRef('wallets').doc(contaDestino);
+  const movimentoRef = userCollectionRef('walletMovements').doc();
+  await firebase.firestore().runTransaction(async (transaction) => {
+    const contaSnap = await transaction.get(contaRef);
+    const contaData = contaSnap.exists ? contaSnap.data() || {} : {};
+    const saldoAnterior = Number(contaData.saldoAtual ?? contaData.currentBalance ?? 0) || 0;
+    const saldoAtualizado = roundCurrency(saldoAnterior + valorCarteira);
+    const agora = firebase.firestore.Timestamp.now();
+
+    transaction.set(contaRef, stampWorkspaceUpdate({
+      saldoAtual: saldoAtualizado,
+      currentBalance: saldoAtualizado,
+      ultimaAtualizacao: agora,
+      updatedAt: agora,
+    }), { merge: true });
+
+    transaction.set(movimentoRef, stampWorkspaceCreation({
+      tipo: 'entrada',
+      type: 'entry',
+      walletId: contaDestino,
+      accountId: contaDestino,
+      amount: valorCarteira,
+      originCollection: 'entradas',
+      originId: entryId,
+      description: descricao || null,
+      occurredAt: dataTimestamp,
+      balanceBefore: saldoAnterior,
+      balanceAfter: saldoAtualizado,
+      allocationPercent: percentCarteira,
+    }));
+  });
+}
+
+async function registrarInvestimentoAuto({ entryId, investimentoTipo, valorInvest, descricao, dataTimestamp, contaDestino }) {
+  if (!Number.isFinite(valorInvest) || valorInvest <= 0) return;
+  const investPayload = stampWorkspaceCreation({
+    tipo: investimentoTipo || 'outros',
+    valor: valorInvest,
+    descricao: descricao ? `Aporte automático: ${descricao}` : 'Aporte automático da entrada',
+    data: dataTimestamp,
+    origemEntradaId: entryId,
+    origemContaCarteira: contaDestino || null,
+    viaCarteira: !!contaDestino,
+  });
+  await userCollectionRef('investimentos').add(investPayload);
+}
+
+async function removerInvestimentosDeEntrada(entryId) {
+  if (!entryId) return;
+  try {
+    const snap = await userCollectionRef('investimentos').where('origemEntradaId', '==', entryId).get();
+    if (snap.empty) return;
+    const batch = firebase.firestore().batch();
+    snap.forEach((doc) => batch.delete(doc.ref));
+    await batch.commit();
+  } catch (error) {
+    console.error('Erro ao remover investimentos vinculados à entrada:', error);
+    throw error;
+  }
+}
+
+async function createOrUpdateRecurringEntrada(entryId, options = {}) {
+  if (!entryId) return;
+  const ref = userCollectionRef('entradaRecorrencias').doc(entryId);
+  const baseDate = options.dataTimestamp && typeof options.dataTimestamp.toDate === 'function'
+    ? options.dataTimestamp.toDate()
+    : (options.dataTimestamp instanceof Date ? options.dataTimestamp : new Date());
+  const monthKey = yyyymm(baseDate);
+
+  await firebase.firestore().runTransaction(async (transaction) => {
+    const snap = await transaction.get(ref);
+    const existing = snap.exists ? snap.data() || {} : {};
+    const payloadBase = {
+      entryId,
+      tipo: options.tipo || existing.tipo || 'outros',
+      valorBase: Number(options.valor ?? existing.valorBase ?? existing.valor ?? 0) || 0,
+      descricaoBase: options.descricao || existing.descricaoBase || null,
+      contaDestino: options.contaDestino ?? existing.contaDestino ?? null,
+      carteiraPercentual: Number(options.carteiraPercentual ?? existing.carteiraPercentual ?? 0) || 0,
+      carteiraValorAplicado: Number(options.carteiraValorAplicado ?? existing.carteiraValorAplicado ?? 0) || 0,
+      investimentoPercentual: Number(options.investimentoPercentual ?? existing.investimentoPercentual ?? 0) || 0,
+      investimentoValorAplicado: Number(options.investimentoValorAplicado ?? existing.investimentoValorAplicado ?? 0) || 0,
+      investimentoTipo: options.investimentoTipo ?? existing.investimentoTipo ?? null,
+      frequencia: options.frequencia || existing.frequencia || 'mensal',
+      diaLancamento: options.diaLancamento ?? existing.diaLancamento ?? null,
+      inicio: options.dataTimestamp || existing.inicio || firebase.firestore.Timestamp.now(),
+      ativo: true,
+    };
+    if (options.fimRecorrencia) {
+      payloadBase.fim = options.fimRecorrencia;
+    } else if (existing.fim) {
+      payloadBase.fim = existing.fim;
+    }
+
+    if (snap.exists) {
+      transaction.set(ref, stampWorkspaceUpdate({
+        ...payloadBase,
+        ultimaGeracao: existing.ultimaGeracao || monthKey,
+      }), { merge: true });
+    } else {
+      transaction.set(ref, stampWorkspaceCreation({
+        ...payloadBase,
+        ultimaGeracao: monthKey,
+      }));
+    }
+  });
+}
+
+async function gerarEntradaRecorrenteFromConfig(docSnap, data, targetDate, monthKey) {
+  const ref = docSnap.ref;
+  let created = null;
+  await firebase.firestore().runTransaction(async (transaction) => {
+    const freshSnap = await transaction.get(ref);
+    const freshData = freshSnap.exists ? freshSnap.data() || {} : data;
+    if (freshData.ultimaGeracao && freshData.ultimaGeracao >= monthKey) {
+      return;
+    }
+    const dia = Number(freshData.diaLancamento ?? data.diaLancamento ?? targetDate.getDate()) || targetDate.getDate();
+    const diaClamped = Math.min(28, Math.max(1, dia));
+    const entryDate = new Date(targetDate.getFullYear(), targetDate.getMonth(), diaClamped);
+    const valorBase = Number(freshData.valorBase ?? freshData.valor ?? 0) || 0;
+    if (valorBase <= 0) {
+      transaction.set(ref, stampWorkspaceUpdate({ ultimaGeracao: monthKey }), { merge: true });
+      return;
+    }
+    const carteiraPercentual = Number(freshData.carteiraPercentual ?? 0) || 0;
+    const investimentoPercentual = Number(freshData.investimentoPercentual ?? 0) || 0;
+    const valorCarteira = roundCurrency(valorBase * (carteiraPercentual / 100));
+    const valorInvest = roundCurrency(valorBase * (investimentoPercentual / 100));
+    const valorRestante = roundCurrency(valorBase - valorCarteira - valorInvest);
+    if (valorRestante < -0.01) {
+      transaction.set(ref, stampWorkspaceUpdate({ ultimaGeracao: monthKey }), { merge: true });
+      console.warn('Distribuição recorrente excede o valor base; geração ignorada.', ref.id);
+      return;
+    }
+    const valorFluxoLivre = valorRestante < 0 ? 0 : valorRestante;
+
+    const newEntryRef = userCollectionRef('entradas').doc();
+    const newPayload = stampWorkspaceCreation({
+      tipo: freshData.tipo || 'outros',
+      valor: valorBase,
+      descricao: freshData.descricaoBase || null,
+      data: firebase.firestore.Timestamp.fromDate(entryDate),
+      adicionaCarteira: valorCarteira > 0 && !!freshData.contaDestino,
+      contaDestino: valorCarteira > 0 ? (freshData.contaDestino || null) : null,
+      carteiraPercentual,
+      carteiraValorAplicado: valorCarteira,
+      direcionaInvestimento: valorInvest > 0 && !!freshData.investimentoTipo,
+      investimentoTipo: valorInvest > 0 ? (freshData.investimentoTipo || null) : null,
+      investimentoPercentual,
+      investimentoValorAplicado: valorInvest,
+      valorFluxoLivre,
+      recorrente: true,
+      recorrenciaId: ref.id,
+    });
+
+    transaction.set(newEntryRef, newPayload);
+    transaction.set(ref, stampWorkspaceUpdate({
+      ultimaGeracao: monthKey,
+      ultimaExecucao: firebase.firestore.Timestamp.now(),
+    }), { merge: true });
+
+    created = {
+      id: newEntryRef.id,
+      payload: newPayload,
+      contaDestino: newPayload.contaDestino,
+      carteiraPercentual,
+      investimentoPercentual,
+      investimentoTipo: newPayload.investimentoTipo,
+      valorCarteira,
+      valorInvest,
+    };
+  });
+
+  if (created) {
+    const tasks = [];
+    if (created.contaDestino && created.valorCarteira > 0) {
+      tasks.push(aplicarEntradaNaCarteira({
+        contaDestino: created.contaDestino,
+        valorCarteira: created.valorCarteira,
+        descricao: created.payload.descricao,
+        dataTimestamp: created.payload.data,
+        entryId: created.id,
+        percentCarteira: created.carteiraPercentual,
+      }));
+    }
+    if (created.valorInvest > 0) {
+      tasks.push(registrarInvestimentoAuto({
+        entryId: created.id,
+        investimentoTipo: created.investimentoTipo || 'outros',
+        valorInvest: created.valorInvest,
+        descricao: created.payload.descricao,
+        dataTimestamp: created.payload.data,
+        contaDestino: created.contaDestino,
+      }));
+    }
+    await Promise.all(tasks);
+  }
+}
+
+async function processRecurringEntries(targetMonthKey) {
+  if (!Array.isArray(entradaRecorrenciasDocs) || entradaRecorrenciasDocs.length === 0) return;
+  const key = targetMonthKey || yyyymm(new Date());
+  const targetDate = parseMonthKeyToDate(key);
+  if (!targetDate) return;
+
+  for (const docSnap of entradaRecorrenciasDocs) {
+    const data = docSnap.data() || {};
+    if (data.ativo === false) continue;
+    const inicio = data.inicio && typeof data.inicio.toDate === 'function'
+      ? data.inicio.toDate()
+      : (data.inicio instanceof Date ? data.inicio : null);
+    if (!inicio || Number.isNaN(inicio.getTime())) continue;
+    const diff = monthDiff(inicio, targetDate);
+    if (diff < 0) continue;
+    const intervalo = data.frequencia === 'bimestral' ? 2 : data.frequencia === 'trimestral' ? 3 : 1;
+    if (diff % intervalo !== 0) continue;
+    const fim = data.fim || data.recorrenciaFim;
+    if (fim) {
+      const fimDate = typeof fim.toDate === 'function' ? fim.toDate() : (fim instanceof Date ? fim : new Date(fim));
+      if (targetDate > fimDate) continue;
+    }
+    const monthKey = yyyymm(targetDate);
+    if (data.ultimaGeracao && data.ultimaGeracao >= monthKey) continue;
+    try {
+      await gerarEntradaRecorrenteFromConfig(docSnap, data, targetDate, monthKey);
+    } catch (error) {
+      console.error('Erro ao gerar entrada recorrente:', error);
     }
   }
 }
 
 if (formEntrada) {
   refreshEntradaCarteiraControls();
+  if (entradaValorInput) {
+    entradaValorInput.addEventListener('input', () => {
+      updateEntradaAllocationPreview();
+    });
+  }
+  entradaCarteiraPercentInput?.addEventListener('input', () => {
+    if (entradaCarteiraPercentInput) {
+      entradaCarteiraPercentInput.value = String(clampPercent(entradaCarteiraPercentInput.value));
+    }
+    updateEntradaAllocationPreview();
+  });
+  entradaInvestPercentInput?.addEventListener('input', () => {
+    if (entradaInvestPercentInput) {
+      entradaInvestPercentInput.value = String(clampPercent(entradaInvestPercentInput.value));
+    }
+    updateEntradaAllocationPreview();
+  });
   document.querySelectorAll('[data-focus-entrada]').forEach((button) => {
     if (button.dataset.bound === 'true') return;
     button.dataset.bound = 'true';
@@ -11150,10 +11772,33 @@ if (formEntrada) {
     });
   });
   entradaCarteiraCheckbox?.addEventListener('change', () => {
+    if (entradaCarteiraCheckbox.checked && entradaCarteiraPercentInput && (!entradaCarteiraPercentInput.value || Number(entradaCarteiraPercentInput.value) <= 0)) {
+      entradaCarteiraPercentInput.value = '100';
+    }
     refreshEntradaCarteiraControls();
   });
+  entradaInvestCheckbox?.addEventListener('change', () => {
+    if (entradaInvestCheckbox.checked && entradaInvestPercentInput && Number(entradaInvestPercentInput.value || 0) <= 0) {
+      entradaInvestPercentInput.value = '10';
+    }
+    refreshEntradaCarteiraControls();
+  });
+  entradaRecorrenteCheckbox?.addEventListener('change', () => {
+    const ativo = entradaRecorrenteCheckbox.checked;
+    if (entradaRecorrenteConfig) {
+      entradaRecorrenteConfig.classList.toggle('hidden', !ativo);
+    }
+    if (ativo) {
+      if (entradaDataInput && entradaRecorrenteDiaInput && !entradaRecorrenteDiaInput.value) {
+        const base = entradaDataInput.value ? new Date(`${entradaDataInput.value}T12:00:00`) : new Date();
+        entradaRecorrenteDiaInput.value = String(Math.min(28, base.getDate()));
+      }
+    } else if (entradaRecorrenteDiaInput) {
+      entradaRecorrenteDiaInput.value = '';
+    }
+  });
 
-  formEntrada.addEventListener('submit', e => {
+  formEntrada.addEventListener('submit', async (e) => {
     e.preventDefault();
     const tipo = document.getElementById('entrada-tipo')?.value || 'outros';
     const valor = parseFloat((entradaValorInput && entradaValorInput.value) || '0');
@@ -11161,77 +11806,129 @@ if (formEntrada) {
     const descricao = (document.getElementById('entrada-desc')?.value || '').trim();
     const adicionaCarteira = !!(entradaCarteiraCheckbox && entradaCarteiraCheckbox.checked);
     const contaDestino = (entradaCarteiraSelect && entradaCarteiraSelect.value) ? entradaCarteiraSelect.value : '';
+    const direcionaInvestimento = !!(entradaInvestCheckbox && entradaInvestCheckbox.checked);
+    const investimentoTipo = entradaInvestTipoSelect?.value || 'renda_fixa';
 
     if (!dataValor || valor <= 0) {
       showToast('Informe um valor e uma data válidos para a entrada.', 'error');
       return;
     }
 
-    if (adicionaCarteira && !contaDestino) {
-      showToast('Escolha a conta da carteira que deve receber o valor da entrada.', 'error');
+    const allocation = updateEntradaAllocationPreview();
+    const valorCarteira = adicionaCarteira ? allocation.valorCarteira : 0;
+    const percentCarteira = adicionaCarteira ? allocation.percentCarteira : 0;
+    const valorInvest = direcionaInvestimento ? allocation.valorInvest : 0;
+    const percentInvest = direcionaInvestimento ? allocation.percentInvest : 0;
+    const totalPercent = allocation.totalPercent;
+
+    if (totalPercent > 100) {
+      showToast('A soma dos percentuais destinados à carteira e aos investimentos não pode ultrapassar 100%.', 'error');
+      return;
+    }
+
+    if (adicionaCarteira && (!contaDestino || valorCarteira <= 0)) {
+      showToast('Defina uma conta e um percentual válido para direcionar a entrada à carteira.', 'error');
       if (entradaCarteiraSelect) {
         entradaCarteiraSelect.focus();
       }
       return;
     }
 
+    if (direcionaInvestimento && valorInvest <= 0) {
+      showToast('Informe um percentual válido para reservar parte da entrada em investimentos.', 'error');
+      if (entradaInvestPercentInput) {
+        entradaInvestPercentInput.focus();
+      }
+      return;
+    }
+
     const data = new Date(`${dataValor}T12:00:00`);
     const dataTimestamp = firebase.firestore.Timestamp.fromDate(data);
+    const valorRestante = roundCurrency(valor - valorCarteira - valorInvest);
+    if (valorRestante < -0.01) {
+      showToast('Os percentuais definidos ultrapassam o valor total da entrada. Ajuste a distribuição.', 'error');
+      return;
+    }
+    const valorFluxoLivre = valorRestante < 0 ? 0 : valorRestante;
+    const recorrenteAtivo = !!(entradaRecorrenteCheckbox && entradaRecorrenteCheckbox.checked);
+    const frequenciaRecorrencia = entradaRecorrenteFreqSelect?.value || 'mensal';
+    const diaRecorrencia = entradaRecorrenteDiaInput?.value ? Number(entradaRecorrenteDiaInput.value) : null;
+    const fimRecorrencia = entradaRecorrenteFimInput?.value
+      ? firebase.firestore.Timestamp.fromDate(new Date(`${entradaRecorrenteFimInput.value}T12:00:00`))
+      : null;
+
     const payload = stampWorkspaceCreation({
       tipo,
       valor,
       descricao,
       data: dataTimestamp,
-      adicionaCarteira,
-      contaDestino: adicionaCarteira ? contaDestino : null,
+      adicionaCarteira: adicionaCarteira && valorCarteira > 0,
+      contaDestino: adicionaCarteira && valorCarteira > 0 ? contaDestino : null,
+      carteiraPercentual: adicionaCarteira ? percentCarteira : 0,
+      carteiraValorAplicado: adicionaCarteira ? valorCarteira : 0,
+      direcionaInvestimento: direcionaInvestimento && valorInvest > 0,
+      investimentoTipo: direcionaInvestimento && valorInvest > 0 ? investimentoTipo : null,
+      investimentoPercentual: direcionaInvestimento ? percentInvest : 0,
+      investimentoValorAplicado: direcionaInvestimento ? valorInvest : 0,
+      valorFluxoLivre,
+      recorrente: recorrenteAtivo,
+      recorrenciaFrequencia: recorrenteAtivo ? frequenciaRecorrencia : null,
+      recorrenciaDia: recorrenteAtivo ? diaRecorrencia : null,
+      recorrenciaFim: recorrenteAtivo && fimRecorrencia ? fimRecorrencia : null,
     });
 
-    userCollectionRef('entradas').add(payload).then((docRef) => {
-      if (adicionaCarteira && contaDestino) {
-        const contaRef = userCollectionRef('wallets').doc(contaDestino);
-        const entradaTimestamp = dataTimestamp;
-        return firebase.firestore().runTransaction(async (transaction) => {
-          const contaSnap = await transaction.get(contaRef);
-          const contaData = contaSnap.exists ? contaSnap.data() || {} : {};
-          const saldoAnterior = Number(contaData.saldoAtual ?? contaData.currentBalance ?? 0) || 0;
-          const saldoAtualizado = saldoAnterior + valor;
-          const agora = firebase.firestore.Timestamp.now();
-
-          transaction.set(contaRef, stampWorkspaceUpdate({
-            saldoAtual: saldoAtualizado,
-            currentBalance: saldoAtualizado,
-            ultimaAtualizacao: agora,
-            updatedAt: agora,
-          }), { merge: true });
-
-          const movimentoPayload = stampWorkspaceCreation({
-            tipo: 'entrada',
-            type: 'entry',
-            walletId: contaDestino,
-            accountId: contaDestino,
-            amount: valor,
-            originCollection: 'entradas',
-            originId: docRef.id,
-            description: descricao || null,
-            occurredAt: entradaTimestamp,
-            balanceBefore: saldoAnterior,
-            balanceAfter: saldoAtualizado,
-          });
-
-          const movimentoRef = userCollectionRef('walletMovements').doc();
-          transaction.set(movimentoRef, movimentoPayload);
-        });
+    try {
+      const docRef = await userCollectionRef('entradas').add(payload);
+      const sideEffects = [];
+      if (adicionaCarteira && contaDestino && valorCarteira > 0) {
+        sideEffects.push(aplicarEntradaNaCarteira({
+          contaDestino,
+          valorCarteira,
+          descricao,
+          dataTimestamp,
+          entryId: docRef.id,
+          percentCarteira,
+        }));
       }
-      return null;
-    }).then(() => {
+      if (direcionaInvestimento && valorInvest > 0) {
+        sideEffects.push(registrarInvestimentoAuto({
+          entryId: docRef.id,
+          investimentoTipo,
+          valorInvest,
+          descricao,
+          dataTimestamp,
+          contaDestino: adicionaCarteira ? contaDestino : null,
+        }));
+      }
+      if (recorrenteAtivo) {
+        sideEffects.push(createOrUpdateRecurringEntrada(docRef.id, {
+          tipo,
+          valor,
+          descricao,
+          contaDestino: adicionaCarteira && contaDestino ? contaDestino : null,
+          carteiraPercentual: adicionaCarteira ? percentCarteira : 0,
+          carteiraValorAplicado: adicionaCarteira ? valorCarteira : 0,
+          investimentoPercentual: direcionaInvestimento ? percentInvest : 0,
+          investimentoValorAplicado: direcionaInvestimento ? valorInvest : 0,
+          investimentoTipo: direcionaInvestimento ? investimentoTipo : null,
+          frequencia: frequenciaRecorrencia,
+          diaLancamento: diaRecorrencia,
+          fimRecorrencia,
+          dataTimestamp,
+        }));
+      }
+
+      await Promise.all(sideEffects);
+
       showToast('Entrada registrada com sucesso!', 'success');
       formEntrada.reset();
       if (entradaDataInput) entradaDataInput.value = formatDateInputValue(new Date());
       refreshEntradaCarteiraControls();
-    }).catch(err => {
+      updateEntradaAllocationPreview();
+    } catch (err) {
       console.error('Erro ao adicionar entrada:', err);
       showToast('Erro ao adicionar entrada.', 'error');
-    });
+    }
   });
 
   const entradasLista = document.getElementById('entradas-lista');
@@ -11246,15 +11943,19 @@ if (formEntrada) {
       const valorEntrada = Number(dataEntrada?.valor) || 0;
       const adicionaCarteira = dataEntrada?.adicionaCarteira === true;
       const contaDestino = adicionaCarteira ? (dataEntrada?.contaDestino || '') : '';
-      abrirModalConfirmacao('Remover entrada', 'Deseja remover esta entrada de dinheiro?', () => {
+      const valorCarteiraEntrada = Number(dataEntrada?.carteiraValorAplicado ?? dataEntrada?.valorCarteiraAplicado ?? (adicionaCarteira ? valorEntrada : 0)) || 0;
+      const valorInvestEntrada = Number(dataEntrada?.investimentoValorAplicado ?? dataEntrada?.valorInvestimento ?? 0) || 0;
+      const direcionaInvestimento = dataEntrada?.direcionaInvestimento === true || (valorInvestEntrada > 0);
+      abrirModalConfirmacao('Remover entrada', 'Deseja remover esta entrada de recursos?', () => {
         const entradaRef = userCollectionRef('entradas').doc(id);
-        if (adicionaCarteira && contaDestino && valorEntrada > 0) {
+        const tarefas = [];
+        if (adicionaCarteira && contaDestino && valorCarteiraEntrada > 0) {
           const contaRef = userCollectionRef('wallets').doc(contaDestino);
-          firebase.firestore().runTransaction(async (transaction) => {
+          tarefas.push(firebase.firestore().runTransaction(async (transaction) => {
             const contaSnap = await transaction.get(contaRef);
             const contaData = contaSnap.exists ? contaSnap.data() || {} : {};
             const saldoAnterior = Number(contaData.saldoAtual ?? contaData.currentBalance ?? 0) || 0;
-            const saldoAtualizado = saldoAnterior - valorEntrada;
+            const saldoAtualizado = roundCurrency(saldoAnterior - valorCarteiraEntrada);
             const agora = firebase.firestore.Timestamp.now();
 
             transaction.set(contaRef, stampWorkspaceUpdate({
@@ -11270,7 +11971,7 @@ if (formEntrada) {
               type: 'adjustment',
               walletId: contaDestino,
               accountId: contaDestino,
-              amount: -valorEntrada,
+              amount: -valorCarteiraEntrada,
               originCollection: 'entradas',
               originId: id,
               description: descricaoReversao ? `Estorno: ${descricaoReversao}` : 'Estorno de entrada removida',
@@ -11278,26 +11979,27 @@ if (formEntrada) {
               balanceBefore: saldoAnterior,
               balanceAfter: saldoAtualizado,
               reversal: true,
+              allocationPercent: Number(dataEntrada?.carteiraPercentual ?? dataEntrada?.percentualCarteira ?? 0) || 0,
             });
             const movimentoRef = userCollectionRef('walletMovements').doc();
             transaction.set(movimentoRef, movimentoPayload);
-
-            transaction.delete(entradaRef);
-          }).then(() => {
-            showToast('Entrada removida!', 'success');
-          }).catch((err) => {
-            console.error('Erro ao remover entrada:', err);
-            showToast('Erro ao remover entrada.', 'error');
-          });
-          return;
+          }));
+        }
+        if (direcionaInvestimento && valorInvestEntrada > 0) {
+          tarefas.push(removerInvestimentosDeEntrada(id));
         }
 
-        entradaRef.delete()
-          .then(() => showToast('Entrada removida!', 'success'))
-          .catch(err => {
-            console.error('Erro ao remover entrada:', err);
-            showToast('Erro ao remover entrada.', 'error');
-          });
+        Promise.all(tarefas).then(() => {
+          entradaRef.delete()
+            .then(() => showToast('Entrada removida!', 'success'))
+            .catch((error) => {
+              console.error('Erro ao remover entrada:', error);
+              showToast('Erro ao remover entrada.', 'error');
+            });
+        }).catch((err) => {
+          console.error('Erro ao remover entrada:', err);
+          showToast('Erro ao remover entrada.', 'error');
+        });
       });
     });
   }
@@ -11386,6 +12088,12 @@ if (envelopesGrid) {
     } else if (acao === 'liberar') {
       limparReservaEnvelope(tipo);
     }
+  });
+}
+
+if (entradasMiniRangeSelect) {
+  entradasMiniRangeSelect.addEventListener('change', () => {
+    updateEntradasMiniChart();
   });
 }
 
