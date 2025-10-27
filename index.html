@@ -148,6 +148,59 @@
   </div>
 </div>
 
+<div id="modal-wallet-invest" class="fixed inset-0 z-[9650] hidden items-start justify-center bg-slate-900/80 backdrop-blur px-4 py-8 overflow-y-auto sm:items-center" role="dialog" aria-modal="true" aria-labelledby="wallet-invest-title">
+  <div class="bg-white dark:bg-slate-900 w-full max-w-xl rounded-2xl shadow-xl relative p-6 sm:p-8 space-y-6 modal-content">
+    <button id="wallet-invest-close" class="absolute top-4 right-4 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white text-2xl font-bold" aria-label="Fechar modal" type="button">&times;</button>
+    <div class="space-y-2">
+      <h2 id="wallet-invest-title" class="text-2xl font-semibold text-slate-900 dark:text-slate-100">Mover recursos para investimentos</h2>
+      <p class="text-sm text-slate-500 dark:text-slate-400">Selecione a conta de origem e registre o aporte diretamente na seção de investimentos para manter o patrimônio sempre conciliado.</p>
+    </div>
+
+    <form id="wallet-invest-form" class="space-y-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <label class="text-sm font-medium text-slate-700 dark:text-slate-200 flex flex-col gap-1">
+          Conta de origem
+          <select id="wallet-invest-origin" class="px-3 py-2 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" required>
+            <option value="" disabled selected>Cadastre contas para começar</option>
+          </select>
+        </label>
+        <label class="text-sm font-medium text-slate-700 dark:text-slate-200 flex flex-col gap-1">
+          Tipo de investimento
+          <select id="wallet-invest-type" class="px-3 py-2 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" required>
+            <option value="reserva">Reserva de emergência</option>
+            <option value="renda_fixa">Renda fixa</option>
+            <option value="acoes">Ações/Fundos</option>
+            <option value="cripto">Cripto</option>
+            <option value="outros">Outros investimentos</option>
+          </select>
+        </label>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <label class="text-sm font-medium text-slate-700 dark:text-slate-200 flex flex-col gap-1">
+          Valor a mover (R$)
+          <input id="wallet-invest-amount" type="number" step="0.01" min="0.01" class="px-3 py-2 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-right" required />
+        </label>
+        <label class="text-sm font-medium text-slate-700 dark:text-slate-200 flex flex-col gap-1">
+          Data do aporte
+          <input id="wallet-invest-date" type="date" class="px-3 py-2 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" required />
+        </label>
+      </div>
+      <p id="wallet-invest-balance-hint" class="text-xs text-slate-500 dark:text-slate-400">Selecione uma conta para visualizar o saldo disponível.</p>
+      <label class="text-sm font-medium text-slate-700 dark:text-slate-200 flex flex-col gap-1">
+        Observação (opcional)
+        <input id="wallet-invest-description" type="text" maxlength="140" class="px-3 py-2 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" placeholder="Ex.: Aporte mensal" />
+      </label>
+      <div class="flex flex-wrap items-center gap-3">
+        <button id="wallet-invest-submit" type="submit" class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-semibold transition-colors">
+          <i class="fa-solid fa-circle-arrow-up"></i>
+          Confirmar movimentação
+        </button>
+        <span id="wallet-invest-feedback" class="hidden text-sm"></span>
+      </div>
+    </form>
+  </div>
+</div>
+
 <!-- NOVO: Modal de Gráficos dos Fixos -->
 <div id="modal-graficos-fixos" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden" role="dialog" aria-modal="true" aria-labelledby="modal-graficos-fixos-title">
   <div class="bg-white dark:bg-gray-800 rounded-lg p-6 w-11/12 max-w-2xl mx-auto relative shadow-lg modal-content max-h-[90vh] overflow-y-auto">
@@ -952,183 +1005,6 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
   display: none; /* Adicionado para garantir que não ocupe espaço nem receba cliques */
 }
 
-  /* Ciclo do dinheiro */
-  .ciclo-flow {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-
-  @media (min-width: 1024px) {
-    .ciclo-flow {
-      flex-direction: row;
-      align-items: stretch;
-    }
-  }
-
-  .ciclo-step {
-    flex: 1 1 0%;
-    padding: 1rem;
-    border-radius: 1rem;
-    background: linear-gradient(135deg, rgba(239, 246, 255, 0.9), rgba(236, 253, 245, 0.9));
-    border: 1px solid rgba(148, 163, 184, 0.3);
-    box-shadow: 0 12px 28px -18px rgba(15, 23, 42, 0.38);
-    display: flex;
-    flex-direction: column;
-    gap: 0.35rem;
-  }
-
-  .dark .ciclo-step {
-    background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(15, 118, 110, 0.32));
-    border-color: rgba(94, 234, 212, 0.18);
-    box-shadow: 0 16px 32px -24px rgba(15, 23, 42, 0.75);
-  }
-
-  .ciclo-step-header {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.75rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: #2563eb;
-  }
-
-  .dark .ciclo-step-header {
-    color: #93c5fd;
-  }
-
-  .ciclo-step-index {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 1.8rem;
-    height: 1.8rem;
-    border-radius: 9999px;
-    background: #2563eb;
-    color: #ffffff;
-    font-weight: 700;
-    font-size: 0.75rem;
-    box-shadow: 0 6px 12px -6px rgba(37, 99, 235, 0.55);
-  }
-
-  .dark .ciclo-step-index {
-    background: #3b82f6;
-    color: #e0f2fe;
-  }
-
-  .ciclo-value {
-    font-size: 1.4rem;
-    font-weight: 700;
-    color: #0f172a;
-  }
-
-  .dark .ciclo-value {
-    color: #f8fafc;
-  }
-
-  .ciclo-hint {
-    font-size: 0.75rem;
-    color: rgba(71, 85, 105, 0.9);
-    line-height: 1.35;
-  }
-
-  .dark .ciclo-hint {
-    color: rgba(203, 213, 225, 0.78);
-  }
-
-  .ciclo-subvalue {
-    margin-top: 0.4rem;
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.72rem;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: rgba(30, 41, 59, 0.78);
-  }
-
-  .ciclo-subvalue .ciclo-value {
-    font-size: 0.95rem;
-  }
-
-  .dark .ciclo-subvalue {
-    color: rgba(203, 213, 225, 0.72);
-  }
-
-  .ciclo-diff {
-    margin-top: 0.45rem;
-    font-size: 0.72rem;
-    font-weight: 600;
-    letter-spacing: 0.01em;
-  }
-
-  .ciclo-value.trend-positive,
-  .ciclo-diff.trend-positive {
-    color: #059669;
-  }
-
-  .dark .ciclo-value.trend-positive,
-  .dark .ciclo-diff.trend-positive {
-    color: #34d399;
-  }
-
-  .ciclo-value.trend-negative,
-  .ciclo-diff.trend-negative {
-    color: #dc2626;
-  }
-
-  .dark .ciclo-value.trend-negative,
-  .dark .ciclo-diff.trend-negative {
-    color: #f87171;
-  }
-
-  .ciclo-value.trend-neutral,
-  .ciclo-diff.trend-neutral {
-    color: #475569;
-  }
-
-  .dark .ciclo-value.trend-neutral,
-  .dark .ciclo-diff.trend-neutral {
-    color: rgba(203, 213, 225, 0.8);
-  }
-
-  .ciclo-connector {
-    align-items: center;
-    justify-content: center;
-    color: #4f46e5;
-    font-size: 1.75rem;
-  }
-
-  .ciclo-connector i {
-    filter: drop-shadow(0 6px 10px rgba(79, 70, 229, 0.35));
-  }
-
-  .dark .ciclo-connector {
-    color: #a5b4fc;
-  }
-
-  .ciclo-summary-card {
-    border-radius: 1rem;
-    border: 1px dashed rgba(79, 70, 229, 0.35);
-    background: rgba(255, 255, 255, 0.92);
-    padding: 1.1rem;
-    box-shadow: 0 12px 30px -24px rgba(79, 70, 229, 0.6);
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-
-  .dark .ciclo-summary-card {
-    background: rgba(15, 23, 42, 0.68);
-    border-color: rgba(129, 140, 248, 0.4);
-    box-shadow: 0 20px 38px -28px rgba(30, 64, 175, 0.75);
-  }
-
-  .ciclo-summary-card h4 {
-    letter-spacing: 0.12em;
-  }
-
 </style>
 
 
@@ -1432,7 +1308,6 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
     <div class="flex gap-2 overflow-x-auto no-scrollbar">
       <button type="button" class="mobile-tab-button" data-panel-target="painel-gastos">Gastos</button>
       <button type="button" class="mobile-tab-button" data-panel-target="painel-saidas">Saídas</button>
-      <button type="button" class="mobile-tab-button" data-panel-target="painel-ciclo-dinheiro">Ciclo</button>
       <button type="button" class="mobile-tab-button" data-panel-target="painel-entradas">Entradas</button>
       <button type="button" class="mobile-tab-button" data-panel-target="painel-carteira">Carteira</button>
       <button type="button" class="mobile-tab-button" data-panel-target="painel-investimentos">Invest.</button>
@@ -2028,129 +1903,6 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
   <!-- RIGHT: sidebar (entradas + resumos + ações) -->
   <aside class="space-y-6 lg:col-span-1 lg:self-start">
 
-    <!-- Ciclo do dinheiro -->
-    <div class="mobile-panel hidden lg:block section-card space-y-5" id="painel-ciclo-dinheiro">
-      <div class="flex flex-col gap-1">
-        <h3 class="font-semibold text-lg flex items-center gap-2"><i class="fa-solid fa-circle-nodes text-indigo-500"></i>Ciclo do dinheiro</h3>
-        <p class="text-sm text-gray-500 dark:text-gray-400">Acompanhe o caminho do seu dinheiro: o que entra, o que sai, o que fica disponível e o que continua crescendo.</p>
-      </div>
-      <div class="ciclo-flow" role="list">
-        <div class="ciclo-step" role="listitem">
-          <div class="ciclo-step-header"><span class="ciclo-step-index">1</span><span>Entradas</span></div>
-          <div id="ciclo-entradas" class="ciclo-value">R$ 0,00</div>
-          <p class="ciclo-hint">Receitas registradas no mês selecionado.</p>
-          <div class="ciclo-subvalue"><span>Acumulado</span><span id="ciclo-entradas-acumulado">R$ 0,00</span></div>
-        </div>
-        <div class="ciclo-connector hidden lg:flex" aria-hidden="true">
-          <i class="fa-solid fa-arrow-right-long"></i>
-        </div>
-        <div class="ciclo-step" role="listitem">
-          <div class="ciclo-step-header"><span class="ciclo-step-index">2</span><span>Saídas</span></div>
-          <div id="ciclo-saidas" class="ciclo-value">R$ 0,00</div>
-          <p class="ciclo-hint">Total de gastos previstos para o mesmo período.</p>
-          <div class="ciclo-subvalue"><span>Fluxo líquido</span><span id="ciclo-fluxo-liquido" class="ciclo-value trend-neutral">R$ 0,00</span></div>
-          <div id="ciclo-fluxo-hint" class="ciclo-diff trend-neutral">Cadastre entradas e saídas para acompanhar o equilíbrio.</div>
-        </div>
-        <div class="ciclo-connector hidden lg:flex" aria-hidden="true">
-          <i class="fa-solid fa-arrow-right-long"></i>
-        </div>
-        <div class="ciclo-step" role="listitem">
-          <div class="ciclo-step-header"><span class="ciclo-step-index">3</span><span>Carteira</span></div>
-          <div id="ciclo-carteira-real" class="ciclo-value">R$ 0,00</div>
-          <p class="ciclo-hint">Saldo real das contas monitoradas na carteira consolidada.</p>
-          <div class="ciclo-subvalue"><span>Projetado</span><span id="ciclo-carteira-projetado">R$ 0,00</span></div>
-          <div id="ciclo-carteira-diff" class="ciclo-diff trend-neutral">Cadastre contas ou defina um saldo inicial.</div>
-        </div>
-        <div class="ciclo-connector hidden lg:flex" aria-hidden="true">
-          <i class="fa-solid fa-arrow-right-long"></i>
-        </div>
-        <div class="ciclo-step" role="listitem">
-          <div class="ciclo-step-header"><span class="ciclo-step-index">4</span><span>Investimentos</span></div>
-          <div id="ciclo-invest-total" class="ciclo-value">R$ 0,00</div>
-          <p class="ciclo-hint">Aportes que continuam trabalhando para você.</p>
-          <div class="ciclo-subvalue"><span>Projeção</span><span id="ciclo-invest-projetado">R$ 0,00</span></div>
-          <div id="ciclo-invest-ganho" class="ciclo-diff trend-neutral">Informe aportes para visualizar o potencial de ganho.</div>
-        </div>
-      </div>
-      <div class="ciclo-summary-card">
-        <div>
-          <h4 class="text-sm font-semibold text-slate-700 dark:text-slate-200 uppercase tracking-wide">Patrimônio consolidado</h4>
-          <p class="text-xs text-slate-500 dark:text-slate-400">Carteira + investimentos com atualização em tempo real.</p>
-        </div>
-        <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <div class="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Disponível agora</div>
-            <div id="ciclo-patrimonio-atual" class="ciclo-value text-2xl">R$ 0,00</div>
-          </div>
-          <div class="sm:text-right">
-            <div class="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Com projeções</div>
-            <div id="ciclo-patrimonio-projetado" class="text-xl font-semibold text-indigo-700 dark:text-indigo-200">R$ 0,00</div>
-          </div>
-        </div>
-        <div id="ciclo-patrimonio-variacao" class="ciclo-diff trend-neutral">Cadastre entradas, contas ou investimentos para acompanhar.</div>
-      </div>
-    </div>
-
-    <!-- NOVO: Entradas de dinheiro -->
-    <div class="mobile-panel hidden lg:block section-card space-y-4" id="painel-entradas">
-      <div>
-        <h3 class="font-semibold text-lg flex items-center gap-2"><i class="fa fa-arrow-down text-green-500"></i>Entradas de Dinheiro</h3>
-        <p class="text-sm text-gray-500 dark:text-gray-400">Registre salários, vendas e rendas extras e acompanhe o fluxo mensal.</p>
-      </div>
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
-        <div class="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-          <div class="text-xs text-green-700 dark:text-green-200 uppercase tracking-wide">Mês selecionado</div>
-          <div class="text-lg font-bold text-green-800 dark:text-green-300">R$ <span id="entradas-total-mes">0,00</span></div>
-        </div>
-        <div class="p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg">
-          <div class="text-xs text-emerald-700 dark:text-emerald-200 uppercase tracking-wide">Saldo líquido do mês</div>
-          <div class="text-lg font-bold text-emerald-800 dark:text-emerald-300">R$ <span id="entradas-saldo-mes">0,00</span></div>
-          <div id="entradas-saldo-hint" class="text-[11px] text-emerald-700/80 dark:text-emerald-200/80 mt-1">Entradas menos saídas previstas do período selecionado.</div>
-        </div>
-        <div class="p-3 bg-green-100 dark:bg-green-900/10 rounded-lg sm:col-span-2">
-          <div class="text-xs text-green-700 dark:text-green-200 uppercase tracking-wide">Entradas registradas</div>
-          <div class="text-lg font-bold text-green-900 dark:text-green-200">R$ <span id="entradas-total-geral">0,00</span></div>
-          <div class="text-[11px] text-green-700/80 dark:text-green-200/80 mt-1">Total acumulado de receitas cadastradas no sistema.</div>
-        </div>
-      </div>
-      <form id="form-entrada" class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
-        <select id="entrada-tipo" class="px-3 py-2 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" required>
-          <option value="salario">Salário</option>
-          <option value="venda">Venda</option>
-          <option value="renda_extra">Renda extra</option>
-          <option value="outros">Outros</option>
-        </select>
-        <input id="entrada-valor" type="number" step="0.01" min="0.01" class="px-3 py-2 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" placeholder="Valor (R$)" required />
-        <input id="entrada-data" type="date" class="px-3 py-2 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" required />
-        <input id="entrada-desc" type="text" class="px-3 py-2 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" placeholder="Descrição (opcional)" />
-        <div class="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
-          <label class="flex items-center gap-2 px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-100">
-            <input id="entrada-adiciona-carteira" type="checkbox" class="h-4 w-4 text-emerald-600 border-gray-300 rounded focus:ring-emerald-500" />
-            <span class="text-xs sm:text-sm">Adicionar saldo diretamente na carteira consolidada</span>
-          </label>
-          <div class="relative">
-            <select id="entrada-conta-carteira" class="w-full px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-100 disabled:opacity-60 disabled:cursor-not-allowed">
-              <option value="">Selecione a conta destino</option>
-            </select>
-            <p id="entrada-conta-helper" class="mt-1 text-[11px] text-gray-500 dark:text-gray-400">Escolha a conta que deve receber esta entrada.</p>
-          </div>
-        </div>
-        <button type="submit" class="sm:col-span-2 bg-green-600 dark:bg-green-700 text-white px-3 py-2 rounded hover:bg-green-700 dark:hover:bg-green-800 transition">Adicionar entrada</button>
-      </form>
-      <div>
-        <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-200">Distribuição por tipo</h4>
-        <div id="entradas-tipos-resumo" class="grid grid-cols-2 gap-2 text-xs text-gray-500 dark:text-gray-400">
-          <div class="col-span-2 text-gray-500 dark:text-gray-400">Cadastre entradas para ver a distribuição.</div>
-        </div>
-      </div>
-      <div>
-        <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-200">Entradas recentes</h4>
-        <div id="entradas-lista" class="space-y-2 max-h-48 overflow-y-auto text-sm">
-          <div class="text-gray-500 dark:text-gray-400">Nenhuma entrada registrada.</div>
-        </div>
-      </div>
-    </div>
-
     <!-- NOVO: Carteira consolidada -->
     <div class="mobile-panel hidden lg:block section-card space-y-5" id="painel-carteira">
       <div class="flex flex-wrap items-start justify-between gap-4">
@@ -2159,12 +1911,12 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
             <i class="fa-solid fa-wallet text-amber-500"></i>
             Carteira consolidada
           </h3>
-          <p class="text-sm text-gray-500 dark:text-gray-400">Monitore o saldo acumulado real (saldo anterior + entradas - saídas) e compare com o valor disponível nas contas cadastradas.</p>
+          <p class="text-sm text-gray-500 dark:text-gray-400">Centralize o patrimônio real: acompanhe saldos de contas, investimentos ativos e o quanto falta para alinhar o mês ao planejado.</p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
-          <button id="btn-transferir-carteira" class="inline-flex items-center gap-2 rounded-full border border-emerald-200/70 dark:border-emerald-800/60 bg-emerald-50/70 dark:bg-emerald-900/20 px-3 py-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-200 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors">
-            <i class="fa-solid fa-arrow-right-arrow-left text-sm"></i>
-            Transferir entre contas
+          <button id="btn-wallet-move-invest" class="inline-flex items-center gap-2 rounded-full border border-emerald-200/70 dark:border-emerald-800/60 bg-emerald-50/70 dark:bg-emerald-900/20 px-3 py-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-200 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors">
+            <i class="fa-solid fa-arrow-trend-up text-sm"></i>
+            Mover para investimento
           </button>
           <button id="btn-gerenciar-carteira" class="inline-flex items-center gap-2 rounded-full border border-amber-200/70 dark:border-amber-900/50 bg-amber-50/70 dark:bg-amber-900/20 px-3 py-1.5 text-xs font-semibold text-amber-700 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors">
             <i class="fa-solid fa-list-check text-sm"></i>
@@ -2195,8 +1947,18 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
           <div id="wallet-saldo-contas" class="text-lg font-semibold text-gray-800 dark:text-gray-100">R$ 0,00</div>
           <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Atualize as contas cadastradas para refletir o valor disponível agora.</p>
         </div>
+        <div class="p-3 bg-indigo-50/70 dark:bg-indigo-900/20 rounded-xl border border-indigo-200/60 dark:border-indigo-800/40">
+          <div class="text-xs uppercase tracking-wide text-indigo-700 dark:text-indigo-200">Investimentos ativos</div>
+          <div id="wallet-saldo-investimentos" class="text-lg font-semibold text-indigo-800 dark:text-indigo-200">R$ 0,00</div>
+          <p id="wallet-investimentos-helper" class="text-xs text-indigo-700/80 dark:text-indigo-200/80 mt-1">Inclui aportes registrados na área de investimentos.</p>
+        </div>
+        <div class="p-3 bg-white/80 dark:bg-slate-800/60 rounded-xl border border-slate-200/70 dark:border-slate-700/60">
+          <div class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Patrimônio consolidado</div>
+          <div id="wallet-patrimonio-total" class="text-lg font-semibold text-gray-800 dark:text-gray-100">R$ 0,00</div>
+          <p id="wallet-patrimonio-legenda" class="text-xs text-gray-500 dark:text-gray-400 mt-1">Soma das contas com os investimentos ativos.</p>
+        </div>
         <div id="wallet-diferenca-card" class="p-3 bg-slate-100 dark:bg-slate-800/70 rounded-xl border border-slate-200/70 dark:border-slate-700/60">
-          <div class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Diferença vs. projetado</div>
+          <div class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Diferença vs. planejado</div>
           <div id="wallet-diferenca" class="text-lg font-semibold text-gray-800 dark:text-gray-100">R$ 0,00</div>
           <p id="wallet-diferenca-legenda" class="text-xs text-gray-500 dark:text-gray-400 mt-1">Mantenha saldos alinhados para facilitar a conciliação.</p>
         </div>
@@ -3539,9 +3301,11 @@ const accessManagerSectionBodies = {};
 const accessManagerSectionCarets = {};
 const accessManagerSectionState = {};
 const walletManageButton = document.getElementById('btn-gerenciar-carteira');
-const walletTransferButton = document.getElementById('btn-transferir-carteira');
+const walletInvestButton = document.getElementById('btn-wallet-move-invest');
 const walletAccountsModal = document.getElementById('modal-wallet-accounts');
+const walletInvestModal = document.getElementById('modal-wallet-invest');
 const walletAccountsClose = document.getElementById('wallet-accounts-close');
+const walletInvestClose = document.getElementById('wallet-invest-close');
 const walletAccountForm = document.getElementById('wallet-account-form');
 const walletAccountName = document.getElementById('wallet-account-name');
 const walletAccountInstitution = document.getElementById('wallet-account-institution');
@@ -3559,6 +3323,15 @@ const walletSettingsFeedback = document.getElementById('wallet-settings-feedback
 const walletSettingsSubmit = document.getElementById('wallet-settings-submit');
 const walletTimelineContainer = document.getElementById('wallet-timeline');
 const walletTimelineLastSync = document.getElementById('wallet-timeline-last-sync');
+const walletInvestForm = document.getElementById('wallet-invest-form');
+const walletInvestOriginSelect = document.getElementById('wallet-invest-origin');
+const walletInvestTypeSelect = document.getElementById('wallet-invest-type');
+const walletInvestAmountInput = document.getElementById('wallet-invest-amount');
+const walletInvestDateInput = document.getElementById('wallet-invest-date');
+const walletInvestDescriptionInput = document.getElementById('wallet-invest-description');
+const walletInvestFeedback = document.getElementById('wallet-invest-feedback');
+const walletInvestBalanceHint = document.getElementById('wallet-invest-balance-hint');
+const walletInvestSubmit = document.getElementById('wallet-invest-submit');
 initAccessManagerSectionControls();
 const FIRESTORE_RULES_SNIPPET = String.raw`rules_version = '2';
 service cloud.firestore {
@@ -3862,8 +3635,9 @@ function unlockBodyScrollIfAllowed() {
   const accessVisible = accessGuardOverlay && !accessGuardOverlay.classList.contains('hidden');
   const workspaceVisible = workspaceShareModal && !workspaceShareModal.classList.contains('hidden');
   const accessManagerVisible = accessManagerModal && !accessManagerModal.classList.contains('hidden');
-  const walletModalVisible = typeof walletAccountsModal !== 'undefined' && walletAccountsModal && !walletAccountsModal.classList.contains('hidden');
-  if (!authVisible && !accessVisible && !workspaceVisible && !accessManagerVisible && !walletModalVisible) {
+  const walletManageVisible = walletAccountsModal && !walletAccountsModal.classList.contains('hidden');
+  const walletInvestVisible = walletInvestModal && !walletInvestModal.classList.contains('hidden');
+  if (!authVisible && !accessVisible && !workspaceVisible && !accessManagerVisible && !walletManageVisible && !walletInvestVisible) {
     document.body.classList.remove('overflow-hidden');
   }
 }
@@ -6419,9 +6193,9 @@ if (walletManageButton && walletAccountsModal) {
   });
 }
 
-if (walletTransferButton) {
-  walletTransferButton.addEventListener('click', () => {
-    showToast('Transferências entre contas estarão disponíveis em breve.', 'info');
+if (walletInvestButton && walletInvestModal) {
+  walletInvestButton.addEventListener('click', () => {
+    openWalletInvestModal();
   });
 }
 
@@ -6435,6 +6209,20 @@ if (walletAccountsModal) {
   walletAccountsModal.addEventListener('click', (event) => {
     if (event.target === walletAccountsModal) {
       closeWalletAccountsModal();
+    }
+  });
+}
+
+if (walletInvestClose) {
+  walletInvestClose.addEventListener('click', () => {
+    closeWalletInvestModal();
+  });
+}
+
+if (walletInvestModal) {
+  walletInvestModal.addEventListener('click', (event) => {
+    if (event.target === walletInvestModal) {
+      closeWalletInvestModal();
     }
   });
 }
@@ -6459,6 +6247,16 @@ if (walletSettingsForm) {
   walletSettingsForm.addEventListener('submit', handleWalletSettingsSubmit);
 }
 
+if (walletInvestForm) {
+  walletInvestForm.addEventListener('submit', handleWalletInvestSubmit);
+}
+
+if (walletInvestOriginSelect) {
+  walletInvestOriginSelect.addEventListener('change', () => {
+    updateWalletInvestBalanceHint();
+  });
+}
+
 /* ===========================
    UTIL
    =========================== */
@@ -6467,17 +6265,6 @@ const moedaSigned = (v) => {
   const value = Number(v) || 0;
   const prefix = value < 0 ? '-R$ ' : 'R$ ';
   return prefix + moeda(Math.abs(value));
-};
-const applyTrendClass = (element, value, threshold = 0.5) => {
-  if (!element) return;
-  element.classList.remove('trend-positive', 'trend-negative', 'trend-neutral');
-  if (value > threshold) {
-    element.classList.add('trend-positive');
-  } else if (value < -threshold) {
-    element.classList.add('trend-negative');
-  } else {
-    element.classList.add('trend-neutral');
-  }
 };
 const pct = (a,b)=> b? Math.max(0,Math.min(100,(a/b)*100)) : 0;
 const yyyymm = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
@@ -7065,6 +6852,8 @@ const createDefaultWalletState = () => ({
   expensesMonth: 0,
   accounts: [],
   accountsTotal: 0,
+  investmentsTotal: 0,
+  patrimonioTotal: 0,
   difference: 0,
   currentSnapshot: null,
   currentSnapshotRef: null,
@@ -8920,31 +8709,67 @@ function renderWalletAccountsList() {
 }
 
 function renderWalletAccountOptions() {
-  if (!entradaCarteiraSelect) return;
-  const previousValue = entradaCarteiraSelect.value;
-  entradaCarteiraSelect.innerHTML = '';
+  const configs = [];
+  if (entradaCarteiraSelect) {
+    configs.push({
+      element: entradaCarteiraSelect,
+      placeholder: 'Selecione a conta destino',
+      allowEmpty: true,
+      disablePlaceholder: false,
+    });
+  }
+  if (walletInvestOriginSelect) {
+    const hasAccounts = Array.isArray(walletAccountsDocs) && walletAccountsDocs.length > 0;
+    configs.push({
+      element: walletInvestOriginSelect,
+      placeholder: hasAccounts ? 'Selecione a conta de origem' : 'Cadastre contas para começar',
+      allowEmpty: false,
+      disablePlaceholder: true,
+    });
+  }
+  if (!configs.length) {
+    return;
+  }
 
-  const defaultOption = document.createElement('option');
-  defaultOption.value = '';
-  defaultOption.textContent = 'Selecione a conta destino';
-  entradaCarteiraSelect.appendChild(defaultOption);
+  configs.forEach(({ element, placeholder, allowEmpty, disablePlaceholder }) => {
+    const previousValue = element.value;
+    element.innerHTML = '';
 
-  (walletAccountsDocs || []).forEach((account) => {
-    const option = document.createElement('option');
-    option.value = account.id;
-    const labelParts = [account.name || 'Conta sem nome'];
-    if (account.institution) {
-      labelParts.push(account.institution);
+    const defaultOption = document.createElement('option');
+    defaultOption.value = '';
+    defaultOption.textContent = placeholder;
+    if (disablePlaceholder) {
+      defaultOption.disabled = true;
+      defaultOption.selected = true;
     }
-    option.textContent = labelParts.join(' • ');
-    entradaCarteiraSelect.appendChild(option);
+    element.appendChild(defaultOption);
+
+    (walletAccountsDocs || []).forEach((account) => {
+      if (!account) return;
+      const option = document.createElement('option');
+      option.value = account.id;
+      const labelParts = [account.name || 'Conta sem nome'];
+      if (account.institution) {
+        labelParts.push(account.institution);
+      }
+      option.textContent = labelParts.join(' • ');
+      option.dataset.balance = String(Number.isFinite(account.balance) ? account.balance : 0);
+      option.dataset.name = account.name || '';
+      element.appendChild(option);
+    });
+
+    const hasPrevious = walletAccountsDocs && walletAccountsDocs.some((acc) => acc.id === previousValue);
+    if (allowEmpty) {
+      element.value = hasPrevious ? previousValue : '';
+    } else if (hasPrevious) {
+      element.value = previousValue;
+    } else {
+      element.selectedIndex = 0;
+    }
   });
 
-  if (walletAccountsDocs && walletAccountsDocs.some((acc) => acc.id === previousValue)) {
-    entradaCarteiraSelect.value = previousValue;
-  } else {
-    entradaCarteiraSelect.value = '';
-  }
+  updateWalletInvestBalanceHint();
+  updateWalletActionsAvailability();
 }
 
 function getWalletAccountLabel(accountId) {
@@ -8957,6 +8782,61 @@ function getWalletAccountLabel(accountId) {
   }
   return parts.join(' • ');
 }
+
+function updateWalletInvestBalanceHint() {
+  if (!walletInvestBalanceHint) return;
+  const hasAccounts = Array.isArray(walletAccountsDocs) && walletAccountsDocs.length > 0;
+  if (!walletInvestOriginSelect || !hasAccounts) {
+    walletInvestBalanceHint.textContent = hasAccounts
+      ? 'Selecione uma conta para visualizar o saldo disponível.'
+      : 'Cadastre contas para começar e poder mover recursos.';
+    if (walletInvestAmountInput) {
+      walletInvestAmountInput.removeAttribute('max');
+    }
+    return;
+  }
+
+  const selectedOption = walletInvestOriginSelect.options[walletInvestOriginSelect.selectedIndex];
+  if (!selectedOption || !selectedOption.value) {
+    walletInvestBalanceHint.textContent = 'Selecione uma conta para visualizar o saldo disponível.';
+    if (walletInvestAmountInput) {
+      walletInvestAmountInput.removeAttribute('max');
+    }
+    return;
+  }
+
+  const balance = Number(selectedOption.dataset.balance || 0) || 0;
+  walletInvestBalanceHint.textContent = `Saldo disponível: R$ ${moeda(balance)}.`;
+  if (walletInvestAmountInput) {
+    if (balance > 0) {
+      walletInvestAmountInput.max = balance.toFixed(2);
+    } else {
+      walletInvestAmountInput.removeAttribute('max');
+    }
+  }
+}
+
+function updateWalletActionsAvailability() {
+  const hasAccounts = Array.isArray(walletAccountsDocs) && walletAccountsDocs.length > 0;
+  if (walletInvestButton) {
+    walletInvestButton.disabled = !hasAccounts;
+    walletInvestButton.classList.toggle('opacity-60', !hasAccounts);
+    walletInvestButton.classList.toggle('pointer-events-none', !hasAccounts);
+    walletInvestButton.setAttribute('aria-disabled', String(!hasAccounts));
+  }
+  if (walletInvestOriginSelect) {
+    walletInvestOriginSelect.disabled = !hasAccounts;
+  }
+  if (walletInvestSubmit) {
+    walletInvestSubmit.disabled = !hasAccounts;
+    walletInvestSubmit.classList.toggle('opacity-60', !hasAccounts);
+    walletInvestSubmit.classList.toggle('cursor-not-allowed', !hasAccounts);
+    walletInvestSubmit.setAttribute('aria-disabled', String(!hasAccounts));
+  }
+  updateWalletInvestBalanceHint();
+}
+
+updateWalletActionsAvailability();
 
 function renderWalletTimeline() {
   if (!walletTimelineContainer) return;
@@ -9111,7 +8991,11 @@ function updateWalletSummaryUI() {
     return sum + (Number(account.balance) || 0);
   }, 0);
   walletState.accountsTotal = accountsTotal;
-  const difference = accountsTotal - closing;
+  const investmentsTotal = Number(painelFinanceiroState?.investimentosTotais || 0);
+  walletState.investmentsTotal = investmentsTotal;
+  const patrimonioTotal = accountsTotal + investmentsTotal;
+  walletState.patrimonioTotal = patrimonioTotal;
+  const difference = patrimonioTotal - closing;
   walletState.difference = difference;
 
   const destaqueEl = document.getElementById('wallet-saldo-projetado-destaque');
@@ -9152,6 +9036,26 @@ function updateWalletSummaryUI() {
   if (contasEl) {
     contasEl.textContent = `R$ ${moeda(accountsTotal)}`;
   }
+  const investimentosEl = document.getElementById('wallet-saldo-investimentos');
+  if (investimentosEl) {
+    investimentosEl.textContent = `R$ ${moeda(investmentsTotal)}`;
+  }
+  const investHelperEl = document.getElementById('wallet-investimentos-helper');
+  if (investHelperEl) {
+    if (investmentsTotal <= 0.005) {
+      investHelperEl.textContent = 'Direcione valores da carteira ou registre aportes na seção de investimentos.';
+    } else {
+      investHelperEl.textContent = 'Inclui aportes registrados na área de investimentos e transferências da carteira.';
+    }
+  }
+  const patrimonioEl = document.getElementById('wallet-patrimonio-total');
+  if (patrimonioEl) {
+    patrimonioEl.textContent = `R$ ${moeda(patrimonioTotal)}`;
+  }
+  const patrimonioLegendaEl = document.getElementById('wallet-patrimonio-legenda');
+  if (patrimonioLegendaEl) {
+    patrimonioLegendaEl.textContent = `Contas: R$ ${moeda(accountsTotal)} • Investimentos: R$ ${moeda(investmentsTotal)}`;
+  }
   const diferencaEl = document.getElementById('wallet-diferenca');
   const diferencaLegenda = document.getElementById('wallet-diferenca-legenda');
   const diferencaCard = document.getElementById('wallet-diferenca-card');
@@ -9164,11 +9068,11 @@ function updateWalletSummaryUI() {
   }
   if (diferencaLegenda) {
     if (Math.abs(difference) < 0.5) {
-      diferencaLegenda.textContent = 'Tudo conciliado! Os saldos batem com o projetado.';
+      diferencaLegenda.textContent = 'Patrimônio alinhado ao saldo planejado para o mês.';
     } else if (difference > 0) {
-      diferencaLegenda.textContent = 'Há mais recursos nas contas do que o previsto. Atualize o planejamento ou distribua o excedente.';
+      diferencaLegenda.textContent = 'Você está acima do planejado — avalie novos aportes ou ajuste o saldo projetado.';
     } else {
-      diferencaLegenda.textContent = 'Faltam recursos para alcançar o saldo projetado. Reveja entradas ou reduza saídas.';
+      diferencaLegenda.textContent = 'Patrimônio abaixo do planejado — revise entradas ou reduza movimentos para investimentos.';
     }
   }
   if (diferencaCard) {
@@ -9182,125 +9086,7 @@ function updateWalletSummaryUI() {
     }
   }
 
-  atualizarCicloDinheiro();
   scheduleWalletSnapshotSync();
-}
-
-function atualizarCicloDinheiro() {
-  const card = document.getElementById('painel-ciclo-dinheiro');
-  if (!card) return;
-
-  const entradasMes = painelFinanceiroState.entradasMes || 0;
-  const entradasTotais = painelFinanceiroState.entradasTotais || 0;
-  const saidasMes = painelFinanceiroState.totalGastosMes || 0;
-  const fluxoLiquido = entradasMes - saidasMes;
-
-  const carteiraProjetada = typeof walletState?.closingBalance === 'number'
-    ? walletState.closingBalance
-    : fluxoLiquido;
-  const carteiraReal = typeof walletState?.accountsTotal === 'number'
-    ? walletState.accountsTotal
-    : 0;
-  const carteiraDiff = carteiraReal - carteiraProjetada;
-
-  const totalInvest = painelFinanceiroState.investimentosTotais || 0;
-  const projInvest = painelFinanceiroState.investimentosProjetados || totalInvest;
-  const ganhoInvest = projInvest - totalInvest;
-
-  const patrimonioAtual = carteiraReal + totalInvest;
-  const patrimonioProjetado = carteiraProjetada + projInvest;
-  const patrimonioDelta = patrimonioAtual - patrimonioProjetado;
-
-  const setCurrencyText = (id, value) => {
-    const el = document.getElementById(id);
-    if (el) {
-      el.textContent = `R$ ${moeda(value)}`;
-    }
-  };
-
-  setCurrencyText('ciclo-entradas', entradasMes);
-  setCurrencyText('ciclo-entradas-acumulado', entradasTotais);
-  setCurrencyText('ciclo-saidas', saidasMes);
-  setCurrencyText('ciclo-carteira-real', carteiraReal);
-  setCurrencyText('ciclo-carteira-projetado', carteiraProjetada);
-  setCurrencyText('ciclo-invest-total', totalInvest);
-  setCurrencyText('ciclo-invest-projetado', projInvest);
-  setCurrencyText('ciclo-patrimonio-atual', patrimonioAtual);
-  setCurrencyText('ciclo-patrimonio-projetado', patrimonioProjetado);
-
-  const fluxoEl = document.getElementById('ciclo-fluxo-liquido');
-  if (fluxoEl) {
-    fluxoEl.textContent = moedaSigned(fluxoLiquido);
-    applyTrendClass(fluxoEl, fluxoLiquido);
-  }
-
-  const fluxoHint = document.getElementById('ciclo-fluxo-hint');
-  if (fluxoHint) {
-    if (entradasMes === 0 && saidasMes === 0) {
-      fluxoHint.textContent = 'Cadastre entradas e saídas para acompanhar o equilíbrio.';
-      applyTrendClass(fluxoHint, 0);
-    } else if (fluxoLiquido > 0.5) {
-      fluxoHint.textContent = `Sobra de R$ ${moeda(fluxoLiquido)} disponível para carteira ou investimentos.`;
-      applyTrendClass(fluxoHint, fluxoLiquido);
-    } else if (fluxoLiquido < -0.5) {
-      fluxoHint.textContent = `Déficit de R$ ${moeda(Math.abs(fluxoLiquido))} — ajuste gastos ou use reservas.`;
-      applyTrendClass(fluxoHint, fluxoLiquido);
-    } else {
-      fluxoHint.textContent = 'Entradas e saídas equilibradas neste mês.';
-      applyTrendClass(fluxoHint, fluxoLiquido);
-    }
-  }
-
-  const carteiraDiffEl = document.getElementById('ciclo-carteira-diff');
-  if (carteiraDiffEl) {
-    if (!carteiraReal && !carteiraProjetada) {
-      carteiraDiffEl.textContent = 'Cadastre contas ou defina um saldo inicial.';
-      applyTrendClass(carteiraDiffEl, 0);
-    } else if (Math.abs(carteiraDiff) < 0.5) {
-      carteiraDiffEl.textContent = 'Saldos alinhados com o planejado.';
-      applyTrendClass(carteiraDiffEl, 0);
-    } else if (carteiraDiff > 0) {
-      carteiraDiffEl.textContent = `R$ ${moeda(carteiraDiff)} acima do projetado — considere investir ou reservar o excedente.`;
-      applyTrendClass(carteiraDiffEl, carteiraDiff);
-    } else {
-      carteiraDiffEl.textContent = `Faltam R$ ${moeda(Math.abs(carteiraDiff))} para atingir o saldo projetado.`;
-      applyTrendClass(carteiraDiffEl, carteiraDiff);
-    }
-  }
-
-  const investGanhoEl = document.getElementById('ciclo-invest-ganho');
-  if (investGanhoEl) {
-    if (!totalInvest && !projInvest) {
-      investGanhoEl.textContent = 'Informe aportes para visualizar o potencial de ganho.';
-      applyTrendClass(investGanhoEl, 0);
-    } else if (ganhoInvest > 0.5) {
-      investGanhoEl.textContent = `Potencial de ganho de R$ ${moeda(ganhoInvest)} com a projeção atual.`;
-      applyTrendClass(investGanhoEl, ganhoInvest);
-    } else if (ganhoInvest < -0.5) {
-      investGanhoEl.textContent = `A projeção está R$ ${moeda(Math.abs(ganhoInvest))} abaixo do total investido — revise as taxas.`;
-      applyTrendClass(investGanhoEl, ganhoInvest);
-    } else {
-      investGanhoEl.textContent = 'A projeção está alinhada ao total investido.';
-      applyTrendClass(investGanhoEl, 0);
-    }
-  }
-
-  const patrimonioVarEl = document.getElementById('ciclo-patrimonio-variacao');
-  if (patrimonioVarEl) {
-    if (!patrimonioAtual && !patrimonioProjetado) {
-      patrimonioVarEl.textContent = 'Cadastre entradas, contas ou investimentos para acompanhar.';
-      applyTrendClass(patrimonioVarEl, 0);
-    } else if (Math.abs(patrimonioDelta) < 0.5) {
-      patrimonioVarEl.textContent = 'Patrimônio alinhado ao cenário projetado.';
-      applyTrendClass(patrimonioVarEl, 0);
-    } else if (patrimonioDelta > 0) {
-      patrimonioVarEl.textContent = `Você está R$ ${moeda(patrimonioDelta)} acima do cenário projetado — atualize metas ou invista o excedente.`;
-      applyTrendClass(patrimonioVarEl, patrimonioDelta);
-    } else {
-      patrimonioVarEl.textContent = `Faltam R$ ${moeda(Math.abs(patrimonioDelta))} para alcançar o cenário projetado.`;
-      applyTrendClass(patrimonioVarEl, patrimonioDelta);
-    }
-  }
 }
 
 function scheduleWalletSnapshotSync() {
@@ -9515,6 +9301,62 @@ function closeWalletAccountsModal() {
   resetWalletAccountForm();
 }
 
+function resetWalletInvestForm() {
+  if (!walletInvestForm) return;
+  if (walletInvestForm instanceof HTMLFormElement) {
+    walletInvestForm.reset();
+  }
+  if (walletInvestAmountInput) {
+    walletInvestAmountInput.value = '';
+  }
+  if (walletInvestDateInput) {
+    walletInvestDateInput.value = formatDateInputValue(new Date());
+  }
+  showWalletInvestFeedback('', null);
+  updateWalletInvestBalanceHint();
+}
+
+function showWalletInvestFeedback(message, isSuccess) {
+  if (!walletInvestFeedback) return;
+  if (!message) {
+    walletInvestFeedback.classList.add('hidden');
+    walletInvestFeedback.textContent = '';
+    walletInvestFeedback.classList.remove('text-emerald-600', 'dark:text-emerald-300', 'text-rose-500', 'dark:text-rose-300');
+    return;
+  }
+  walletInvestFeedback.textContent = message;
+  walletInvestFeedback.classList.remove('hidden');
+  walletInvestFeedback.classList.toggle('text-emerald-600', !!isSuccess);
+  walletInvestFeedback.classList.toggle('dark:text-emerald-300', !!isSuccess);
+  walletInvestFeedback.classList.toggle('text-rose-500', isSuccess === false);
+  walletInvestFeedback.classList.toggle('dark:text-rose-300', isSuccess === false);
+}
+
+function openWalletInvestModal() {
+  if (!walletInvestModal) return;
+  renderWalletAccountOptions();
+  const hasAccounts = Array.isArray(walletAccountsDocs) && walletAccountsDocs.length > 0;
+  if (!hasAccounts) {
+    showToast('Cadastre ao menos uma conta antes de mover recursos para investimentos.', 'info');
+    return;
+  }
+  resetWalletInvestForm();
+  walletInvestModal.classList.remove('hidden');
+  lockBodyScroll();
+  const initialFocus = walletInvestOriginSelect && !walletInvestOriginSelect.disabled
+    ? walletInvestOriginSelect
+    : walletInvestAmountInput;
+  activateDialog(walletInvestModal, { initialFocus });
+}
+
+function closeWalletInvestModal() {
+  if (!walletInvestModal) return;
+  deactivateDialog(walletInvestModal);
+  walletInvestModal.classList.add('hidden');
+  unlockBodyScrollIfAllowed();
+  resetWalletInvestForm();
+}
+
 async function handleWalletAccountSubmit(event) {
   if (event) {
     event.preventDefault();
@@ -9645,6 +9487,128 @@ function handleWalletAccountToggleChange(event) {
     console.error('Erro ao atualizar visibilidade da conta:', error);
     showToast('Não foi possível atualizar o consolidado agora.', 'error');
     toggle.checked = !checked;
+  });
+}
+
+function handleWalletInvestSubmit(event) {
+  if (event) {
+    event.preventDefault();
+  }
+  if (!walletInvestForm || !walletInvestOriginSelect || !walletInvestTypeSelect || !walletInvestAmountInput || !walletInvestDateInput) {
+    return;
+  }
+
+  const originId = walletInvestOriginSelect.value;
+  if (!originId) {
+    showWalletInvestFeedback('Escolha a conta que enviará o aporte.', false);
+    walletInvestOriginSelect.focus();
+    return;
+  }
+
+  const tipo = walletInvestTypeSelect.value || 'outros';
+  const rawValor = Number(walletInvestAmountInput.value || 0);
+  if (!Number.isFinite(rawValor) || rawValor <= 0) {
+    showWalletInvestFeedback('Informe um valor válido maior que zero.', false);
+    walletInvestAmountInput.focus();
+    return;
+  }
+
+  const dataValor = walletInvestDateInput.value;
+  if (!dataValor) {
+    showWalletInvestFeedback('Informe a data do aporte.', false);
+    walletInvestDateInput.focus();
+    return;
+  }
+
+  const dataAporte = new Date(`${dataValor}T12:00:00`);
+  if (Number.isNaN(dataAporte.getTime())) {
+    showWalletInvestFeedback('Data do aporte inválida.', false);
+    walletInvestDateInput.focus();
+    return;
+  }
+
+  const descricao = (walletInvestDescriptionInput?.value || '').trim();
+  const option = walletInvestOriginSelect.options[walletInvestOriginSelect.selectedIndex];
+  const saldoDisponivel = Number(option?.dataset?.balance || 0) || 0;
+  if (rawValor > saldoDisponivel + 0.005) {
+    showWalletInvestFeedback('O valor informado excede o saldo disponível da conta.', false);
+    walletInvestAmountInput.focus();
+    return;
+  }
+
+  const valor = Number(rawValor.toFixed(2));
+  const occurredAt = firebase.firestore.Timestamp.fromDate(dataAporte);
+  const investRef = userCollectionRef('investimentos').doc();
+  const movimentoRef = userCollectionRef('walletMovements').doc();
+  const contaRef = userCollectionRef('wallets').doc(originId);
+  const contaLabel = getWalletAccountLabel(originId) || 'Conta da carteira';
+
+  showWalletInvestFeedback('Registrando movimentação...', true);
+  walletInvestSubmit?.classList.add('opacity-70', 'pointer-events-none');
+
+  firebase.firestore().runTransaction(async (transaction) => {
+    const contaSnap = await transaction.get(contaRef);
+    if (!contaSnap.exists) {
+      const error = new Error('Conta não encontrada.');
+      error.code = 'wallet/missing-account';
+      throw error;
+    }
+    const contaData = contaSnap.data() || {};
+    const saldoAtual = Number(contaData.saldoAtual ?? contaData.currentBalance ?? 0) || 0;
+    if (valor > saldoAtual + 0.005) {
+      const error = new Error('Saldo insuficiente na conta selecionada.');
+      error.code = 'wallet/insufficient-balance';
+      throw error;
+    }
+    const saldoAtualizado = saldoAtual - valor;
+    const agora = firebase.firestore.Timestamp.now();
+
+    transaction.set(contaRef, stampWorkspaceUpdate({
+      saldoAtual: saldoAtualizado,
+      currentBalance: saldoAtualizado,
+      ultimaAtualizacao: agora,
+      updatedAt: agora,
+    }), { merge: true });
+
+    const descricaoInvest = descricao || `Aporte transferido de ${contaLabel}`;
+    transaction.set(investRef, stampWorkspaceCreation({
+      tipo,
+      valor,
+      descricao: descricaoInvest,
+      data: occurredAt,
+      origemCarteira: originId,
+      origemNome: contaData.nome || contaData.name || contaLabel,
+      viaCarteira: true,
+    }));
+
+    transaction.set(movimentoRef, stampWorkspaceCreation({
+      tipo: 'investimento',
+      type: 'investment',
+      walletId: originId,
+      accountId: originId,
+      amount: -valor,
+      originCollection: 'investimentos',
+      originId: investRef.id,
+      description: descricao || `Aporte em ${investimentoTipoLabels[tipo] || tipo}`,
+      occurredAt,
+      balanceBefore: saldoAtual,
+      balanceAfter: saldoAtualizado,
+      investmentType: tipo,
+    }));
+  }).then(() => {
+    showToast('Aporte registrado na carteira e na área de investimentos!', 'success');
+    closeWalletInvestModal();
+  }).catch((error) => {
+    console.error('Erro ao mover recursos para investimentos:', error);
+    if (error?.code === 'wallet/insufficient-balance') {
+      showWalletInvestFeedback('Saldo insuficiente na conta selecionada.', false);
+    } else if (error?.code === 'wallet/missing-account') {
+      showWalletInvestFeedback('A conta selecionada não está mais disponível.', false);
+    } else {
+      showWalletInvestFeedback('Não foi possível registrar o aporte agora. Tente novamente.', false);
+    }
+  }).finally(() => {
+    walletInvestSubmit?.classList.remove('opacity-70', 'pointer-events-none');
   });
 }
 
@@ -10061,7 +10025,7 @@ function atualizarResumoUI(){
   atualizarResumoRapido();
   atualizarResumoSaidasCard(totalGastosPrevistosMes);
   atualizarSaudeFinanceira();
-  atualizarCicloDinheiro();
+  updateWalletSummaryUI();
 }
 
 
@@ -10264,7 +10228,7 @@ function renderEntradasSidebar(docs = []) {
   atualizarResumoRapido();
   atualizarSaudeFinanceira();
   atualizarFiltroMeses();
-  atualizarCicloDinheiro();
+  updateWalletSummaryUI();
 }
 
 function atualizarSaldoLiquidoEntradas() {
@@ -10375,7 +10339,7 @@ function renderInvestimentosSidebar(docs = []) {
   atualizarSimuladorValoresPadrao();
   atualizarSimuladorResultados();
   atualizarFiltroMeses();
-  atualizarCicloDinheiro();
+  updateWalletSummaryUI();
 }
 
 function renderGraficoInvestimentos(totaisPorMes = {}) {
