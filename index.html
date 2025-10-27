@@ -7049,6 +7049,10 @@ const createDefaultWalletState = () => ({
   difference: 0,
   currentSnapshot: null,
   currentSnapshotRef: null,
+  currentSnapshotNormalized: null,
+  snapshotSyncInFlight: false,
+  pendingSnapshotNormalized: null,
+  pendingSnapshotPayload: null,
 });
 let walletState = createDefaultWalletState();
 let resumoFinanceiroAtual = {
@@ -8835,7 +8839,9 @@ function renderWalletAccountsList() {
     const subtitle = document.createElement('div');
     subtitle.className = 'text-xs text-slate-500 dark:text-slate-400 flex flex-wrap items-center gap-x-2 gap-y-1';
     const instLabel = institution ? institution : 'Saldo manual';
-    const updatedLabel = updatedAt ? `Atualizado em ${formatDateTime(updatedAt)}` : 'Sem registro recente';
+    const updatedLabel = updatedAt
+      ? `Última atualização em ${formatDate(updatedAt)}`
+      : 'Sem registro recente';
     const instSpan = document.createElement('span');
     instSpan.textContent = instLabel;
     subtitle.appendChild(instSpan);
@@ -9078,12 +9084,47 @@ function renderWalletTimeline() {
 
   const latest = docs[0];
   if (walletTimelineLastSync) {
-    walletTimelineLastSync.textContent = latest && latest.computedAt
-      ? `Atualizado em ${formatDateTime(latest.computedAt)}`
+    walletTimelineLastSync.textContent = latest && latest.month
+      ? `Último fechamento: ${mmYYYY(latest.month)}`
       : '';
   }
 }
 
+
+function normalizeWalletSnapshot(data = {}, fallbackMonth = walletState.monthKey) {
+  const month = data.month || fallbackMonth || getCurrentWalletMonthKey();
+  const toNumber = (value) => {
+    const numeric = Number(value);
+    return Number.isFinite(numeric) ? numeric : 0;
+  };
+  const opening = roundCurrency(toNumber(data.openingBalance ?? data.opening ?? 0));
+  const entries = roundCurrency(toNumber(data.entriesTotal ?? data.entriesMonth ?? data.entries ?? 0));
+  const expenses = roundCurrency(toNumber(data.expensesTotal ?? data.expensesMonth ?? data.expenses ?? 0));
+  const netCandidate = data.netFlow != null ? toNumber(data.netFlow) : (entries - expenses);
+  const netFlow = roundCurrency(netCandidate);
+  const closingCandidate = data.closingBalance != null ? toNumber(data.closingBalance) : (opening + netFlow);
+  const closing = roundCurrency(closingCandidate);
+  return {
+    month,
+    openingBalance: opening,
+    entriesTotal: entries,
+    expensesTotal: expenses,
+    netFlow,
+    closingBalance: closing,
+  };
+}
+
+function walletSnapshotsEqual(a, b) {
+  if (!a || !b) {
+    return false;
+  }
+  return a.month === b.month
+    && a.openingBalance === b.openingBalance
+    && a.entriesTotal === b.entriesTotal
+    && a.expensesTotal === b.expensesTotal
+    && a.netFlow === b.netFlow
+    && a.closingBalance === b.closingBalance;
+}
 
 function computeWalletEntriesForMonth(monthKey) {
   if (!monthKey) return 0;
@@ -9202,28 +9243,28 @@ async function updateWalletSummaryUI() {
     console.error('Erro ao calcular saldo de abertura da carteira:', error);
     opening = 0;
   }
-  walletState.openingBalance = opening;
+  walletState.openingBalance = roundCurrency(opening);
 
-  const entries = computeWalletEntriesForMonth(monthKey);
-  const expenses = computeWalletExpensesForMonth(monthKey);
+  const entries = roundCurrency(computeWalletEntriesForMonth(monthKey));
+  const expenses = roundCurrency(computeWalletExpensesForMonth(monthKey));
   walletState.entriesMonth = entries;
   walletState.expensesMonth = expenses;
 
-  const net = entries - expenses;
+  const net = roundCurrency(entries - expenses);
   walletState.netFlow = net;
-  const closing = opening + net;
+  const closing = roundCurrency(walletState.openingBalance + net);
   walletState.closingBalance = closing;
 
   const accountsTotal = (walletAccountsDocs || []).reduce((sum, account) => {
     if (!account || account.include === false) return sum;
     return sum + (Number(account.balance) || 0);
   }, 0);
-  walletState.accountsTotal = accountsTotal;
-  const investmentsTotal = Number(painelFinanceiroState?.investimentosTotais || 0);
+  walletState.accountsTotal = roundCurrency(accountsTotal);
+  const investmentsTotal = roundCurrency(Number(painelFinanceiroState?.investimentosTotais || 0));
   walletState.investmentsTotal = investmentsTotal;
-  const patrimonioTotal = accountsTotal + investmentsTotal;
+  const patrimonioTotal = roundCurrency(walletState.accountsTotal + investmentsTotal);
   walletState.patrimonioTotal = patrimonioTotal;
-  const difference = patrimonioTotal - closing;
+  const difference = roundCurrency(patrimonioTotal - closing);
   walletState.difference = difference;
 
   const destaqueEl = document.getElementById('wallet-saldo-projetado-destaque');
@@ -9236,7 +9277,7 @@ async function updateWalletSummaryUI() {
   }
   const saldoInicialEl = document.getElementById('wallet-saldo-inicial');
   if (saldoInicialEl) {
-    saldoInicialEl.textContent = `R$ ${moeda(opening)}`;
+    saldoInicialEl.textContent = `R$ ${moeda(walletState.openingBalance)}`;
   }
   const saldoInicialLabel = document.getElementById('wallet-saldo-inicial-label');
   if (saldoInicialLabel) {
@@ -9333,19 +9374,67 @@ function scheduleWalletSnapshotSync() {
   }
   walletSnapshotSyncTimeout = setTimeout(async () => {
     walletSnapshotSyncTimeout = null;
+    const basePayload = {
+      month: walletState.monthKey,
+      openingBalance: walletState.openingBalance,
+      entriesTotal: walletState.entriesMonth,
+      expensesTotal: walletState.expensesMonth,
+      closingBalance: walletState.closingBalance,
+      netFlow: walletState.netFlow,
+    };
+    const normalized = normalizeWalletSnapshot(basePayload, walletState.monthKey);
+
+    if (walletState.currentSnapshotNormalized && walletSnapshotsEqual(normalized, walletState.currentSnapshotNormalized)) {
+      walletState.pendingSnapshotNormalized = null;
+      walletState.pendingSnapshotPayload = null;
+      return;
+    }
+
+    if (walletState.snapshotSyncInFlight) {
+      walletState.pendingSnapshotNormalized = normalized;
+      walletState.pendingSnapshotPayload = { ...basePayload };
+      return;
+    }
+
+    const previousNormalized = walletState.currentSnapshotNormalized;
+    walletState.snapshotSyncInFlight = true;
     try {
       const payload = stampWorkspaceUpdate({
-        month: walletState.monthKey,
-        openingBalance: walletState.openingBalance,
-        entriesTotal: walletState.entriesMonth,
-        expensesTotal: walletState.expensesMonth,
-        closingBalance: walletState.closingBalance,
-        netFlow: walletState.netFlow,
+        ...basePayload,
         computedAt: firebase.firestore.Timestamp.now(),
       });
       await walletState.currentSnapshotRef.set(payload, { merge: true });
+      walletState.currentSnapshotNormalized = normalized;
+      walletState.pendingSnapshotNormalized = null;
+      walletState.pendingSnapshotPayload = null;
     } catch (error) {
       console.warn('Não foi possível sincronizar o snapshot da carteira agora:', error);
+      walletState.currentSnapshotNormalized = previousNormalized;
+    } finally {
+      walletState.snapshotSyncInFlight = false;
+      const hasPending = walletState.pendingSnapshotNormalized
+        && (!walletState.currentSnapshotNormalized
+          || !walletSnapshotsEqual(walletState.pendingSnapshotNormalized, walletState.currentSnapshotNormalized));
+      if (hasPending) {
+        const pendingNormalized = { ...walletState.pendingSnapshotNormalized };
+        const pendingPayload = walletState.pendingSnapshotPayload
+          ? { ...walletState.pendingSnapshotPayload }
+          : null;
+        walletState.pendingSnapshotNormalized = null;
+        walletState.pendingSnapshotPayload = null;
+        if (pendingPayload?.month) {
+          walletState.monthKey = pendingPayload.month;
+        }
+        walletState.openingBalance = pendingNormalized.openingBalance;
+        walletState.entriesMonth = pendingNormalized.entriesTotal;
+        walletState.expensesMonth = pendingNormalized.expensesTotal;
+        walletState.closingBalance = pendingNormalized.closingBalance;
+        walletState.netFlow = pendingNormalized.netFlow;
+        scheduleWalletSnapshotSync();
+      } else {
+        walletState.pendingSnapshotNormalized = null;
+        walletState.pendingSnapshotPayload = null;
+      }
     }
   }, 600);
 }
@@ -9436,10 +9525,15 @@ async function ensureWalletSnapshotDoc(monthKey) {
       });
       await ref.set(payload, { merge: true });
       walletState.currentSnapshot = payload;
+      walletState.currentSnapshotNormalized = normalizeWalletSnapshot(payload, monthKey);
     } else {
       walletState.currentSnapshot = snapshot.data() || {};
+      walletState.currentSnapshotNormalized = normalizeWalletSnapshot(walletState.currentSnapshot, monthKey);
     }
     walletState.currentSnapshotRef = ref;
+    walletState.pendingSnapshotNormalized = null;
+    walletState.pendingSnapshotPayload = null;
+    walletState.snapshotSyncInFlight = false;
     walletSnapshotEnsureCache.add(cacheKey);
     return walletState.currentSnapshot;
   } catch (error) {
@@ -9921,6 +10015,10 @@ async function startObservers(){
   unsubWalletSnapshot = walletSnapshotRef.onSnapshot((snap) => {
     if (snap.exists) {
       walletState.currentSnapshot = snap.data() || {};
+      walletState.currentSnapshotNormalized = normalizeWalletSnapshot(walletState.currentSnapshot, walletMonthKey);
+    } else {
+      walletState.currentSnapshot = null;
+      walletState.currentSnapshotNormalized = null;
     }
     updateWalletSummaryUI();
   }, (error) => {
