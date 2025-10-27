@@ -1919,33 +1919,48 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
         </div>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-        <div class="rounded-2xl bg-emerald-50/80 dark:bg-emerald-900/30 border border-emerald-100/70 dark:border-emerald-800/50 p-4 shadow-sm">
-          <div class="text-[0.65rem] uppercase tracking-wide text-emerald-700 dark:text-emerald-200">Saldo líquido do período</div>
-          <div id="entradas-saldo-mes" class="text-2xl font-bold text-emerald-900 dark:text-emerald-100">R$ 0,00</div>
-          <p id="entradas-saldo-hint" class="text-[0.7rem] text-emerald-700/80 dark:text-emerald-200/80 mt-1">Selecione um mês para ver a diferença entre entradas e saídas.</p>
+      <div class="grid grid-cols-1 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] gap-3 items-start">
+        <div class="space-y-3">
+          <div class="rounded-2xl bg-emerald-50/80 dark:bg-emerald-900/30 border border-emerald-100/70 dark:border-emerald-800/50 p-4 shadow-sm space-y-2">
+            <div class="text-[0.65rem] uppercase tracking-wide text-emerald-700 dark:text-emerald-200">Saldo líquido do período</div>
+            <div id="entradas-saldo-mes" class="text-2xl font-bold text-emerald-900 dark:text-emerald-100">R$ 0,00</div>
+            <p id="entradas-saldo-hint" class="text-[0.7rem] text-emerald-700/80 dark:text-emerald-200/80">Selecione um mês para ver a diferença entre entradas e saídas.</p>
+            <p id="wallet-fluxo-liquido" class="text-xs font-semibold leading-snug text-slate-700 dark:text-slate-200">Fluxo líquido: R$ 0,00</p>
+            <p id="wallet-entradas-saidas" class="text-[0.7rem] text-emerald-700/80 dark:text-emerald-200/80">Entradas: R$ 0,00 • Saídas: R$ 0,00</p>
+          </div>
+          <div class="rounded-2xl bg-white/80 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/60 p-4 shadow-sm">
+            <div class="text-[0.65rem] uppercase tracking-wide text-slate-600 dark:text-slate-300">Distribuição por tipo</div>
+            <div id="entradas-tipos-resumo" class="grid grid-cols-1 gap-2 text-sm mt-2"></div>
+          </div>
         </div>
         <div class="rounded-2xl bg-white/90 dark:bg-slate-900/40 border border-slate-200/70 dark:border-slate-700/60 p-4 shadow-sm flex flex-col">
-          <div class="flex items-center justify-between gap-3">
-            <div class="text-[0.65rem] uppercase tracking-wide text-slate-600 dark:text-slate-300">Resumo visual</div>
-            <label class="sr-only" for="entradas-mini-range">Período do resumo de entradas</label>
-            <select id="entradas-mini-range" class="text-xs px-2 py-1 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200">
-              <option value="3">Últimos 3 meses</option>
-              <option value="6">Últimos 6 meses</option>
-              <option value="12">Últimos 12 meses</option>
-            </select>
-          </div>
-          <div class="relative mt-3 flex-1 min-h-[120px]">
-            <canvas id="entradas-mini-chart" class="h-full w-full"></canvas>
-            <div id="entradas-mini-empty" class="absolute inset-0 flex items-center justify-center text-[0.7rem] text-slate-500 dark:text-slate-400 hidden">
-              Sem dados suficientes no período escolhido.
+          <button id="entradas-mini-toggle" type="button" aria-controls="entradas-mini-panel" aria-expanded="false" class="flex items-center justify-between gap-4 rounded-xl border border-transparent bg-slate-50/80 dark:bg-slate-800/60 px-4 py-3 text-left transition hover:border-slate-200 dark:hover:border-slate-600">
+            <div class="space-y-1">
+              <div class="text-[0.65rem] uppercase tracking-wide text-slate-600 dark:text-slate-300">Resumo visual</div>
+              <div id="entradas-mini-range-display" class="text-xs text-slate-500 dark:text-slate-300">Últimos 3 meses</div>
             </div>
+            <span class="flex items-center gap-2 text-xs font-medium text-emerald-700 dark:text-emerald-200">
+              <span class="hidden sm:inline">Ver detalhes</span>
+              <i data-chevron class="fa fa-chevron-down transition-transform duration-200 text-sm"></i>
+            </span>
+          </button>
+          <div id="entradas-mini-panel" class="mt-3 space-y-3 hidden" hidden>
+            <label class="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300 flex flex-col gap-1" for="entradas-mini-range">
+              Período
+              <select id="entradas-mini-range" class="w-full rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-2 text-xs text-slate-700 dark:text-slate-200">
+                <option value="3">Últimos 3 meses</option>
+                <option value="6">Últimos 6 meses</option>
+                <option value="12">Últimos 12 meses</option>
+              </select>
+            </label>
+            <div class="relative h-32 sm:h-40">
+              <canvas id="entradas-mini-chart" class="h-full w-full"></canvas>
+              <div id="entradas-mini-empty" class="absolute inset-0 flex items-center justify-center text-[0.7rem] text-slate-500 dark:text-slate-400 hidden">
+                Sem dados suficientes no período escolhido.
+              </div>
+            </div>
+            <p id="entradas-mini-total" class="text-[0.7rem] text-slate-600 dark:text-slate-300">Total do período: R$ 0,00</p>
           </div>
-          <p id="entradas-mini-total" class="text-[0.7rem] text-slate-600 dark:text-slate-300 mt-3">Total do período: R$ 0,00</p>
-        </div>
-        <div class="rounded-2xl bg-white/80 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/60 p-4 shadow-sm">
-          <div class="text-[0.65rem] uppercase tracking-wide text-slate-600 dark:text-slate-300">Distribuição por tipo</div>
-          <div id="entradas-tipos-resumo" class="grid grid-cols-1 gap-2 text-sm mt-2"></div>
         </div>
       </div>
 
@@ -1997,7 +2012,7 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
             <div id="entrada-carteira-config" class="grid grid-cols-1 lg:grid-cols-[minmax(0,220px)_minmax(0,1fr)] gap-3 hidden">
               <div class="space-y-2">
                 <label class="text-xs font-semibold uppercase tracking-wide text-emerald-800 dark:text-emerald-200" for="entrada-conta-carteira">Conta de destino</label>
-                <select id="entrada-conta-carteira" class="px-3 py-1.5 sm:py-1 rounded border border-emerald-200 dark:border-emerald-700 bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-200 disabled:opacity-60 disabled:cursor-not-allowed">
+                <select id="entrada-conta-carteira" class="px-3 py-2 sm:py-1.5 lg:px-2.5 lg:py-1.5 rounded border border-emerald-200 dark:border-emerald-700 bg-white dark:bg-slate-900 text-sm text-emerald-700 dark:text-emerald-200 disabled:opacity-60 disabled:cursor-not-allowed">
                   <option value="">Selecione a conta de destino</option>
                 </select>
                 <p id="entrada-conta-helper" class="text-[0.7rem] text-emerald-700/80 dark:text-emerald-200/80">Cadastre contas na carteira para direcionar entradas automaticamente.</p>
@@ -2022,7 +2037,7 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
             <div id="entrada-invest-config" class="grid grid-cols-1 lg:grid-cols-[minmax(0,220px)_minmax(0,1fr)] gap-3 hidden">
               <div class="space-y-2">
                 <label class="text-xs font-semibold uppercase tracking-wide text-emerald-800 dark:text-emerald-200" for="entrada-invest-tipo">Tipo de investimento</label>
-                <select id="entrada-invest-tipo" class="px-3 py-1.5 sm:py-1 rounded border border-emerald-200 dark:border-emerald-700 bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-200">
+                <select id="entrada-invest-tipo" class="px-3 py-2 sm:py-1.5 lg:px-2.5 lg:py-1.5 rounded border border-emerald-200 dark:border-emerald-700 bg-white dark:bg-slate-900 text-sm text-emerald-700 dark:text-emerald-200">
                   <option value="renda_fixa">Renda fixa</option>
                   <option value="acoes">Ações</option>
                   <option value="fundo_imobiliario">Fundos imobiliários</option>
@@ -2114,11 +2129,6 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
           <p class="text-xs text-gray-500 dark:text-gray-400 mt-1" id="wallet-saldo-inicial-label">Resultado que sobrou do mês anterior. Direcione para contas ou investimentos.</p>
         </div>
         <div class="p-3 bg-white/80 dark:bg-slate-800/60 rounded-xl border border-slate-200/70 dark:border-slate-700/60">
-          <div class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Fluxo líquido do mês</div>
-          <div id="wallet-fluxo-liquido" class="text-lg font-semibold text-gray-800 dark:text-gray-100">R$ 0,00</div>
-          <p class="text-xs text-gray-500 dark:text-gray-400 mt-1" id="wallet-entradas-saidas">Entradas: R$ 0,00 • Saídas: R$ 0,00</p>
-        </div>
-        <div class="p-3 bg-white/80 dark:bg-slate-800/60 rounded-xl border border-slate-200/70 dark:border-slate-700/60">
           <div class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Saldo em contas</div>
           <div id="wallet-saldo-contas" class="text-lg font-semibold text-gray-800 dark:text-gray-100">R$ 0,00</div>
           <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Atualize as contas cadastradas para refletir o valor disponível agora.</p>
@@ -2132,11 +2142,6 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
           <div class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Patrimônio consolidado</div>
           <div id="wallet-patrimonio-total" class="text-lg font-semibold text-gray-800 dark:text-gray-100">R$ 0,00</div>
           <p id="wallet-patrimonio-legenda" class="text-xs text-gray-500 dark:text-gray-400 mt-1">Soma das contas com os investimentos ativos.</p>
-        </div>
-        <div id="wallet-diferenca-card" class="p-3 bg-slate-100 dark:bg-slate-800/70 rounded-xl border border-slate-200/70 dark:border-slate-700/60">
-          <div class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Variação vs. saldo projetado</div>
-          <div id="wallet-diferenca" class="text-lg font-semibold text-gray-800 dark:text-gray-100">R$ 0,00</div>
-          <p id="wallet-diferenca-legenda" class="text-xs text-gray-500 dark:text-gray-400 mt-1">Compare o patrimônio atual com o saldo projetado para ajustar aportes e contas.</p>
         </div>
       </div>
 
@@ -9186,11 +9191,17 @@ function resolveWalletOpeningBalance(monthKey) {
   return 0;
 }
 
-function updateWalletSummaryUI() {
+async function updateWalletSummaryUI() {
   const monthKey = getCurrentWalletMonthKey();
   walletState.monthKey = monthKey;
   const monthLabel = monthKey ? mmYYYY(monthKey) : '';
-  const opening = Number(resolveWalletOpeningBalance(monthKey) || 0);
+  let opening = 0;
+  try {
+    opening = Number(await resolveWalletOpeningBalance(monthKey) || 0);
+  } catch (error) {
+    console.error('Erro ao calcular saldo de abertura da carteira:', error);
+    opening = 0;
+  }
   walletState.openingBalance = opening;
 
   const entries = computeWalletEntriesForMonth(monthKey);
@@ -9242,13 +9253,15 @@ function updateWalletSummaryUI() {
   }
   const fluxoEl = document.getElementById('wallet-fluxo-liquido');
   if (fluxoEl) {
-    fluxoEl.textContent = moedaSigned(net);
-    fluxoEl.classList.toggle('text-emerald-600', net > 0);
-    fluxoEl.classList.toggle('dark:text-emerald-300', net > 0);
-    fluxoEl.classList.toggle('text-rose-600', net < 0);
-    fluxoEl.classList.toggle('dark:text-rose-300', net < 0);
-    fluxoEl.classList.toggle('text-gray-800', net === 0);
-    fluxoEl.classList.toggle('dark:text-gray-100', net === 0);
+    fluxoEl.textContent = `Fluxo líquido: ${moedaSigned(net)}`;
+    fluxoEl.classList.remove('text-emerald-600', 'dark:text-emerald-300', 'text-rose-600', 'dark:text-rose-300', 'text-slate-700', 'dark:text-slate-200');
+    if (net > 0) {
+      fluxoEl.classList.add('text-emerald-600', 'dark:text-emerald-300');
+    } else if (net < 0) {
+      fluxoEl.classList.add('text-rose-600', 'dark:text-rose-300');
+    } else {
+      fluxoEl.classList.add('text-slate-700', 'dark:text-slate-200');
+    }
   }
   const entradasSaidasEl = document.getElementById('wallet-entradas-saidas');
   if (entradasSaidasEl) {
@@ -10523,6 +10536,7 @@ function updateEntradasMiniChart(dataset) {
   const rangeSelect = document.getElementById('entradas-mini-range');
   const emptyEl = document.getElementById('entradas-mini-empty');
   const totalEl = document.getElementById('entradas-mini-total');
+  const panel = document.getElementById('entradas-mini-panel');
 
   const entries = Object.entries(entradasMiniDataset || {}).sort(([a], [b]) => a.localeCompare(b));
   const range = Number(rangeSelect?.value || 3);
@@ -10532,6 +10546,17 @@ function updateEntradasMiniChart(dataset) {
   const totalPeriodo = values.reduce((sum, value) => sum + value, 0);
   if (totalEl) {
     totalEl.textContent = `Total do período: R$ ${moeda(totalPeriodo)}`;
+  }
+  const panelHidden = panel && (panel.classList.contains('hidden') || panel.hasAttribute('hidden'));
+  if (panelHidden) {
+    if (entradasMiniChartInstance) {
+      entradasMiniChartInstance.destroy();
+      entradasMiniChartInstance = null;
+    }
+    if (emptyEl) {
+      emptyEl.classList.add('hidden');
+    }
+    return;
   }
   const hasData = values.some((value) => value > 0.005);
   if (emptyEl) {
@@ -11413,6 +11438,11 @@ const entradaRecorrenteFreqSelect = document.getElementById('entrada-recorrente-
 const entradaRecorrenteDiaInput = document.getElementById('entrada-recorrente-dia');
 const entradaRecorrenteFimInput = document.getElementById('entrada-recorrente-fim');
 const entradasMiniRangeSelect = document.getElementById('entradas-mini-range');
+const entradasMiniToggle = document.getElementById('entradas-mini-toggle');
+const entradasMiniPanel = document.getElementById('entradas-mini-panel');
+const entradasMiniRangeDisplay = document.getElementById('entradas-mini-range-display');
+const entradaSubmitButton = formEntrada ? formEntrada.querySelector('button[type="submit"]') : null;
+const entradasRemocaoPendentes = new Set();
 const formInvestimento = document.getElementById('form-investimento');
 const investimentoDataInput = document.getElementById('investimento-data');
 const investimentoValorInput = document.getElementById('investimento-valor');
@@ -11800,6 +11830,10 @@ if (formEntrada) {
 
   formEntrada.addEventListener('submit', async (e) => {
     e.preventDefault();
+    if (formEntrada.dataset.submitting === 'true') {
+      showToast('Uma entrada já está sendo processada. Aguarde um instante.', 'info');
+      return;
+    }
     const tipo = document.getElementById('entrada-tipo')?.value || 'outros';
     const valor = parseFloat((entradaValorInput && entradaValorInput.value) || '0');
     const dataValor = entradaDataInput ? entradaDataInput.value : '';
@@ -11856,6 +11890,15 @@ if (formEntrada) {
     const fimRecorrencia = entradaRecorrenteFimInput?.value
       ? firebase.firestore.Timestamp.fromDate(new Date(`${entradaRecorrenteFimInput.value}T12:00:00`))
       : null;
+
+    formEntrada.dataset.submitting = 'true';
+    let submitOriginalHtml = null;
+    if (entradaSubmitButton) {
+      submitOriginalHtml = entradaSubmitButton.innerHTML;
+      entradaSubmitButton.disabled = true;
+      entradaSubmitButton.classList.add('opacity-60', 'cursor-not-allowed');
+      entradaSubmitButton.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i><span> Salvando...</span>';
+    }
 
     const payload = stampWorkspaceCreation({
       tipo,
@@ -11927,7 +11970,20 @@ if (formEntrada) {
       updateEntradaAllocationPreview();
     } catch (err) {
       console.error('Erro ao adicionar entrada:', err);
-      showToast('Erro ao adicionar entrada.', 'error');
+      if (err?.code === 'resource-exhausted' || /quota/i.test(err?.message || '')) {
+        showToast('Limite de operações atingido. Aguarde alguns instantes e tente novamente.', 'error');
+      } else {
+        showToast('Erro ao adicionar entrada.', 'error');
+      }
+    } finally {
+      delete formEntrada.dataset.submitting;
+      if (entradaSubmitButton) {
+        entradaSubmitButton.disabled = false;
+        entradaSubmitButton.classList.remove('opacity-60', 'cursor-not-allowed');
+        if (submitOriginalHtml !== null) {
+          entradaSubmitButton.innerHTML = submitOriginalHtml;
+        }
+      }
     }
   });
 
@@ -11946,60 +12002,65 @@ if (formEntrada) {
       const valorCarteiraEntrada = Number(dataEntrada?.carteiraValorAplicado ?? dataEntrada?.valorCarteiraAplicado ?? (adicionaCarteira ? valorEntrada : 0)) || 0;
       const valorInvestEntrada = Number(dataEntrada?.investimentoValorAplicado ?? dataEntrada?.valorInvestimento ?? 0) || 0;
       const direcionaInvestimento = dataEntrada?.direcionaInvestimento === true || (valorInvestEntrada > 0);
-      abrirModalConfirmacao('Remover entrada', 'Deseja remover esta entrada de recursos?', () => {
+      abrirModalConfirmacao('Remover entrada', 'Deseja remover esta entrada de recursos?', async () => {
+        if (entradasRemocaoPendentes.has(id)) {
+          showToast('Remoção em andamento. Aguarde um instante.', 'info');
+          return;
+        }
+        entradasRemocaoPendentes.add(id);
         const entradaRef = userCollectionRef('entradas').doc(id);
-        const tarefas = [];
-        if (adicionaCarteira && contaDestino && valorCarteiraEntrada > 0) {
-          const contaRef = userCollectionRef('wallets').doc(contaDestino);
-          tarefas.push(firebase.firestore().runTransaction(async (transaction) => {
-            const contaSnap = await transaction.get(contaRef);
-            const contaData = contaSnap.exists ? contaSnap.data() || {} : {};
-            const saldoAnterior = Number(contaData.saldoAtual ?? contaData.currentBalance ?? 0) || 0;
-            const saldoAtualizado = roundCurrency(saldoAnterior - valorCarteiraEntrada);
-            const agora = firebase.firestore.Timestamp.now();
+        try {
+          if (adicionaCarteira && contaDestino && valorCarteiraEntrada > 0) {
+            const contaRef = userCollectionRef('wallets').doc(contaDestino);
+            await firebase.firestore().runTransaction(async (transaction) => {
+              const contaSnap = await transaction.get(contaRef);
+              const contaData = contaSnap.exists ? contaSnap.data() || {} : {};
+              const saldoAnterior = Number(contaData.saldoAtual ?? contaData.currentBalance ?? 0) || 0;
+              const saldoAtualizado = roundCurrency(saldoAnterior - valorCarteiraEntrada);
+              const agora = firebase.firestore.Timestamp.now();
 
-            transaction.set(contaRef, stampWorkspaceUpdate({
-              saldoAtual: saldoAtualizado,
-              currentBalance: saldoAtualizado,
-              ultimaAtualizacao: agora,
-              updatedAt: agora,
-            }), { merge: true });
+              transaction.set(contaRef, stampWorkspaceUpdate({
+                saldoAtual: saldoAtualizado,
+                currentBalance: saldoAtualizado,
+                ultimaAtualizacao: agora,
+                updatedAt: agora,
+              }), { merge: true });
 
-            const descricaoReversao = (dataEntrada?.descricao || '').trim();
-            const movimentoPayload = stampWorkspaceCreation({
-              tipo: 'ajuste',
-              type: 'adjustment',
-              walletId: contaDestino,
-              accountId: contaDestino,
-              amount: -valorCarteiraEntrada,
-              originCollection: 'entradas',
-              originId: id,
-              description: descricaoReversao ? `Estorno: ${descricaoReversao}` : 'Estorno de entrada removida',
-              occurredAt: agora,
-              balanceBefore: saldoAnterior,
-              balanceAfter: saldoAtualizado,
-              reversal: true,
-              allocationPercent: Number(dataEntrada?.carteiraPercentual ?? dataEntrada?.percentualCarteira ?? 0) || 0,
+              const descricaoReversao = (dataEntrada?.descricao || '').trim();
+              const movimentoPayload = stampWorkspaceCreation({
+                tipo: 'ajuste',
+                type: 'adjustment',
+                walletId: contaDestino,
+                accountId: contaDestino,
+                amount: -valorCarteiraEntrada,
+                originCollection: 'entradas',
+                originId: id,
+                description: descricaoReversao ? `Estorno: ${descricaoReversao}` : 'Estorno de entrada removida',
+                occurredAt: agora,
+                balanceBefore: saldoAnterior,
+                balanceAfter: saldoAtualizado,
+                reversal: true,
+                allocationPercent: Number(dataEntrada?.carteiraPercentual ?? dataEntrada?.percentualCarteira ?? 0) || 0,
+              });
+              const movimentoRef = userCollectionRef('walletMovements').doc();
+              transaction.set(movimentoRef, movimentoPayload);
             });
-            const movimentoRef = userCollectionRef('walletMovements').doc();
-            transaction.set(movimentoRef, movimentoPayload);
-          }));
-        }
-        if (direcionaInvestimento && valorInvestEntrada > 0) {
-          tarefas.push(removerInvestimentosDeEntrada(id));
-        }
-
-        Promise.all(tarefas).then(() => {
-          entradaRef.delete()
-            .then(() => showToast('Entrada removida!', 'success'))
-            .catch((error) => {
-              console.error('Erro ao remover entrada:', error);
-              showToast('Erro ao remover entrada.', 'error');
-            });
-        }).catch((err) => {
+          }
+          if (direcionaInvestimento && valorInvestEntrada > 0) {
+            await removerInvestimentosDeEntrada(id);
+          }
+          await entradaRef.delete();
+          showToast('Entrada removida!', 'success');
+        } catch (err) {
           console.error('Erro ao remover entrada:', err);
-          showToast('Erro ao remover entrada.', 'error');
-        });
+          if (err?.code === 'resource-exhausted' || /quota/i.test(err?.message || '')) {
+            showToast('Limite de operações atingido. Aguarde e tente novamente.', 'error');
+          } else {
+            showToast('Erro ao remover entrada.', 'error');
+          }
+        } finally {
+          entradasRemocaoPendentes.delete(id);
+        }
       });
     });
   }
@@ -12091,9 +12152,46 @@ if (envelopesGrid) {
   });
 }
 
+function syncEntradasMiniRangeLabel() {
+  if (!entradasMiniRangeSelect || !entradasMiniRangeDisplay) return;
+  const option = entradasMiniRangeSelect.options[entradasMiniRangeSelect.selectedIndex];
+  entradasMiniRangeDisplay.textContent = option ? option.textContent : '';
+}
+
 if (entradasMiniRangeSelect) {
   entradasMiniRangeSelect.addEventListener('change', () => {
+    syncEntradasMiniRangeLabel();
     updateEntradasMiniChart();
+  });
+  syncEntradasMiniRangeLabel();
+}
+
+if (entradasMiniToggle && entradasMiniPanel) {
+  if (!entradasMiniToggle.hasAttribute('aria-expanded')) {
+    entradasMiniToggle.setAttribute('aria-expanded', 'false');
+  }
+  entradasMiniToggle.addEventListener('click', () => {
+    const expanded = entradasMiniToggle.getAttribute('aria-expanded') === 'true';
+    const nextState = !expanded;
+    entradasMiniToggle.setAttribute('aria-expanded', String(nextState));
+    const chevron = entradasMiniToggle.querySelector('[data-chevron]');
+    if (chevron) {
+      chevron.classList.toggle('rotate-180', nextState);
+    }
+    if (nextState) {
+      entradasMiniPanel.classList.remove('hidden');
+      entradasMiniPanel.removeAttribute('hidden');
+      requestAnimationFrame(() => {
+        updateEntradasMiniChart();
+        if (entradasMiniRangeSelect) {
+          entradasMiniRangeSelect.focus({ preventScroll: true });
+        }
+      });
+    } else {
+      entradasMiniPanel.classList.add('hidden');
+      entradasMiniPanel.setAttribute('hidden', 'hidden');
+      updateEntradasMiniChart();
+    }
   });
 }
 
