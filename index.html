@@ -1903,6 +1903,94 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
   <!-- RIGHT: sidebar (entradas + resumos + ações) -->
   <aside class="space-y-6 lg:col-span-1 lg:self-start">
 
+    <!-- Entradas e renda -->
+    <section class="mobile-panel hidden lg:block section-card space-y-5" id="painel-entradas">
+      <div class="flex flex-wrap items-start justify-between gap-4">
+        <div class="space-y-1">
+          <h3 class="font-semibold text-lg flex items-center gap-2 text-emerald-700 dark:text-emerald-200">
+            <i class="fa-solid fa-circle-arrow-down text-base"></i>
+            Entradas de dinheiro
+          </h3>
+          <p class="text-xs text-gray-500 dark:text-gray-400 max-w-sm">Registre salários, vendas e extras. Se quiser, direcione o valor direto para uma conta da carteira.</p>
+        </div>
+        <div class="text-right text-sm font-semibold text-emerald-700 dark:text-emerald-200">
+          <div>Este mês: R$ <span id="entradas-total-mes">0,00</span></div>
+          <div class="text-xs text-gray-500 dark:text-gray-400">Acumulado: R$ <span id="entradas-total-geral">0,00</span></div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div class="rounded-2xl bg-emerald-50/80 dark:bg-emerald-900/30 border border-emerald-100/70 dark:border-emerald-800/50 p-4 shadow-sm">
+          <div class="text-[0.65rem] uppercase tracking-wide text-emerald-700 dark:text-emerald-200">Saldo líquido do período</div>
+          <div id="entradas-saldo-mes" class="text-2xl font-bold text-emerald-900 dark:text-emerald-100">R$ 0,00</div>
+          <p id="entradas-saldo-hint" class="text-[0.7rem] text-emerald-700/80 dark:text-emerald-200/80 mt-1">Selecione um mês para ver a diferença entre entradas e saídas.</p>
+        </div>
+        <div class="rounded-2xl bg-white/80 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/60 p-4 shadow-sm">
+          <div class="text-[0.65rem] uppercase tracking-wide text-slate-600 dark:text-slate-300">Distribuição por tipo</div>
+          <div id="entradas-tipos-resumo" class="grid grid-cols-1 gap-2 text-sm mt-2"></div>
+        </div>
+      </div>
+
+      <div class="space-y-3">
+        <div class="flex items-center justify-between">
+          <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-200">Histórico do período</h4>
+          <button type="button" class="text-xs inline-flex items-center gap-1 rounded-full border border-emerald-200/70 dark:border-emerald-900/40 px-3 py-1 text-emerald-700 dark:text-emerald-200 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition" data-focus-entrada>
+            <i class="fa fa-circle-plus text-[0.65rem]"></i>
+            Nova entrada
+          </button>
+        </div>
+        <div id="entradas-lista" class="space-y-2 text-sm"></div>
+      </div>
+
+      <form id="form-entrada" class="space-y-3 rounded-2xl border border-emerald-100 dark:border-emerald-900/40 bg-white/80 dark:bg-slate-900/40 p-4">
+        <div class="flex items-center justify-between gap-3">
+          <h4 class="text-sm font-semibold text-emerald-700 dark:text-emerald-200">Registrar nova entrada</h4>
+          <span class="text-[0.7rem] text-gray-500 dark:text-gray-400">Campos obrigatórios marcados com *</span>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <label class="text-sm font-medium text-gray-700 dark:text-gray-200 flex flex-col gap-1">
+            Tipo da entrada*
+            <select id="entrada-tipo" class="px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100" required>
+              <option value="salario">Salário</option>
+              <option value="venda">Venda</option>
+              <option value="extra">Renda extra</option>
+              <option value="outros">Outros</option>
+            </select>
+          </label>
+          <label class="text-sm font-medium text-gray-700 dark:text-gray-200 flex flex-col gap-1">
+            Valor (R$)*
+            <input id="entrada-valor" type="number" min="0" step="0.01" class="px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 text-right" placeholder="0,00" required />
+          </label>
+          <label class="text-sm font-medium text-gray-700 dark:text-gray-200 flex flex-col gap-1">
+            Data*
+            <input id="entrada-data" type="date" class="px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100" required />
+          </label>
+          <label class="text-sm font-medium text-gray-700 dark:text-gray-200 flex flex-col gap-1">
+            Descrição
+            <input id="entrada-desc" type="text" class="px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100" placeholder="Ex.: bônus, venda de produto" />
+          </label>
+        </div>
+        <div class="rounded-xl border border-emerald-100 dark:border-emerald-900/40 bg-emerald-50/50 dark:bg-emerald-900/20 p-3 space-y-2">
+          <label class="inline-flex items-center gap-2 text-sm font-medium text-emerald-700 dark:text-emerald-200">
+            <input id="entrada-adiciona-carteira" type="checkbox" class="h-4 w-4 rounded border-emerald-300 dark:border-emerald-600 text-emerald-600 focus:ring-emerald-500" />
+            Adicionar este valor direto na carteira
+          </label>
+          <div class="grid grid-cols-1 sm:grid-cols-[minmax(0,260px)_1fr] gap-3">
+            <select id="entrada-conta-carteira" class="px-3 py-2 rounded border border-emerald-200 dark:border-emerald-700 bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-200 disabled:opacity-60 disabled:cursor-not-allowed" disabled>
+              <option value="">Selecione a conta de destino</option>
+            </select>
+            <p id="entrada-conta-helper" class="text-xs text-emerald-700/80 dark:text-emerald-200/70">Cadastre contas na carteira para direcionar entradas automaticamente.</p>
+          </div>
+        </div>
+        <div class="flex flex-wrap items-center gap-3 justify-end">
+          <button type="submit" class="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-semibold transition">
+            <i class="fa-solid fa-floppy-disk"></i>
+            Salvar entrada
+          </button>
+        </div>
+      </form>
+    </section>
+
     <!-- NOVO: Carteira consolidada -->
     <div class="mobile-panel hidden lg:block section-card space-y-5" id="painel-carteira">
       <div class="flex flex-wrap items-start justify-between gap-4">
@@ -11054,6 +11142,13 @@ function refreshEntradaCarteiraControls() {
 
 if (formEntrada) {
   refreshEntradaCarteiraControls();
+  document.querySelectorAll('[data-focus-entrada]').forEach((button) => {
+    if (button.dataset.bound === 'true') return;
+    button.dataset.bound = 'true';
+    button.addEventListener('click', () => {
+      goToPanelAndFocus('painel-entradas', '#entrada-valor');
+    });
+  });
   entradaCarteiraCheckbox?.addEventListener('change', () => {
     refreshEntradaCarteiraControls();
   });
