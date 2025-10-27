@@ -952,6 +952,183 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
   display: none; /* Adicionado para garantir que não ocupe espaço nem receba cliques */
 }
 
+  /* Ciclo do dinheiro */
+  .ciclo-flow {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  @media (min-width: 1024px) {
+    .ciclo-flow {
+      flex-direction: row;
+      align-items: stretch;
+    }
+  }
+
+  .ciclo-step {
+    flex: 1 1 0%;
+    padding: 1rem;
+    border-radius: 1rem;
+    background: linear-gradient(135deg, rgba(239, 246, 255, 0.9), rgba(236, 253, 245, 0.9));
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    box-shadow: 0 12px 28px -18px rgba(15, 23, 42, 0.38);
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .dark .ciclo-step {
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(15, 118, 110, 0.32));
+    border-color: rgba(94, 234, 212, 0.18);
+    box-shadow: 0 16px 32px -24px rgba(15, 23, 42, 0.75);
+  }
+
+  .ciclo-step-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #2563eb;
+  }
+
+  .dark .ciclo-step-header {
+    color: #93c5fd;
+  }
+
+  .ciclo-step-index {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.8rem;
+    height: 1.8rem;
+    border-radius: 9999px;
+    background: #2563eb;
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 0.75rem;
+    box-shadow: 0 6px 12px -6px rgba(37, 99, 235, 0.55);
+  }
+
+  .dark .ciclo-step-index {
+    background: #3b82f6;
+    color: #e0f2fe;
+  }
+
+  .ciclo-value {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #0f172a;
+  }
+
+  .dark .ciclo-value {
+    color: #f8fafc;
+  }
+
+  .ciclo-hint {
+    font-size: 0.75rem;
+    color: rgba(71, 85, 105, 0.9);
+    line-height: 1.35;
+  }
+
+  .dark .ciclo-hint {
+    color: rgba(203, 213, 225, 0.78);
+  }
+
+  .ciclo-subvalue {
+    margin-top: 0.4rem;
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: rgba(30, 41, 59, 0.78);
+  }
+
+  .ciclo-subvalue .ciclo-value {
+    font-size: 0.95rem;
+  }
+
+  .dark .ciclo-subvalue {
+    color: rgba(203, 213, 225, 0.72);
+  }
+
+  .ciclo-diff {
+    margin-top: 0.45rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+  }
+
+  .ciclo-value.trend-positive,
+  .ciclo-diff.trend-positive {
+    color: #059669;
+  }
+
+  .dark .ciclo-value.trend-positive,
+  .dark .ciclo-diff.trend-positive {
+    color: #34d399;
+  }
+
+  .ciclo-value.trend-negative,
+  .ciclo-diff.trend-negative {
+    color: #dc2626;
+  }
+
+  .dark .ciclo-value.trend-negative,
+  .dark .ciclo-diff.trend-negative {
+    color: #f87171;
+  }
+
+  .ciclo-value.trend-neutral,
+  .ciclo-diff.trend-neutral {
+    color: #475569;
+  }
+
+  .dark .ciclo-value.trend-neutral,
+  .dark .ciclo-diff.trend-neutral {
+    color: rgba(203, 213, 225, 0.8);
+  }
+
+  .ciclo-connector {
+    align-items: center;
+    justify-content: center;
+    color: #4f46e5;
+    font-size: 1.75rem;
+  }
+
+  .ciclo-connector i {
+    filter: drop-shadow(0 6px 10px rgba(79, 70, 229, 0.35));
+  }
+
+  .dark .ciclo-connector {
+    color: #a5b4fc;
+  }
+
+  .ciclo-summary-card {
+    border-radius: 1rem;
+    border: 1px dashed rgba(79, 70, 229, 0.35);
+    background: rgba(255, 255, 255, 0.92);
+    padding: 1.1rem;
+    box-shadow: 0 12px 30px -24px rgba(79, 70, 229, 0.6);
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .dark .ciclo-summary-card {
+    background: rgba(15, 23, 42, 0.68);
+    border-color: rgba(129, 140, 248, 0.4);
+    box-shadow: 0 20px 38px -28px rgba(30, 64, 175, 0.75);
+  }
+
+  .ciclo-summary-card h4 {
+    letter-spacing: 0.12em;
+  }
+
 </style>
 
 
@@ -1255,6 +1432,7 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
     <div class="flex gap-2 overflow-x-auto no-scrollbar">
       <button type="button" class="mobile-tab-button" data-panel-target="painel-gastos">Gastos</button>
       <button type="button" class="mobile-tab-button" data-panel-target="painel-saidas">Saídas</button>
+      <button type="button" class="mobile-tab-button" data-panel-target="painel-ciclo-dinheiro">Ciclo</button>
       <button type="button" class="mobile-tab-button" data-panel-target="painel-entradas">Entradas</button>
       <button type="button" class="mobile-tab-button" data-panel-target="painel-carteira">Carteira</button>
       <button type="button" class="mobile-tab-button" data-panel-target="painel-investimentos">Invest.</button>
@@ -1849,6 +2027,69 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
 
   <!-- RIGHT: sidebar (entradas + resumos + ações) -->
   <aside class="space-y-6 lg:col-span-1 lg:self-start">
+
+    <!-- Ciclo do dinheiro -->
+    <div class="mobile-panel hidden lg:block section-card space-y-5" id="painel-ciclo-dinheiro">
+      <div class="flex flex-col gap-1">
+        <h3 class="font-semibold text-lg flex items-center gap-2"><i class="fa-solid fa-circle-nodes text-indigo-500"></i>Ciclo do dinheiro</h3>
+        <p class="text-sm text-gray-500 dark:text-gray-400">Acompanhe o caminho do seu dinheiro: o que entra, o que sai, o que fica disponível e o que continua crescendo.</p>
+      </div>
+      <div class="ciclo-flow" role="list">
+        <div class="ciclo-step" role="listitem">
+          <div class="ciclo-step-header"><span class="ciclo-step-index">1</span><span>Entradas</span></div>
+          <div id="ciclo-entradas" class="ciclo-value">R$ 0,00</div>
+          <p class="ciclo-hint">Receitas registradas no mês selecionado.</p>
+          <div class="ciclo-subvalue"><span>Acumulado</span><span id="ciclo-entradas-acumulado">R$ 0,00</span></div>
+        </div>
+        <div class="ciclo-connector hidden lg:flex" aria-hidden="true">
+          <i class="fa-solid fa-arrow-right-long"></i>
+        </div>
+        <div class="ciclo-step" role="listitem">
+          <div class="ciclo-step-header"><span class="ciclo-step-index">2</span><span>Saídas</span></div>
+          <div id="ciclo-saidas" class="ciclo-value">R$ 0,00</div>
+          <p class="ciclo-hint">Total de gastos previstos para o mesmo período.</p>
+          <div class="ciclo-subvalue"><span>Fluxo líquido</span><span id="ciclo-fluxo-liquido" class="ciclo-value trend-neutral">R$ 0,00</span></div>
+          <div id="ciclo-fluxo-hint" class="ciclo-diff trend-neutral">Cadastre entradas e saídas para acompanhar o equilíbrio.</div>
+        </div>
+        <div class="ciclo-connector hidden lg:flex" aria-hidden="true">
+          <i class="fa-solid fa-arrow-right-long"></i>
+        </div>
+        <div class="ciclo-step" role="listitem">
+          <div class="ciclo-step-header"><span class="ciclo-step-index">3</span><span>Carteira</span></div>
+          <div id="ciclo-carteira-real" class="ciclo-value">R$ 0,00</div>
+          <p class="ciclo-hint">Saldo real das contas monitoradas na carteira consolidada.</p>
+          <div class="ciclo-subvalue"><span>Projetado</span><span id="ciclo-carteira-projetado">R$ 0,00</span></div>
+          <div id="ciclo-carteira-diff" class="ciclo-diff trend-neutral">Cadastre contas ou defina um saldo inicial.</div>
+        </div>
+        <div class="ciclo-connector hidden lg:flex" aria-hidden="true">
+          <i class="fa-solid fa-arrow-right-long"></i>
+        </div>
+        <div class="ciclo-step" role="listitem">
+          <div class="ciclo-step-header"><span class="ciclo-step-index">4</span><span>Investimentos</span></div>
+          <div id="ciclo-invest-total" class="ciclo-value">R$ 0,00</div>
+          <p class="ciclo-hint">Aportes que continuam trabalhando para você.</p>
+          <div class="ciclo-subvalue"><span>Projeção</span><span id="ciclo-invest-projetado">R$ 0,00</span></div>
+          <div id="ciclo-invest-ganho" class="ciclo-diff trend-neutral">Informe aportes para visualizar o potencial de ganho.</div>
+        </div>
+      </div>
+      <div class="ciclo-summary-card">
+        <div>
+          <h4 class="text-sm font-semibold text-slate-700 dark:text-slate-200 uppercase tracking-wide">Patrimônio consolidado</h4>
+          <p class="text-xs text-slate-500 dark:text-slate-400">Carteira + investimentos com atualização em tempo real.</p>
+        </div>
+        <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <div class="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Disponível agora</div>
+            <div id="ciclo-patrimonio-atual" class="ciclo-value text-2xl">R$ 0,00</div>
+          </div>
+          <div class="sm:text-right">
+            <div class="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Com projeções</div>
+            <div id="ciclo-patrimonio-projetado" class="text-xl font-semibold text-indigo-700 dark:text-indigo-200">R$ 0,00</div>
+          </div>
+        </div>
+        <div id="ciclo-patrimonio-variacao" class="ciclo-diff trend-neutral">Cadastre entradas, contas ou investimentos para acompanhar.</div>
+      </div>
+    </div>
 
     <!-- NOVO: Entradas de dinheiro -->
     <div class="mobile-panel hidden lg:block section-card space-y-4" id="painel-entradas">
@@ -6227,6 +6468,17 @@ const moedaSigned = (v) => {
   const prefix = value < 0 ? '-R$ ' : 'R$ ';
   return prefix + moeda(Math.abs(value));
 };
+const applyTrendClass = (element, value, threshold = 0.5) => {
+  if (!element) return;
+  element.classList.remove('trend-positive', 'trend-negative', 'trend-neutral');
+  if (value > threshold) {
+    element.classList.add('trend-positive');
+  } else if (value < -threshold) {
+    element.classList.add('trend-negative');
+  } else {
+    element.classList.add('trend-neutral');
+  }
+};
 const pct = (a,b)=> b? Math.max(0,Math.min(100,(a/b)*100)) : 0;
 const yyyymm = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
 const mmYYYY = key => { const [y,m]=key.split('-'); return `${m}/${y}`; };
@@ -8930,7 +9182,125 @@ function updateWalletSummaryUI() {
     }
   }
 
+  atualizarCicloDinheiro();
   scheduleWalletSnapshotSync();
+}
+
+function atualizarCicloDinheiro() {
+  const card = document.getElementById('painel-ciclo-dinheiro');
+  if (!card) return;
+
+  const entradasMes = painelFinanceiroState.entradasMes || 0;
+  const entradasTotais = painelFinanceiroState.entradasTotais || 0;
+  const saidasMes = painelFinanceiroState.totalGastosMes || 0;
+  const fluxoLiquido = entradasMes - saidasMes;
+
+  const carteiraProjetada = typeof walletState?.closingBalance === 'number'
+    ? walletState.closingBalance
+    : fluxoLiquido;
+  const carteiraReal = typeof walletState?.accountsTotal === 'number'
+    ? walletState.accountsTotal
+    : 0;
+  const carteiraDiff = carteiraReal - carteiraProjetada;
+
+  const totalInvest = painelFinanceiroState.investimentosTotais || 0;
+  const projInvest = painelFinanceiroState.investimentosProjetados || totalInvest;
+  const ganhoInvest = projInvest - totalInvest;
+
+  const patrimonioAtual = carteiraReal + totalInvest;
+  const patrimonioProjetado = carteiraProjetada + projInvest;
+  const patrimonioDelta = patrimonioAtual - patrimonioProjetado;
+
+  const setCurrencyText = (id, value) => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.textContent = `R$ ${moeda(value)}`;
+    }
+  };
+
+  setCurrencyText('ciclo-entradas', entradasMes);
+  setCurrencyText('ciclo-entradas-acumulado', entradasTotais);
+  setCurrencyText('ciclo-saidas', saidasMes);
+  setCurrencyText('ciclo-carteira-real', carteiraReal);
+  setCurrencyText('ciclo-carteira-projetado', carteiraProjetada);
+  setCurrencyText('ciclo-invest-total', totalInvest);
+  setCurrencyText('ciclo-invest-projetado', projInvest);
+  setCurrencyText('ciclo-patrimonio-atual', patrimonioAtual);
+  setCurrencyText('ciclo-patrimonio-projetado', patrimonioProjetado);
+
+  const fluxoEl = document.getElementById('ciclo-fluxo-liquido');
+  if (fluxoEl) {
+    fluxoEl.textContent = moedaSigned(fluxoLiquido);
+    applyTrendClass(fluxoEl, fluxoLiquido);
+  }
+
+  const fluxoHint = document.getElementById('ciclo-fluxo-hint');
+  if (fluxoHint) {
+    if (entradasMes === 0 && saidasMes === 0) {
+      fluxoHint.textContent = 'Cadastre entradas e saídas para acompanhar o equilíbrio.';
+      applyTrendClass(fluxoHint, 0);
+    } else if (fluxoLiquido > 0.5) {
+      fluxoHint.textContent = `Sobra de R$ ${moeda(fluxoLiquido)} disponível para carteira ou investimentos.`;
+      applyTrendClass(fluxoHint, fluxoLiquido);
+    } else if (fluxoLiquido < -0.5) {
+      fluxoHint.textContent = `Déficit de R$ ${moeda(Math.abs(fluxoLiquido))} — ajuste gastos ou use reservas.`;
+      applyTrendClass(fluxoHint, fluxoLiquido);
+    } else {
+      fluxoHint.textContent = 'Entradas e saídas equilibradas neste mês.';
+      applyTrendClass(fluxoHint, fluxoLiquido);
+    }
+  }
+
+  const carteiraDiffEl = document.getElementById('ciclo-carteira-diff');
+  if (carteiraDiffEl) {
+    if (!carteiraReal && !carteiraProjetada) {
+      carteiraDiffEl.textContent = 'Cadastre contas ou defina um saldo inicial.';
+      applyTrendClass(carteiraDiffEl, 0);
+    } else if (Math.abs(carteiraDiff) < 0.5) {
+      carteiraDiffEl.textContent = 'Saldos alinhados com o planejado.';
+      applyTrendClass(carteiraDiffEl, 0);
+    } else if (carteiraDiff > 0) {
+      carteiraDiffEl.textContent = `R$ ${moeda(carteiraDiff)} acima do projetado — considere investir ou reservar o excedente.`;
+      applyTrendClass(carteiraDiffEl, carteiraDiff);
+    } else {
+      carteiraDiffEl.textContent = `Faltam R$ ${moeda(Math.abs(carteiraDiff))} para atingir o saldo projetado.`;
+      applyTrendClass(carteiraDiffEl, carteiraDiff);
+    }
+  }
+
+  const investGanhoEl = document.getElementById('ciclo-invest-ganho');
+  if (investGanhoEl) {
+    if (!totalInvest && !projInvest) {
+      investGanhoEl.textContent = 'Informe aportes para visualizar o potencial de ganho.';
+      applyTrendClass(investGanhoEl, 0);
+    } else if (ganhoInvest > 0.5) {
+      investGanhoEl.textContent = `Potencial de ganho de R$ ${moeda(ganhoInvest)} com a projeção atual.`;
+      applyTrendClass(investGanhoEl, ganhoInvest);
+    } else if (ganhoInvest < -0.5) {
+      investGanhoEl.textContent = `A projeção está R$ ${moeda(Math.abs(ganhoInvest))} abaixo do total investido — revise as taxas.`;
+      applyTrendClass(investGanhoEl, ganhoInvest);
+    } else {
+      investGanhoEl.textContent = 'A projeção está alinhada ao total investido.';
+      applyTrendClass(investGanhoEl, 0);
+    }
+  }
+
+  const patrimonioVarEl = document.getElementById('ciclo-patrimonio-variacao');
+  if (patrimonioVarEl) {
+    if (!patrimonioAtual && !patrimonioProjetado) {
+      patrimonioVarEl.textContent = 'Cadastre entradas, contas ou investimentos para acompanhar.';
+      applyTrendClass(patrimonioVarEl, 0);
+    } else if (Math.abs(patrimonioDelta) < 0.5) {
+      patrimonioVarEl.textContent = 'Patrimônio alinhado ao cenário projetado.';
+      applyTrendClass(patrimonioVarEl, 0);
+    } else if (patrimonioDelta > 0) {
+      patrimonioVarEl.textContent = `Você está R$ ${moeda(patrimonioDelta)} acima do cenário projetado — atualize metas ou invista o excedente.`;
+      applyTrendClass(patrimonioVarEl, patrimonioDelta);
+    } else {
+      patrimonioVarEl.textContent = `Faltam R$ ${moeda(Math.abs(patrimonioDelta))} para alcançar o cenário projetado.`;
+      applyTrendClass(patrimonioVarEl, patrimonioDelta);
+    }
+  }
 }
 
 function scheduleWalletSnapshotSync() {
@@ -9691,6 +10061,7 @@ function atualizarResumoUI(){
   atualizarResumoRapido();
   atualizarResumoSaidasCard(totalGastosPrevistosMes);
   atualizarSaudeFinanceira();
+  atualizarCicloDinheiro();
 }
 
 
@@ -9893,6 +10264,7 @@ function renderEntradasSidebar(docs = []) {
   atualizarResumoRapido();
   atualizarSaudeFinanceira();
   atualizarFiltroMeses();
+  atualizarCicloDinheiro();
 }
 
 function atualizarSaldoLiquidoEntradas() {
@@ -10003,6 +10375,7 @@ function renderInvestimentosSidebar(docs = []) {
   atualizarSimuladorValoresPadrao();
   atualizarSimuladorResultados();
   atualizarFiltroMeses();
+  atualizarCicloDinheiro();
 }
 
 function renderGraficoInvestimentos(totaisPorMes = {}) {
