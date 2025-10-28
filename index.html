@@ -6508,18 +6508,29 @@ if (workspaceJoinForm) {
     }
   });
 
-  auth.onAuthStateChanged(async (user) => {
-    if (user) {
-      if (requiresEmailVerification(user)) {
-        await handlePendingEmailVerification(user);
-        return;
+  firebaseReady
+    .then(() => {
+      if (!auth || typeof auth.onAuthStateChanged !== 'function') {
+        throw new Error('Firebase Auth não foi inicializado.');
       }
-      exitVerificationMode('signIn');
-      await handleUserSignedIn(user);
-    } else {
-      handleUserSignedOut();
-    }
-  });
+
+      auth.onAuthStateChanged(async (user) => {
+        if (user) {
+          if (requiresEmailVerification(user)) {
+            await handlePendingEmailVerification(user);
+            return;
+          }
+          exitVerificationMode('signIn');
+          await handleUserSignedIn(user);
+        } else {
+          handleUserSignedOut();
+        }
+      });
+    })
+    .catch((error) => {
+      console.error('Erro ao inicializar monitoramento de autenticação:', error);
+      showToast('Não foi possível conectar ao Firebase agora. Atualize a página e tente novamente.', 'error');
+    });
 
   if (accessGuardRefresh) {
     accessGuardRefresh.addEventListener('click', async () => {
