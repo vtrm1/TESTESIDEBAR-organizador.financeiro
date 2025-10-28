@@ -2776,12 +2776,32 @@ if ("serviceWorker" in navigator) {
 
 <script>
   (function setupFirebaseConfigLoader() {
+    const FALLBACK_FIREBASE_CONFIG = Object.freeze({
+      apiKey: 'AIzaSyCpBfq801WlkxgHhWwORDvnKWpXGXz3k4c',
+      authDomain: 'organizacao-financeira1.firebaseapp.com',
+      projectId: 'organizacao-financeira1',
+      storageBucket: 'organizacao-financeira1.firebasestorage.app',
+      messagingSenderId: '896359450111',
+      appId: '1:896359450111:web:bd8d7c2f2e35d4f27a93ca',
+      measurementId: 'G-58ZVECNK3B',
+    });
+
     const ensureConfig = (candidate) => {
       if (candidate && typeof candidate === 'object' && Object.keys(candidate).length) {
         window.__FIREBASE_CONFIG__ = candidate;
         return candidate;
       }
       return null;
+    };
+
+    let fallbackConfig = null;
+
+    const ensureFallbackConfig = () => {
+      if (fallbackConfig) {
+        return fallbackConfig;
+      }
+      fallbackConfig = ensureConfig(FALLBACK_FIREBASE_CONFIG);
+      return fallbackConfig;
     };
 
     const overlay = document.getElementById('app-loading-overlay');
@@ -2800,8 +2820,10 @@ if ("serviceWorker" in navigator) {
       overlay.classList.add('hidden');
     };
 
-    if (ensureConfig(window.__FIREBASE_CONFIG__)) {
-      window.__firebaseConfigPromise = Promise.resolve(window.__FIREBASE_CONFIG__);
+    const embeddedConfig = ensureConfig(window.__FIREBASE_CONFIG__);
+    if (embeddedConfig) {
+      window.__firebaseConfigPromise = Promise.resolve(embeddedConfig);
+      hideLoader();
       return;
     }
 
@@ -2857,10 +2879,16 @@ if ("serviceWorker" in navigator) {
       if (scriptConfig) {
         return scriptConfig;
       }
-      return ensureConfig(window.__FIREBASE_CONFIG__);
+      const fallback = ensureConfig(window.__FIREBASE_CONFIG__) || ensureFallbackConfig();
+      if (fallback) {
+        return fallback;
+      }
+      return null;
     }
 
-    window.__firebaseConfigPromise = loadFirebaseConfig().finally(hideLoader);
+    window.__firebaseConfigPromise = loadFirebaseConfig()
+      .then((config) => config || ensureFallbackConfig())
+      .finally(hideLoader);
   })();
 </script>
 
