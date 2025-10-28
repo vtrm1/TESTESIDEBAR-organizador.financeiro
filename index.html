@@ -278,6 +278,30 @@
   </div>
 </div>
 
+<div id="modal-invest-strategies" class="fixed inset-0 z-[9610] hidden flex items-center justify-center bg-slate-900/80 backdrop-blur px-4 py-8 overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="invest-strategies-title">
+  <div class="relative w-full max-w-3xl rounded-2xl bg-white dark:bg-slate-900 p-6 shadow-xl max-h-[calc(100vh-4rem)] sm:max-h-[calc(100vh-6rem)] overflow-y-auto">
+    <button id="invest-strategies-close" class="absolute top-4 right-4 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white text-2xl font-bold" aria-label="Fechar modal" type="button">&times;</button>
+    <h2 id="invest-strategies-title" class="text-2xl font-semibold text-slate-900 dark:text-slate-100">Estratégias de investimento</h2>
+    <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">Personalize nomes, metas e destaques de cada estratégia para acompanhar os aportes com mais clareza.</p>
+    <form id="invest-strategies-form" class="mt-5 space-y-5">
+      <div id="invest-strategies-list" class="space-y-4"></div>
+      <div class="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 dark:border-slate-700 pt-4">
+        <span id="invest-strategies-feedback" class="hidden text-sm"></span>
+        <div class="flex flex-wrap items-center gap-3">
+          <button type="button" id="invest-strategies-cancel" class="inline-flex items-center gap-2 rounded-lg border border-slate-300 dark:border-slate-600 px-4 py-2 text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+            <i class="fa-solid fa-xmark"></i>
+            Cancelar
+          </button>
+          <button type="submit" class="inline-flex items-center gap-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-700 dark:hover:bg-indigo-800 px-4 py-2 text-sm font-semibold text-white transition-colors">
+            <i class="fa-solid fa-floppy-disk"></i>
+            Salvar estratégias
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
 <div id="modal-recursos-overview" class="fixed inset-0 z-[9630] hidden flex items-center justify-center bg-slate-900/80 backdrop-blur px-4 py-8 overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="recursos-overview-title">
   <div class="relative w-full max-w-4xl rounded-2xl bg-white dark:bg-slate-900 p-6 shadow-xl max-h-[calc(100vh-4rem)] sm:max-h-[calc(100vh-6rem)] overflow-y-auto">
     <button id="recursos-overview-close" class="absolute top-4 right-4 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white text-2xl font-bold" aria-label="Fechar modal" type="button">&times;</button>
@@ -1393,10 +1417,10 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
   <nav id="mobile-panels-nav" class="text-sm font-medium">
     <div class="flex gap-2 overflow-x-auto no-scrollbar">
       <button type="button" class="mobile-tab-button" data-panel-target="painel-gastos">Gastos</button>
-      <button type="button" class="mobile-tab-button" data-panel-target="painel-saidas">Saídas</button>
       <button type="button" class="mobile-tab-button" data-panel-target="painel-entradas">Entradas</button>
       <button type="button" class="mobile-tab-button" data-panel-target="painel-carteira">Carteira</button>
       <button type="button" class="mobile-tab-button" data-panel-target="painel-investimentos">Invest.</button>
+      <button type="button" class="mobile-tab-button" data-panel-target="painel-saidas">Saídas</button>
       <button type="button" class="mobile-tab-button" data-panel-target="painel-saude-financeira">Saúde</button>
       <button type="button" class="mobile-tab-button" data-panel-target="painel-fixos">Fixos</button>
       <button type="button" class="mobile-tab-button" data-panel-target="painel-cartoes">Cartões</button>
@@ -1624,9 +1648,9 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
                 <span class="hint">Após rendimento de 1% a.m.</span>
               </div>
               <div class="resumo-item">
-                <span class="label">Ganho em investimentos</span>
-                <span class="value">R$ <span id="resumo-ganho-invest">0,00</span></span>
-                <span class="hint">Comparado ao aporte total</span>
+                <span class="label">Patrimônio total</span>
+                <span class="value">R$ <span id="resumo-patrimonio-total">0,00</span></span>
+                <span class="hint">Contas + investimentos ativos</span>
               </div>
             </div>
           </section>
@@ -2273,11 +2297,17 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
 
     <!-- NOVO: Investimentos -->
     <div class="mobile-panel hidden lg:block section-card space-y-4" id="painel-investimentos">
-      <div class="flex items-center justify-between">
+      <div class="flex flex-wrap items-center justify-between gap-3">
         <h3 class="font-semibold text-lg flex items-center gap-2"><i class="fa fa-chart-line text-indigo-500"></i>Investimentos</h3>
-        <span class="text-xs text-gray-500 dark:text-gray-400">Projeção com 1% ao mês</span>
+        <div class="flex items-center gap-2">
+          <button id="btn-invest-estrategias" class="inline-flex items-center gap-2 rounded-full border border-indigo-200/70 dark:border-indigo-900/50 bg-indigo-50/80 dark:bg-indigo-900/20 px-3 py-1.5 text-xs font-semibold text-indigo-700 dark:text-indigo-200 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-colors">
+            <i class="fa-solid fa-sitemap text-sm"></i>
+            Gerenciar estratégias
+          </button>
+          <span class="text-xs text-gray-500 dark:text-gray-400">Projeção com 1% ao mês</span>
+        </div>
       </div>
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-sm">
+      <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2 text-sm">
         <div class="p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg">
           <div class="text-xs text-indigo-700 dark:text-indigo-200 uppercase tracking-wide">Investido no mês</div>
           <div class="text-lg font-bold text-indigo-800 dark:text-indigo-200">R$ <span id="investimento-total-mes">0,00</span></div>
@@ -2289,6 +2319,12 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
         <div class="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
           <div class="text-xs text-purple-700 dark:text-purple-200 uppercase tracking-wide">Projeção futura</div>
           <div class="text-lg font-bold text-purple-800 dark:text-purple-200">R$ <span id="investimento-projecao">0,00</span></div>
+          <p class="mt-1 text-[0.7rem] text-purple-700/80 dark:text-purple-200/80">Considera rentabilidade de 1% a.m. sobre cada aporte.</p>
+        </div>
+        <div class="p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg">
+          <div class="text-xs text-emerald-700 dark:text-emerald-200 uppercase tracking-wide">Rendimento acumulado</div>
+          <div class="text-lg font-bold text-emerald-800 dark:text-emerald-200">R$ <span id="investimento-rendimento-real">0,00</span></div>
+          <p class="mt-1 text-[0.7rem] text-emerald-700/80 dark:text-emerald-200/80">Diferença entre o total projetado e o aportado.</p>
         </div>
       </div>
       <div class="pt-3 border-t border-indigo-100 dark:border-indigo-900/40">
@@ -2375,11 +2411,37 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
         <input id="investimento-desc" type="text" class="px-3 py-2 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" placeholder="Observação (opcional)" />
         <button type="submit" class="sm:col-span-2 bg-indigo-600 dark:bg-indigo-700 text-white px-3 py-2 rounded hover:bg-indigo-700 dark:hover:bg-indigo-800 transition">Adicionar investimento</button>
       </form>
-      <div>
-        <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">Aplicações recentes</h4>
-        <div id="investimentos-lista" class="space-y-2 max-h-48 overflow-y-auto text-sm">
-          <div class="text-gray-500 dark:text-gray-400">Nenhum investimento registrado.</div>
+      <div class="space-y-3">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <button id="investimentos-recentes-toggle" type="button" class="flex grow items-center justify-between gap-2 rounded-xl border border-indigo-100 dark:border-indigo-900/40 bg-white/80 dark:bg-gray-800/50 px-3 py-2 text-left text-sm font-semibold text-indigo-700 dark:text-indigo-200 transition hover:bg-white dark:hover:bg-gray-800" aria-controls="investimentos-recentes-panel" aria-expanded="false">
+            <span class="flex items-center gap-2"><i class="fa-solid fa-clock-rotate-left"></i>Aplicações recentes</span>
+            <span class="inline-flex items-center gap-2 text-[0.7rem] text-indigo-600 dark:text-indigo-200">
+              <span id="investimentos-recentes-count">0</span>
+              <i class="fa fa-chevron-down transition-transform duration-200" data-investimentos-recentes-chevron></i>
+            </span>
+          </button>
+          <label class="text-[0.7rem] text-indigo-600 dark:text-indigo-200 flex items-center gap-2">
+            <span id="investimentos-recentes-range-display">Últimos 3 meses</span>
+            <span class="sr-only">Período das aplicações recentes</span>
+            <select id="investimentos-recentes-range" class="rounded border border-indigo-200/70 dark:border-indigo-900/60 bg-white dark:bg-gray-800 px-2 py-1 text-xs text-indigo-700 dark:text-indigo-200">
+              <option value="3">Últimos 3 meses</option>
+              <option value="6">Últimos 6 meses</option>
+              <option value="12">Últimos 12 meses</option>
+              <option value="24">Últimos 24 meses</option>
+            </select>
+          </label>
         </div>
+        <div id="investimentos-recentes-panel" class="hidden" hidden>
+          <div id="investimentos-lista" class="space-y-2 max-h-48 overflow-y-auto text-sm"></div>
+        </div>
+      </div>
+
+      <div class="rounded-xl border border-indigo-100 dark:border-indigo-900/40 bg-white/80 dark:bg-gray-800/60 p-4 space-y-3 text-sm">
+        <div class="flex items-start justify-between gap-2">
+          <h4 class="text-sm font-semibold text-indigo-800 dark:text-indigo-200">Distribuição por estratégia</h4>
+          <span class="text-[0.7rem] text-indigo-600 dark:text-indigo-200">Atualize pelos aportes e transferências</span>
+        </div>
+        <div id="investimentos-por-tipo" class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm"></div>
       </div>
     </div>
 
@@ -3611,6 +3673,18 @@ const walletOpeningSubmit = document.getElementById('wallet-opening-submit');
 const walletTimelineToggle = document.getElementById('wallet-timeline-toggle');
 const walletTimelinePanel = document.getElementById('wallet-timeline-panel');
 const walletTimelineChevron = document.querySelector('[data-wallet-timeline-chevron]');
+const investimentosRecentesToggle = document.getElementById('investimentos-recentes-toggle');
+const investimentosRecentesPanel = document.getElementById('investimentos-recentes-panel');
+const investimentosRecentesChevron = document.querySelector('[data-investimentos-recentes-chevron]');
+const investimentosRecentesRangeSelect = document.getElementById('investimentos-recentes-range');
+const investimentosRecentesRangeDisplay = document.getElementById('investimentos-recentes-range-display');
+const investStrategiesModal = document.getElementById('modal-invest-strategies');
+const investStrategiesClose = document.getElementById('invest-strategies-close');
+const investStrategiesOpen = document.getElementById('btn-invest-estrategias');
+const investStrategiesCancel = document.getElementById('invest-strategies-cancel');
+const investStrategiesForm = document.getElementById('invest-strategies-form');
+const investStrategiesList = document.getElementById('invest-strategies-list');
+const investStrategiesFeedback = document.getElementById('invest-strategies-feedback');
 const recursosOverviewModal = document.getElementById('modal-recursos-overview');
 const recursosOverviewClose = document.getElementById('recursos-overview-close');
 const recursosOverviewBody = document.getElementById('recursos-overview-body');
@@ -6522,6 +6596,39 @@ if (walletInvestModal) {
     }
   });
 }
+
+if (investStrategiesOpen && investStrategiesModal) {
+  investStrategiesOpen.addEventListener('click', (event) => {
+    event.preventDefault();
+    openInvestStrategiesModal();
+  });
+}
+
+if (investStrategiesClose) {
+  investStrategiesClose.addEventListener('click', (event) => {
+    event.preventDefault();
+    closeInvestStrategiesModal();
+  });
+}
+
+if (investStrategiesCancel) {
+  investStrategiesCancel.addEventListener('click', (event) => {
+    event.preventDefault();
+    closeInvestStrategiesModal();
+  });
+}
+
+if (investStrategiesModal) {
+  investStrategiesModal.addEventListener('click', (event) => {
+    if (event.target === investStrategiesModal) {
+      closeInvestStrategiesModal();
+    }
+  });
+}
+
+if (investStrategiesForm) {
+  investStrategiesForm.addEventListener('submit', handleInvestStrategiesSubmit);
+}
 if (walletOpeningModal) {
   walletOpeningModal.addEventListener('click', (event) => {
     if (event.target === walletOpeningModal) {
@@ -6614,10 +6721,45 @@ if (walletTimelineToggle && walletTimelinePanel) {
   });
 }
 
+if (investimentosRecentesToggle && investimentosRecentesPanel) {
+  investimentosRecentesToggle.addEventListener('click', () => {
+    const expanded = investimentosRecentesToggle.getAttribute('aria-expanded') === 'true';
+    const nextState = !expanded;
+    investimentosRecentesToggle.setAttribute('aria-expanded', String(nextState));
+    investimentosRecentesPanel.classList.toggle('hidden', !nextState);
+    if (nextState) {
+      investimentosRecentesPanel.removeAttribute('hidden');
+    } else {
+      investimentosRecentesPanel.setAttribute('hidden', '');
+    }
+    if (investimentosRecentesChevron) {
+      investimentosRecentesChevron.classList.toggle('fa-chevron-up', nextState);
+      investimentosRecentesChevron.classList.toggle('fa-chevron-down', !nextState);
+      investimentosRecentesChevron.style.transform = nextState ? 'rotate(180deg)' : 'rotate(0deg)';
+    }
+  });
+}
+
+if (investimentosRecentesRangeSelect) {
+  investimentosRecentesRange = investimentosRecentesRangeSelect.value || investimentosRecentesRange;
+  syncInvestimentosRecentesRangeLabel();
+  investimentosRecentesRangeSelect.addEventListener('change', () => {
+    investimentosRecentesRange = investimentosRecentesRangeSelect.value || investimentosRecentesRange;
+    syncInvestimentosRecentesRangeLabel();
+    renderInvestimentosSidebar(allInvestimentosDocs);
+  });
+}
+
 /* ===========================
    UTIL
    =========================== */
 const moeda = v => (Number(v)||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const escapeHtml = (value) => String(value ?? '')
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;')
+  .replace(/'/g, '&#39;');
 const moedaSigned = (v) => {
   const value = Number(v) || 0;
   const prefix = value < 0 ? '-R$ ' : 'R$ ';
@@ -7198,11 +7340,19 @@ let allEntradasDocs = [];
 let allInvestimentosDocs = [];
 let recursosEntradasChartInstance = null;
 let recursosPatrimonioChartInstance = null;
-let recursosInvestimentosChartInstance = null;
+let recursosDestinosChartInstance = null;
+let recursosSaldoInicialChartInstance = null;
+let recursosTimelineChartInstance = null;
 let entradaRecorrenciasDocs = [];
 let entradasResumoTiposAtual = {};
 let recursosEntradasDataset = {};
-let recursosInvestimentosDataset = [];
+let recursosDestinosDataset = [];
+let recursosSaldoInicialDataset = [];
+let recursosTimelineDataset = [];
+let investimentosDistribuicaoResumo = [];
+let investmentStrategiesDocs = [];
+let investmentStrategyMap = {};
+let investimentosRecentesRange = '3';
 
 const painelFinanceiroState = {
   entradasMes: 0,
@@ -7243,7 +7393,8 @@ let resumoFinanceiroAtual = {
   entradasMes: 0,
   totalGastosMes: 0,
   saldoProjetado: 0,
-  ganhoInvest: 0,
+  patrimonioTotal: 0,
+  rendimentoInvestimentos: 0,
 };
 
 /* resumo */
@@ -8919,7 +9070,7 @@ function exportarCSVtudo(){
    ATUALIZAÇÕES & SNAPSHOTS
    =========================== */
 
-let unsubLimits, unsubFixos, unsubGastos, unsubParcelados, unsubConfig, unsubEntradas, unsubInvestimentos, unsubEntradasRecorrentes;
+let unsubLimits, unsubFixos, unsubGastos, unsubParcelados, unsubConfig, unsubEntradas, unsubInvestimentos, unsubEntradasRecorrentes, unsubInvestmentStrategies;
 let unsubWalletSettings, unsubWalletAccounts, unsubWalletSnapshot, unsubWalletTimeline;
 let allParceladosDocs = [];
 let allGastosDocs = [];
@@ -10196,6 +10347,7 @@ async function handleWalletOpeningSubmit(event) {
   }
 }
 
+
 function renderRecursosOverview() {
   if (!recursosOverviewBody) return;
   destroyRecursosOverviewCharts();
@@ -10222,91 +10374,155 @@ function renderRecursosOverview() {
     origemDescricao = 'Saldo inicial definido manualmente nas preferências.';
   }
 
-  const tiposResumo = Object.entries(entradasResumoTiposAtual || {});
-  const tiposHtml = tiposResumo.length
-    ? tiposResumo
-        .sort((a, b) => b[1] - a[1])
-        .map(([tipo, valor]) => `
-          <div class="flex items-center justify-between gap-4 rounded-lg bg-emerald-50/70 dark:bg-emerald-900/20 px-3 py-2">
-            <span class="text-xs font-semibold uppercase tracking-wide text-emerald-800 dark:text-emerald-200">${entradaTipoLabels[tipo] || tipo}</span>
-            <span class="text-sm font-semibold text-emerald-900 dark:text-emerald-100">R$ ${moeda(valor)}</span>
-          </div>
-        `)
-        .join('')
-    : '<p class="text-sm text-slate-500 dark:text-slate-400">Nenhuma entrada categorizada no mês selecionado.</p>';
+  const mesFiltro = document.getElementById('filtro-mes')?.value || yyyymm(new Date());
+  const considerarTodosMeses = mesFiltro === 'all';
+  let totalDestinosConsiderados = 0;
+  let destinoContas = 0;
+  let destinoInvestimentos = 0;
 
-  const investimentosPorTipo = {};
-  (allInvestimentosDocs || []).forEach((doc) => {
+  (allEntradasDocs || []).forEach((doc) => {
     if (!doc || typeof doc.data !== 'function') return;
     const data = doc.data();
     if (!data) return;
-    const tipo = data.tipo || 'outros';
+    const dt = data.data?.toDate ? data.data.toDate() : (data.data ? new Date(data.data) : null);
+    if (!dt || Number.isNaN(dt.getTime())) return;
+    const key = yyyymm(dt);
+    if (!considerarTodosMeses && key !== mesFiltro) return;
     const valor = Number(data.valor) || 0;
-    investimentosPorTipo[tipo] = (investimentosPorTipo[tipo] || 0) + valor;
+    if (valor <= 0) return;
+    totalDestinosConsiderados += valor;
+
+    const adicionaCarteira = data.adicionaCarteira === true;
+    const carteiraValorAplicado = adicionaCarteira
+      ? roundCurrency(Number(data.carteiraValorAplicado ?? data.valorCarteiraAplicado ?? (valor * ((Number(data.carteiraPercentual ?? data.percentualCarteira ?? 0)) / 100))))
+      : 0;
+    const direcionaInvestimento = data.direcionaInvestimento === true || data.adicionaInvestimento === true;
+    const investimentoValorAplicado = direcionaInvestimento
+      ? roundCurrency(Number(data.investimentoValorAplicado ?? data.valorInvestimento ?? (valor * ((Number(data.investimentoPercentual ?? data.percentualInvestimento ?? 0)) / 100))))
+      : 0;
+
+    destinoContas += Math.min(carteiraValorAplicado, valor);
+    destinoInvestimentos += Math.min(investimentoValorAplicado, Math.max(0, valor - carteiraValorAplicado));
   });
-  const investimentosPorTipoEntries = Object.entries(investimentosPorTipo)
-    .map(([tipo, valor]) => [investimentoTipoLabels?.[tipo] || tipo, roundCurrency(valor)])
-    .filter(([, valor]) => valor > 0.005)
-    .sort((a, b) => b[1] - a[1]);
-  recursosInvestimentosDataset = investimentosPorTipoEntries;
 
-  const investimentosTiposListHtml = investimentosPorTipoEntries.length
-    ? `<ul class="mt-4 space-y-1 text-[0.7rem] text-slate-600 dark:text-slate-300">
-        ${investimentosPorTipoEntries.slice(0, 6).map(([label, valor]) => `
+  destinoContas = roundCurrency(destinoContas);
+  destinoInvestimentos = roundCurrency(destinoInvestimentos);
+  const destinoLivre = roundCurrency(Math.max(totalDestinosConsiderados - destinoContas - destinoInvestimentos, 0));
+
+  const saldoInicialContas = roundCurrency(walletState.openingAllocatedAccounts || 0);
+  const saldoInicialInvestimentos = roundCurrency(walletState.openingAllocatedInvestments || 0);
+  const saldoInicialLivre = roundCurrency(Math.max(saldoInicial - saldoInicialContas - saldoInicialInvestimentos, 0));
+
+  recursosSaldoInicialDataset = [
+    { label: 'Mantido em contas', value: saldoInicialContas, color: '#10b981' },
+    { label: 'Direcionado para investimentos', value: saldoInicialInvestimentos, color: '#6366f1' },
+    { label: 'Disponível para novas decisões', value: saldoInicialLivre, color: '#fbbf24' },
+  ].filter((item) => item.value > 0.005);
+
+  recursosDestinosDataset = [
+    { label: 'Aplicado na carteira', value: destinoContas, color: '#10b981' },
+    { label: 'Aplicado em investimentos', value: destinoInvestimentos, color: '#6366f1' },
+    { label: 'Mantido no fluxo', value: destinoLivre, color: '#f59e0b' },
+  ].filter((item) => item.value > 0.005);
+
+  const saldoInicialListHtml = recursosSaldoInicialDataset.length
+    ? `<ul class="mt-4 space-y-1 text-[0.7rem] text-slate-600 dark:text-slate-300">`
+        ${recursosSaldoInicialDataset.map((item) => `
           <li class="flex items-center justify-between gap-3">
-            <span class="font-medium">${label}</span>
-            <span class="text-emerald-700 dark:text-emerald-200 font-semibold">R$ ${moeda(valor)}</span>
+            <span class="font-medium">${item.label}</span>
+            <span class="text-sm font-semibold">R$ ${moeda(item.value)}</span>
           </li>
-        `).join('')}
+        `).join('')}`
       </ul>`
-    : '<p class="mt-4 text-sm text-slate-500 dark:text-slate-400">Registre aportes para acompanhar a distribuição dos investimentos.</p>';
+    : '<p class="mt-4 text-sm text-slate-500 dark:text-slate-400">Distribua o saldo inicial para visualizar como ele fortalece seu mês.</p>';
 
-  const contasList = Array.isArray(walletAccountsDocs) ? walletAccountsDocs.filter(Boolean) : [];
-  const contasHtml = contasList.length
-    ? contasList.slice(0, 4).map((conta) => {
-        const saldoConta = roundCurrency(conta.balance || conta.currentBalance || conta.saldoAtual || 0);
-        const labelParts = [conta.name || conta.nome || 'Conta sem nome'];
-        if (conta.institution || conta.instituicao) {
-          labelParts.push(conta.institution || conta.instituicao);
-        }
-        const atualizado = conta.updatedAt ? `Atualizado em ${formatDate(conta.updatedAt)}` : (conta.ultimaAtualizacao ? `Atualizado em ${formatDate(conta.ultimaAtualizacao)}` : 'Sem data de atualização');
-        return `
-          <div class="rounded-lg border border-slate-200/70 dark:border-slate-700/60 px-3 py-2 text-xs">
-            <div class="font-semibold text-slate-700 dark:text-slate-200">${labelParts.join(' • ')}</div>
-            <div class="text-sm font-semibold text-emerald-700 dark:text-emerald-200 mt-1">R$ ${moeda(saldoConta)}</div>
-            <div class="text-[0.65rem] text-slate-500 dark:text-slate-400 mt-1">${atualizado}</div>
-          </div>
-        `;
-      }).join('')
-    : '<p class="text-sm text-slate-500 dark:text-slate-400">Cadastre contas na carteira para acompanhar o saldo consolidado.</p>';
-
-  const recentesDocs = Array.isArray(allEntradasDocs) ? allEntradasDocs.slice(0, 5) : [];
-  const recentesHtml = recentesDocs.length
-    ? recentesDocs.map((doc) => {
-        if (!doc || typeof doc.data !== 'function') return '';
-        const data = doc.data();
-        if (!data) return '';
-        const dt = data.data?.toDate ? data.data.toDate() : (data.data ? new Date(data.data) : null);
-        const valor = roundCurrency(Number(data.valor) || 0);
-        const tipoLabel = entradaTipoLabels[data.tipo] || data.tipo || 'Entrada';
-        const descricao = (data.descricao || '').trim();
-        const carteiraValor = roundCurrency(Number(data.carteiraValorAplicado ?? data.valorCarteiraAplicado ?? 0));
-        const investValor = roundCurrency(Number(data.investimentoValorAplicado ?? data.valorInvestimento ?? 0));
-        const detalhes = [dt ? formatDate(dt) : 'Data não informada'];
-        if (descricao) detalhes.push(descricao);
-        if (carteiraValor > 0.005) detalhes.push(`Carteira: R$ ${moeda(carteiraValor)}`);
-        if (investValor > 0.005) detalhes.push(`Invest.: R$ ${moeda(investValor)}`);
-        return `
-          <li class="flex items-start justify-between gap-3 rounded-lg bg-white/70 dark:bg-slate-800/60 px-3 py-2">
-            <div class="flex-1">
-              <div class="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">${tipoLabel}</div>
-              <div class="text-[0.7rem] text-slate-500 dark:text-slate-400">${detalhes.join(' • ')}</div>
-            </div>
-            <span class="text-sm font-semibold text-emerald-700 dark:text-emerald-200">R$ ${moeda(valor)}</span>
+  const destinosListHtml = recursosDestinosDataset.length
+    ? `<ul class="mt-4 space-y-1 text-[0.7rem] text-slate-600 dark:text-slate-300">`
+        ${recursosDestinosDataset.map((item) => `
+          <li class="flex items-center justify-between gap-3">
+            <span class="font-medium">${item.label}</span>
+            <span class="text-sm font-semibold">R$ ${moeda(item.value)}</span>
           </li>
-        `;
-      }).join('')
-    : '<li class="text-sm text-slate-500 dark:text-slate-400">Nenhuma entrada recente encontrada.</li>';
+        `).join('')}`
+      </ul>`
+    : '<p class="mt-4 text-sm text-slate-500 dark:text-slate-400">Direcione suas entradas para visualizar como o dinheiro foi distribuído.</p>';
+
+  const taxaRetencao = totalDestinosConsiderados > 0
+    ? ((destinoContas + destinoInvestimentos + Math.max(saldoRestante, 0)) / totalDestinosConsiderados) * 100
+    : 0;
+  const percentualCarteira = totalDestinosConsiderados > 0 ? (destinoContas / totalDestinosConsiderados) * 100 : 0;
+  const percentualInvestido = totalDestinosConsiderados > 0 ? (destinoInvestimentos / totalDestinosConsiderados) * 100 : 0;
+  const percentualSaldoAlocado = saldoInicial > 0 ? (saldoDistribuido / saldoInicial) * 100 : 0;
+
+  const estrategiasAtivas = Array.isArray(investimentosDistribuicaoResumo)
+    ? investimentosDistribuicaoResumo.filter((item) => item && item.valor > 0.005 && item.ativo !== false)
+    : [];
+  const totalEstrategiasValor = estrategiasAtivas.reduce((acc, item) => acc + (item.valor || 0), 0);
+  let estrategiaIndicadorHtml = '';
+  if (estrategiasAtivas.length) {
+    const principal = [...estrategiasAtivas].sort((a, b) => b.valor - a.valor)[0];
+    const principalLabelSafe = escapeHtml(principal.label || getInvestmentStrategyLabel(principal.tipo));
+    const principalPercent = totalEstrategiasValor > 0 ? ((principal.valor / totalEstrategiasValor) * 100) : 0;
+    estrategiaIndicadorHtml = `
+      <li class="flex items-center justify-between gap-3">
+        <span>Estratégia em destaque</span>
+        <span class="font-semibold">${principalLabelSafe} • ${principalPercent.toFixed(1)}%</span>
+      </li>`;
+  }
+
+  const indicadoresHtml = `
+    <ul class="mt-3 space-y-1 text-[0.7rem] text-slate-500 dark:text-slate-400">
+      <li class="flex items-center justify-between gap-3"><span>Taxa de retenção do período</span><span class="font-semibold">${taxaRetencao.toFixed(1)}%</span></li>
+      <li class="flex items-center justify-between gap-3"><span>Entradas na carteira</span><span class="font-semibold">${percentualCarteira.toFixed(1)}% (${moeda(destinoContas)})</span></li>
+      <li class="flex items-center justify-between gap-3"><span>Entradas direcionadas a investimentos</span><span class="font-semibold">${percentualInvestido.toFixed(1)}% (${moeda(destinoInvestimentos)})</span></li>
+      <li class="flex items-center justify-between gap-3"><span>Fluxo líquido do mês</span><span class="font-semibold">${moedaSigned(fluxoLiquido)}</span></li>
+      <li class="flex items-center justify-between gap-3"><span>Saldo inicial direcionado</span><span class="font-semibold">${percentualSaldoAlocado.toFixed(1)}% (R$ ${moeda(saldoDistribuido)})</span></li>
+      ${estrategiaIndicadorHtml}
+      <li class="flex items-center justify-between gap-3"><span>Patrimônio total</span><span class="font-semibold">R$ ${moeda(patrimonio)}</span></li>
+    </ul>
+  `;
+
+  const timelineDocs = Array.isArray(walletTimelineDocs) ? walletTimelineDocs.filter(Boolean) : [];
+  const timelineSorted = timelineDocs
+    .map((doc) => ({
+      month: doc.month || doc.id || '',
+      closing: roundCurrency(Number(doc.closingBalance ?? 0) || 0),
+      net: roundCurrency(Number(doc.netFlow ?? 0) || 0),
+    }))
+    .filter((item) => item.month)
+    .sort((a, b) => a.month.localeCompare(b.month));
+
+  recursosTimelineDataset = timelineSorted.map((item) => ({
+    label: mmYYYY(item.month),
+    closing: item.closing,
+    net: item.net,
+  }));
+
+  const ultimoFechamentoLabel = recursosTimelineDataset.length
+    ? recursosTimelineDataset[recursosTimelineDataset.length - 1].label
+    : null;
+  const timelineHeaderBadge = ultimoFechamentoLabel
+    ? `<span class="text-xs font-medium text-slate-500 dark:text-slate-400">Último fechamento: ${ultimoFechamentoLabel}</span>`
+    : '';
+
+  const timelineListItems = recursosTimelineDataset.slice(-4).reverse().map((item) => {
+    const netClass = item.net >= 0 ? 'text-emerald-600 dark:text-emerald-200' : 'text-rose-500 dark:text-rose-300';
+    return `
+      <li class="rounded-lg border border-slate-200/70 dark:border-slate-700/60 px-3 py-2">
+        <div class="flex items-center justify-between gap-3">
+          <span class="font-semibold text-slate-700 dark:text-slate-200">${item.label}</span>
+          <span class="text-sm font-semibold text-slate-700 dark:text-slate-200">R$ ${moeda(item.closing)}</span>
+        </div>
+        <div class="mt-1 flex items-center justify-between text-[0.65rem] text-slate-500 dark:text-slate-400">
+          <span>Fluxo líquido</span>
+          <span class="font-semibold ${netClass}">${moedaSigned(item.net)}</span>
+        </div>
+      </li>`;
+  }).join('');
+
+  const timelineListHtml = timelineListItems
+    ? `<ul class="mt-4 space-y-2">${timelineListItems}</ul>`
+    : '<p class="mt-4 text-sm text-slate-500 dark:text-slate-400">Feche o mês para construir o histórico consolidado do patrimônio.</p>';
 
   recursosOverviewBody.innerHTML = `
     <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -10318,7 +10534,7 @@ function renderRecursosOverview() {
         <p class="text-xs font-semibold uppercase tracking-wide text-rose-700 dark:text-rose-200">Saídas do mês</p>
         <p class="text-2xl font-bold text-rose-700 dark:text-rose-200">R$ ${moeda(gastosMes)}</p>
       </div>
-      <div class="rounded-xl border border-slate-200/70 dark:border-slate-700/60 bg-white/70 dark:bg-slate-800/40 p-4">
+      <div class="rounded-xl border border-slate-200/70 dark-border-slate-700/60 bg-white/70 dark:bg-slate-800/40 p-4">
         <p class="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">Fluxo líquido</p>
         <p class="text-2xl font-bold ${fluxoLiquido >= 0 ? 'text-emerald-700 dark:text-emerald-200' : 'text-rose-600 dark:text-rose-300'}">${moedaSigned(fluxoLiquido)}</p>
       </div>
@@ -10375,32 +10591,59 @@ function renderRecursosOverview() {
 
     <div class="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
       <div class="rounded-xl border border-slate-200/70 dark:border-slate-700/60 bg-white/80 dark:bg-slate-900/40 p-4">
-        <p class="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">Entradas por tipo</p>
-        <div class="mt-3 space-y-2">${tiposHtml}</div>
+        <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">Uso do saldo inicial</p>
+            <p class="text-[0.7rem] text-slate-500 dark:text-slate-400">Transforme o crédito do mês anterior em planos concretos.</p>
+          </div>
+          <div class="text-xs font-semibold text-emerald-600 dark:text-emerald-200">Disponível: R$ ${moeda(Math.max(saldoInicialLivre, 0))}</div>
+        </div>
+        <div class="relative mt-4 h-48 sm:h-56">
+          <canvas id="recursos-saldo-inicial-chart" class="h-full w-full"></canvas>
+          <div id="recursos-saldo-inicial-empty" class="absolute inset-0 hidden items-center justify-center text-[0.75rem] text-slate-500 dark:text-slate-400">
+            Assim que direcionar o saldo inicial o painel mostrará a divisão entre contas, investimentos e valor livre.
+          </div>
+        </div>
+        ${saldoInicialListHtml}
       </div>
       <div class="rounded-xl border border-slate-200/70 dark:border-slate-700/60 bg-white/80 dark:bg-slate-900/40 p-4">
         <div class="flex items-start justify-between gap-3">
-          <p class="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">Investimentos por tipo</p>
-          <p class="text-xs font-medium text-indigo-600 dark:text-indigo-200">Total: R$ ${moeda(investimentosTotal)}</p>
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">Destinos das entradas</p>
+            <p class="text-[0.7rem] text-slate-500 dark:text-slate-400">Como você repartiu o fluxo do período.</p>
+          </div>
+          <p class="text-xs font-medium text-indigo-600 dark:text-indigo-200">Total analisado: R$ ${moeda(totalDestinosConsiderados)}</p>
         </div>
         <div class="relative mt-4 h-48 sm:h-56">
-          <canvas id="recursos-investimentos-chart" class="h-full w-full"></canvas>
-          <div id="recursos-investimentos-empty" class="absolute inset-0 hidden items-center justify-center text-[0.75rem] text-slate-500 dark:text-slate-400">
-            Registre investimentos para visualizar a distribuição.
+          <canvas id="recursos-destinos-chart" class="h-full w-full"></canvas>
+          <div id="recursos-destinos-empty" class="absolute inset-0 hidden items-center justify-center text-[0.75rem] text-slate-500 dark:text-slate-400">
+            Direcione entradas para visualizar como o dinheiro foi distribuído.
           </div>
         </div>
-        ${investimentosTiposListHtml}
+        ${destinosListHtml}
       </div>
     </div>
 
     <div class="mt-5 grid gap-4 md:grid-cols-2">
       <div class="rounded-xl border border-slate-200/70 dark:border-slate-700/60 bg-white/80 dark:bg-slate-900/40 p-4">
-        <p class="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">Contas acompanhadas</p>
-        <div class="mt-3 grid gap-3">${contasHtml}</div>
+        <div class="flex items-start justify-between gap-3">
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">Patrimônio ao longo dos meses</p>
+            <p class="text-[0.7rem] text-slate-500 dark:text-slate-400">Acompanhe como seus fechamentos evoluíram.</p>
+          </div>
+          ${timelineHeaderBadge || ''}
+        </div>
+        <div class="relative mt-4 h-48 sm:h-56">
+          <canvas id="recursos-timeline-chart" class="h-full w-full"></canvas>
+          <div id="recursos-timeline-empty" class="absolute inset-0 hidden items-center justify-center text-[0.75rem] text-slate-500 dark:text-slate-400">
+            Feche o mês para construir o histórico consolidado do patrimônio.
+          </div>
+        </div>
+        ${timelineListHtml}
       </div>
       <div class="rounded-xl border border-slate-200/70 dark:border-slate-700/60 bg-white/80 dark:bg-slate-900/40 p-4">
-        <p class="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">Entradas recentes</p>
-        <ul class="mt-3 space-y-2">${recentesHtml}</ul>
+        <p class="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">Indicadores essenciais</p>
+        ${indicadoresHtml}
       </div>
     </div>
   `;
@@ -10417,10 +10660,11 @@ function renderRecursosOverview() {
   requestAnimationFrame(() => {
     updateRecursosEntradasChart();
     updateRecursosPatrimonioChart();
-    updateRecursosInvestimentosChart();
+    updateRecursosSaldoInicialChart();
+    updateRecursosDestinosChart();
+    updateRecursosTimelineChart();
   });
 }
-
 function openRecursosOverviewModal() {
   if (!recursosOverviewModal) return;
   renderRecursosOverview();
@@ -10461,6 +10705,164 @@ function closeWalletInvestModal() {
   walletInvestModal.classList.add('hidden');
   unlockBodyScrollIfAllowed();
   resetWalletInvestForm();
+}
+
+function renderInvestStrategiesModal() {
+  if (!investStrategiesList) return;
+
+  const baseTipos = ['reserva', 'renda_fixa', 'acoes', 'fundo_imobiliario', 'cripto', 'outros'];
+  const totaisPorTipo = (investimentosDistribuicaoResumo || []).reduce((acc, item) => {
+    if (item && item.tipo) {
+      acc[item.tipo] = roundCurrency((acc[item.tipo] || 0) + (item.valor || 0));
+    }
+    return acc;
+  }, {});
+
+  const fragment = document.createDocumentFragment();
+
+  baseTipos.forEach((tipo) => {
+    const config = investmentStrategyMap[tipo] || {};
+    const labelAtual = config.nome && config.nome.trim() ? config.nome.trim() : '';
+    const labelAtualSafe = escapeHtml(labelAtual);
+    const metaPercentual = Number.isFinite(Number(config.metaPercentual)) ? Number(config.metaPercentual) : '';
+    const cor = typeof config.cor === 'string' ? config.cor : '#6366f1';
+    const ativo = config.ativo !== false;
+    const totalTipo = roundCurrency(totaisPorTipo[tipo] || 0);
+    const defaultLabel = investimentoTipoLabels?.[tipo] || tipo;
+    const defaultLabelSafe = escapeHtml(defaultLabel);
+
+    const row = document.createElement('div');
+    row.className = 'space-y-3 rounded-xl border border-indigo-100 dark:border-indigo-900/40 bg-white/80 dark:bg-slate-900/40 p-4';
+    row.setAttribute('data-invest-strategy-row', tipo);
+    row.innerHTML = `
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div class="text-sm font-semibold text-indigo-700 dark:text-indigo-200">${defaultLabelSafe}</div>
+        <div class="text-xs font-semibold text-indigo-600 dark:text-indigo-200">Atual: R$ ${moeda(totalTipo)}</div>
+      </div>
+      <div class="grid gap-3 sm:grid-cols-[minmax(0,1.4fr)_minmax(0,0.9fr)]">
+        <label class="flex flex-col gap-1 text-sm font-medium text-slate-700 dark:text-slate-200">
+          Nome exibido
+          <input type="text" data-invest-strategy-name class="rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-800 dark:text-slate-100" value="${labelAtualSafe}" placeholder="Ex.: ${defaultLabelSafe}" />
+        </label>
+        <label class="flex flex-col gap-1 text-sm font-medium text-slate-700 dark:text-slate-200">
+          Meta de participação (%)
+          <input type="number" min="0" max="100" step="1" data-invest-strategy-target class="rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2 text-right text-sm text-slate-800 dark:text-slate-100" value="${metaPercentual}" />
+        </label>
+      </div>
+      <div class="grid gap-3 sm:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
+        <label class="flex flex-col gap-1 text-sm font-medium text-slate-700 dark:text-slate-200">
+          Cor de destaque
+          <input type="color" data-invest-strategy-color class="h-10 w-full rounded border border-slate-300 dark:border-slate-700 bg-transparent" value="${cor}" />
+        </label>
+        <label class="inline-flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-300">
+          <input type="checkbox" data-invest-strategy-active class="h-4 w-4 rounded border-slate-300 dark:border-slate-600 text-indigo-600 focus:ring-indigo-500" ${ativo ? 'checked' : ''} />
+          Mostrar na distribuição consolidada
+        </label>
+      </div>
+    `;
+    fragment.appendChild(row);
+  });
+
+  investStrategiesList.innerHTML = '';
+  investStrategiesList.appendChild(fragment);
+  if (investStrategiesFeedback) {
+    investStrategiesFeedback.classList.add('hidden');
+    investStrategiesFeedback.textContent = '';
+  }
+}
+
+function openInvestStrategiesModal() {
+  if (!investStrategiesModal) return;
+  renderInvestStrategiesModal();
+  investStrategiesModal.classList.remove('hidden');
+  lockBodyScroll();
+  const initialFocus = investStrategiesList?.querySelector('input[data-invest-strategy-name]') || investStrategiesModal.querySelector('button, [href], input, select, textarea');
+  activateDialog(investStrategiesModal, { initialFocus });
+}
+
+function closeInvestStrategiesModal() {
+  if (!investStrategiesModal) return;
+  deactivateDialog(investStrategiesModal);
+  investStrategiesModal.classList.add('hidden');
+  unlockBodyScrollIfAllowed();
+}
+
+async function handleInvestStrategiesSubmit(event) {
+  if (event) {
+    event.preventDefault();
+  }
+  if (!investStrategiesForm || !investStrategiesList) return;
+
+  const rows = Array.from(investStrategiesList.querySelectorAll('[data-invest-strategy-row]'));
+  if (!rows.length) {
+    closeInvestStrategiesModal();
+    return;
+  }
+
+  const feedback = investStrategiesFeedback;
+  const showFeedback = (message, success = true) => {
+    if (!feedback) return;
+    feedback.textContent = message;
+    feedback.classList.remove('hidden');
+    feedback.classList.toggle('text-emerald-600', success);
+    feedback.classList.toggle('dark:text-emerald-300', success);
+    feedback.classList.toggle('text-rose-500', !success);
+    feedback.classList.toggle('dark:text-rose-300', !success);
+  };
+
+  try {
+    investStrategiesForm.classList.add('opacity-60', 'pointer-events-none');
+
+    const batch = firebase.firestore().batch();
+
+    rows.forEach((row) => {
+      const tipo = row.getAttribute('data-invest-strategy-row');
+      if (!tipo) return;
+      const nomeInput = row.querySelector('[data-invest-strategy-name]');
+      const metaInput = row.querySelector('[data-invest-strategy-target]');
+      const colorInput = row.querySelector('[data-invest-strategy-color]');
+      const activeInput = row.querySelector('[data-invest-strategy-active]');
+
+      const nome = nomeInput?.value?.trim() || '';
+      const metaValor = Number(metaInput?.value);
+      const temMeta = Number.isFinite(metaValor) && metaValor >= 0;
+      const cor = colorInput?.value || '';
+      const ativo = activeInput ? activeInput.checked : true;
+
+      const payload = {};
+      if (nome) {
+        payload.nome = nome;
+      } else {
+        payload.nome = firebase.firestore.FieldValue.delete();
+      }
+      if (temMeta) {
+        payload.metaPercentual = metaValor;
+      } else {
+        payload.metaPercentual = firebase.firestore.FieldValue.delete();
+      }
+      if (cor) {
+        payload.cor = cor;
+      } else {
+        payload.cor = firebase.firestore.FieldValue.delete();
+      }
+      payload.ativo = ativo;
+
+      const ref = userDocRef('investmentStrategies', tipo);
+      batch.set(ref, stampWorkspaceUpdate(payload), { merge: true });
+    });
+
+    await batch.commit();
+    showFeedback('Estratégias atualizadas com sucesso.', true);
+    showToast('Estratégias de investimento atualizadas.', 'success');
+    setTimeout(() => {
+      closeInvestStrategiesModal();
+    }, 900);
+  } catch (error) {
+    console.error('Erro ao atualizar estratégias de investimento:', error);
+    showFeedback('Não foi possível salvar as alterações agora. Tente novamente em instantes.', false);
+  } finally {
+    investStrategiesForm.classList.remove('opacity-60', 'pointer-events-none');
+  }
 }
 
 async function handleWalletAccountSubmit(event) {
@@ -10760,6 +11162,7 @@ async function startObservers(){
   if (unsubEntradas) unsubEntradas();
   if (unsubEntradasRecorrentes) unsubEntradasRecorrentes();
   if (unsubInvestimentos) unsubInvestimentos();
+  if (unsubInvestmentStrategies) unsubInvestmentStrategies();
   if (unsubWalletSettings) unsubWalletSettings();
   if (unsubWalletAccounts) unsubWalletAccounts();
   if (unsubWalletSnapshot) unsubWalletSnapshot();
@@ -10899,6 +11302,26 @@ async function startObservers(){
   }, err => {
     console.error('Erro ao carregar investimentos:', err);
     showToast('Erro ao carregar investimentos.', 'error');
+  });
+
+  unsubInvestmentStrategies = userCollectionRef('investmentStrategies').onSnapshot((snap) => {
+    investmentStrategiesDocs = snap.docs.map((doc) => ({ id: doc.id, data: doc.data() || {} }));
+    investmentStrategyMap = investmentStrategiesDocs.reduce((acc, entry) => {
+      const data = entry.data || {};
+      acc[entry.id] = {
+        nome: typeof data.nome === 'string' ? data.nome : null,
+        metaPercentual: Number.isFinite(Number(data.metaPercentual)) ? Number(data.metaPercentual) : null,
+        cor: typeof data.cor === 'string' ? data.cor : null,
+        ativo: data.ativo !== false,
+      };
+      return acc;
+    }, {});
+    renderInvestimentosSidebar(allInvestimentosDocs);
+    if (!investStrategiesModal?.classList.contains('hidden')) {
+      renderInvestStrategiesModal();
+    }
+  }, (error) => {
+    console.error('Erro ao carregar estratégias de investimento:', error);
   });
 
 
@@ -11254,6 +11677,14 @@ const investimentoTipoLabels = {
   outros: 'Outros',
 };
 
+function getInvestmentStrategyLabel(tipo) {
+  const config = investmentStrategyMap && investmentStrategyMap[tipo];
+  if (config && typeof config.nome === 'string' && config.nome.trim()) {
+    return config.nome.trim();
+  }
+  return investimentoTipoLabels?.[tipo] || tipo;
+}
+
 function renderEntradasSidebar(docs = []) {
   const lista = document.getElementById('entradas-lista');
   const totalMesEl = document.getElementById('entradas-total-mes');
@@ -11587,31 +12018,31 @@ function updateRecursosPatrimonioChart() {
   });
 }
 
-function updateRecursosInvestimentosChart(dataset) {
+
+function updateRecursosDestinosChart(dataset) {
   if (dataset) {
-    recursosInvestimentosDataset = dataset;
+    recursosDestinosDataset = dataset;
   }
 
-  const canvas = document.getElementById('recursos-investimentos-chart');
-  const emptyEl = document.getElementById('recursos-investimentos-empty');
+  const canvas = document.getElementById('recursos-destinos-chart');
+  const emptyEl = document.getElementById('recursos-destinos-empty');
 
   if (!canvas || typeof Chart === 'undefined') {
-    if (recursosInvestimentosChartInstance) {
-      recursosInvestimentosChartInstance.destroy();
-      recursosInvestimentosChartInstance = null;
+    if (recursosDestinosChartInstance) {
+      recursosDestinosChartInstance.destroy();
+      recursosDestinosChartInstance = null;
     }
     if (emptyEl) emptyEl.classList.remove('hidden');
     return;
   }
 
-  const entries = (recursosInvestimentosDataset || [])
-    .filter(([, valor]) => valor > 0.005)
-    .sort((a, b) => b[1] - a[1]);
+  const items = (recursosDestinosDataset || [])
+    .filter((item) => item && typeof item.value === 'number' && item.value > 0.005);
 
-  if (!entries.length) {
-    if (recursosInvestimentosChartInstance) {
-      recursosInvestimentosChartInstance.destroy();
-      recursosInvestimentosChartInstance = null;
+  if (!items.length) {
+    if (recursosDestinosChartInstance) {
+      recursosDestinosChartInstance.destroy();
+      recursosDestinosChartInstance = null;
     }
     if (emptyEl) emptyEl.classList.remove('hidden');
     return;
@@ -11622,20 +12053,20 @@ function updateRecursosInvestimentosChart(dataset) {
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
 
-  if (recursosInvestimentosChartInstance) {
-    recursosInvestimentosChartInstance.destroy();
+  if (recursosDestinosChartInstance) {
+    recursosDestinosChartInstance.destroy();
   }
 
-  const palette = ['#6366f1', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316', '#22d3ee'];
+  const fallbackPalette = ['#10b981', '#6366f1', '#f59e0b'];
 
-  recursosInvestimentosChartInstance = new Chart(ctx, {
+  recursosDestinosChartInstance = new Chart(ctx, {
     type: 'doughnut',
     data: {
-      labels: entries.map(([label]) => label),
+      labels: items.map((item) => item.label),
       datasets: [
         {
-          data: entries.map(([, valor]) => valor),
-          backgroundColor: entries.map((_, index) => palette[index % palette.length]),
+          data: items.map((item) => item.value),
+          backgroundColor: items.map((item, index) => item.color || fallbackPalette[index % fallbackPalette.length]),
           borderWidth: 0,
         },
       ],
@@ -11643,7 +12074,7 @@ function updateRecursosInvestimentosChart(dataset) {
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      cutout: '58%',
+      cutout: '60%',
       plugins: {
         legend: {
           position: 'bottom',
@@ -11664,6 +12095,129 @@ function updateRecursosInvestimentosChart(dataset) {
   });
 }
 
+function updateRecursosTimelineChart(dataset) {
+  if (dataset) {
+    recursosTimelineDataset = dataset;
+  }
+
+  const canvas = document.getElementById('recursos-timeline-chart');
+  const emptyEl = document.getElementById('recursos-timeline-empty');
+
+  if (!canvas || typeof Chart === 'undefined') {
+    if (recursosTimelineChartInstance) {
+      recursosTimelineChartInstance.destroy();
+      recursosTimelineChartInstance = null;
+    }
+    if (emptyEl) emptyEl.classList.remove('hidden');
+    return;
+  }
+
+  const items = (recursosTimelineDataset || [])
+    .filter((item) => item && typeof item.closing === 'number');
+
+  if (!items.length) {
+    if (recursosTimelineChartInstance) {
+      recursosTimelineChartInstance.destroy();
+      recursosTimelineChartInstance = null;
+    }
+    if (emptyEl) emptyEl.classList.remove('hidden');
+    return;
+  }
+
+  if (emptyEl) emptyEl.classList.add('hidden');
+
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+
+  if (recursosTimelineChartInstance) {
+    recursosTimelineChartInstance.destroy();
+  }
+
+  const labels = items.map((item) => item.label);
+  const closingData = items.map((item) => item.closing);
+  const netData = items.map((item) => item.net || 0);
+  const netBackground = netData.map((valor) => valor >= 0 ? 'rgba(16, 185, 129, 0.35)' : 'rgba(239, 68, 68, 0.35)');
+  const netBorder = netData.map((valor) => valor >= 0 ? '#10b981' : '#ef4444');
+
+  recursosTimelineChartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        {
+          type: 'bar',
+          label: 'Fluxo líquido',
+          data: netData,
+          backgroundColor: netBackground,
+          borderColor: netBorder,
+          borderWidth: 1.5,
+          borderRadius: 6,
+          yAxisID: 'y1',
+        },
+        {
+          type: 'line',
+          label: 'Saldo de fechamento',
+          data: closingData,
+          borderColor: '#6366f1',
+          backgroundColor: 'rgba(99, 102, 241, 0.18)',
+          fill: true,
+          tension: 0.35,
+          pointRadius: 3,
+          pointBackgroundColor: '#6366f1',
+          yAxisID: 'y',
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          labels: {
+            color: html.classList.contains('dark') ? '#e2e8f0' : '#0f172a',
+          },
+        },
+        tooltip: {
+          callbacks: {
+            label: (context) => {
+              const value = context.parsed.y || 0;
+              if (context.dataset.type === 'line') {
+                return `Saldo: R$ ${moeda(value)}`;
+              }
+              return `Fluxo líquido: R$ ${moeda(value)}`;
+            },
+          },
+        },
+      },
+      scales: {
+        y: {
+          position: 'left',
+          grid: { color: 'rgba(148, 163, 184, 0.15)' },
+          ticks: {
+            color: html.classList.contains('dark') ? '#cbd5f5' : '#475569',
+            callback: (value) => `R$ ${moeda(value)}`,
+          },
+        },
+        y1: {
+          position: 'right',
+          grid: { drawOnChartArea: false },
+          ticks: {
+            color: html.classList.contains('dark') ? '#cbd5f5' : '#475569',
+            callback: (value) => `R$ ${moeda(value)}`,
+          },
+        },
+        x: {
+          ticks: {
+            color: html.classList.contains('dark') ? '#cbd5f5' : '#475569',
+            font: { size: 10 },
+          },
+          grid: { color: 'rgba(148, 163, 184, 0.1)' },
+        },
+      },
+    },
+  });
+}
+
 function destroyRecursosOverviewCharts() {
   if (recursosEntradasChartInstance) {
     recursosEntradasChartInstance.destroy();
@@ -11673,10 +12227,91 @@ function destroyRecursosOverviewCharts() {
     recursosPatrimonioChartInstance.destroy();
     recursosPatrimonioChartInstance = null;
   }
-  if (recursosInvestimentosChartInstance) {
-    recursosInvestimentosChartInstance.destroy();
-    recursosInvestimentosChartInstance = null;
+  if (recursosSaldoInicialChartInstance) {
+    recursosSaldoInicialChartInstance.destroy();
+    recursosSaldoInicialChartInstance = null;
   }
+  if (recursosDestinosChartInstance) {
+    recursosDestinosChartInstance.destroy();
+    recursosDestinosChartInstance = null;
+  }
+  if (recursosTimelineChartInstance) {
+    recursosTimelineChartInstance.destroy();
+    recursosTimelineChartInstance = null;
+  }
+}
+function updateRecursosSaldoInicialChart(dataset) {
+  if (dataset) {
+    recursosSaldoInicialDataset = dataset;
+  }
+
+  const canvas = document.getElementById('recursos-saldo-inicial-chart');
+  const emptyEl = document.getElementById('recursos-saldo-inicial-empty');
+
+  if (!canvas || typeof Chart === 'undefined') {
+    if (recursosSaldoInicialChartInstance) {
+      recursosSaldoInicialChartInstance.destroy();
+      recursosSaldoInicialChartInstance = null;
+    }
+    if (emptyEl) emptyEl.classList.remove('hidden');
+    return;
+  }
+
+  const datasetItems = (recursosSaldoInicialDataset || [])
+    .filter((item) => item && typeof item.value === 'number' && item.value > 0.005);
+
+  if (!datasetItems.length) {
+    if (recursosSaldoInicialChartInstance) {
+      recursosSaldoInicialChartInstance.destroy();
+      recursosSaldoInicialChartInstance = null;
+    }
+    if (emptyEl) emptyEl.classList.remove('hidden');
+    return;
+  }
+
+  if (emptyEl) emptyEl.classList.add('hidden');
+
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+
+  if (recursosSaldoInicialChartInstance) {
+    recursosSaldoInicialChartInstance.destroy();
+  }
+
+  recursosSaldoInicialChartInstance = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: datasetItems.map((item) => item.label),
+      datasets: [
+        {
+          data: datasetItems.map((item) => item.value),
+          backgroundColor: datasetItems.map((item) => item.color),
+          borderWidth: 0,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '60%',
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: {
+            usePointStyle: true,
+            pointStyle: 'circle',
+            padding: 16,
+            color: html.classList.contains('dark') ? '#e2e8f0' : '#0f172a',
+          },
+        },
+        tooltip: {
+          callbacks: {
+            label: (context) => `${context.label}: R$ ${moeda(context.parsed || 0)}`,
+          },
+        },
+      },
+    },
+  });
 }
 
 function atualizarSaldoLiquidoEntradas() {
@@ -11709,20 +12344,32 @@ function renderInvestimentosSidebar(docs = []) {
   const totalMesEl = document.getElementById('investimento-total-mes');
   const totalGeralEl = document.getElementById('investimento-total-geral');
   const projEl = document.getElementById('investimento-projecao');
-  if (!lista || !totalMesEl || !totalGeralEl || !projEl) return;
+  const rendimentoEl = document.getElementById('investimento-rendimento-real');
+  const countEl = document.getElementById('investimentos-recentes-count');
+  const distribContainer = document.getElementById('investimentos-por-tipo');
+  if (!lista || !totalMesEl || !totalGeralEl || !projEl || !rendimentoEl || !distribContainer) return;
 
   mesesInvestimentosDisponiveis = new Set();
   allInvestimentosDocs = docs;
 
   lista.innerHTML = '';
+  distribContainer.innerHTML = '';
+  if (countEl) countEl.textContent = '0';
 
   const mesSel = document.getElementById('filtro-mes').value || yyyymm(new Date());
   const mostrarTodos = mesSel === 'all';
   const hoje = new Date();
 
+  if (investimentosRecentesRangeSelect) {
+    investimentosRecentesRange = investimentosRecentesRangeSelect.value || investimentosRecentesRange;
+  }
+  syncInvestimentosRecentesRangeLabel();
+  const rangeMeses = Math.max(1, Number(investimentosRecentesRange) || 3);
+
   let totalMes = 0;
   let totalGeral = 0;
   let totalProjetado = 0;
+  let recentesCount = 0;
   const totaisPorMes = {};
   const investimentosPorTipoOverview = {};
 
@@ -11737,6 +12384,8 @@ function renderInvestimentosSidebar(docs = []) {
     const valor = Number(data.valor) || 0;
     const tipo = data.tipo || 'outros';
     const descricao = (data.descricao || '').trim();
+    const descricaoSafe = descricao ? escapeHtml(descricao) : '';
+    const estrategiaLabelSafe = escapeHtml(getInvestmentStrategyLabel(tipo));
 
     totalGeral += valor;
     totaisPorMes[key] = (totaisPorMes[key] || 0) + valor;
@@ -11745,15 +12394,18 @@ function renderInvestimentosSidebar(docs = []) {
     const valorProjetado = valor * Math.pow(1.01, mesesPassados);
     totalProjetado += valorProjetado;
 
-    if (mostrarTodos || key === mesSel) {
+    const dentroDoRecorte = mostrarTodos ? monthDiff(dt, hoje) < rangeMeses : key === mesSel;
+
+    if (dentroDoRecorte) {
       totalMes += valor;
+      recentesCount += 1;
       const item = document.createElement('div');
       item.className = 'flex items-center gap-3 p-2 bg-indigo-50 dark:bg-indigo-900/20 rounded';
       item.innerHTML = `
         <div class="flex-1">
           <div class="flex items-center gap-2">
-            <span class="text-xs uppercase tracking-wide bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-200 px-2 py-0.5 rounded">${investimentoTipoLabels[tipo] || tipo}</span>
-            ${descricao ? `<span class="text-sm font-medium text-gray-700 dark:text-gray-200">${descricao}</span>` : ''}
+            <span class="text-xs uppercase tracking-wide bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-200 px-2 py-0.5 rounded">${estrategiaLabelSafe}</span>
+            ${descricaoSafe ? `<span class="text-sm font-medium text-gray-700 dark:text-gray-200">${descricaoSafe}</span>` : ''}
           </div>
           <div class="text-xs text-gray-500 dark:text-gray-400">${formatDate(dt)}</div>
         </div>
@@ -11769,25 +12421,75 @@ function renderInvestimentosSidebar(docs = []) {
     }
   });
 
-  if (!lista.children.length) {
+  if (!recentesCount) {
     const empty = document.createElement('div');
     empty.className = 'text-gray-500 dark:text-gray-400';
     empty.textContent = 'Nenhum investimento registrado para o período selecionado.';
     lista.appendChild(empty);
   }
 
+  if (countEl) {
+    countEl.textContent = String(recentesCount);
+  }
+
   totalMesEl.textContent = moeda(totalMes);
   totalGeralEl.textContent = moeda(totalGeral);
   projEl.textContent = moeda(totalProjetado);
+  const rendimentoTotal = Math.max(0, totalProjetado - totalGeral);
+  rendimentoEl.textContent = moeda(rendimentoTotal);
 
   painelFinanceiroState.investimentosMes = totalMes;
   painelFinanceiroState.investimentosTotais = totalGeral;
   painelFinanceiroState.investimentosProjetados = totalProjetado;
-  recursosInvestimentosDataset = Object.entries(investimentosPorTipoOverview)
-    .map(([tipo, valor]) => [investimentoTipoLabels?.[tipo] || tipo, roundCurrency(valor)])
-    .filter(([, valor]) => valor > 0.005)
-    .sort((a, b) => b[1] - a[1]);
-  updateRecursosInvestimentosChart();
+  painelFinanceiroState.investimentosRendimento = rendimentoTotal;
+  const investimentosPorTipoEntries = Object.entries(investimentosPorTipoOverview)
+    .map(([tipo, valor]) => {
+      const configuracao = investmentStrategyMap[tipo] || {};
+      const label = (configuracao.nome && configuracao.nome.trim()) || getInvestmentStrategyLabel(tipo);
+      const metaPercentual = Number.isFinite(Number(configuracao.metaPercentual)) ? Number(configuracao.metaPercentual) : null;
+      const corBruta = typeof configuracao.cor === 'string' ? configuracao.cor.trim() : '';
+      const cor = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(corBruta) ? corBruta : null;
+      const ativo = configuracao.ativo !== false;
+      return { tipo, label, valor: roundCurrency(valor), metaPercentual, cor, ativo };
+    })
+    .filter((item) => item.valor > 0.005 && item.ativo !== false)
+    .sort((a, b) => b.valor - a.valor);
+
+  investimentosDistribuicaoResumo = investimentosPorTipoEntries.map((item) => ({ ...item }));
+
+  const totalAtivo = investimentosPorTipoEntries.reduce((acc, item) => acc + item.valor, 0) || totalGeral;
+
+  if (!investimentosPorTipoEntries.length) {
+    distribContainer.innerHTML = '<p class="text-sm text-gray-500 dark:text-gray-400">Registre aportes para acompanhar o total por estratégia.</p>';
+  } else {
+    distribContainer.innerHTML = investimentosPorTipoEntries
+      .map((item) => {
+        const percentual = totalAtivo > 0 ? ((item.valor / totalAtivo) * 100) : 0;
+        const metaInfo = Number.isFinite(item.metaPercentual)
+          ? `<span class="text-[0.65rem] font-medium ${percentual >= item.metaPercentual ? 'text-emerald-600 dark:text-emerald-200' : 'text-rose-500 dark:text-rose-300'}">${percentual >= item.metaPercentual ? '+' : ''}${(percentual - item.metaPercentual).toFixed(1)} pp vs meta</span>`
+          : '';
+        const metaBadge = Number.isFinite(item.metaPercentual)
+          ? `<span class="text-[0.7rem] text-indigo-600 dark:text-indigo-200">Meta: ${item.metaPercentual.toFixed(0)}%</span>`
+          : '';
+        const colorDot = item.cor ? `<span class="h-2.5 w-2.5 rounded-full" style="background:${item.cor}"></span>` : '<span class="h-2 w-2 rounded-full bg-indigo-400"></span>';
+        const labelSafe = escapeHtml(item.label);
+        return `
+          <div class="rounded-lg border border-indigo-100 dark:border-indigo-900/40 bg-indigo-50/50 dark:bg-indigo-900/20 p-3">
+            <div class="flex items-center justify-between gap-2">
+              <span class="flex items-center gap-2 text-sm font-semibold text-indigo-800 dark:text-indigo-200">${colorDot}${labelSafe}</span>
+              <span class="text-xs font-semibold text-indigo-600 dark:text-indigo-200">${percentual.toFixed(1)}%</span>
+            </div>
+            <div class="mt-1 flex items-center justify-between gap-2 text-sm font-semibold text-indigo-800 dark:text-indigo-100">
+              <span>R$ ${moeda(item.valor)}</span>
+              ${metaBadge}
+            </div>
+            ${metaInfo ? `<div class="mt-1">${metaInfo}</div>` : ''}
+          </div>
+        `;
+      })
+      .join('');
+  }
+
   renderGraficoInvestimentos(totaisPorMes);
   atualizarResumoRapido();
   atualizarSaudeFinanceira();
@@ -11825,6 +12527,11 @@ function renderGraficoInvestimentos(totaisPorMes = {}) {
     acumulado += totaisPorMes[mes];
     return acumulado;
   });
+  let acumuladoProjetado = 0;
+  const projetadoSeries = mesesRecentes.map((mes) => {
+    acumuladoProjetado = (acumuladoProjetado + totaisPorMes[mes]) * 1.01;
+    return roundCurrency(acumuladoProjetado);
+  });
 
   chartInvestimentos = new Chart(ctx, {
     type: 'bar',
@@ -11851,6 +12558,19 @@ function renderGraficoInvestimentos(totaisPorMes = {}) {
           tension: 0.35,
           pointRadius: 4,
           pointBackgroundColor: '#8b5cf6',
+          yAxisID: 'y'
+        },
+        {
+          type: 'line',
+          label: 'Total com rendimento (1% a.m.)',
+          data: projetadoSeries,
+          borderColor: '#10b981',
+          backgroundColor: 'rgba(16, 185, 129, 0.2)',
+          fill: false,
+          tension: 0.35,
+          pointRadius: 4,
+          pointBackgroundColor: '#10b981',
+          borderDash: [6, 6],
           yAxisID: 'y'
         }
       ]
@@ -12090,31 +12810,42 @@ function atualizarResumoRapido() {
   const totalGastosMes = painelFinanceiroState.totalGastosMes || 0;
   const projInvest = painelFinanceiroState.investimentosProjetados || 0;
   const totalInvest = painelFinanceiroState.investimentosTotais || 0;
-  const ganhoInvest = Math.max(0, projInvest - totalInvest);
+  const rendimentoInvest = Math.max(0, projInvest - totalInvest);
+  const contasTotal = roundCurrency(Number(walletState?.accountsTotal || 0));
+  const investimentosTotal = roundCurrency(Number(walletState?.investmentsTotal || totalInvest));
+  const patrimonioTotal = typeof walletState?.patrimonioTotal === 'number'
+    ? roundCurrency(walletState.patrimonioTotal)
+    : roundCurrency(contasTotal + investimentosTotal);
   const saldoBaseCarteira = typeof walletState?.closingBalance === 'number'
     ? walletState.closingBalance
     : (entradasMes - totalGastosMes);
-  const saldoProjetado = saldoBaseCarteira + ganhoInvest;
+  const saldoProjetado = saldoBaseCarteira + rendimentoInvest;
 
-  atualizarResumoIndicadoresFinanceiros({ entradasMes, totalGastosMes, saldoProjetado, ganhoInvest });
+  atualizarResumoIndicadoresFinanceiros({ entradasMes, totalGastosMes, saldoProjetado, patrimonioTotal });
 
-  resumoFinanceiroAtual = { entradasMes, totalGastosMes, saldoProjetado, ganhoInvest };
+  resumoFinanceiroAtual = {
+    entradasMes,
+    totalGastosMes,
+    saldoProjetado,
+    patrimonioTotal,
+    rendimentoInvestimentos: rendimentoInvest,
+  };
   atualizarSimuladorResultados();
   return resumoFinanceiroAtual;
 }
 
-function atualizarResumoIndicadoresFinanceiros({ entradasMes, totalGastosMes, saldoProjetado, ganhoInvest }) {
+function atualizarResumoIndicadoresFinanceiros({ entradasMes, totalGastosMes, saldoProjetado, patrimonioTotal }) {
   const entradasMesEl = document.getElementById('resumo-entradas-mes');
   const saidasMesEl = document.getElementById('resumo-saidas-mes');
   const saldoProjetadoEl = document.getElementById('resumo-saldo-projetado');
-  const ganhoInvestEl = document.getElementById('resumo-ganho-invest');
+  const patrimonioEl = document.getElementById('resumo-patrimonio-total');
 
-  if (!entradasMesEl || !saidasMesEl || !saldoProjetadoEl || !ganhoInvestEl) return;
+  if (!entradasMesEl || !saidasMesEl || !saldoProjetadoEl || !patrimonioEl) return;
 
   entradasMesEl.textContent = moeda(entradasMes);
   saidasMesEl.textContent = moeda(totalGastosMes);
   saldoProjetadoEl.textContent = moeda(saldoProjetado);
-  ganhoInvestEl.textContent = moeda(Math.max(0, ganhoInvest));
+  patrimonioEl.textContent = moeda(Math.max(0, patrimonioTotal));
 
   const saldoItem = saldoProjetadoEl.closest('.resumo-item');
   if (saldoItem) {
@@ -12128,14 +12859,10 @@ function atualizarResumoIndicadoresFinanceiros({ entradasMes, totalGastosMes, sa
     }
   }
 
-  const ganhoItem = ganhoInvestEl.closest('.resumo-item');
-  if (ganhoItem) {
-    ganhoItem.classList.remove('positivo', 'alerta', 'neutro');
-    if (ganhoInvest > 0) {
-      ganhoItem.classList.add('positivo');
-    } else {
-      ganhoItem.classList.add('neutro');
-    }
+  const patrimonioItem = patrimonioEl.closest('.resumo-item');
+  if (patrimonioItem) {
+    patrimonioItem.classList.remove('positivo', 'alerta', 'neutro');
+    patrimonioItem.classList.add(patrimonioTotal > 0 ? 'positivo' : 'neutro');
   }
 
   const saidasItem = saidasMesEl.closest('.resumo-item');
@@ -13203,6 +13930,26 @@ function syncRecursosEntradasRangeLabel() {
   if (!rangeSelect || !display) return;
   const option = rangeSelect.options[rangeSelect.selectedIndex];
   display.textContent = option ? option.textContent : '';
+}
+
+function getInvestimentosRecentesRangeLabel(value) {
+  switch (value) {
+    case '3':
+      return 'Últimos 3 meses';
+    case '6':
+      return 'Últimos 6 meses';
+    case '12':
+      return 'Últimos 12 meses';
+    case '24':
+      return 'Últimos 24 meses';
+    default:
+      return 'Período personalizado';
+  }
+}
+
+function syncInvestimentosRecentesRangeLabel() {
+  if (!investimentosRecentesRangeDisplay) return;
+  investimentosRecentesRangeDisplay.textContent = getInvestimentosRecentesRangeLabel(investimentosRecentesRange);
 }
 
 const reservarTodosBtn = document.getElementById('btn-envelopes-reservar-todos');
