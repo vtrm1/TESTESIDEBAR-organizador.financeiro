@@ -148,7 +148,7 @@
   </div>
 </div>
 
-<div id="modal-wallet-invest" class="fixed inset-0 z-[9650] hidden items-start justify-center bg-slate-900/80 backdrop-blur px-4 py-8 overflow-y-auto sm:items-center" role="dialog" aria-modal="true" aria-labelledby="wallet-invest-title">
+<div id="modal-wallet-invest" class="fixed inset-0 z-[9650] hidden flex items-center justify-center bg-slate-900/80 backdrop-blur px-4 py-8 overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="wallet-invest-title">
   <div class="bg-white dark:bg-slate-900 w-full max-w-xl rounded-2xl shadow-xl relative p-6 sm:p-8 space-y-6 modal-content">
     <button id="wallet-invest-close" class="absolute top-4 right-4 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white text-2xl font-bold" aria-label="Fechar modal" type="button">&times;</button>
     <div class="space-y-2">
@@ -201,7 +201,7 @@
   </div>
 </div>
 
-<div id="modal-wallet-opening" class="fixed inset-0 z-[9640] hidden items-start justify-center bg-slate-900/80 backdrop-blur px-4 py-8 overflow-y-auto sm:items-center" role="dialog" aria-modal="true" aria-labelledby="wallet-opening-title">
+<div id="modal-wallet-opening" class="fixed inset-0 z-[9640] hidden flex items-center justify-center bg-slate-900/80 backdrop-blur px-4 py-8 overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="wallet-opening-title">
   <div class="relative w-full max-w-2xl rounded-2xl bg-white dark:bg-slate-900 p-6 shadow-xl">
     <button id="wallet-opening-close" class="absolute top-4 right-4 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white text-2xl font-bold" aria-label="Fechar modal" type="button">&times;</button>
     <h2 id="wallet-opening-title" class="text-2xl font-semibold text-slate-900 dark:text-slate-100">Distribuir saldo inicial</h2>
@@ -278,7 +278,7 @@
   </div>
 </div>
 
-<div id="modal-recursos-overview" class="fixed inset-0 z-[9630] hidden items-start justify-center bg-slate-900/80 backdrop-blur px-4 py-8 overflow-y-auto sm:items-center" role="dialog" aria-modal="true" aria-labelledby="recursos-overview-title">
+<div id="modal-recursos-overview" class="fixed inset-0 z-[9630] hidden flex items-center justify-center bg-slate-900/80 backdrop-blur px-4 py-8 overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="recursos-overview-title">
   <div class="relative w-full max-w-4xl rounded-2xl bg-white dark:bg-slate-900 p-6 shadow-xl">
     <button id="recursos-overview-close" class="absolute top-4 right-4 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white text-2xl font-bold" aria-label="Fechar modal" type="button">&times;</button>
     <h2 id="recursos-overview-title" class="text-2xl font-semibold text-slate-900 dark:text-slate-100">Visão completa de recursos</h2>
@@ -1200,7 +1200,7 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
 </div>
 
 <!-- MODAL: Compartilhamento do espaço financeiro -->
-<div id="modal-workspace-share" class="fixed inset-0 z-[9500] hidden flex items-start justify-center bg-slate-900/80 backdrop-blur px-4 py-8 overflow-y-auto sm:items-center" role="dialog" aria-modal="true" aria-labelledby="workspace-share-title" aria-describedby="workspace-owner-hint">
+<div id="modal-workspace-share" class="fixed inset-0 z-[9500] hidden flex items-center justify-center bg-slate-900/80 backdrop-blur px-4 py-8 overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="workspace-share-title" aria-describedby="workspace-owner-hint">
   <div class="relative flex w-full max-w-xl flex-col bg-white dark:bg-gray-900 border border-gray-200/80 dark:border-gray-700 rounded-2xl shadow-2xl p-6 sm:p-8 max-h-[92vh] sm:max-h-[88vh] overflow-hidden">
     <button id="workspace-share-close" class="absolute top-3 right-3 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 text-2xl leading-none" aria-label="Fechar modal">&times;</button>
     <div class="flex min-h-0 flex-col gap-6 text-sm">
@@ -2009,8 +2009,8 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
         </div>
       </div>
 
-      <div class="grid grid-cols-1 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] gap-3 items-start">
-        <div class="space-y-3">
+      <div class="space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div class="rounded-2xl bg-emerald-50/80 dark:bg-emerald-900/30 border border-emerald-100/70 dark:border-emerald-800/50 p-4 shadow-sm space-y-2">
             <div class="text-[0.65rem] uppercase tracking-wide text-emerald-700 dark:text-emerald-200">Saldo líquido do período</div>
             <div id="entradas-saldo-mes" class="text-2xl font-bold text-emerald-900 dark:text-emerald-100">R$ 0,00</div>
@@ -2021,35 +2021,6 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
           <div class="rounded-2xl bg-white/80 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/60 p-4 shadow-sm">
             <div class="text-[0.65rem] uppercase tracking-wide text-slate-600 dark:text-slate-300">Distribuição por tipo</div>
             <div id="entradas-tipos-resumo" class="grid grid-cols-1 gap-2 text-sm mt-2"></div>
-          </div>
-        </div>
-        <div class="rounded-2xl bg-white/90 dark:bg-slate-900/40 border border-slate-200/70 dark:border-slate-700/60 p-4 shadow-sm flex flex-col">
-          <button id="entradas-mini-toggle" type="button" aria-controls="entradas-mini-panel" aria-expanded="false" class="flex items-center justify-between gap-4 rounded-xl border border-transparent bg-slate-50/80 dark:bg-slate-800/60 px-4 py-3 text-left transition hover:border-slate-200 dark:hover:border-slate-600">
-            <div class="space-y-1">
-              <div class="text-[0.65rem] uppercase tracking-wide text-slate-600 dark:text-slate-300">Resumo visual</div>
-              <div id="entradas-mini-range-display" class="text-xs text-slate-500 dark:text-slate-300">Últimos 3 meses</div>
-            </div>
-            <span class="flex items-center gap-2 text-xs font-medium text-emerald-700 dark:text-emerald-200">
-              <span class="hidden sm:inline">Ver detalhes</span>
-              <i data-chevron class="fa fa-chevron-down transition-transform duration-200 text-sm"></i>
-            </span>
-          </button>
-          <div id="entradas-mini-panel" class="mt-3 space-y-3 hidden" hidden>
-            <label class="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300 flex flex-col gap-1" for="entradas-mini-range">
-              Período
-              <select id="entradas-mini-range" class="w-full rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-2 text-xs text-slate-700 dark:text-slate-200">
-                <option value="3">Últimos 3 meses</option>
-                <option value="6">Últimos 6 meses</option>
-                <option value="12">Últimos 12 meses</option>
-              </select>
-            </label>
-            <div class="relative h-32 sm:h-40">
-              <canvas id="entradas-mini-chart" class="h-full w-full"></canvas>
-              <div id="entradas-mini-empty" class="absolute inset-0 flex items-center justify-center text-[0.7rem] text-slate-500 dark:text-slate-400 hidden">
-                Sem dados suficientes no período escolhido.
-              </div>
-            </div>
-            <p id="entradas-mini-total" class="text-[0.7rem] text-slate-600 dark:text-slate-300">Total do período: R$ 0,00</p>
           </div>
         </div>
       </div>
@@ -2499,7 +2470,7 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
   </div>
 </div>
 
-<div id="modal-wallet-accounts" class="fixed inset-0 z-[9600] hidden items-start justify-center bg-slate-900/80 backdrop-blur px-4 py-8 overflow-y-auto sm:items-center" role="dialog" aria-modal="true" aria-labelledby="wallet-accounts-title">
+<div id="modal-wallet-accounts" class="fixed inset-0 z-[9600] hidden flex items-center justify-center bg-slate-900/80 backdrop-blur px-4 py-8 overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="wallet-accounts-title">
   <div class="bg-white dark:bg-slate-900 w-full max-w-2xl rounded-2xl shadow-xl relative p-6 sm:p-8 space-y-6 modal-content">
     <button id="wallet-accounts-close" class="absolute top-4 right-4 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white text-2xl font-bold" aria-label="Fechar modal" type="button">&times;</button>
     <div class="space-y-2">
@@ -7225,10 +7196,13 @@ let mesesEntradasDisponiveis = new Set();
 let mesesInvestimentosDisponiveis = new Set();
 let allEntradasDocs = [];
 let allInvestimentosDocs = [];
-let entradasMiniDataset = {};
-let entradasMiniChartInstance = null;
+let recursosEntradasChartInstance = null;
+let recursosPatrimonioChartInstance = null;
+let recursosInvestimentosChartInstance = null;
 let entradaRecorrenciasDocs = [];
 let entradasResumoTiposAtual = {};
+let recursosEntradasDataset = {};
+let recursosInvestimentosDataset = [];
 
 const painelFinanceiroState = {
   entradasMes: 0,
@@ -10224,6 +10198,8 @@ async function handleWalletOpeningSubmit(event) {
 
 function renderRecursosOverview() {
   if (!recursosOverviewBody) return;
+  destroyRecursosOverviewCharts();
+
   const entradasMes = roundCurrency(painelFinanceiroState.entradasMes || 0);
   const gastosMes = roundCurrency(painelFinanceiroState.totalGastosMes || 0);
   const fluxoLiquido = roundCurrency(entradasMes - gastosMes);
@@ -10234,6 +10210,17 @@ function renderRecursosOverview() {
   const contasTotal = roundCurrency(walletState.accountsTotal || 0);
   const investimentosTotal = roundCurrency(walletState.investmentsTotal || Number(painelFinanceiroState.investimentosTotais || 0));
   const patrimonio = roundCurrency(walletState.patrimonioTotal || (contasTotal + investimentosTotal));
+  const patrimonioResumo = `Contas: R$ ${moeda(contasTotal)} • Invest.: R$ ${moeda(investimentosTotal)}`;
+
+  const origem = walletState.openingSource || { type: 'default', month: null };
+  let origemDescricao = 'Defina o saldo inicial para começar o mês com clareza.';
+  if (origem.type === 'snapshot') {
+    origemDescricao = 'Saldo herdado do fechamento anterior.';
+  } else if (origem.type === 'carry' && origem.month) {
+    origemDescricao = `Sobra de ${mmYYYY(origem.month)} disponível para distribuir.`;
+  } else if (origem.type === 'settings') {
+    origemDescricao = 'Saldo inicial definido manualmente nas preferências.';
+  }
 
   const tiposResumo = Object.entries(entradasResumoTiposAtual || {});
   const tiposHtml = tiposResumo.length
@@ -10248,15 +10235,41 @@ function renderRecursosOverview() {
         .join('')
     : '<p class="text-sm text-slate-500 dark:text-slate-400">Nenhuma entrada categorizada no mês selecionado.</p>';
 
+  const investimentosPorTipo = {};
+  (allInvestimentosDocs || []).forEach((doc) => {
+    if (!doc || typeof doc.data !== 'function') return;
+    const data = doc.data();
+    if (!data) return;
+    const tipo = data.tipo || 'outros';
+    const valor = Number(data.valor) || 0;
+    investimentosPorTipo[tipo] = (investimentosPorTipo[tipo] || 0) + valor;
+  });
+  const investimentosPorTipoEntries = Object.entries(investimentosPorTipo)
+    .map(([tipo, valor]) => [investimentoTipoLabels?.[tipo] || tipo, roundCurrency(valor)])
+    .filter(([, valor]) => valor > 0.005)
+    .sort((a, b) => b[1] - a[1]);
+  recursosInvestimentosDataset = investimentosPorTipoEntries;
+
+  const investimentosTiposListHtml = investimentosPorTipoEntries.length
+    ? `<ul class="mt-4 space-y-1 text-[0.7rem] text-slate-600 dark:text-slate-300">
+        ${investimentosPorTipoEntries.slice(0, 6).map(([label, valor]) => `
+          <li class="flex items-center justify-between gap-3">
+            <span class="font-medium">${label}</span>
+            <span class="text-emerald-700 dark:text-emerald-200 font-semibold">R$ ${moeda(valor)}</span>
+          </li>
+        `).join('')}
+      </ul>`
+    : '<p class="mt-4 text-sm text-slate-500 dark:text-slate-400">Registre aportes para acompanhar a distribuição dos investimentos.</p>';
+
   const contasList = Array.isArray(walletAccountsDocs) ? walletAccountsDocs.filter(Boolean) : [];
   const contasHtml = contasList.length
     ? contasList.slice(0, 4).map((conta) => {
-        const saldoConta = roundCurrency(conta.balance || 0);
-        const labelParts = [conta.name || 'Conta sem nome'];
-        if (conta.institution) {
-          labelParts.push(conta.institution);
+        const saldoConta = roundCurrency(conta.balance || conta.currentBalance || conta.saldoAtual || 0);
+        const labelParts = [conta.name || conta.nome || 'Conta sem nome'];
+        if (conta.institution || conta.instituicao) {
+          labelParts.push(conta.institution || conta.instituicao);
         }
-        const atualizado = conta.updatedAt ? `Atualizado em ${formatDate(conta.updatedAt)}` : 'Sem data de atualização';
+        const atualizado = conta.updatedAt ? `Atualizado em ${formatDate(conta.updatedAt)}` : (conta.ultimaAtualizacao ? `Atualizado em ${formatDate(conta.ultimaAtualizacao)}` : 'Sem data de atualização');
         return `
           <div class="rounded-lg border border-slate-200/70 dark:border-slate-700/60 px-3 py-2 text-xs">
             <div class="font-semibold text-slate-700 dark:text-slate-200">${labelParts.join(' • ')}</div>
@@ -10296,7 +10309,7 @@ function renderRecursosOverview() {
     : '<li class="text-sm text-slate-500 dark:text-slate-400">Nenhuma entrada recente encontrada.</li>';
 
   recursosOverviewBody.innerHTML = `
-    <div class="grid gap-4 md:grid-cols-4">
+    <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
       <div class="rounded-xl border border-emerald-200/70 dark:border-emerald-800/50 bg-emerald-50/60 dark:bg-emerald-900/20 p-4">
         <p class="text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-200">Entradas do mês</p>
         <p class="text-2xl font-bold text-emerald-900 dark:text-emerald-100">R$ ${moeda(entradasMes)}</p>
@@ -10310,51 +10323,102 @@ function renderRecursosOverview() {
         <p class="text-2xl font-bold ${fluxoLiquido >= 0 ? 'text-emerald-700 dark:text-emerald-200' : 'text-rose-600 dark:text-rose-300'}">${moedaSigned(fluxoLiquido)}</p>
       </div>
       <div class="rounded-xl border border-indigo-200/70 dark:border-indigo-800/50 bg-indigo-50/60 dark:bg-indigo-900/20 p-4">
-        <p class="text-xs font-semibold uppercase tracking-wide text-indigo-700 dark:text-indigo-200">Saldo projetado</p>
-        <p class="text-2xl font-bold text-indigo-800 dark:text-indigo-200">R$ ${moeda(saldoProjetado)}</p>
+        <p class="text-xs font-semibold uppercase tracking-wide text-indigo-700 dark:text-indigo-200">Patrimônio total</p>
+        <p class="text-2xl font-bold text-indigo-800 dark:text-indigo-200">R$ ${moeda(patrimonio)}</p>
       </div>
     </div>
 
-    <div class="grid gap-4 md:grid-cols-2">
-      <div class="rounded-xl border border-slate-200/70 dark:border-slate-700/60 bg-white/80 dark:bg-slate-900/40 p-4 space-y-3">
-        <p class="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">Saldo inicial e destinos</p>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-          <div class="rounded-lg bg-slate-100/80 dark:bg-slate-800/50 p-3">
-            <p class="text-[0.65rem] uppercase tracking-wide text-slate-500 dark:text-slate-400">Saldo inicial</p>
-            <p class="text-lg font-semibold text-slate-800 dark:text-slate-100">R$ ${moeda(saldoInicial)}</p>
+    <div class="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
+      <div class="rounded-xl border border-slate-200/70 dark:border-slate-700/60 bg-white/80 dark:bg-slate-900/40 p-4">
+        <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">Evolução das entradas</p>
+            <p id="recursos-entradas-range-display" class="text-[0.7rem] text-slate-500 dark:text-slate-400">Últimos 3 meses</p>
           </div>
-          <div class="rounded-lg bg-emerald-50/70 dark:bg-emerald-900/20 p-3">
-            <p class="text-[0.65rem] uppercase tracking-wide text-emerald-700 dark:text-emerald-200">Distribuído</p>
-            <p class="text-lg font-semibold text-emerald-800 dark:text-emerald-200">R$ ${moeda(saldoDistribuido)}</p>
-          </div>
-          <div class="rounded-lg bg-indigo-50/70 dark:bg-indigo-900/20 p-3">
-            <p class="text-[0.65rem] uppercase tracking-wide text-indigo-700 dark:text-indigo-200">Reservado</p>
-            <p class="text-lg font-semibold text-indigo-800 dark:text-indigo-200">R$ ${moeda(saldoRestante)}</p>
-          </div>
-          <div class="rounded-lg bg-slate-100/80 dark:bg-slate-800/50 p-3">
-            <p class="text-[0.65rem] uppercase tracking-wide text-slate-500 dark:text-slate-400">Patrimônio</p>
-            <p class="text-lg font-semibold text-slate-800 dark:text-slate-100">R$ ${moeda(patrimonio)}</p>
-            <p class="text-[0.65rem] text-slate-500 dark:text-slate-400 mt-1">Contas: R$ ${moeda(contasTotal)} • Invest.: R$ ${moeda(investimentosTotal)}</p>
+          <label class="text-[0.7rem] text-slate-500 dark:text-slate-400" for="recursos-entradas-range">
+            <span class="sr-only">Período do gráfico</span>
+            <select id="recursos-entradas-range" class="mt-1 w-full rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1.5 text-xs text-slate-700 dark:text-slate-200">
+              <option value="3">Últimos 3 meses</option>
+              <option value="6">Últimos 6 meses</option>
+              <option value="12">Últimos 12 meses</option>
+            </select>
+          </label>
+        </div>
+        <div class="relative mt-4 h-48 sm:h-56">
+          <canvas id="recursos-entradas-chart" class="h-full w-full"></canvas>
+          <div id="recursos-entradas-empty" class="absolute inset-0 hidden items-center justify-center text-[0.75rem] text-slate-500 dark:text-slate-400">
+            Cadastre entradas para visualizar a evolução.
           </div>
         </div>
+        <p id="recursos-entradas-total" class="mt-3 text-xs text-slate-500 dark:text-slate-400">Total do período: R$ 0,00</p>
       </div>
       <div class="rounded-xl border border-slate-200/70 dark:border-slate-700/60 bg-white/80 dark:bg-slate-900/40 p-4">
-        <p class="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300 mb-3">Entradas por tipo</p>
-        <div class="space-y-2">${tiposHtml}</div>
+        <div class="flex flex-col gap-2">
+          <p class="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">Carteira consolidada</p>
+          <p class="text-[0.7rem] text-slate-500 dark:text-slate-400">${origemDescricao}</p>
+        </div>
+        <div class="relative mt-4 h-48 sm:h-56">
+          <canvas id="recursos-patrimonio-chart" class="h-full w-full"></canvas>
+          <div id="recursos-patrimonio-empty" class="absolute inset-0 hidden items-center justify-center text-[0.75rem] text-slate-500 dark:text-slate-400">
+            Cadastre contas e investimentos para compor seu patrimônio.
+          </div>
+        </div>
+        <ul class="mt-3 space-y-1 text-[0.7rem] text-slate-500 dark:text-slate-400">
+          <li>Saldo inicial: R$ ${moeda(saldoInicial)}</li>
+          <li>Distribuído: R$ ${moeda(saldoDistribuido)}</li>
+          <li>Reservado: R$ ${moeda(saldoRestante)}</li>
+          <li>Saldo projetado: R$ ${moeda(saldoProjetado)}</li>
+          <li>${patrimonioResumo}</li>
+        </ul>
       </div>
     </div>
 
-    <div class="grid gap-4 md:grid-cols-2">
+    <div class="mt-5 grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
       <div class="rounded-xl border border-slate-200/70 dark:border-slate-700/60 bg-white/80 dark:bg-slate-900/40 p-4">
-        <p class="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300 mb-3">Contas acompanhadas</p>
-        <div class="grid gap-3">${contasHtml}</div>
+        <p class="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">Entradas por tipo</p>
+        <div class="mt-3 space-y-2">${tiposHtml}</div>
       </div>
       <div class="rounded-xl border border-slate-200/70 dark:border-slate-700/60 bg-white/80 dark:bg-slate-900/40 p-4">
-        <p class="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300 mb-3">Entradas recentes</p>
-        <ul class="space-y-2">${recentesHtml}</ul>
+        <div class="flex items-start justify-between gap-3">
+          <p class="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">Investimentos por tipo</p>
+          <p class="text-xs font-medium text-indigo-600 dark:text-indigo-200">Total: R$ ${moeda(investimentosTotal)}</p>
+        </div>
+        <div class="relative mt-4 h-48 sm:h-56">
+          <canvas id="recursos-investimentos-chart" class="h-full w-full"></canvas>
+          <div id="recursos-investimentos-empty" class="absolute inset-0 hidden items-center justify-center text-[0.75rem] text-slate-500 dark:text-slate-400">
+            Registre investimentos para visualizar a distribuição.
+          </div>
+        </div>
+        ${investimentosTiposListHtml}
+      </div>
+    </div>
+
+    <div class="mt-5 grid gap-4 md:grid-cols-2">
+      <div class="rounded-xl border border-slate-200/70 dark:border-slate-700/60 bg-white/80 dark:bg-slate-900/40 p-4">
+        <p class="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">Contas acompanhadas</p>
+        <div class="mt-3 grid gap-3">${contasHtml}</div>
+      </div>
+      <div class="rounded-xl border border-slate-200/70 dark:border-slate-700/60 bg-white/80 dark:bg-slate-900/40 p-4">
+        <p class="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">Entradas recentes</p>
+        <ul class="mt-3 space-y-2">${recentesHtml}</ul>
       </div>
     </div>
   `;
+
+  syncRecursosEntradasRangeLabel();
+  const rangeSelect = document.getElementById('recursos-entradas-range');
+  if (rangeSelect) {
+    rangeSelect.addEventListener('change', () => {
+      syncRecursosEntradasRangeLabel();
+      updateRecursosEntradasChart();
+    });
+  }
+
+  requestAnimationFrame(() => {
+    updateRecursosEntradasChart();
+    updateRecursosPatrimonioChart();
+    updateRecursosInvestimentosChart();
+  });
 }
 
 function openRecursosOverviewModal() {
@@ -10368,6 +10432,7 @@ function openRecursosOverviewModal() {
 
 function closeRecursosOverviewModal() {
   if (!recursosOverviewModal) return;
+  destroyRecursosOverviewCharts();
   deactivateDialog(recursosOverviewModal);
   recursosOverviewModal.classList.add('hidden');
   unlockBodyScrollIfAllowed();
@@ -11337,69 +11402,63 @@ function renderEntradasSidebar(docs = []) {
   atualizarResumoRapido();
   atualizarSaudeFinanceira();
   atualizarFiltroMeses();
-  updateEntradasMiniChart(totaisPorMesGeral);
+  updateRecursosEntradasChart(totaisPorMesGeral);
   updateWalletSummaryUI();
 }
 
-function updateEntradasMiniChart(dataset) {
+function updateRecursosEntradasChart(dataset) {
   if (dataset) {
-    entradasMiniDataset = { ...dataset };
+    recursosEntradasDataset = { ...dataset };
   }
-  const chartCanvas = document.getElementById('entradas-mini-chart');
-  const rangeSelect = document.getElementById('entradas-mini-range');
-  const emptyEl = document.getElementById('entradas-mini-empty');
-  const totalEl = document.getElementById('entradas-mini-total');
-  const panel = document.getElementById('entradas-mini-panel');
 
-  const entries = Object.entries(entradasMiniDataset || {}).sort(([a], [b]) => a.localeCompare(b));
+  const chartCanvas = document.getElementById('recursos-entradas-chart');
+  const rangeSelect = document.getElementById('recursos-entradas-range');
+  const emptyEl = document.getElementById('recursos-entradas-empty');
+  const totalEl = document.getElementById('recursos-entradas-total');
+
+  const entries = Object.entries(recursosEntradasDataset || {}).sort(([a], [b]) => a.localeCompare(b));
   const range = Number(rangeSelect?.value || 3);
   const subset = entries.slice(-range);
   const labels = subset.map(([key]) => mmYYYY(key));
   const values = subset.map(([, value]) => roundCurrency(value));
   const totalPeriodo = values.reduce((sum, value) => sum + value, 0);
+
   if (totalEl) {
     totalEl.textContent = `Total do período: R$ ${moeda(totalPeriodo)}`;
   }
-  const panelHidden = panel && (panel.classList.contains('hidden') || panel.hasAttribute('hidden'));
-  if (panelHidden) {
-    if (entradasMiniChartInstance) {
-      entradasMiniChartInstance.destroy();
-      entradasMiniChartInstance = null;
-    }
-    if (emptyEl) {
-      emptyEl.classList.add('hidden');
-    }
-    return;
-  }
+
+  const hasElements = chartCanvas && rangeSelect && typeof Chart !== 'undefined';
   const hasData = values.some((value) => value > 0.005);
+
   if (emptyEl) {
     emptyEl.classList.toggle('hidden', hasData);
-  }
-
-  if (!chartCanvas || typeof Chart === 'undefined') {
-    if (!hasData && emptyEl) {
+    if (!hasData && !hasElements) {
       emptyEl.classList.remove('hidden');
     }
-    return;
   }
 
-  if (!hasData) {
-    if (entradasMiniChartInstance) {
-      entradasMiniChartInstance.destroy();
-      entradasMiniChartInstance = null;
+  if (!hasElements || !hasData) {
+    if (recursosEntradasChartInstance) {
+      recursosEntradasChartInstance.destroy();
+      recursosEntradasChartInstance = null;
     }
     return;
   }
 
   const ctx = chartCanvas.getContext('2d');
-  if (entradasMiniChartInstance) {
-    entradasMiniChartInstance.destroy();
+  if (!ctx) {
+    return;
   }
-  const gradient = ctx.createLinearGradient(0, 0, 0, chartCanvas.height || chartCanvas.clientHeight || 120);
-  gradient.addColorStop(0, 'rgba(16, 185, 129, 0.35)');
+
+  if (recursosEntradasChartInstance) {
+    recursosEntradasChartInstance.destroy();
+  }
+
+  const gradient = ctx.createLinearGradient(0, 0, 0, chartCanvas.height || chartCanvas.clientHeight || 180);
+  gradient.addColorStop(0, 'rgba(16, 185, 129, 0.38)');
   gradient.addColorStop(1, 'rgba(16, 185, 129, 0)');
 
-  entradasMiniChartInstance = new Chart(ctx, {
+  recursosEntradasChartInstance = new Chart(ctx, {
     type: 'line',
     data: {
       labels,
@@ -11450,6 +11509,176 @@ function updateEntradasMiniChart(dataset) {
   });
 }
 
+function updateRecursosPatrimonioChart() {
+  const canvas = document.getElementById('recursos-patrimonio-chart');
+  const emptyEl = document.getElementById('recursos-patrimonio-empty');
+  if (!canvas || typeof Chart === 'undefined') {
+    if (recursosPatrimonioChartInstance) {
+      recursosPatrimonioChartInstance.destroy();
+      recursosPatrimonioChartInstance = null;
+    }
+    if (emptyEl) {
+      emptyEl.classList.remove('hidden');
+    }
+    return;
+  }
+
+  const contasTotal = roundCurrency(walletState.accountsTotal || 0);
+  const investimentosTotal = roundCurrency(walletState.investmentsTotal || Number(painelFinanceiroState?.investimentosTotais || 0));
+  const reservado = roundCurrency(Math.max(walletState.openingRemaining || Math.max(walletState.openingBalance - walletState.openingAllocatedTotal, 0), 0));
+
+  const dataset = [
+    { label: 'Contas', value: contasTotal, color: '#10b981' },
+    { label: 'Investimentos', value: investimentosTotal, color: '#6366f1' },
+    { label: 'Saldo a decidir', value: reservado, color: '#f59e0b' },
+  ].filter((item) => item.value > 0.005);
+
+  if (dataset.length === 0) {
+    if (recursosPatrimonioChartInstance) {
+      recursosPatrimonioChartInstance.destroy();
+      recursosPatrimonioChartInstance = null;
+    }
+    if (emptyEl) emptyEl.classList.remove('hidden');
+    return;
+  }
+
+  if (emptyEl) emptyEl.classList.add('hidden');
+
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+
+  if (recursosPatrimonioChartInstance) {
+    recursosPatrimonioChartInstance.destroy();
+  }
+
+  recursosPatrimonioChartInstance = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: dataset.map((item) => item.label),
+      datasets: [
+        {
+          data: dataset.map((item) => item.value),
+          backgroundColor: dataset.map((item) => item.color),
+          borderWidth: 0,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '62%',
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: {
+            usePointStyle: true,
+            pointStyle: 'circle',
+            padding: 16,
+            color: html.classList.contains('dark') ? '#e2e8f0' : '#0f172a',
+          },
+        },
+        tooltip: {
+          callbacks: {
+            label: (context) => `${context.label}: R$ ${moeda(context.parsed || 0)}`,
+          },
+        },
+      },
+    },
+  });
+}
+
+function updateRecursosInvestimentosChart(dataset) {
+  if (dataset) {
+    recursosInvestimentosDataset = dataset;
+  }
+
+  const canvas = document.getElementById('recursos-investimentos-chart');
+  const emptyEl = document.getElementById('recursos-investimentos-empty');
+
+  if (!canvas || typeof Chart === 'undefined') {
+    if (recursosInvestimentosChartInstance) {
+      recursosInvestimentosChartInstance.destroy();
+      recursosInvestimentosChartInstance = null;
+    }
+    if (emptyEl) emptyEl.classList.remove('hidden');
+    return;
+  }
+
+  const entries = (recursosInvestimentosDataset || [])
+    .filter(([, valor]) => valor > 0.005)
+    .sort((a, b) => b[1] - a[1]);
+
+  if (!entries.length) {
+    if (recursosInvestimentosChartInstance) {
+      recursosInvestimentosChartInstance.destroy();
+      recursosInvestimentosChartInstance = null;
+    }
+    if (emptyEl) emptyEl.classList.remove('hidden');
+    return;
+  }
+
+  if (emptyEl) emptyEl.classList.add('hidden');
+
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+
+  if (recursosInvestimentosChartInstance) {
+    recursosInvestimentosChartInstance.destroy();
+  }
+
+  const palette = ['#6366f1', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316', '#22d3ee'];
+
+  recursosInvestimentosChartInstance = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: entries.map(([label]) => label),
+      datasets: [
+        {
+          data: entries.map(([, valor]) => valor),
+          backgroundColor: entries.map((_, index) => palette[index % palette.length]),
+          borderWidth: 0,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '58%',
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: {
+            usePointStyle: true,
+            pointStyle: 'circle',
+            padding: 16,
+            color: html.classList.contains('dark') ? '#e2e8f0' : '#0f172a',
+          },
+        },
+        tooltip: {
+          callbacks: {
+            label: (context) => `${context.label}: R$ ${moeda(context.parsed || 0)}`,
+          },
+        },
+      },
+    },
+  });
+}
+
+function destroyRecursosOverviewCharts() {
+  if (recursosEntradasChartInstance) {
+    recursosEntradasChartInstance.destroy();
+    recursosEntradasChartInstance = null;
+  }
+  if (recursosPatrimonioChartInstance) {
+    recursosPatrimonioChartInstance.destroy();
+    recursosPatrimonioChartInstance = null;
+  }
+  if (recursosInvestimentosChartInstance) {
+    recursosInvestimentosChartInstance.destroy();
+    recursosInvestimentosChartInstance = null;
+  }
+}
+
 function atualizarSaldoLiquidoEntradas() {
   const saldoMesEl = document.getElementById('entradas-saldo-mes');
   const saldoHintEl = document.getElementById('entradas-saldo-hint');
@@ -11495,6 +11724,7 @@ function renderInvestimentosSidebar(docs = []) {
   let totalGeral = 0;
   let totalProjetado = 0;
   const totaisPorMes = {};
+  const investimentosPorTipoOverview = {};
 
   docs.forEach(doc => {
     const data = doc.data();
@@ -11510,6 +11740,7 @@ function renderInvestimentosSidebar(docs = []) {
 
     totalGeral += valor;
     totaisPorMes[key] = (totaisPorMes[key] || 0) + valor;
+    investimentosPorTipoOverview[tipo] = (investimentosPorTipoOverview[tipo] || 0) + valor;
     const mesesPassados = Math.max(0, monthDiff(dt, hoje));
     const valorProjetado = valor * Math.pow(1.01, mesesPassados);
     totalProjetado += valorProjetado;
@@ -11552,6 +11783,11 @@ function renderInvestimentosSidebar(docs = []) {
   painelFinanceiroState.investimentosMes = totalMes;
   painelFinanceiroState.investimentosTotais = totalGeral;
   painelFinanceiroState.investimentosProjetados = totalProjetado;
+  recursosInvestimentosDataset = Object.entries(investimentosPorTipoOverview)
+    .map(([tipo, valor]) => [investimentoTipoLabels?.[tipo] || tipo, roundCurrency(valor)])
+    .filter(([, valor]) => valor > 0.005)
+    .sort((a, b) => b[1] - a[1]);
+  updateRecursosInvestimentosChart();
   renderGraficoInvestimentos(totaisPorMes);
   atualizarResumoRapido();
   atualizarSaudeFinanceira();
@@ -12250,10 +12486,6 @@ const entradaRecorrenteConfig = document.getElementById('entrada-recorrente-conf
 const entradaRecorrenteFreqSelect = document.getElementById('entrada-recorrente-frequencia');
 const entradaRecorrenteDiaInput = document.getElementById('entrada-recorrente-dia');
 const entradaRecorrenteFimInput = document.getElementById('entrada-recorrente-fim');
-const entradasMiniRangeSelect = document.getElementById('entradas-mini-range');
-const entradasMiniToggle = document.getElementById('entradas-mini-toggle');
-const entradasMiniPanel = document.getElementById('entradas-mini-panel');
-const entradasMiniRangeDisplay = document.getElementById('entradas-mini-range-display');
 const entradaSubmitButton = formEntrada ? formEntrada.querySelector('button[type="submit"]') : null;
 const entradasRemocaoPendentes = new Set();
 const formInvestimento = document.getElementById('form-investimento');
@@ -12965,47 +13197,12 @@ if (envelopesGrid) {
   });
 }
 
-function syncEntradasMiniRangeLabel() {
-  if (!entradasMiniRangeSelect || !entradasMiniRangeDisplay) return;
-  const option = entradasMiniRangeSelect.options[entradasMiniRangeSelect.selectedIndex];
-  entradasMiniRangeDisplay.textContent = option ? option.textContent : '';
-}
-
-if (entradasMiniRangeSelect) {
-  entradasMiniRangeSelect.addEventListener('change', () => {
-    syncEntradasMiniRangeLabel();
-    updateEntradasMiniChart();
-  });
-  syncEntradasMiniRangeLabel();
-}
-
-if (entradasMiniToggle && entradasMiniPanel) {
-  if (!entradasMiniToggle.hasAttribute('aria-expanded')) {
-    entradasMiniToggle.setAttribute('aria-expanded', 'false');
-  }
-  entradasMiniToggle.addEventListener('click', () => {
-    const expanded = entradasMiniToggle.getAttribute('aria-expanded') === 'true';
-    const nextState = !expanded;
-    entradasMiniToggle.setAttribute('aria-expanded', String(nextState));
-    const chevron = entradasMiniToggle.querySelector('[data-chevron]');
-    if (chevron) {
-      chevron.classList.toggle('rotate-180', nextState);
-    }
-    if (nextState) {
-      entradasMiniPanel.classList.remove('hidden');
-      entradasMiniPanel.removeAttribute('hidden');
-      requestAnimationFrame(() => {
-        updateEntradasMiniChart();
-        if (entradasMiniRangeSelect) {
-          entradasMiniRangeSelect.focus({ preventScroll: true });
-        }
-      });
-    } else {
-      entradasMiniPanel.classList.add('hidden');
-      entradasMiniPanel.setAttribute('hidden', 'hidden');
-      updateEntradasMiniChart();
-    }
-  });
+function syncRecursosEntradasRangeLabel() {
+  const rangeSelect = document.getElementById('recursos-entradas-range');
+  const display = document.getElementById('recursos-entradas-range-display');
+  if (!rangeSelect || !display) return;
+  const option = rangeSelect.options[rangeSelect.selectedIndex];
+  display.textContent = option ? option.textContent : '';
 }
 
 const reservarTodosBtn = document.getElementById('btn-envelopes-reservar-todos');
