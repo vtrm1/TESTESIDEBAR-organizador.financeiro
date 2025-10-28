@@ -2775,7 +2775,7 @@ if ("serviceWorker" in navigator) {
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 
 <script>
-  (function setupFirebaseConfigLoader() {
+  (function ensureFirebaseConfig() {
     const FALLBACK_FIREBASE_CONFIG = Object.freeze({
       apiKey: 'AIzaSyCpBfq801WlkxgHhWwORDvnKWpXGXz3k4c',
       authDomain: 'organizacao-financeira1.firebaseapp.com',
@@ -2786,109 +2786,35 @@ if ("serviceWorker" in navigator) {
       measurementId: 'G-58ZVECNK3B',
     });
 
-    const ensureConfig = (candidate) => {
-      if (candidate && typeof candidate === 'object' && Object.keys(candidate).length) {
-        window.__FIREBASE_CONFIG__ = candidate;
-        return candidate;
-      }
-      return null;
-    };
-
-    let fallbackConfig = null;
-
-    const ensureFallbackConfig = () => {
-      if (fallbackConfig) {
-        return fallbackConfig;
-      }
-      fallbackConfig = ensureConfig(FALLBACK_FIREBASE_CONFIG);
-      return fallbackConfig;
-    };
-
     const overlay = document.getElementById('app-loading-overlay');
-    const overlayMessage = document.getElementById('app-loading-message');
 
-    const showLoader = (message) => {
-      if (!overlay) return;
-      if (overlayMessage && message) {
-        overlayMessage.textContent = message;
+    const normalizeConfig = (candidate) => {
+      if (!candidate || typeof candidate !== 'object') {
+        return null;
       }
-      overlay.classList.remove('hidden');
+      const keys = Object.keys(candidate);
+      if (!keys.length) {
+        return null;
+      }
+      return candidate;
     };
 
-    const hideLoader = () => {
-      if (!overlay) return;
+    let resolvedConfig = normalizeConfig(window.__FIREBASE_CONFIG__);
+
+    if (!resolvedConfig && window.__APP_CONFIG__ && window.__APP_CONFIG__.firebase && window.__APP_CONFIG__.firebase.client) {
+      resolvedConfig = normalizeConfig(window.__APP_CONFIG__.firebase.client);
+    }
+
+    if (!resolvedConfig) {
+      resolvedConfig = FALLBACK_FIREBASE_CONFIG;
+    }
+
+    window.__FIREBASE_CONFIG__ = resolvedConfig;
+    window.__firebaseConfigPromise = Promise.resolve(resolvedConfig);
+
+    if (overlay) {
       overlay.classList.add('hidden');
-    };
-
-    const embeddedConfig = ensureConfig(window.__FIREBASE_CONFIG__);
-    if (embeddedConfig) {
-      window.__firebaseConfigPromise = Promise.resolve(embeddedConfig);
-      hideLoader();
-      return;
     }
-
-    if (window.__APP_CONFIG__ && window.__APP_CONFIG__.firebase && window.__APP_CONFIG__.firebase.client) {
-      const embedded = ensureConfig(window.__APP_CONFIG__.firebase.client);
-      if (embedded) {
-        window.__firebaseConfigPromise = Promise.resolve(embedded);
-        return;
-      }
-    }
-
-    async function fetchJsonConfig() {
-      try {
-        const response = await fetch('/app-config.js?format=json', {
-          cache: 'no-store',
-          credentials: 'same-origin',
-          headers: { Accept: 'application/json' },
-        });
-        if (!response.ok) return null;
-        const data = await response.json().catch(() => null);
-        return ensureConfig(data);
-      } catch (error) {
-        console.warn('Falha ao buscar app-config.json.', error);
-        return null;
-      }
-    }
-
-    async function fetchScriptConfig() {
-      try {
-        const response = await fetch('/app-config.js', { cache: 'no-store', credentials: 'same-origin' });
-        if (!response.ok) return null;
-        const scriptText = await response.text();
-        try {
-          new Function(scriptText)();
-        } catch (error) {
-          console.warn('Falha ao avaliar app-config.js.', error);
-          return null;
-        }
-        return ensureConfig(window.__FIREBASE_CONFIG__);
-      } catch (error) {
-        console.warn('Não foi possível carregar app-config.js.', error);
-        return null;
-      }
-    }
-
-    async function loadFirebaseConfig() {
-      showLoader('Carregando configurações do Firebase…');
-      const jsonConfig = await fetchJsonConfig();
-      if (jsonConfig) {
-        return jsonConfig;
-      }
-      const scriptConfig = await fetchScriptConfig();
-      if (scriptConfig) {
-        return scriptConfig;
-      }
-      const fallback = ensureConfig(window.__FIREBASE_CONFIG__) || ensureFallbackConfig();
-      if (fallback) {
-        return fallback;
-      }
-      return null;
-    }
-
-    window.__firebaseConfigPromise = loadFirebaseConfig()
-      .then((config) => config || ensureFallbackConfig())
-      .finally(hideLoader);
   })();
 </script>
 
