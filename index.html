@@ -6541,6 +6541,7 @@ function handleUserSignedOut() {
   appStartInProgress = false;
   resetWalletState({ resetUI: true });
   walletOpeningCache.clear();
+  walletClosingCache.clear();
   detachTagsMetadataListener();
   if (typeof unsubMonthlySummary === 'function') {
     try {
@@ -7913,7 +7914,9 @@ let resumoFinanceiroAtual = {
 };
 
 const walletOpeningCache = new Map();
+const walletClosingCache = new Map();
 const WALLET_OPENING_CACHE_TTL = 1000 * 60 * 60 * 6; // 6 horas
+const WALLET_CLOSING_CACHE_TTL = WALLET_OPENING_CACHE_TTL;
 
 function setWalletOpeningSource(type = 'default', month = null) {
   walletState.openingSource = { type, month: month || null };
@@ -7929,7 +7932,9 @@ function cacheWalletOpeningBalance(monthKey, value) {
   if (!monthKey) return;
   const cacheKey = getWalletOpeningCacheKey(monthKey);
   if (!cacheKey) return;
-  const normalized = roundCurrency(Number(value) || 0);
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return;
+  const normalized = roundCurrency(numeric);
   walletOpeningCache.set(cacheKey, { value: normalized, cachedAt: Date.now() });
 }
 
@@ -7943,6 +7948,31 @@ function getCachedWalletOpeningBalance(monthKey) {
   }
   if ((Date.now() - cached.cachedAt) > WALLET_OPENING_CACHE_TTL) {
     walletOpeningCache.delete(cacheKey);
+    return null;
+  }
+  return cached.value;
+}
+
+function cacheWalletClosingBalance(monthKey, value) {
+  if (!monthKey) return;
+  const cacheKey = getWalletOpeningCacheKey(monthKey);
+  if (!cacheKey) return;
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return;
+  const normalized = roundCurrency(numeric);
+  walletClosingCache.set(cacheKey, { value: normalized, cachedAt: Date.now() });
+}
+
+function getCachedWalletClosingBalance(monthKey) {
+  if (!monthKey) return null;
+  const cacheKey = getWalletOpeningCacheKey(monthKey);
+  if (!cacheKey) return null;
+  const cached = walletClosingCache.get(cacheKey);
+  if (!cached) {
+    return null;
+  }
+  if ((Date.now() - cached.cachedAt) > WALLET_CLOSING_CACHE_TTL) {
+    walletClosingCache.delete(cacheKey);
     return null;
   }
   return cached.value;
@@ -10214,11 +10244,107 @@ function computeWalletExpensesForMonth(monthKey) {
   return variavel + parcelados + fixos;
 }
 
+function resolveWalletCarryForward(monthKey) {
+  if (!monthKey) {
+    return null;
+  }
+  const previousKey = previousMonthKey(monthKey);
+  if (!previousKey) {
+    return null;
+  }
+
+  const ensureCandidate = (value) => {
+    if (!Number.isFinite(value)) {
+      return null;
+    }
+    const resolved = roundCurrency(Number(value));
+    return { value: resolved, sourceMonth: previousKey };
+  };
+
+  const cachedNext = getCachedWalletOpeningBalance(monthKey);
+  if (Number.isFinite(cachedNext)) {
+    return ensureCandidate(cachedNext);
+  }
+
+  const cachedClosing = getCachedWalletClosingBalance(previousKey);
+  if (Number.isFinite(cachedClosing)) {
+    cacheWalletOpeningBalance(monthKey, cachedClosing);
+    return ensureCandidate(cachedClosing);
+  }
+
+  const summary = monthlySummariesCache.get(previousKey);
+  const summaryValue = summary?.net ? Number(summary.net.saldoProjetado) : null;
+  if (Number.isFinite(summaryValue)) {
+    cacheWalletClosingBalance(previousKey, summaryValue);
+    cacheWalletOpeningBalance(monthKey, summaryValue);
+    return ensureCandidate(summaryValue);
+  }
+
+  const normalizedSnapshot = walletState.currentSnapshotNormalized;
+  if (normalizedSnapshot?.month === previousKey) {
+    const closing = Number(normalizedSnapshot.closingBalance);
+    if (Number.isFinite(closing)) {
+      cacheWalletClosingBalance(previousKey, closing);
+      cacheWalletOpeningBalance(monthKey, closing);
+      return ensureCandidate(closing);
+    }
+  }
+
+  const rawSnapshot = walletState.currentSnapshot;
+  if (rawSnapshot?.month === previousKey) {
+    let closingCandidate = rawSnapshot.closingBalance != null ? Number(rawSnapshot.closingBalance) : null;
+    if (!Number.isFinite(closingCandidate)) {
+      const openingCandidate = Number(rawSnapshot.openingBalance);
+      const netCandidate = Number(rawSnapshot.netFlow);
+      if (Number.isFinite(openingCandidate) && Number.isFinite(netCandidate)) {
+        closingCandidate = openingCandidate + netCandidate;
+      }
+    }
+    if (Number.isFinite(closingCandidate)) {
+      cacheWalletClosingBalance(previousKey, closingCandidate);
+      cacheWalletOpeningBalance(monthKey, closingCandidate);
+      return ensureCandidate(closingCandidate);
+    }
+  }
+
+  const timelineDocs = Array.isArray(walletTimelineDocs) ? walletTimelineDocs : [];
+  for (const doc of timelineDocs) {
+    if (doc?.month === previousKey) {
+      const closing = Number(doc.closingBalance);
+      if (Number.isFinite(closing)) {
+        cacheWalletClosingBalance(previousKey, closing);
+        cacheWalletOpeningBalance(monthKey, closing);
+        return ensureCandidate(closing);
+      }
+      break;
+    }
+  }
+
+  return null;
+}
+
 function resolveWalletOpeningBalanceLocal(monthKey) {
   const normalizedSnapshot = walletState.currentSnapshotNormalized || null;
   const snapshotMonth = normalizedSnapshot?.month
     || walletState.currentSnapshot?.month
     || null;
+  const shouldAutoCarry = walletState.settings?.autoCarry !== false;
+  const carryCandidate = shouldAutoCarry ? resolveWalletCarryForward(monthKey) : null;
+
+  if (carryCandidate && carryCandidate.sourceMonth) {
+    cacheWalletClosingBalance(carryCandidate.sourceMonth, carryCandidate.value);
+  }
+
+  if (
+    carryCandidate
+    && carryCandidate.sourceMonth
+    && monthKey
+    && (!snapshotMonth || snapshotMonth < monthKey)
+  ) {
+    setWalletOpeningSource('carry', carryCandidate.sourceMonth);
+    cacheWalletOpeningBalance(monthKey, carryCandidate.value);
+    return carryCandidate.value;
+  }
 
   if (snapshotMonth && monthKey && snapshotMonth < monthKey) {
     let carry = normalizedSnapshot?.closingBalance;
@@ -10235,6 +10361,7 @@ function resolveWalletOpeningBalanceLocal(monthKey) {
     }
     if (Number.isFinite(carry)) {
       const resolved = roundCurrency(Number(carry));
+      cacheWalletClosingBalance(snapshotMonth, resolved);
       setWalletOpeningSource('carry', snapshotMonth);
       cacheWalletOpeningBalance(monthKey, resolved);
       return resolved;
@@ -10255,9 +10382,21 @@ function resolveWalletOpeningBalanceLocal(monthKey) {
       const snapshot = walletState.currentSnapshot || {};
       openingValue = snapshot.openingBalance != null ? Number(snapshot.openingBalance) : null;
     }
+    if (
+      carryCandidate
+      && Number.isFinite(carryCandidate.value)
+      && shouldAutoCarry
+      && (!Number.isFinite(openingValue) || Math.abs(openingValue - carryCandidate.value) > 0.5)
+    ) {
+      const resolvedCarry = roundCurrency(carryCandidate.value);
+      setWalletOpeningSource('carry', carryCandidate.sourceMonth || snapshotMonth);
+      cacheWalletOpeningBalance(monthKey, resolvedCarry);
+      return resolvedCarry;
+    }
     if (Number.isFinite(openingValue)) {
       const resolved = roundCurrency(Number(openingValue));
       setWalletOpeningSource('snapshot', snapshotMonth);
+      cacheWalletClosingBalance(snapshotMonth, normalizedSnapshot?.closingBalance);
       cacheWalletOpeningBalance(snapshotMonth, resolved);
       return resolved;
     }
@@ -10285,6 +10424,7 @@ function resolveWalletOpeningBalanceLocal(monthKey) {
   if (candidate) {
     setWalletOpeningSource('carry', candidate.month);
     const resolved = roundCurrency(candidate.closing);
+    cacheWalletClosingBalance(candidate.month, resolved);
     cacheWalletOpeningBalance(monthKey, resolved);
     return resolved;
   }
@@ -10360,6 +10500,11 @@ async function updateWalletSummaryUI() {
   walletState.netFlow = net;
   const closing = roundCurrency(walletState.openingBalance + net);
   walletState.closingBalance = closing;
+  cacheWalletClosingBalance(monthKey, closing);
+  const nextMonth = nextMonthKey(monthKey);
+  if (nextMonth) {
+    cacheWalletOpeningBalance(nextMonth, closing);
+  }
 
   const accountsTotal = (walletAccountsDocs || []).reduce((sum, account) => {
     if (!account || account.include === false) return sum;
@@ -10536,6 +10681,7 @@ function scheduleWalletSnapshotSync() {
       await walletState.currentSnapshotRef.set(payload, { merge: true });
       walletState.currentSnapshotNormalized = normalized;
       cacheWalletOpeningBalance(walletState.monthKey, normalized.openingBalance);
+      cacheWalletClosingBalance(walletState.monthKey, normalized.closingBalance);
       const nextKey = nextMonthKey(walletState.monthKey);
       if (nextKey) {
         cacheWalletOpeningBalance(nextKey, normalized.closingBalance);
@@ -10742,6 +10888,7 @@ async function ensureWalletSnapshotDoc(monthKey) {
       walletState.currentSnapshot = payload;
       walletState.currentSnapshotNormalized = normalizeWalletSnapshot(payload, monthKey);
       cacheWalletOpeningBalance(monthKey, openingBalance);
+      cacheWalletClosingBalance(monthKey, openingBalance);
       const nextKey = nextMonthKey(monthKey);
       if (nextKey) {
         cacheWalletOpeningBalance(nextKey, openingBalance);
@@ -10751,6 +10898,7 @@ async function ensureWalletSnapshotDoc(monthKey) {
       walletState.currentSnapshotNormalized = normalizeWalletSnapshot(walletState.currentSnapshot, monthKey);
       if (walletState.currentSnapshotNormalized) {
         cacheWalletOpeningBalance(monthKey, walletState.currentSnapshotNormalized.openingBalance);
+        cacheWalletClosingBalance(monthKey, walletState.currentSnapshotNormalized.closingBalance);
         const nextKey = nextMonthKey(monthKey);
         if (nextKey) {
           cacheWalletOpeningBalance(nextKey, walletState.currentSnapshotNormalized.closingBalance);
@@ -11972,6 +12120,7 @@ async function startObservers(force = false){
 
   if (observersContext.workspaceId && observersContext.workspaceId !== workspaceId) {
     walletOpeningCache.clear();
+    walletClosingCache.clear();
   }
 
   observersContext = { workspaceId, monthKey: normalizedMonth };
@@ -12069,6 +12218,7 @@ async function startObservers(force = false){
     walletTimelineDocs.forEach((docInfo) => {
       if (docInfo?.month) {
         cacheWalletOpeningBalance(docInfo.month, docInfo.openingBalance);
+        cacheWalletClosingBalance(docInfo.month, docInfo.closingBalance);
         const nextKey = nextMonthKey(docInfo.month);
         if (nextKey) {
           cacheWalletOpeningBalance(nextKey, docInfo.closingBalance);
