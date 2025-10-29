@@ -2649,6 +2649,63 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
   </div>
 </div>
 
+<div id="modal-invest-edit" class="fixed inset-0 z-[9595] hidden flex items-center justify-center bg-slate-900/80 backdrop-blur px-4 py-8 overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="invest-edit-title">
+  <div class="bg-white dark:bg-slate-900 w-full max-w-lg rounded-2xl shadow-xl relative p-6 sm:p-8 space-y-6 modal-content max-h-[calc(100vh-4rem)] sm:max-h-[calc(100vh-6rem)] overflow-y-auto">
+    <button id="invest-edit-close" class="absolute top-4 right-4 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white text-2xl font-bold" aria-label="Fechar modal" type="button">&times;</button>
+    <div class="space-y-2">
+      <h2 id="invest-edit-title" class="text-2xl font-semibold text-slate-900 dark:text-slate-100">Editar investimento</h2>
+      <p class="text-sm text-slate-500 dark:text-slate-400">Atualize o valor aplicado, a categoria ou a descrição. Para resgatar parcialmente, informe o novo valor após o resgate.</p>
+      <div id="invest-edit-meta" class="text-xs text-slate-500 dark:text-slate-400"></div>
+    </div>
+
+    <form id="invest-edit-form" class="space-y-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <label class="text-sm font-medium text-slate-700 dark:text-slate-200 flex flex-col gap-1">
+          Data do aporte
+          <input id="invest-edit-date" type="date" class="px-3 py-2 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" required />
+        </label>
+        <label class="text-sm font-medium text-slate-700 dark:text-slate-200 flex flex-col gap-1">
+          Tipo
+          <select id="invest-edit-type" class="px-3 py-2 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" required>
+            <option value="reserva">Reserva de emergência</option>
+            <option value="renda_fixa">Renda fixa</option>
+            <option value="acoes">Ações</option>
+            <option value="fundos">Fundos de investimento</option>
+            <option value="fundo_imobiliario">Fundos imobiliários</option>
+            <option value="tesouro">Tesouro direto</option>
+            <option value="previdencia">Previdência complementar</option>
+            <option value="cripto">Cripto</option>
+            <option value="outros">Outros investimentos</option>
+          </select>
+        </label>
+      </div>
+      <label class="text-sm font-medium text-slate-700 dark:text-slate-200 flex flex-col gap-1">
+        Descrição (opcional)
+        <input id="invest-edit-description" type="text" class="px-3 py-2 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" placeholder="Detalhe do investimento" />
+      </label>
+      <label class="text-sm font-medium text-slate-700 dark:text-slate-200 flex flex-col gap-1">
+        Novo valor investido (R$)
+        <input id="invest-edit-amount" type="number" step="0.01" min="0" class="px-3 py-2 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 text-right" required />
+      </label>
+      <div class="flex flex-wrap items-center gap-3">
+        <button id="invest-edit-submit" type="submit" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold transition">
+          <i class="fa-solid fa-floppy-disk"></i>
+          Salvar alterações
+        </button>
+        <button id="invest-edit-cancel" type="button" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+          <i class="fa-solid fa-rotate-left"></i>
+          Cancelar
+        </button>
+        <button id="invest-edit-remove" type="button" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-rose-300 dark:border-rose-900 text-rose-600 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition">
+          <i class="fa-solid fa-trash"></i>
+          Remover lançamento
+        </button>
+        <span id="invest-edit-feedback" class="hidden text-sm"></span>
+      </div>
+    </form>
+  </div>
+</div>
+
 
     <!-- ações rápidas - MOVIDO PARA O FINAL DA ASIDE -->
     <div class="section-card text-sm">
@@ -4004,10 +4061,12 @@ const investManagerButton = document.getElementById('btn-gerenciar-investimentos
 const walletOpeningButton = document.getElementById('btn-wallet-opening');
 const walletAccountsModal = document.getElementById('modal-wallet-accounts');
 const investManagerModal = document.getElementById('modal-investimentos');
+const investEditModal = document.getElementById('modal-invest-edit');
 const walletInvestModal = document.getElementById('modal-wallet-invest');
 const walletOpeningModal = document.getElementById('modal-wallet-opening');
 const walletAccountsClose = document.getElementById('wallet-accounts-close');
 const investManagerClose = document.getElementById('modal-investimentos-close');
+const investEditClose = document.getElementById('invest-edit-close');
 const walletInvestClose = document.getElementById('wallet-invest-close');
 const walletOpeningClose = document.getElementById('wallet-opening-close');
 const walletAccountForm = document.getElementById('wallet-account-form');
@@ -4036,6 +4095,16 @@ const walletInvestDescriptionInput = document.getElementById('wallet-invest-desc
 const walletInvestFeedback = document.getElementById('wallet-invest-feedback');
 const walletInvestBalanceHint = document.getElementById('wallet-invest-balance-hint');
 const walletInvestSubmit = document.getElementById('wallet-invest-submit');
+const investEditForm = document.getElementById('invest-edit-form');
+const investEditDateInput = document.getElementById('invest-edit-date');
+const investEditTypeSelect = document.getElementById('invest-edit-type');
+const investEditDescriptionInput = document.getElementById('invest-edit-description');
+const investEditAmountInput = document.getElementById('invest-edit-amount');
+const investEditFeedback = document.getElementById('invest-edit-feedback');
+const investEditCancel = document.getElementById('invest-edit-cancel');
+const investEditRemove = document.getElementById('invest-edit-remove');
+const investEditSubmit = document.getElementById('invest-edit-submit');
+const investEditMeta = document.getElementById('invest-edit-meta');
 const walletOpeningForm = document.getElementById('wallet-opening-form');
 const walletOpeningAvailable = document.getElementById('wallet-opening-available');
 const walletOpeningAvailableHelper = document.getElementById('wallet-opening-available-helper');
@@ -4379,8 +4448,10 @@ function unlockBodyScrollIfAllowed() {
   const walletInvestVisible = walletInvestModal && !walletInvestModal.classList.contains('hidden');
   const walletOpeningVisible = walletOpeningModal && !walletOpeningModal.classList.contains('hidden');
   const recursosOverviewVisible = recursosOverviewModal && !recursosOverviewModal.classList.contains('hidden');
+  const investManagerVisible = investManagerModal && !investManagerModal.classList.contains('hidden');
+  const investEditVisible = investEditModal && !investEditModal.classList.contains('hidden');
   if (!authVisible && !accessVisible && !workspaceVisible && !accessManagerVisible && !walletManageVisible && !walletInvestVisible
-    && !walletOpeningVisible && !recursosOverviewVisible) {
+    && !walletOpeningVisible && !recursosOverviewVisible && !investManagerVisible && !investEditVisible) {
     document.body.classList.remove('overflow-hidden');
   }
 }
@@ -6964,6 +7035,16 @@ if (investManagerButton && investManagerModal) {
     openInvestimentosModal();
   });
 }
+if (investEditClose) {
+  investEditClose.addEventListener('click', () => {
+    closeInvestEditModal();
+  });
+}
+if (investEditCancel) {
+  investEditCancel.addEventListener('click', () => {
+    closeInvestEditModal();
+  });
+}
 if (walletOpeningButton && walletOpeningModal) {
   walletOpeningButton.addEventListener('click', () => {
     openWalletOpeningModal();
@@ -6992,6 +7073,13 @@ if (walletInvestClose) {
 if (investManagerClose) {
   investManagerClose.addEventListener('click', () => {
     closeInvestimentosModal();
+  });
+}
+if (investEditModal) {
+  investEditModal.addEventListener('click', (event) => {
+    if (event.target === investEditModal) {
+      closeInvestEditModal();
+    }
   });
 }
 if (walletOpeningClose) {
@@ -7764,6 +7852,7 @@ let mesesEntradasDisponiveis = new Set();
 let mesesInvestimentosDisponiveis = new Set();
 let allEntradasDocs = [];
 let allInvestimentosDocs = [];
+let investEditCurrentId = null;
 let recursosEntradasChartInstance = null;
 let recursosPatrimonioChartInstance = null;
 let recursosInvestimentosChartInstance = null;
@@ -10737,7 +10826,124 @@ function closeInvestimentosModal() {
   if (!investManagerModal) return;
   deactivateDialog(investManagerModal);
   investManagerModal.classList.add('hidden');
+  if (investEditModal && !investEditModal.classList.contains('hidden')) {
+    closeInvestEditModal();
+  }
   unlockBodyScrollIfAllowed();
+}
+
+function findInvestimentoSnapshotById(id) {
+  if (!id || !Array.isArray(allInvestimentosDocs)) {
+    return null;
+  }
+  return allInvestimentosDocs.find((doc) => {
+    const docId = typeof doc?.id === 'string' ? doc.id : doc?.id;
+    return docId === id;
+  }) || null;
+}
+
+function showInvestEditFeedback(message, isSuccess) {
+  if (!investEditFeedback) return;
+  if (!message) {
+    investEditFeedback.classList.add('hidden');
+    investEditFeedback.textContent = '';
+    investEditFeedback.classList.remove('text-emerald-600', 'dark:text-emerald-300', 'text-rose-500', 'dark:text-rose-300');
+    return;
+  }
+  investEditFeedback.textContent = message;
+  investEditFeedback.classList.remove('hidden');
+  investEditFeedback.classList.toggle('text-emerald-600', !!isSuccess);
+  investEditFeedback.classList.toggle('dark:text-emerald-300', !!isSuccess);
+  investEditFeedback.classList.toggle('text-rose-500', isSuccess === false);
+  investEditFeedback.classList.toggle('dark:text-rose-300', isSuccess === false);
+}
+
+function resetInvestEditForm() {
+  investEditCurrentId = null;
+  if (investEditForm instanceof HTMLFormElement) {
+    investEditForm.reset();
+  }
+  if (investEditAmountInput) {
+    investEditAmountInput.value = '';
+  }
+  if (investEditSubmit) {
+    investEditSubmit.disabled = false;
+    investEditSubmit.classList.remove('opacity-70', 'pointer-events-none');
+  }
+  showInvestEditFeedback('', null);
+  if (investEditMeta) {
+    investEditMeta.textContent = '';
+  }
+}
+
+function openInvestEditModal(id) {
+  if (!investEditModal || !id) return;
+  const snapshot = findInvestimentoSnapshotById(id);
+  if (!snapshot) {
+    showToast('Investimento não encontrado.', 'error');
+    return;
+  }
+  const data = typeof snapshot.data === 'function' ? snapshot.data() : (snapshot.data || {});
+  let parsedDate;
+  const rawDate = data.data;
+  if (rawDate && typeof rawDate.toDate === 'function') {
+    parsedDate = rawDate.toDate();
+  } else if (rawDate instanceof Date) {
+    parsedDate = rawDate;
+  } else if (rawDate) {
+    parsedDate = new Date(rawDate);
+  }
+  if (!parsedDate || Number.isNaN(parsedDate.getTime())) {
+    parsedDate = new Date();
+  }
+  if (investEditForm instanceof HTMLFormElement) {
+    investEditForm.reset();
+  }
+  showInvestEditFeedback('', null);
+  investEditCurrentId = id;
+  if (investEditDateInput) {
+    investEditDateInput.value = formatDateInputValue(parsedDate);
+  }
+  if (investEditTypeSelect) {
+    const tipo = data.tipo || 'outros';
+    if (Array.from(investEditTypeSelect.options).some((opt) => opt.value === tipo)) {
+      investEditTypeSelect.value = tipo;
+    } else {
+      investEditTypeSelect.value = 'outros';
+    }
+  }
+  if (investEditDescriptionInput) {
+    investEditDescriptionInput.value = data.descricao || '';
+  }
+  if (investEditAmountInput) {
+    const valor = Number(data.valor ?? data.valorInvestimento ?? data.investimentoValorAplicado ?? 0) || 0;
+    investEditAmountInput.value = valor ? roundCurrency(valor).toFixed(2) : '0.00';
+  }
+  if (investEditMeta) {
+    const metaParts = [`Registrado em ${formatDate(parsedDate)}`];
+    if (data.viaCarteira && data.origemNome) {
+      metaParts.push(`Origem: ${data.origemNome}`);
+    }
+    if (data.updatedAt) {
+      const updatedAt = typeof data.updatedAt.toDate === 'function' ? data.updatedAt.toDate() : data.updatedAt;
+      if (updatedAt && !Number.isNaN(new Date(updatedAt).getTime())) {
+        metaParts.push(`Atualizado em ${formatDateTime(updatedAt)}`);
+      }
+    }
+    investEditMeta.textContent = metaParts.join(' • ');
+  }
+  investEditModal.classList.remove('hidden');
+  lockBodyScroll();
+  const initialFocus = investEditAmountInput || investEditModal;
+  activateDialog(investEditModal, { initialFocus });
+}
+
+function closeInvestEditModal() {
+  if (!investEditModal) return;
+  deactivateDialog(investEditModal);
+  investEditModal.classList.add('hidden');
+  unlockBodyScrollIfAllowed();
+  resetInvestEditForm();
 }
 
 function resetWalletInvestForm() {
@@ -12279,7 +12485,10 @@ const investimentoTipoLabels = {
   reserva: 'Reserva de emergência',
   renda_fixa: 'Renda fixa',
   acoes: 'Ações',
+  fundos: 'Fundos de investimento',
   fundo_imobiliario: 'Fundos imobiliários',
+  tesouro: 'Tesouro direto',
+  previdencia: 'Previdência complementar',
   cripto: 'Cripto',
   outros: 'Outros',
 };
@@ -12875,7 +13084,7 @@ function renderInvestimentosSidebar(docs = []) {
   const totaisPorMes = {};
   const investimentosPorTipoOverview = {};
   const selectedItemsHtml = [];
-  const allItemsHtml = [];
+  const managerItems = [];
 
   const parsedDocs = Array.isArray(docs) ? docs.map((doc) => {
     const raw = typeof doc.data === 'function' ? doc.data() : doc.data;
@@ -12900,6 +13109,10 @@ function renderInvestimentosSidebar(docs = []) {
 
   parsedDocs.forEach((item) => {
     const { doc, dt, key, valor, tipo, descricao } = item;
+    const docId = typeof doc?.id === 'string' ? doc.id : (doc && typeof doc.id === 'function' ? doc.id() : doc?.id);
+    if (!docId) {
+      return;
+    }
     snapshotInvestmentMonths.add(key);
     investmentAggregates[key] = (investmentAggregates[key] || 0) + valor;
 
@@ -12924,11 +13137,24 @@ function renderInvestimentosSidebar(docs = []) {
         <div class="font-semibold text-indigo-700 dark:text-indigo-200">R$ ${moeda(valor)}</div>
         <div class="text-xs text-gray-500 dark:text-gray-400">Proj. ${projectionLabel}: R$ ${moeda(valorProjetado)}</div>
       </div>
-      <button class="text-gray-400 hover:text-red-500 transition" data-remove-investimento="${doc.id}" aria-label="Remover investimento">
+      <button class="text-gray-400 hover:text-red-500 transition" data-remove-investimento="${docId}" aria-label="Remover investimento">
         <i class="fa fa-times"></i>
       </button>`;
 
-    allItemsHtml.push(`<div class="flex items-center gap-3 rounded-xl border border-indigo-100 dark:border-indigo-900/40 bg-indigo-50/70 dark:bg-indigo-900/20 p-2">${baseInfoHtml}</div>`);
+    const viaCarteira = !!item.data?.viaCarteira;
+    const origemCarteira = item.data?.origemCarteira || '';
+    const origemNome = item.data?.origemNome || '';
+    managerItems.push({
+      id: docId,
+      valor,
+      tipo,
+      descricao,
+      data: dt,
+      viaCarteira,
+      origemCarteira,
+      origemNome,
+      projection: valorProjetado,
+    });
 
     if (mostrarTodos || key === mesSel) {
       totalMes += valor;
@@ -12938,8 +13164,14 @@ function renderInvestimentosSidebar(docs = []) {
 
   const totalFromDocs = roundCurrency(totalGeral);
 
+  const aggregateKeys = new Set(Object.keys(investmentAggregates));
   Object.entries(investmentAggregates).forEach(([key, total]) => {
     monthTotals.investimentos.set(key, roundCurrency(total));
+  });
+  Array.from(monthTotals.investimentos.keys()).forEach((key) => {
+    if (!aggregateKeys.has(key)) {
+      monthTotals.investimentos.delete(key);
+    }
   });
   pruneMonthTotals(monthTotals.investimentos);
 
@@ -12984,19 +13216,25 @@ function renderInvestimentosSidebar(docs = []) {
     .filter((value) => Number.isFinite(value) && value > 0);
   const summaryGlobalTotal = summaryGlobalTotals.length ? Math.max(...summaryGlobalTotals) : 0;
 
-  if (!mostrarTodos && totalMes <= 0.005 && summaryMonthFallback > 0) {
-    totalMes = roundCurrency(summaryMonthFallback);
+  if (!mostrarTodos) {
+    const aggregateForMonth = investmentAggregates[mesSel] || 0;
+    if (aggregateForMonth > 0.005) {
+      totalMes = roundCurrency(aggregateForMonth);
+    } else if (selectedItemsHtml.length === 0) {
+      totalMes = 0;
+    } else if (totalMes <= 0.005 && summaryMonthFallback > 0) {
+      totalMes = roundCurrency(summaryMonthFallback);
+    }
   }
 
   const docsPossiblyTruncated = mostrarTodos && docs.length >= SNAPSHOT_LIMITS.investimentos;
-  const truncatedFallbackTotal = Math.max(summaryGlobalTotal, aggregatedMonthSum);
-  if (docsPossiblyTruncated && truncatedFallbackTotal > totalFromDocs) {
-    totalGeral = roundCurrency(truncatedFallbackTotal);
+  if (docsPossiblyTruncated) {
+    const truncatedFallbackTotal = Math.max(summaryGlobalTotal, aggregatedMonthSum);
+    totalGeral = truncatedFallbackTotal > totalFromDocs
+      ? roundCurrency(truncatedFallbackTotal)
+      : totalFromDocs;
   } else {
     totalGeral = totalFromDocs;
-    if (!docsPossiblyTruncated && totalGeral <= 0.005 && summaryGlobalTotal > 0) {
-      totalGeral = roundCurrency(summaryGlobalTotal);
-    }
   }
 
   lista.innerHTML = selectedItemsHtml.length
@@ -13035,11 +13273,11 @@ function renderInvestimentosSidebar(docs = []) {
     totalGeral,
     totalProjetado,
     totaisPorTipo: investimentosPorTipoOverview,
-    allItemsHtml,
+    managerItems,
   });
 }
 
-function updateInvestimentosManagerUI({ totalMes = 0, totalGeral = 0, totalProjetado = 0, totaisPorTipo = {}, allItemsHtml = [] }) {
+function updateInvestimentosManagerUI({ totalMes = 0, totalGeral = 0, totalProjetado = 0, totaisPorTipo = {}, managerItems = [] }) {
   const totalMesManager = document.getElementById('invest-manager-total-mes');
   const totalGeralManager = document.getElementById('invest-manager-total-geral');
   const totalProjManager = document.getElementById('invest-manager-total-projecao');
@@ -13105,9 +13343,48 @@ function updateInvestimentosManagerUI({ totalMes = 0, totalGeral = 0, totalProje
   }
 
   if (managerListEl) {
-    managerListEl.innerHTML = allItemsHtml.length
-      ? allItemsHtml.join('')
-      : '<div class="text-slate-500 dark:text-slate-400">Nenhum investimento registrado ainda.</div>';
+    if (managerItems.length) {
+      managerListEl.innerHTML = managerItems.map((item) => {
+        const label = investimentoTipoLabels?.[item.tipo] || item.tipo;
+        const metaParts = [
+          `Registrado em ${formatDate(item.data)}`,
+        ];
+        if (item.viaCarteira && item.origemNome) {
+          metaParts.push(`Origem: ${item.origemNome}`);
+        }
+        const projectionHint = Number.isFinite(item.projection) && item.projection > 0.005
+          ? `Projeção futura: R$ ${moeda(item.projection)}`
+          : '';
+        return `
+          <div class="space-y-3 rounded-xl border border-indigo-100/80 dark:border-indigo-900/40 bg-white/70 dark:bg-slate-900/30 p-3">
+            <div class="flex flex-wrap items-start justify-between gap-3">
+              <div class="space-y-1">
+                <div class="flex flex-wrap items-center gap-2">
+                  <span class="text-xs uppercase tracking-wide rounded-full bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-200 px-2 py-0.5">${label}</span>
+                  ${item.descricao ? `<span class="text-sm font-medium text-slate-700 dark:text-slate-200">${item.descricao}</span>` : ''}
+                </div>
+                <div class="text-xs text-slate-500 dark:text-slate-400">${metaParts.join(' • ')}</div>
+              </div>
+              <div class="text-right space-y-1">
+                <div class="font-semibold text-indigo-700 dark:text-indigo-200">R$ ${moeda(item.valor)}</div>
+                ${projectionHint ? `<div class="text-[0.7rem] text-slate-500 dark:text-slate-400">${projectionHint}</div>` : ''}
+              </div>
+            </div>
+            <div class="flex flex-wrap items-center justify-end gap-2 text-[0.72rem] sm:text-xs">
+              <button type="button" class="inline-flex items-center gap-1 rounded-lg border border-indigo-200 dark:border-indigo-800 px-3 py-1.5 text-indigo-700 dark:text-indigo-200 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition" data-invest-edit="${item.id}">
+                <i class="fa-solid fa-pen-to-square"></i>
+                Editar
+              </button>
+              <button type="button" class="inline-flex items-center gap-1 rounded-lg border border-rose-200 dark:border-rose-900 px-3 py-1.5 text-rose-600 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition" data-remove-investimento="${item.id}">
+                <i class="fa-solid fa-trash"></i>
+                Remover
+              </button>
+            </div>
+          </div>`;
+      }).join('');
+    } else {
+      managerListEl.innerHTML = '<div class="text-slate-500 dark:text-slate-400">Nenhum investimento registrado ainda.</div>';
+    }
   }
 }
 
@@ -14456,14 +14733,113 @@ if (formInvestimento) {
 
 }
 
+if (investEditForm) {
+  investEditForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (!investEditCurrentId) {
+      showInvestEditFeedback('Selecione um investimento para editar.', false);
+      return;
+    }
+    const rawAmount = Number(investEditAmountInput?.value || 0);
+    if (!Number.isFinite(rawAmount) || rawAmount < 0) {
+      showInvestEditFeedback('Informe um valor válido para o investimento.', false);
+      investEditAmountInput?.focus();
+      return;
+    }
+    const dateValue = investEditDateInput?.value;
+    if (!dateValue) {
+      showInvestEditFeedback('Escolha a data do aporte.', false);
+      investEditDateInput?.focus();
+      return;
+    }
+    const parsedDate = new Date(`${dateValue}T12:00:00`);
+    if (Number.isNaN(parsedDate.getTime())) {
+      showInvestEditFeedback('Data inválida. Ajuste e tente novamente.', false);
+      investEditDateInput?.focus();
+      return;
+    }
+    const tipo = investEditTypeSelect?.value || 'outros';
+    const descricao = (investEditDescriptionInput?.value || '').trim();
+    const valor = roundCurrency(rawAmount);
+
+    if (investEditSubmit) {
+      investEditSubmit.disabled = true;
+      investEditSubmit.classList.add('opacity-70', 'pointer-events-none');
+    }
+    showInvestEditFeedback('Salvando alterações...', true);
+
+    try {
+      const payload = stampWorkspaceUpdate({
+        tipo,
+        valor,
+        data: firebase.firestore.Timestamp.fromDate(parsedDate),
+      });
+      if (descricao) {
+        payload.descricao = descricao;
+      } else if (firebase?.firestore?.FieldValue?.delete) {
+        payload.descricao = firebase.firestore.FieldValue.delete();
+      } else {
+        payload.descricao = '';
+      }
+
+      await userCollectionRef('investimentos').doc(investEditCurrentId).set(payload, { merge: true });
+      showToast('Investimento atualizado!', 'success');
+      closeInvestEditModal();
+    } catch (error) {
+      console.error('Erro ao atualizar investimento:', error);
+      showInvestEditFeedback('Não foi possível salvar agora. Tente novamente.', false);
+    } finally {
+      if (investEditSubmit) {
+        investEditSubmit.disabled = false;
+        investEditSubmit.classList.remove('opacity-70', 'pointer-events-none');
+      }
+    }
+  });
+}
+
+if (investEditRemove) {
+  investEditRemove.addEventListener('click', () => {
+    if (!investEditCurrentId) {
+      showInvestEditFeedback('Selecione um investimento para remover.', false);
+      return;
+    }
+    const targetId = investEditCurrentId;
+    abrirModalConfirmacao('Remover investimento', 'Deseja remover este lançamento de investimento?', () => {
+      userCollectionRef('investimentos').doc(targetId).delete()
+        .then(() => {
+          showToast('Investimento removido!', 'success');
+          closeInvestEditModal();
+        })
+        .catch((error) => {
+          console.error('Erro ao remover investimento:', error);
+          showToast('Erro ao remover investimento.', 'error');
+        });
+    }, 'modal-invest-edit');
+  });
+}
+
 document.addEventListener('click', (event) => {
+  const editBtn = event.target.closest('[data-invest-edit]');
+  if (editBtn) {
+    event.preventDefault();
+    const editId = editBtn.getAttribute('data-invest-edit');
+    if (editId) {
+      openInvestEditModal(editId);
+    }
+    return;
+  }
   const btn = event.target.closest('[data-remove-investimento]');
   if (!btn) return;
   const id = btn.getAttribute('data-remove-investimento');
   if (!id) return;
   abrirModalConfirmacao('Remover investimento', 'Deseja remover este lançamento de investimento?', () => {
     userCollectionRef('investimentos').doc(id).delete()
-      .then(() => showToast('Investimento removido!', 'success'))
+      .then(() => {
+        if (investEditCurrentId === id) {
+          closeInvestEditModal();
+        }
+        showToast('Investimento removido!', 'success');
+      })
       .catch(err => {
         console.error('Erro ao remover investimento:', err);
         showToast('Erro ao remover investimento.', 'error');
