@@ -3064,6 +3064,89 @@ const SNAPSHOT_LIMITS = {
 let walletAccountsRealtimeHydrated = false;
 let investimentosRealtimeHydrated = false;
 
+function getInvestmentSummaryTotalForMonth(monthKey) {
+  if (!monthKey || monthKey === 'all') {
+    return null;
+  }
+  const summary = monthlySummariesCache.get(monthKey);
+  if (!summary) {
+    return null;
+  }
+  const investSection = summary.investimentos || {};
+  const patrimonioSection = summary.patrimonio || {};
+  const candidates = [
+    Number(investSection.total),
+    Number(patrimonioSection.investimentos),
+  ].filter((value) => Number.isFinite(value) && Math.abs(value) > 0.005);
+  if (!candidates.length) {
+    return null;
+  }
+  return roundCurrency(Math.max(...candidates));
+}
+
+function resolveInvestmentTotalsContext(monthKey) {
+  const normalizedKey = monthKey && monthKey !== 'all' ? monthKey : null;
+  const contributions = Array.from(monthTotals.investimentos.entries())
+    .map(([key, value]) => ({ key, value: Number(value) || 0 }))
+    .filter(({ value }) => Number.isFinite(value));
+
+  contributions.sort((a, b) => a.key.localeCompare(b.key));
+
+  let cumulative = 0;
+  let carry = normalizedKey ? null : 0;
+
+  contributions.forEach(({ key, value }) => {
+    cumulative = roundCurrency(cumulative + value);
+    if (!normalizedKey || key <= normalizedKey) {
+      carry = cumulative;
+    }
+  });
+
+  const summaryTotals = [];
+  monthlySummariesCache.forEach((summary, key) => {
+    const total = getInvestmentSummaryTotalForMonth(key);
+    if (total != null) {
+      summaryTotals.push({ key, total });
+      if (!normalizedKey || key <= normalizedKey) {
+        if (carry == null || total > carry) {
+          carry = total;
+        }
+      }
+    }
+  });
+
+  summaryTotals.sort((a, b) => a.key.localeCompare(b.key));
+
+  if (carry == null) {
+    const previousSummary = summaryTotals
+      .filter(({ key }) => !normalizedKey || key <= normalizedKey)
+      .pop();
+    if (previousSummary) {
+      carry = previousSummary.total;
+    }
+  }
+
+  if (carry == null) {
+    carry = cumulative;
+  }
+
+  carry = roundCurrency(Math.max(carry, cumulative));
+
+  const globalTotal = summaryTotals.reduce((max, entry) => Math.max(max, entry.total), cumulative);
+
+  const monthContribution = normalizedKey
+    ? roundCurrency(Number(monthTotals.investimentos.get(normalizedKey)) || 0)
+    : 0;
+
+  const resolvedCarry = normalizedKey ? carry : roundCurrency(Math.max(carry, globalTotal));
+
+  return {
+    monthContribution,
+    carryTotal: resolvedCarry,
+    globalTotal: roundCurrency(Math.max(globalTotal, cumulative, resolvedCarry)),
+  };
+}
+
 function sanitizeMonthlySummarySection(section = {}) {
   const result = {};
   Object.entries(section || {}).forEach(([key, value]) => {
@@ -13265,13 +13348,14 @@ function renderInvestimentosSidebar(docs = []) {
 
   const mesSel = document.getElementById('filtro-mes').value || yyyymm(new Date());
   const mostrarTodos = mesSel === 'all';
+  const normalizedMonthKey = mostrarTodos ? null : mesSel;
   const hoje = new Date();
   const futureMonths = Math.max(0, INVEST_PROJECTION_FUTURE_MONTHS || 0);
   const projectionFactorFuture = Math.pow(1 + INVEST_PROJECTION_MONTHLY_RATE, futureMonths);
   const projectionLabel = futureMonths > 0 ? `${futureMonths}m` : 'atual';
 
   let totalMes = 0;
-  let totalGeral = 0;
+  let totalDocsOverall = 0;
   let totalProjetado = 0;
   const totaisPorMes = {};
   const investimentosPorTipoOverview = {};
@@ -13308,7 +13392,7 @@ function renderInvestimentosSidebar(docs = []) {
     snapshotInvestmentMonths.add(key);
     investmentAggregates[key] = (investmentAggregates[key] || 0) + valor;
 
-    totalGeral += valor;
+    totalDocsOverall += valor;
     totaisPorMes[key] = (totaisPorMes[key] || 0) + valor;
     investimentosPorTipoOverview[tipo] = (investimentosPorTipoOverview[tipo] || 0) + valor;
 
@@ -13354,17 +13438,25 @@ function renderInvestimentosSidebar(docs = []) {
     }
   });
 
-  const totalFromDocs = roundCurrency(totalGeral);
+  const totalFromDocs = roundCurrency(totalDocsOverall);
 
   const aggregateKeys = new Set(Object.keys(investmentAggregates));
-  Object.entries(investmentAggregates).forEach(([key, total]) => {
-    monthTotals.investimentos.set(key, roundCurrency(total));
-  });
-  Array.from(monthTotals.investimentos.keys()).forEach((key) => {
-    if (!aggregateKeys.has(key)) {
-      monthTotals.investimentos.delete(key);
+  if (normalizedMonthKey) {
+    if (aggregateKeys.has(normalizedMonthKey)) {
+      monthTotals.investimentos.set(normalizedMonthKey, roundCurrency(investmentAggregates[normalizedMonthKey]));
+    } else if (parsedDocs.length && monthTotals.investimentos.has(normalizedMonthKey)) {
+      monthTotals.investimentos.delete(normalizedMonthKey);
     }
-  });
+  } else {
+    Object.entries(investmentAggregates).forEach(([key, total]) => {
+      monthTotals.investimentos.set(key, roundCurrency(total));
+    });
+    Array.from(monthTotals.investimentos.keys()).forEach((key) => {
+      if (!aggregateKeys.has(key) && !monthlySummariesCache.has(key)) {
+        monthTotals.investimentos.delete(key);
+      }
+    });
+  }
   pruneMonthTotals(monthTotals.investimentos);
 
   const investmentMonthSet = new Set(monthTotals.investimentos.keys());
@@ -13389,45 +13481,56 @@ function renderInvestimentosSidebar(docs = []) {
     }
   }
 
-  const aggregatedMonthSum = Array.from(monthTotals.investimentos.values())
-    .map((value) => Number(value) || 0)
-    .filter((value) => Number.isFinite(value) && value > 0)
-    .reduce((sum, value) => sum + value, 0);
+  monthTotals.investimentos.forEach((valor, key) => {
+    const rounded = roundCurrency(Number(valor) || 0);
+    if (!mostrarTodos && normalizedMonthKey && key !== normalizedMonthKey) {
+      if (!(key in totaisPorMes)) {
+        totaisPorMes[key] = rounded;
+      }
+    } else if (mostrarTodos && !(key in totaisPorMes)) {
+      totaisPorMes[key] = rounded;
+    }
+  });
+  if (normalizedMonthKey && summaryMonthFallback > 0.005 && !(normalizedMonthKey in totaisPorMes)) {
+    totaisPorMes[normalizedMonthKey] = summaryMonthFallback;
+  }
 
-  const summaryGlobalTotals = Array.from(monthlySummariesCache.values())
-    .map((summary) => {
-      if (!summary) return 0;
-      const investSection = summary.investimentos || {};
-      const patrimonioSection = summary.patrimonio || {};
-      const candidates = [
-        Number(investSection.total) || 0,
-        Number(patrimonioSection.investimentos) || 0,
-      ].filter((value) => Number.isFinite(value) && value > 0);
-      return candidates.length ? Math.max(...candidates) : 0;
-    })
-    .filter((value) => Number.isFinite(value) && value > 0);
-  const summaryGlobalTotal = summaryGlobalTotals.length ? Math.max(...summaryGlobalTotals) : 0;
+  const totalsContext = resolveInvestmentTotalsContext(mesSel);
+  const cachedMonthContribution = totalsContext.monthContribution;
 
   if (!mostrarTodos) {
     const aggregateForMonth = investmentAggregates[mesSel] || 0;
     if (aggregateForMonth > 0.005) {
       totalMes = roundCurrency(aggregateForMonth);
-    } else if (selectedItemsHtml.length === 0) {
-      totalMes = 0;
-    } else if (totalMes <= 0.005 && summaryMonthFallback > 0) {
+    } else if (cachedMonthContribution > 0.005) {
+      totalMes = roundCurrency(cachedMonthContribution);
+    } else if (summaryMonthFallback > 0.005) {
       totalMes = roundCurrency(summaryMonthFallback);
+    } else {
+      totalMes = roundCurrency(totalMes);
     }
+  } else {
+    totalMes = roundCurrency(totalMes);
   }
 
   const docsPossiblyTruncated = mostrarTodos && docs.length >= SNAPSHOT_LIMITS.investimentos;
+  let totalGeral = mostrarTodos
+    ? Math.max(totalFromDocs, totalsContext.globalTotal)
+    : Math.max(totalFromDocs, totalsContext.carryTotal);
   if (docsPossiblyTruncated) {
-    const truncatedFallbackTotal = Math.max(summaryGlobalTotal, aggregatedMonthSum);
-    totalGeral = truncatedFallbackTotal > totalFromDocs
-      ? roundCurrency(truncatedFallbackTotal)
-      : totalFromDocs;
-  } else {
-    totalGeral = totalFromDocs;
+    totalGeral = Math.max(totalGeral, totalsContext.globalTotal);
   }
+  totalGeral = roundCurrency(totalGeral);
+
+  if (totalProjetado <= 0.005 && totalGeral > 0.005) {
+    totalProjetado = roundCurrency(totalGeral * projectionFactorFuture);
+  } else {
+    totalProjetado = roundCurrency(totalProjetado);
+  }
+
+  Object.keys(totaisPorMes).forEach((key) => {
+    totaisPorMes[key] = roundCurrency(Number(totaisPorMes[key]) || 0);
+  });
 
   lista.innerHTML = selectedItemsHtml.length
     ? selectedItemsHtml.join('')
