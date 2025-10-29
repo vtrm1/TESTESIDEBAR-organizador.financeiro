@@ -2987,6 +2987,12 @@ const monthTotals = {
   entradas: new Map(),
   investimentos: new Map(),
 };
+const monthlySummariesCache = new Map();
+const monthlySummaryPending = new Map();
+let monthlySummaryFlushTimeout = null;
+let unsubMonthlySummary = null;
+let monthlySummaryActiveKey = null;
+const MONTHLY_SUMMARY_DEBOUNCE = 3000;
 let cachedMesesGastos = new Set();
 let cachedMesesEntradas = new Set();
 let cachedMesesInvestimentos = new Set();
@@ -2998,6 +3004,191 @@ const SNAPSHOT_LIMITS = {
   entradas: 240,
   investimentos: 240,
 };
+
+function sanitizeMonthlySummarySection(section = {}) {
+  const result = {};
+  Object.entries(section || {}).forEach(([key, value]) => {
+    const num = Number(value);
+    if (Number.isFinite(num)) {
+      result[key] = roundCurrency(num);
+    }
+  });
+  return result;
+}
+
+function normalizeMonthlySummaryPayload(monthKey, payload = {}) {
+  if (!monthKey) {
+    return null;
+  }
+  return {
+    month: monthKey,
+    version: 1,
+    entradas: sanitizeMonthlySummarySection(payload.entradas),
+    gastos: sanitizeMonthlySummarySection(payload.gastos),
+    investimentos: sanitizeMonthlySummarySection(payload.investimentos),
+    patrimonio: sanitizeMonthlySummarySection(payload.patrimonio),
+    net: sanitizeMonthlySummarySection(payload.net),
+  };
+}
+
+function monthlySummaryEquals(a, b) {
+  if (!a || !b) {
+    return false;
+  }
+  if (a.month !== b.month) {
+    return false;
+  }
+  const sections = ['entradas', 'gastos', 'investimentos', 'patrimonio', 'net'];
+  for (const section of sections) {
+    const aSection = a[section] || {};
+    const bSection = b[section] || {};
+    const keys = new Set([...Object.keys(aSection), ...Object.keys(bSection)]);
+    for (const key of keys) {
+      const aValue = roundCurrency(Number(aSection[key] || 0));
+      const bValue = roundCurrency(Number(bSection[key] || 0));
+      if (aValue !== bValue) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+function normalizeMonthlySummarySnapshot(data = {}) {
+  if (!data || !data.month) {
+    return null;
+  }
+  return normalizeMonthlySummaryPayload(data.month, data) || null;
+}
+
+function queueMonthlySummaryUpdate(monthKey, payload = {}) {
+  if (!monthKey || monthKey === 'all') {
+    return;
+  }
+  const normalized = normalizeMonthlySummaryPayload(monthKey, payload);
+  if (!normalized) {
+    return;
+  }
+  monthlySummaryPending.set(monthKey, normalized);
+  if (monthlySummaryFlushTimeout) {
+    return;
+  }
+  monthlySummaryFlushTimeout = setTimeout(() => {
+    flushMonthlySummaryUpdates().catch((error) => {
+      console.error('Erro ao sincronizar resumos mensais:', error);
+    });
+  }, MONTHLY_SUMMARY_DEBOUNCE);
+}
+
+async function flushMonthlySummaryUpdates() {
+  const entries = Array.from(monthlySummaryPending.entries());
+  monthlySummaryPending.clear();
+  monthlySummaryFlushTimeout = null;
+  if (!entries.length) {
+    return;
+  }
+  await Promise.all(entries.map(async ([monthKey, payload]) => {
+    if (!monthKey || monthKey === 'all') {
+      return;
+    }
+    const normalized = normalizeMonthlySummaryPayload(monthKey, payload);
+    if (!normalized) {
+      return;
+    }
+    const cached = monthlySummariesCache.get(monthKey);
+    if (cached && monthlySummaryEquals(cached, normalized)) {
+      return;
+    }
+    try {
+      await userDocRef('resumosMensais', monthKey).set(stampWorkspaceUpdate({
+        ...normalized,
+        computedAt: firebase.firestore.Timestamp.now(),
+      }), { merge: true });
+      monthlySummariesCache.set(monthKey, normalized);
+    } catch (error) {
+      console.error('Erro ao salvar resumo mensal:', error);
+    }
+  }));
+}
+
+function attachMonthlySummaryListener(monthKey) {
+  if (typeof unsubMonthlySummary === 'function') {
+    try {
+      unsubMonthlySummary();
+    } catch (error) {
+      console.warn('Falha ao encerrar listener de resumo mensal:', error);
+    }
+  }
+  unsubMonthlySummary = null;
+  monthlySummaryActiveKey = null;
+  if (!monthKey || monthKey === 'all') {
+    return;
+  }
+  try {
+    unsubMonthlySummary = userDocRef('resumosMensais', monthKey).onSnapshot((snap) => {
+      monthlySummaryActiveKey = monthKey;
+      if (snap.exists) {
+        const normalized = normalizeMonthlySummarySnapshot(snap.data() || {});
+        if (normalized) {
+          monthlySummariesCache.set(monthKey, normalized);
+        }
+      }
+    }, (error) => {
+      console.error('Erro ao acompanhar resumo mensal:', error);
+    });
+  } catch (error) {
+    console.error('Erro ao iniciar listener de resumo mensal:', error);
+  }
+}
+
+function persistMonthlySummaryFromState() {
+  const select = document.getElementById('filtro-mes');
+  const monthKey = select ? select.value : null;
+  if (!monthKey || monthKey === 'all') {
+    return;
+  }
+  const entradasDistribuicao = painelFinanceiroState.entradasDistribuicaoMes || {};
+  const entradas = {
+    bruto: entradasDistribuicao.bruto || 0,
+    fluxo: entradasDistribuicao.fluxo || painelFinanceiroState.entradasMes || 0,
+    carteira: entradasDistribuicao.carteira || 0,
+    investimento: entradasDistribuicao.investimento || 0,
+  };
+  const gastos = {
+    variavel: resumo.historicoMes || 0,
+    fixos: resumo.fixosMes || 0,
+    parcelados: resumo.parcelasMes || 0,
+    cartoes: resumo.cartoesMes || 0,
+    pix: resumo.pixMes || 0,
+  };
+  gastos.total = roundCurrency((gastos.variavel || 0) + (gastos.fixos || 0) + (gastos.parcelados || 0));
+
+  const investimentos = {
+    mes: painelFinanceiroState.investimentosMes || 0,
+    total: painelFinanceiroState.investimentosTotais || 0,
+    projetado: painelFinanceiroState.investimentosProjetados || 0,
+  };
+
+  const patrimonio = {
+    contas: walletState.accountsTotal || 0,
+    investimentos: walletState.investmentsTotal || painelFinanceiroState.investimentosTotais || 0,
+  };
+  patrimonio.total = roundCurrency((patrimonio.contas || 0) + (patrimonio.investimentos || 0));
+
+  const net = {
+    entradas: painelFinanceiroState.entradasMes || entradas.fluxo || 0,
+    saidas: gastos.total,
+    saldoProjetado: resumoFinanceiroAtual?.saldoProjetado || 0,
+  };
+
+  queueMonthlySummaryUpdate(monthKey, {
+    entradas,
+    gastos,
+    investimentos,
+    patrimonio,
+    net,
+  });
+}
 
 try {
   notificationPrompted = localStorage.getItem(NOTIFICATION_PROMPT_KEY) === '1';
@@ -6148,6 +6339,23 @@ function handleUserSignedOut() {
   appReadyForCurrentUser = false;
   appStartInProgress = false;
   resetWalletState({ resetUI: true });
+  detachTagsMetadataListener();
+  if (typeof unsubMonthlySummary === 'function') {
+    try {
+      unsubMonthlySummary();
+    } catch (error) {
+      console.warn('Falha ao encerrar listener de resumo mensal ao sair:', error);
+    }
+  }
+  unsubMonthlySummary = null;
+  monthlySummaryActiveKey = null;
+  monthlySummariesCache.clear();
+  if (monthlySummaryPending.size > 0) {
+    flushMonthlySummaryUpdates().catch((error) => {
+      console.error('Erro ao sincronizar resumos mensais ao sair:', error);
+    });
+  }
+  monthlySummaryPending.clear();
   if (accessProfileUnsubscribe) {
     accessProfileUnsubscribe();
     accessProfileUnsubscribe = null;
@@ -7486,6 +7694,8 @@ let allTags = new Set(); // Cache de todas as tags existentes
 let selectedTagsArray = []; // Tags selecionadas no modal
 let currentSearchTerm = ''; // Termo de busca atual
 let currentGroupBy = ''; // Agrupamento atual
+let unsubTagsMetadata = null;
+let tagsMetadataWorkspaceId = null;
 
 /* NOVO: Variável para controle de scroll */
 let lastScrollTop = 0;
@@ -7498,8 +7708,7 @@ function initTagsSystem() {
   const tagsSuggestions = document.getElementById('tags-suggestions');
   const selectedTagsContainer = document.getElementById('selected-tags');
 
-  // Carrega tags existentes do Firestore
-  loadExistingTags();
+  attachTagsMetadataListener();
 
   // Event listeners para o sistema de tags
   tagsInput.addEventListener('input', (e) => {
@@ -7531,15 +7740,68 @@ function initTagsSystem() {
   });
 }
 
-function loadExistingTags() {
-  userCollectionRef('gastos').get().then(snapshot => {
-    snapshot.docs.forEach(doc => {
-      const data = doc.data();
-      if (data.tags && Array.isArray(data.tags)) {
-        data.tags.forEach(tag => allTags.add(tag.toLowerCase()));
-      }
+function attachTagsMetadataListener(force = false) {
+  if (!currentUser) return;
+  const workspaceId = getActiveWorkspaceId();
+  if (!workspaceId) return;
+  if (!force && tagsMetadataWorkspaceId === workspaceId && typeof unsubTagsMetadata === 'function') {
+    return;
+  }
+  if (typeof unsubTagsMetadata === 'function') {
+    unsubTagsMetadata();
+    unsubTagsMetadata = null;
+  }
+  tagsMetadataWorkspaceId = workspaceId;
+  try {
+    unsubTagsMetadata = userDocRef('metadata', 'tags').onSnapshot((snap) => {
+      const data = snap.exists ? (snap.data() || {}) : {};
+      const list = Array.isArray(data.list) ? data.list : (Array.isArray(data.tags) ? data.tags : []);
+      allTags = new Set(list
+        .map((tag) => (typeof tag === 'string' ? tag.toLowerCase().trim() : ''))
+        .filter((tag) => tag.length > 0));
+    }, (error) => {
+      console.error('Erro ao acompanhar tags do workspace:', error);
     });
-  });
+  } catch (error) {
+    console.error('Erro ao inicializar listener de tags:', error);
+  }
+}
+
+function detachTagsMetadataListener() {
+  if (typeof unsubTagsMetadata === 'function') {
+    try {
+      unsubTagsMetadata();
+    } catch (error) {
+      console.warn('Falha ao encerrar listener de tags:', error);
+    }
+  }
+  unsubTagsMetadata = null;
+  tagsMetadataWorkspaceId = null;
+  allTags = new Set();
+}
+
+function persistTagsMetadata(tags) {
+  if (!Array.isArray(tags) || tags.length === 0) {
+    return;
+  }
+  const normalized = Array.from(new Set(tags
+    .map((tag) => (typeof tag === 'string' ? tag.toLowerCase().trim() : ''))
+    .filter((tag) => tag.length > 0)));
+  if (normalized.length === 0) {
+    return;
+  }
+  if (!FieldValue || typeof FieldValue.arrayUnion !== 'function') {
+    return;
+  }
+  try {
+    userDocRef('metadata', 'tags').set(stampWorkspaceUpdate({
+      list: FieldValue.arrayUnion(...normalized),
+    }), { merge: true }).catch((error) => {
+      console.error('Erro ao atualizar tags do workspace:', error);
+    });
+  } catch (error) {
+    console.error('Erro ao persistir tags do workspace:', error);
+  }
 }
 
 function showTagSuggestions(searchTerm) {
@@ -8450,7 +8712,7 @@ function renderFixos(docs) {
   let totalAtivos = 0;
   let totalInativos = 0;
   
-  if (!docs.length) { 
+  if (!docs.length) {
     container.innerHTML = '<div class="text-center text-gray-500 dark:text-gray-400 py-4">Sem fixos cadastrados</div>';
   } else {
     docs.forEach(doc => {
@@ -8500,10 +8762,16 @@ function renderFixos(docs) {
       container.appendChild(card);
     });
   }
-  
+
   // Atualiza resumos
-  document.getElementById('resumo-fixos-ativos').textContent = `R$ ${moeda(totalAtivos)}`;
-  document.getElementById('resumo-fixos-inativos').textContent = `R$ ${moeda(totalInativos)}`;
+  const totalAtivosRounded = roundCurrency(totalAtivos);
+  const totalInativosRounded = roundCurrency(totalInativos);
+  document.getElementById('resumo-fixos-ativos').textContent = `R$ ${moeda(totalAtivosRounded)}`;
+  document.getElementById('resumo-fixos-inativos').textContent = `R$ ${moeda(totalInativosRounded)}`;
+
+  resumo.fixosMes = totalAtivosRounded;
+  painelFinanceiroState.totalFixosAtivos = totalAtivosRounded;
+  atualizarResumoUI();
 }
 
 function toggleAtivoFixo(id, atual) {
@@ -11050,46 +11318,70 @@ async function preloadMonthCaches(force = false) {
 
   try {
     const limit = 24;
-    const [gastosSnap, entradasSnap, investimentosSnap] = await Promise.all([
-      userCollectionRef('gastos').orderBy('mesFatura', 'desc').limit(limit).get().catch(() => null),
-      userCollectionRef('entradas').orderBy('data', 'desc').limit(limit).get().catch(() => null),
-      userCollectionRef('investimentos').orderBy('data', 'desc').limit(limit).get().catch(() => null),
-    ]);
+    const summariesSnap = await userCollectionRef('resumosMensais')
+      .orderBy('month', 'desc')
+      .limit(limit)
+      .get()
+      .catch(() => null);
 
+    let usedSummaries = false;
     const nextCachedMesesGastos = new Set();
-    if (gastosSnap && !gastosSnap.empty) {
-      gastosSnap.docs.forEach((doc) => {
-        const data = typeof doc.data === 'function' ? doc.data() : doc.data;
-        if (!data) return;
-        const key = data.mesFatura || (data.data ? yyyymm(data.data.toDate ? data.data.toDate() : new Date(data.data)) : null);
-        if (key) {
-          nextCachedMesesGastos.add(key);
-        }
-      });
-    }
-
     const nextCachedMesesEntradas = new Set();
-    if (entradasSnap && !entradasSnap.empty) {
-      entradasSnap.docs.forEach((doc) => {
-        const data = typeof doc.data === 'function' ? doc.data() : doc.data;
-        if (!data?.data) return;
-        const dt = data.data.toDate ? data.data.toDate() : new Date(data.data);
-        if (!Number.isNaN(dt?.getTime?.())) {
-          nextCachedMesesEntradas.add(yyyymm(dt));
+    const nextCachedMesesInvestimentos = new Set();
+
+    if (summariesSnap && !summariesSnap.empty) {
+      summariesSnap.docs.forEach((doc) => {
+        const normalized = normalizeMonthlySummarySnapshot(doc.data() || {});
+        if (!normalized || !normalized.month) {
+          return;
         }
+        monthlySummariesCache.set(normalized.month, normalized);
+        nextCachedMesesGastos.add(normalized.month);
+        nextCachedMesesEntradas.add(normalized.month);
+        nextCachedMesesInvestimentos.add(normalized.month);
       });
+      usedSummaries = nextCachedMesesGastos.size > 0;
     }
 
-    const nextCachedMesesInvestimentos = new Set();
-    if (investimentosSnap && !investimentosSnap.empty) {
-      investimentosSnap.docs.forEach((doc) => {
-        const data = typeof doc.data === 'function' ? doc.data() : doc.data;
-        if (!data?.data) return;
-        const dt = data.data.toDate ? data.data.toDate() : new Date(data.data);
-        if (!Number.isNaN(dt?.getTime?.())) {
-          nextCachedMesesInvestimentos.add(yyyymm(dt));
-        }
-      });
+    if (!usedSummaries) {
+      const [gastosSnap, entradasSnap, investimentosSnap] = await Promise.all([
+        userCollectionRef('gastos').orderBy('mesFatura', 'desc').limit(limit).get().catch(() => null),
+        userCollectionRef('entradas').orderBy('data', 'desc').limit(limit).get().catch(() => null),
+        userCollectionRef('investimentos').orderBy('data', 'desc').limit(limit).get().catch(() => null),
+      ]);
+
+      if (gastosSnap && !gastosSnap.empty) {
+        gastosSnap.docs.forEach((doc) => {
+          const data = typeof doc.data === 'function' ? doc.data() : doc.data;
+          if (!data) return;
+          const key = data.mesFatura || (data.data ? yyyymm(data.data.toDate ? data.data.toDate() : new Date(data.data)) : null);
+          if (key) {
+            nextCachedMesesGastos.add(key);
+          }
+        });
+      }
+
+      if (entradasSnap && !entradasSnap.empty) {
+        entradasSnap.docs.forEach((doc) => {
+          const data = typeof doc.data === 'function' ? doc.data() : doc.data;
+          if (!data?.data) return;
+          const dt = data.data.toDate ? data.data.toDate() : new Date(data.data);
+          if (!Number.isNaN(dt?.getTime?.())) {
+            nextCachedMesesEntradas.add(yyyymm(dt));
+          }
+        });
+      }
+
+      if (investimentosSnap && !investimentosSnap.empty) {
+        investimentosSnap.docs.forEach((doc) => {
+          const data = typeof doc.data === 'function' ? doc.data() : doc.data;
+          if (!data?.data) return;
+          const dt = data.data.toDate ? data.data.toDate() : new Date(data.data);
+          if (!Number.isNaN(dt?.getTime?.())) {
+            nextCachedMesesInvestimentos.add(yyyymm(dt));
+          }
+        });
+      }
     }
 
     cachedMesesGastos = nextCachedMesesGastos;
@@ -11128,6 +11420,8 @@ async function startObservers(force = false){
   }
 
   observersContext = { workspaceId, monthKey: normalizedMonth };
+  attachTagsMetadataListener();
+  attachMonthlySummaryListener(normalizedMonth);
 
   // Desinscrever observers antigos para evitar múltiplos listeners
   if (unsubLimits) unsubLimits();
@@ -11474,84 +11768,53 @@ totalRestanteParcelados += restantesIncluindoAtual * (p.valorParcela || 0);
   document.getElementById('p-total-restante').textContent = moeda(totalRestanteParcelados);
 
   // === FIXOS ===
-    userCollectionRef('fixos').get().then(fixSnap=>{
-      const somaFixosAtivos = fixSnap.docs.reduce((a,d)=> 
-        a + ((d.data().ativo && d.data().valor) ? d.data().valor : 0), 0);
+  const metaParcelado = getEnvelopeMeta('parcelado');
+  const metaFixoAtual = getEnvelopeMeta('fixo');
+  const metaVariavel = getEnvelopeMeta('variavel');
+  const triggerParcelado = metaParcelado > 0 && parcelasMesTotal > metaParcelado;
+  const somaVariavel = window._somaVariavelAtual || 0;
+  const triggerVariavel = metaVariavel > 0 && somaVariavel > metaVariavel;
+  const triggerFixo = metaFixoAtual > 0 && (resumo.fixosMes || 0) > metaFixoAtual;
 
-      // salva no resumo para entrar no total geral
-      resumo.fixosMes = somaFixosAtivos;
+  const banner = document.getElementById('danger-banner');
+  const alertas = [];
 
-let totalGastosAcumulado = 0;
-// Gastos variáveis (todos realizados)
-allGastosDocs.forEach(doc => totalGastosAcumulado += (doc.data().valor || 0));
-// Parcelados: Somar apenas parcelas pagas até agora (não o total futuro)
-const hoje = new Date();
-allParceladosDocs.forEach(doc => {
-  const p = doc.data();
-  const inicio = p.dataInicio && p.dataInicio.toDate ? p.dataInicio.toDate() : new Date(p.dataInicio);
-  const parcelasPagas = Math.max(0, monthDiff(inicio, hoje) + 1); // Parcelas pagas até agora
-  const valorPagas = Math.min(parcelasPagas, p.numParcelas || 1) * (p.valorParcela || 0);
-  totalGastosAcumulado += valorPagas;
-});
-// Fixos: Somar valor mensal * número de meses com dados (aproximação)
-const mesesComDados = new Set([...mesesDisponiveis, ...mesesParceladosColetados]);
-allFixosDocs.forEach(doc => {
-  if (doc.data().ativo !== false) {
-    totalGastosAcumulado += (doc.data().valor || 0) * mesesComDados.size; // Multiplica pelo número de meses únicos
+  if(triggerFixo) {
+    alertas.push(`<strong>Fixos:</strong> R$ ${moeda(resumo.fixosMes || 0)} / R$ ${moeda(metaFixoAtual)} (${(((resumo.fixosMes || 0)/metaFixoAtual)*100).toFixed(1)}%)`);
   }
-});
 
+  if(triggerParcelado) {
+    alertas.push(`<strong>Parcelados:</strong> R$ ${moeda(parcelasMesTotal)} / R$ ${moeda(metaParcelado)} (${((parcelasMesTotal/metaParcelado)*100).toFixed(1)}%)`);
+  }
 
-      // Verifica todos os tipos de gastos que ultrapassam o limite
-      const metaParcelado = getEnvelopeMeta('parcelado');
-      const metaFixoAtual = getEnvelopeMeta('fixo');
-      const metaVariavel = getEnvelopeMeta('variavel');
-      const triggerParcelado = metaParcelado > 0 && parcelasMesTotal > metaParcelado;
-      const triggerFixo = metaFixoAtual > 0 && somaFixosAtivos > metaFixoAtual;
-      const somaVariavel = window._somaVariavelAtual || 0;
-      const triggerVariavel = metaVariavel > 0 && somaVariavel > metaVariavel;
-      
-      const banner = document.getElementById('danger-banner');
-      const alertas = [];
+  if(triggerVariavel) {
+    alertas.push(`<strong>Variáveis:</strong> R$ ${moeda(somaVariavel)} / R$ ${moeda(metaVariavel)} (${((somaVariavel/metaVariavel)*100).toFixed(1)}%)`);
+  }
 
-      if(triggerFixo) {
-        alertas.push(`<strong>Fixos:</strong> R$ ${moeda(somaFixosAtivos)} / R$ ${moeda(metaFixoAtual)} (${((somaFixosAtivos/metaFixoAtual)*100).toFixed(1)}%)`);
-      }
-
-      if(triggerParcelado) {
-        alertas.push(`<strong>Parcelados:</strong> R$ ${moeda(parcelasMesTotal)} / R$ ${moeda(metaParcelado)} (${((parcelasMesTotal/metaParcelado)*100).toFixed(1)}%)`);
-      }
-
-      if(triggerVariavel) {
-        alertas.push(`<strong>Variáveis:</strong> R$ ${moeda(somaVariavel)} / R$ ${moeda(metaVariavel)} (${((somaVariavel/metaVariavel)*100).toFixed(1)}%)`);
-      }
-
-      if(alertas.length > 0) {
-        banner.style.display = 'block';
-        banner.innerHTML = `
-          <div class="flex items-start gap-2">
-            <span class="text-xl">🚨</span>
-            <div class="flex-1">
-              <div class="font-bold mb-2">Atenção: Limite(s) ultrapassado(s)!</div>
-              <div class="space-y-1">
-                ${alertas.map(alerta => `<div class="text-sm">• ${alerta}</div>`).join('')}
-              </div>
-              <div class="text-xs mt-2 text-red-800 dark:text-red-300">
-                💡 <strong>Dica:</strong> Considere revisar gastos desnecessários ou ajustar seus limites.
-              </div>
-            </div>
+  if(alertas.length > 0) {
+    banner.style.display = 'block';
+    banner.innerHTML = `
+      <div class="flex items-start gap-2">
+        <span class="text-xl">🚨</span>
+        <div class="flex-1">
+          <div class="font-bold mb-2">Atenção: Limite(s) ultrapassado(s)!</div>
+          <div class="space-y-1">
+            ${alertas.map(alerta => `<div class="text-sm">• ${alerta}</div>`).join('')}
           </div>
-        `;
-      } else {
-        banner.style.display = 'none';
-      }
+          <div class="text-xs mt-2 text-red-800 dark:text-red-300">
+            💡 <strong>Dica:</strong> Considere revisar gastos desnecessários ou ajustar seus limites.
+          </div>
+        </div>
+      </div>
+    `;
+  } else {
+    banner.style.display = 'none';
+  }
 
-      document.getElementById('gasto-fixo').textContent = moeda(somaFixosAtivos);
-      atualizarBarra('fixo', somaFixosAtivos);
+  document.getElementById('gasto-fixo').textContent = moeda(resumo.fixosMes || 0);
+  atualizarBarra('fixo', resumo.fixosMes || 0);
 
-      // agora que já temos fixos, atualiza resumo
-      atualizarResumoUI();
-    });
+  atualizarResumoUI();
 }
 
 
@@ -11570,6 +11833,7 @@ function atualizarResumoUI(){
   atualizarResumoSaidasCard(totalGastosPrevistosMes);
   atualizarSaudeFinanceira();
   updateWalletSummaryUI();
+  persistMonthlySummaryFromState();
 }
 
 
@@ -14187,6 +14451,8 @@ formAddGastoModal.addEventListener('submit', e => {
     }
   }
 
+  const tagsToPersist = [...selectedTagsArray];
+
   userCollectionRef('gastos').add(stampWorkspaceCreation({
     tipo: 'variavel',
     cartao: cartaoSelecionado,
@@ -14197,6 +14463,9 @@ formAddGastoModal.addEventListener('submit', e => {
     data: firebase.firestore.Timestamp.now(),
     mesFatura: mesFaturaCalculado, // NOVO CAMPO
   })).then(() => {
+    if (tagsToPersist.length) {
+      persistTagsMetadata(tagsToPersist);
+    }
     // Limpa tags selecionadas
     selectedTagsArray = [];
     renderSelectedTags();
@@ -15338,15 +15607,20 @@ function boot(){
   carregarEnvelopes();
   // initial empty UI
   atualizarBarrasVisuais();
-  // start observing everything
-  startObservers();
-  // 🔥 Força o filtro de mês para o mês atual
+  // 🔥 Força o filtro de mês para o mês atual antes de iniciar os observers
   const filtroMes = document.getElementById('filtro-mes');
   const mesAtual = yyyymm(new Date());
-  filtroMes.value = mesAtual;
+  if (filtroMes) {
+    if (!filtroMes.value || filtroMes.value === 'all') {
+      filtroMes.value = mesAtual;
+    }
+    painelFinanceiroState.entradasUltimoMesSelecionado = filtroMes.value;
+  }
+  // start observing everything com o filtro já definido
+  startObservers(true);
   // NOVO: Popula os selects de cartão na inicialização
-  popularSelectCartoes(); 
-  
+  popularSelectCartoes();
+
   // NOVO: Inicializa sistemas de melhorias
   initTagsSystem();
   initHistoricoSearch();
@@ -15907,6 +16181,8 @@ if (cartaoSelecionado === 'pix' || cartaoSelecionado === '') {
   }
 }
 
+      const tagsToPersist = [...selectedTagsArray];
+
       userCollectionRef('gastos').doc(id).update(stampWorkspaceUpdate({
         cartao: cartaoSelecionado,
         categoria,
@@ -15915,6 +16191,9 @@ if (cartaoSelecionado === 'pix' || cartaoSelecionado === '') {
         tags: selectedTagsArray,
         mesFatura: mesFaturaCalculado
       })).then(() => {
+        if (tagsToPersist.length) {
+          persistTagsMetadata(tagsToPersist);
+        }
         selectedTagsArray = [];
         renderSelectedTags();
         fecharModal();
