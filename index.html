@@ -13402,13 +13402,11 @@ function atualizarResumoSaidasCard(totalGastosPrevistosMes) {
 function atualizarResumoRapido() {
   const entradasMes = painelFinanceiroState.entradasMes || 0;
   const totalGastosMes = painelFinanceiroState.totalGastosMes || 0;
-  const projInvest = painelFinanceiroState.investimentosProjetados || 0;
-  const totalInvest = painelFinanceiroState.investimentosTotais || 0;
-  const ganhoInvest = Math.max(0, projInvest - totalInvest);
-  const saldoBaseCarteira = typeof walletState?.closingBalance === 'number'
-    ? walletState.closingBalance
-    : (entradasMes - totalGastosMes);
-  const saldoProjetado = saldoBaseCarteira + ganhoInvest;
+  const fluxoDistribuicao = Number(painelFinanceiroState?.entradasDistribuicaoMes?.fluxo);
+  const fluxoDisponivel = Number.isFinite(fluxoDistribuicao)
+    ? fluxoDistribuicao
+    : entradasMes;
+  const saldoProjetado = roundCurrency((fluxoDisponivel || 0) - totalGastosMes);
   const contasTotal = roundCurrency(walletState.accountsTotal || 0);
   const investimentosTotal = roundCurrency(walletState.investmentsTotal || Number(painelFinanceiroState?.investimentosTotais || 0));
   const patrimonioTotal = roundCurrency(walletState.patrimonioTotal || (contasTotal + investimentosTotal));
@@ -13475,12 +13473,11 @@ function atualizarSaudeFinanceira() {
   const entradasMes = painelFinanceiroState.entradasMes || 0;
   const totalGastosMes = painelFinanceiroState.totalGastosMes || 0;
   const projInvest = painelFinanceiroState.investimentosProjetados || 0;
-  const totalInvest = painelFinanceiroState.investimentosTotais || 0;
-  const ganhoInvest = Math.max(0, projInvest - totalInvest);
-  const saldoBaseCarteira = typeof walletState?.closingBalance === 'number'
-    ? walletState.closingBalance
-    : (entradasMes - totalGastosMes);
-  const saldoProjetado = saldoBaseCarteira + ganhoInvest;
+  const fluxoDistribuicao = Number(painelFinanceiroState?.entradasDistribuicaoMes?.fluxo);
+  const fluxoDisponivel = Number.isFinite(fluxoDistribuicao)
+    ? fluxoDistribuicao
+    : entradasMes;
+  const saldoProjetado = roundCurrency((fluxoDisponivel || 0) - totalGastosMes);
 
   rendaEl.textContent = `R$ ${moeda(entradasMes)}`;
   investimentoEl.textContent = `R$ ${moeda(Math.max(projInvest, 0))}`;
