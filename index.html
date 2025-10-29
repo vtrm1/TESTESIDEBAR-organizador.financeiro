@@ -2016,15 +2016,27 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
 
       <div class="space-y-4">
         <div class="rounded-2xl bg-emerald-50/80 dark:bg-emerald-900/30 border border-emerald-100/70 dark:border-emerald-800/50 p-4 shadow-sm space-y-4">
-          <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <div class="text-[0.65rem] uppercase tracking-wide text-emerald-700 dark:text-emerald-200">Saldo líquido do período</div>
-              <div id="entradas-saldo-mes" class="text-2xl font-bold text-emerald-900 dark:text-emerald-100">R$ 0,00</div>
-              <p id="entradas-saldo-hint" class="text-[0.7rem] text-emerald-700/80 dark:text-emerald-200/80">Selecione um mês para ver a diferença entre entradas e saídas.</p>
-            </div>
-            <div class="rounded-xl bg-white/70 dark:bg-slate-900/40 border border-emerald-200/60 dark:border-emerald-800/40 px-3 py-2 text-right">
-              <div class="text-[0.65rem] uppercase tracking-wide text-emerald-700 dark:text-emerald-200">Fluxo disponível</div>
-              <div id="entradas-distribuicao-fluxo" class="text-lg font-semibold text-emerald-900 dark:text-emerald-100">R$ 0,00</div>
+          <div class="flex flex-col gap-3">
+            <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+              <div class="flex flex-col gap-2 flex-1 min-w-[220px]">
+                <div class="flex flex-wrap items-start justify-between gap-2">
+                  <div>
+                    <div class="text-[0.65rem] uppercase tracking-wide text-emerald-700 dark:text-emerald-200">Saldo líquido do período</div>
+                    <div id="entradas-saldo-mes" class="text-2xl font-bold text-emerald-900 dark:text-emerald-100">R$ 0,00</div>
+                    <p id="entradas-saldo-hint" class="text-[0.7rem] text-emerald-700/80 dark:text-emerald-200/80">Selecione um mês para ver a diferença entre entradas e saídas.</p>
+                  </div>
+                  <label for="entradas-saldo-periodo-select" class="text-[0.65rem] font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-200">
+                    <span class="sr-only">Selecionar período das entradas</span>
+                    <select id="entradas-saldo-periodo-select" class="mt-1 min-w-[9rem] rounded border border-emerald-200 dark:border-emerald-700 bg-white dark:bg-slate-900 px-2.5 py-1.5 text-xs text-emerald-700 dark:text-emerald-200">
+                      <option value="" disabled selected>Carregando...</option>
+                    </select>
+                  </label>
+                </div>
+              </div>
+              <div class="rounded-xl bg-white/70 dark:bg-slate-900/40 border border-emerald-200/60 dark:border-emerald-800/40 px-3 py-2 text-right">
+                <div class="text-[0.65rem] uppercase tracking-wide text-emerald-700 dark:text-emerald-200">Fluxo disponível</div>
+                <div id="entradas-distribuicao-fluxo" class="text-lg font-semibold text-emerald-900 dark:text-emerald-100">R$ 0,00</div>
+              </div>
             </div>
           </div>
           <div class="grid grid-cols-1 gap-2 text-sm">
@@ -2050,12 +2062,20 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
       </div>
 
       <div class="space-y-3">
-        <div class="flex items-center justify-between">
+        <div class="flex flex-wrap items-center justify-between gap-2">
           <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-200">Histórico do período</h4>
-          <button type="button" class="text-xs inline-flex items-center gap-1 rounded-full border border-emerald-200/70 dark:border-emerald-900/40 px-3 py-1 text-emerald-700 dark:text-emerald-200 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition" data-focus-entrada>
-            <i class="fa fa-circle-plus text-[0.65rem]"></i>
-            Nova entrada
-          </button>
+          <div class="flex items-center gap-2">
+            <label for="entradas-historico-periodo-select" class="text-[0.65rem] font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-200">
+              <span class="sr-only">Selecionar período do histórico</span>
+              <select id="entradas-historico-periodo-select" class="min-w-[9rem] rounded border border-emerald-200 dark:border-emerald-700 bg-white dark:bg-slate-900 px-2.5 py-1.5 text-xs text-emerald-700 dark:text-emerald-200">
+                <option value="" disabled selected>Carregando...</option>
+              </select>
+            </label>
+            <button type="button" class="text-xs inline-flex items-center gap-1 rounded-full border border-emerald-200/70 dark:border-emerald-900/40 px-3 py-1 text-emerald-700 dark:text-emerald-200 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition" data-focus-entrada>
+              <i class="fa fa-circle-plus text-[0.65rem]"></i>
+              Nova entrada
+            </button>
+          </div>
         </div>
         <div id="entradas-lista" class="space-y-2 text-sm"></div>
       </div>
@@ -2102,7 +2122,7 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
                 </select>
                 <p id="entrada-conta-helper" class="text-[0.7rem] text-emerald-700/80 dark:text-emerald-200/80">Cadastre contas na carteira para direcionar entradas automaticamente.</p>
               </div>
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div class="grid grid-cols-1 gap-3">
                 <label class="text-xs font-semibold uppercase tracking-wide text-emerald-800 dark:text-emerald-200 flex flex-col gap-1">
                   Percentual (%)
                   <input id="entrada-percentual-carteira" type="number" min="0" max="100" step="1" class="px-3 py-1.5 rounded border border-emerald-200 dark:border-emerald-700 bg-white dark:bg-slate-900 text-right text-emerald-700 dark:text-emerald-200" value="100" />
@@ -2130,7 +2150,7 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
                   <option value="outros">Outros</option>
                 </select>
               </div>
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div class="grid grid-cols-1 gap-3">
                 <label class="text-xs font-semibold uppercase tracking-wide text-emerald-800 dark:text-emerald-200 flex flex-col gap-1">
                   Percentual (%)
                   <input id="entrada-percentual-invest" type="number" min="0" max="100" step="1" class="px-3 py-1.5 rounded border border-emerald-200 dark:border-emerald-700 bg-white dark:bg-slate-900 text-right text-emerald-700 dark:text-emerald-200" value="0" />
@@ -7233,6 +7253,7 @@ const painelFinanceiroState = {
   entradasMesBrutas: 0,
   entradasTotais: 0,
   entradasTotaisBrutas: 0,
+  entradasUltimoMesSelecionado: yyyymm(new Date()),
   entradasFiltroTodos: false,
   entradasDistribuicaoMes: {
     bruto: 0,
@@ -13443,37 +13464,123 @@ btnPlanejamentoEntrada?.addEventListener('click', () => {
 /* ===========================
    FILTRO MESES POPULATION helper (GERAL)
    =========================== */
+function getEntradasPeriodoSelects() {
+  return [
+    document.getElementById('entradas-saldo-periodo-select'),
+    document.getElementById('entradas-historico-periodo-select'),
+  ].filter(Boolean);
+}
+
+function clonarOpcoesEntradasPeriodo() {
+  const baseSelect = document.getElementById('filtro-mes');
+  if (!baseSelect) return;
+  const options = Array.from(baseSelect.options).map((opt) => ({
+    value: opt.value,
+    label: opt.textContent,
+  }));
+  const baseValue = baseSelect.value;
+
+  getEntradasPeriodoSelects().forEach((select) => {
+    select.innerHTML = '';
+    options.forEach(({ value, label }) => {
+      const option = document.createElement('option');
+      option.value = value;
+      option.textContent = label;
+      select.appendChild(option);
+    });
+    const hasBase = Array.from(select.options).some((opt) => opt.value === baseValue);
+    if (hasBase) {
+      select.value = baseValue;
+    } else if (select.options.length > 0) {
+      select.selectedIndex = 0;
+    }
+  });
+}
+
+function sincronizarSeletoresEntradasPeriodo() {
+  const baseSelect = document.getElementById('filtro-mes');
+  if (!baseSelect) return;
+  const value = baseSelect.value;
+  getEntradasPeriodoSelects().forEach((select) => {
+    if (Array.from(select.options).some((opt) => opt.value === value)) {
+      select.value = value;
+    }
+  });
+}
+
 function atualizarFiltroMeses(){
   const select = document.getElementById('filtro-mes');
-  const atual = select.value; 
+  if (!select) return;
+  const atual = select.value;
 
   select.innerHTML = '<option value="all">Todos</option>';
 
- const setAllDataMonths = new Set([
-   ...(mesesDisponiveis||[]),
-   ...(mesesParceladosColetados||[]),
-   ...(mesesEntradasDisponiveis||[]),
-   ...(mesesInvestimentosDisponiveis||[])
- ]);
-  
-  Array.from(setAllDataMonths).sort().reverse().forEach(k=>{
+  const setAllDataMonths = new Set([
+    ...(mesesDisponiveis || []),
+    ...(mesesParceladosColetados || []),
+    ...(mesesEntradasDisponiveis || []),
+    ...(mesesInvestimentosDisponiveis || []),
+  ]);
+
+  Array.from(setAllDataMonths).sort().reverse().forEach((k) => {
     const opt = document.createElement('option');
     opt.value = k;
     opt.textContent = mmYYYY(k);
     select.appendChild(opt);
   });
 
-  if(atual && Array.from(select.options).some(o=>o.value===atual)) {
-      select.value = atual;
-  } else {
-      select.value = yyyymm(new Date());
+  const valoresDisponiveis = Array.from(select.options).map((opt) => opt.value);
+  let finalValue = atual;
+
+  if (!finalValue || !valoresDisponiveis.includes(finalValue)) {
+    const ultimoMesValido = painelFinanceiroState.entradasUltimoMesSelecionado;
+    if (ultimoMesValido && valoresDisponiveis.includes(ultimoMesValido)) {
+      finalValue = ultimoMesValido;
+    } else {
+      const mesAtual = yyyymm(new Date());
+      if (valoresDisponiveis.includes(mesAtual)) {
+        finalValue = mesAtual;
+      } else {
+        finalValue = valoresDisponiveis[0] || 'all';
+      }
+    }
   }
+
+  select.value = finalValue;
+  if (finalValue && finalValue !== 'all') {
+    painelFinanceiroState.entradasUltimoMesSelecionado = finalValue;
+  }
+
+  clonarOpcoesEntradasPeriodo();
+  sincronizarSeletoresEntradasPeriodo();
 }
 
 
-document.getElementById('filtro-mes').addEventListener('change', ()=>{
+document.getElementById('filtro-mes').addEventListener('change', () => {
+  const filtroMesEl = document.getElementById('filtro-mes');
+  if (!filtroMesEl) return;
+  const valorSelecionado = filtroMesEl.value;
+  if (valorSelecionado && valorSelecionado !== 'all') {
+    painelFinanceiroState.entradasUltimoMesSelecionado = valorSelecionado;
+  }
+  sincronizarSeletoresEntradasPeriodo();
   // Ao mudar o filtro de mês, reinicia os observers para carregar os dados do novo mês
-  startObservers(); 
+  startObservers();
+});
+
+getEntradasPeriodoSelects().forEach((select) => {
+  select.addEventListener('change', (event) => {
+    const filtroMesEl = document.getElementById('filtro-mes');
+    if (!filtroMesEl) return;
+    const novoValor = event.target.value;
+    if (!Array.from(filtroMesEl.options).some((opt) => opt.value === novoValor)) {
+      return;
+    }
+    if (filtroMesEl.value !== novoValor) {
+      filtroMesEl.value = novoValor;
+      filtroMesEl.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+  });
 });
 
 /* ===========================
