@@ -10215,12 +10215,54 @@ function computeWalletExpensesForMonth(monthKey) {
 }
 
 function resolveWalletOpeningBalanceLocal(monthKey) {
-  if (walletState.currentSnapshot && typeof walletState.currentSnapshot.openingBalance === 'number') {
-    setWalletOpeningSource('snapshot', monthKey);
-    const resolved = roundCurrency(walletState.currentSnapshot.openingBalance);
-    cacheWalletOpeningBalance(monthKey, resolved);
-    return resolved;
+  const normalizedSnapshot = walletState.currentSnapshotNormalized || null;
+  const snapshotMonth = normalizedSnapshot?.month
+    || walletState.currentSnapshot?.month
+    || null;
+
+  if (snapshotMonth && monthKey && snapshotMonth < monthKey) {
+    let carry = normalizedSnapshot?.closingBalance;
+    if (carry != null) {
+      const numericCarry = Number(carry);
+      carry = Number.isFinite(numericCarry) ? numericCarry : null;
+    }
+    if (!Number.isFinite(carry)) {
+      const snapshot = walletState.currentSnapshot || {};
+      const closingCandidate = snapshot.closingBalance != null
+        ? Number(snapshot.closingBalance)
+        : Number(snapshot.openingBalance) + Number(snapshot.netFlow);
+      carry = Number.isFinite(closingCandidate) ? closingCandidate : null;
+    }
+    if (Number.isFinite(carry)) {
+      const resolved = roundCurrency(Number(carry));
+      setWalletOpeningSource('carry', snapshotMonth);
+      cacheWalletOpeningBalance(monthKey, resolved);
+      return resolved;
+    }
   }
+
+  if (
+    snapshotMonth
+    && (!monthKey || snapshotMonth === monthKey)
+    && (normalizedSnapshot?.openingBalance != null || walletState.currentSnapshot?.openingBalance != null)
+  ) {
+    let openingValue = normalizedSnapshot?.openingBalance;
+    if (openingValue != null) {
+      const numericOpening = Number(openingValue);
+      openingValue = Number.isFinite(numericOpening) ? numericOpening : null;
+    }
+    if (!Number.isFinite(openingValue)) {
+      const snapshot = walletState.currentSnapshot || {};
+      openingValue = snapshot.openingBalance != null ? Number(snapshot.openingBalance) : null;
+    }
+    if (Number.isFinite(openingValue)) {
+      const resolved = roundCurrency(Number(openingValue));
+      setWalletOpeningSource('snapshot', snapshotMonth);
+      cacheWalletOpeningBalance(snapshotMonth, resolved);
+      return resolved;
+    }
+  }
+
   const timeline = Array.isArray(walletTimelineDocs) ? walletTimelineDocs : [];
   let candidate = null;
   if (monthKey) {
