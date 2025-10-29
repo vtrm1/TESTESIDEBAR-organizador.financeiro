@@ -2015,22 +2015,14 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
       </div>
 
       <div class="space-y-4">
-        <div class="rounded-2xl bg-emerald-50/80 dark:bg-emerald-900/30 border border-emerald-100/70 dark:border-emerald-800/50 p-4 shadow-sm space-y-4">
-          <div class="flex flex-col gap-3">
+        <details class="group rounded-2xl bg-emerald-50/80 dark:bg-emerald-900/30 border border-emerald-100/70 dark:border-emerald-800/50 p-4 shadow-sm">
+          <summary class="flex flex-col gap-3 cursor-pointer">
             <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
               <div class="flex flex-col gap-2 flex-1 min-w-[220px]">
-                <div class="flex flex-wrap items-start justify-between gap-2">
-                  <div>
-                    <div class="text-[0.65rem] uppercase tracking-wide text-emerald-700 dark:text-emerald-200">Saldo líquido do período</div>
-                    <div id="entradas-saldo-mes" class="text-2xl font-bold text-emerald-900 dark:text-emerald-100">R$ 0,00</div>
-                    <p id="entradas-saldo-hint" class="text-[0.7rem] text-emerald-700/80 dark:text-emerald-200/80">Selecione um mês para ver a diferença entre entradas e saídas.</p>
-                  </div>
-                  <label for="entradas-saldo-periodo-select" class="text-[0.65rem] font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-200">
-                    <span class="sr-only">Selecionar período das entradas</span>
-                    <select id="entradas-saldo-periodo-select" class="mt-1 min-w-[9rem] rounded border border-emerald-200 dark:border-emerald-700 bg-white dark:bg-slate-900 px-2.5 py-1.5 text-xs text-emerald-700 dark:text-emerald-200">
-                      <option value="" disabled selected>Carregando...</option>
-                    </select>
-                  </label>
+                <div>
+                  <div class="text-[0.65rem] uppercase tracking-wide text-emerald-700 dark:text-emerald-200">Saldo líquido do período</div>
+                  <div id="entradas-saldo-mes" class="text-2xl font-bold text-emerald-900 dark:text-emerald-100">R$ 0,00</div>
+                  <p id="entradas-saldo-hint" class="text-[0.7rem] text-emerald-700/80 dark:text-emerald-200/80">Use o filtro principal de período para ajustar este saldo e clique para conferir a distribuição detalhada.</p>
                 </div>
               </div>
               <div class="rounded-xl bg-white/70 dark:bg-slate-900/40 border border-emerald-200/60 dark:border-emerald-800/40 px-3 py-2 text-right">
@@ -2038,46 +2030,50 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
                 <div id="entradas-distribuicao-fluxo" class="text-lg font-semibold text-emerald-900 dark:text-emerald-100">R$ 0,00</div>
               </div>
             </div>
-          </div>
-          <div class="grid grid-cols-1 gap-2 text-sm">
-            <div class="flex items-center justify-between rounded-lg bg-white/70 dark:bg-slate-900/40 px-3 py-2">
-              <span class="text-emerald-700 dark:text-emerald-200 font-semibold text-xs uppercase tracking-wide">Recebido bruto</span>
-              <span id="entradas-distribuicao-bruto" class="text-emerald-900 dark:text-emerald-100 font-semibold">R$ 0,00</span>
+            <div class="flex items-center justify-end gap-2 text-[0.65rem] font-semibold uppercase tracking-wide text-emerald-700/70 dark:text-emerald-200/70">
+              <span>Ver detalhes da distribuição</span>
+              <i class="fa-solid fa-chevron-down transition-transform duration-200 group-open:rotate-180"></i>
             </div>
-            <div class="flex items-center justify-between rounded-lg bg-emerald-100/70 dark:bg-emerald-800/40 px-3 py-2">
-              <span class="text-emerald-800 dark:text-emerald-200 text-xs uppercase tracking-wide">Direcionado à carteira</span>
-              <span id="entradas-distribuicao-carteira" class="text-emerald-900 dark:text-emerald-100 font-semibold">R$ 0,00</span>
+          </summary>
+          <div class="mt-4 space-y-4">
+            <div class="grid grid-cols-1 gap-2 text-sm">
+              <div class="flex items-center justify-between rounded-lg bg-white/70 dark:bg-slate-900/40 px-3 py-2">
+                <span class="text-emerald-700 dark:text-emerald-200 font-semibold text-xs uppercase tracking-wide">Recebido bruto</span>
+                <span id="entradas-distribuicao-bruto" class="text-emerald-900 dark:text-emerald-100 font-semibold">R$ 0,00</span>
+              </div>
+              <div class="flex items-center justify-between rounded-lg bg-emerald-100/70 dark:bg-emerald-800/40 px-3 py-2">
+                <span class="text-emerald-800 dark:text-emerald-200 text-xs uppercase tracking-wide">Direcionado à carteira</span>
+                <span id="entradas-distribuicao-carteira" class="text-emerald-900 dark:text-emerald-100 font-semibold">R$ 0,00</span>
+              </div>
+              <div class="flex items-center justify-between rounded-lg bg-indigo-100/70 dark:bg-indigo-900/30 px-3 py-2">
+                <span class="text-indigo-700 dark:text-indigo-200 text-xs uppercase tracking-wide">Reservado para investimentos</span>
+                <span id="entradas-distribuicao-invest" class="text-indigo-800 dark:text-indigo-200 font-semibold">R$ 0,00</span>
+              </div>
             </div>
-            <div class="flex items-center justify-between rounded-lg bg-indigo-100/70 dark:bg-indigo-900/30 px-3 py-2">
-              <span class="text-indigo-700 dark:text-indigo-200 text-xs uppercase tracking-wide">Reservado para investimentos</span>
-              <span id="entradas-distribuicao-invest" class="text-indigo-800 dark:text-indigo-200 font-semibold">R$ 0,00</span>
+            <div class="space-y-1 text-xs text-emerald-700 dark:text-emerald-200">
+              <p id="wallet-fluxo-liquido" class="font-semibold text-sm text-emerald-700 dark:text-emerald-200">Fluxo líquido: R$ 0,00</p>
+              <p id="wallet-entradas-saidas" class="text-emerald-700/80 dark:text-emerald-200/80">Entradas: R$ 0,00 • Saídas: R$ 0,00</p>
+              <p id="entradas-distribuicao-insight" class="text-emerald-700/80 dark:text-emerald-200/80">Cadastre entradas para visualizar a distribuição deste mês.</p>
             </div>
           </div>
-          <div class="space-y-1 text-xs text-emerald-700 dark:text-emerald-200">
-            <p id="wallet-fluxo-liquido" class="font-semibold text-sm text-emerald-700 dark:text-emerald-200">Fluxo líquido: R$ 0,00</p>
-            <p id="wallet-entradas-saidas" class="text-emerald-700/80 dark:text-emerald-200/80">Entradas: R$ 0,00 • Saídas: R$ 0,00</p>
-            <p id="entradas-distribuicao-insight" class="text-emerald-700/80 dark:text-emerald-200/80">Cadastre entradas para visualizar a distribuição deste mês.</p>
-          </div>
-        </div>
+        </details>
       </div>
 
       <div class="space-y-3">
         <div class="flex flex-wrap items-center justify-between gap-2">
           <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-200">Histórico do período</h4>
-          <div class="flex items-center gap-2">
-            <label for="entradas-historico-periodo-select" class="text-[0.65rem] font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-200">
-              <span class="sr-only">Selecionar período do histórico</span>
-              <select id="entradas-historico-periodo-select" class="min-w-[9rem] rounded border border-emerald-200 dark:border-emerald-700 bg-white dark:bg-slate-900 px-2.5 py-1.5 text-xs text-emerald-700 dark:text-emerald-200">
-                <option value="" disabled selected>Carregando...</option>
-              </select>
-            </label>
-            <button type="button" class="text-xs inline-flex items-center gap-1 rounded-full border border-emerald-200/70 dark:border-emerald-900/40 px-3 py-1 text-emerald-700 dark:text-emerald-200 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition" data-focus-entrada>
-              <i class="fa fa-circle-plus text-[0.65rem]"></i>
-              Nova entrada
-            </button>
-          </div>
+          <button type="button" class="text-xs inline-flex items-center gap-1 rounded-full border border-emerald-200/70 dark:border-emerald-900/40 px-3 py-1 text-emerald-700 dark:text-emerald-200 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition" data-focus-entrada>
+            <i class="fa fa-circle-plus text-[0.65rem]"></i>
+            Nova entrada
+          </button>
         </div>
-        <div id="entradas-lista" class="space-y-2 text-sm"></div>
+        <details class="group rounded-xl border border-emerald-100/70 dark:border-emerald-900/40 bg-white/70 dark:bg-slate-900/40">
+          <summary class="flex items-center justify-between gap-3 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-200 cursor-pointer">
+            <span>Ver lançamentos registrados</span>
+            <i class="fa-solid fa-chevron-down text-[0.65rem] transition-transform duration-200 group-open:rotate-180"></i>
+          </summary>
+          <div id="entradas-lista" class="space-y-2 text-sm px-3 pb-3"></div>
+        </details>
       </div>
 
       <form id="form-entrada" class="space-y-3 rounded-2xl border border-emerald-100 dark:border-emerald-900/40 bg-white/80 dark:bg-slate-900/40 p-4">
@@ -13461,53 +13457,6 @@ btnPlanejamentoEntrada?.addEventListener('click', () => {
   showToast(`Sugestão pronta: R$ ${moeda(margem)} já está preenchido nas entradas para você salvar.`, 'info');
 });
 
-/* ===========================
-   FILTRO MESES POPULATION helper (GERAL)
-   =========================== */
-function getEntradasPeriodoSelects() {
-  return [
-    document.getElementById('entradas-saldo-periodo-select'),
-    document.getElementById('entradas-historico-periodo-select'),
-  ].filter(Boolean);
-}
-
-function clonarOpcoesEntradasPeriodo() {
-  const baseSelect = document.getElementById('filtro-mes');
-  if (!baseSelect) return;
-  const options = Array.from(baseSelect.options).map((opt) => ({
-    value: opt.value,
-    label: opt.textContent,
-  }));
-  const baseValue = baseSelect.value;
-
-  getEntradasPeriodoSelects().forEach((select) => {
-    select.innerHTML = '';
-    options.forEach(({ value, label }) => {
-      const option = document.createElement('option');
-      option.value = value;
-      option.textContent = label;
-      select.appendChild(option);
-    });
-    const hasBase = Array.from(select.options).some((opt) => opt.value === baseValue);
-    if (hasBase) {
-      select.value = baseValue;
-    } else if (select.options.length > 0) {
-      select.selectedIndex = 0;
-    }
-  });
-}
-
-function sincronizarSeletoresEntradasPeriodo() {
-  const baseSelect = document.getElementById('filtro-mes');
-  if (!baseSelect) return;
-  const value = baseSelect.value;
-  getEntradasPeriodoSelects().forEach((select) => {
-    if (Array.from(select.options).some((opt) => opt.value === value)) {
-      select.value = value;
-    }
-  });
-}
-
 function atualizarFiltroMeses(){
   const select = document.getElementById('filtro-mes');
   if (!select) return;
@@ -13551,8 +13500,6 @@ function atualizarFiltroMeses(){
     painelFinanceiroState.entradasUltimoMesSelecionado = finalValue;
   }
 
-  clonarOpcoesEntradasPeriodo();
-  sincronizarSeletoresEntradasPeriodo();
 }
 
 
@@ -13563,24 +13510,8 @@ document.getElementById('filtro-mes').addEventListener('change', () => {
   if (valorSelecionado && valorSelecionado !== 'all') {
     painelFinanceiroState.entradasUltimoMesSelecionado = valorSelecionado;
   }
-  sincronizarSeletoresEntradasPeriodo();
   // Ao mudar o filtro de mês, reinicia os observers para carregar os dados do novo mês
   startObservers();
-});
-
-getEntradasPeriodoSelects().forEach((select) => {
-  select.addEventListener('change', (event) => {
-    const filtroMesEl = document.getElementById('filtro-mes');
-    if (!filtroMesEl) return;
-    const novoValor = event.target.value;
-    if (!Array.from(filtroMesEl.options).some((opt) => opt.value === novoValor)) {
-      return;
-    }
-    if (filtroMesEl.value !== novoValor) {
-      filtroMesEl.value = novoValor;
-      filtroMesEl.dispatchEvent(new Event('change', { bubbles: true }));
-    }
-  });
 });
 
 /* ===========================
