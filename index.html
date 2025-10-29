@@ -2313,9 +2313,15 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
 
     <!-- NOVO: Investimentos -->
     <div class="mobile-panel hidden lg:block section-card space-y-4" id="painel-investimentos">
-      <div class="flex items-center justify-between">
-        <h3 class="font-semibold text-lg flex items-center gap-2"><i class="fa fa-chart-line text-indigo-500"></i>Investimentos</h3>
-        <span class="text-xs text-gray-500 dark:text-gray-400">Projeção com 1% ao mês</span>
+      <div class="flex flex-wrap items-start justify-between gap-3">
+        <div class="space-y-0.5">
+          <h3 class="font-semibold text-lg flex items-center gap-2"><i class="fa fa-chart-line text-indigo-500"></i>Investimentos</h3>
+          <span id="investimentos-projecao-label" class="text-xs text-gray-500 dark:text-gray-400">Projeção com 1% ao mês</span>
+        </div>
+        <button id="btn-gerenciar-investimentos" type="button" class="inline-flex items-center gap-2 rounded-full border border-indigo-200/70 dark:border-indigo-900/40 bg-indigo-50/70 dark:bg-indigo-900/20 px-3 py-1.5 text-xs font-semibold text-indigo-700 dark:text-indigo-200 hover:bg-indigo-100 dark:hover:bg-indigo-900/35 transition-colors">
+          <i class="fa-solid fa-list-check text-sm"></i>
+          Gerenciar investimentos
+        </button>
       </div>
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-sm">
         <div class="p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg">
@@ -2415,10 +2421,18 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
         <input id="investimento-desc" type="text" class="px-3 py-2 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" placeholder="Observação (opcional)" />
         <button type="submit" class="sm:col-span-2 bg-indigo-600 dark:bg-indigo-700 text-white px-3 py-2 rounded hover:bg-indigo-700 dark:hover:bg-indigo-800 transition">Adicionar investimento</button>
       </form>
-      <div>
-        <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2">Aplicações recentes</h4>
-        <div id="investimentos-lista" class="space-y-2 max-h-48 overflow-y-auto text-sm">
-          <div class="text-gray-500 dark:text-gray-400">Nenhum investimento registrado.</div>
+      <div class="border-t border-indigo-100 dark:border-indigo-900/40 pt-3 space-y-3">
+        <button id="investimentos-recentes-toggle" type="button" class="flex w-full items-center justify-between gap-2 rounded-xl border border-indigo-100 dark:border-indigo-900/40 bg-white/70 dark:bg-slate-800/40 px-3 py-2 text-left font-semibold text-indigo-800 dark:text-indigo-200 transition hover:bg-white dark:hover:bg-slate-800" aria-controls="investimentos-recentes-panel" aria-expanded="false">
+          <span>Aplicações recentes</span>
+          <span class="inline-flex items-center gap-1 text-[0.65rem] font-medium text-indigo-500 dark:text-indigo-300">
+            <span id="investimentos-recentes-meta">Sem registros</span>
+            <i class="fa fa-chevron-down transition-transform duration-200" data-investimentos-recentes-chevron></i>
+          </span>
+        </button>
+        <div id="investimentos-recentes-panel" class="hidden space-y-2" hidden>
+          <div id="investimentos-lista" data-investimentos-list class="space-y-2 max-h-52 overflow-y-auto text-sm">
+            <div class="text-gray-500 dark:text-gray-400">Nenhum investimento registrado.</div>
+          </div>
         </div>
       </div>
     </div>
@@ -2586,6 +2600,53 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
         <span id="wallet-settings-feedback" class="hidden text-sm"></span>
       </div>
     </form>
+  </div>
+</div>
+
+<div id="modal-investimentos" class="fixed inset-0 z-[9590] hidden flex items-center justify-center bg-slate-900/80 backdrop-blur px-4 py-8 overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="modal-investimentos-title">
+  <div class="bg-white dark:bg-slate-900 w-full max-w-3xl rounded-2xl shadow-xl relative p-6 sm:p-8 space-y-6 modal-content max-h-[calc(100vh-4rem)] sm:max-h-[calc(100vh-6rem)] overflow-y-auto">
+    <button id="modal-investimentos-close" class="absolute top-4 right-4 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white text-2xl font-bold" aria-label="Fechar modal" type="button">&times;</button>
+    <div class="space-y-2">
+      <h2 id="modal-investimentos-title" class="text-2xl font-semibold text-slate-900 dark:text-slate-100">Visão detalhada dos investimentos</h2>
+      <p class="text-sm text-slate-500 dark:text-slate-400">Revise a distribuição por tipo, acompanhe aportes recentes e projete o crescimento esperado com base nas suas movimentações.</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+      <div class="p-4 rounded-xl bg-indigo-50/80 dark:bg-indigo-900/20 border border-indigo-100/80 dark:border-indigo-900/40 space-y-1">
+        <div class="text-xs uppercase tracking-wide text-indigo-700 dark:text-indigo-200">Aporte no mês</div>
+        <div id="invest-manager-total-mes" class="text-2xl font-semibold text-indigo-800 dark:text-indigo-200">R$ 0,00</div>
+        <p class="text-[0.7rem] text-indigo-600/80 dark:text-indigo-300/80">Somatório dos aportes lançados no período filtrado.</p>
+      </div>
+      <div class="p-4 rounded-xl bg-indigo-50/80 dark:bg-indigo-900/20 border border-indigo-100/80 dark:border-indigo-900/40 space-y-1">
+        <div class="text-xs uppercase tracking-wide text-indigo-700 dark:text-indigo-200">Total investido</div>
+        <div id="invest-manager-total-geral" class="text-2xl font-semibold text-indigo-800 dark:text-indigo-200">R$ 0,00</div>
+        <p class="text-[0.7rem] text-indigo-600/80 dark:text-indigo-300/80">Considera todos os lançamentos registrados.</p>
+      </div>
+      <div class="p-4 rounded-xl bg-purple-50/80 dark:bg-purple-900/20 border border-purple-100/70 dark:border-purple-900/40 space-y-1">
+        <div class="text-xs uppercase tracking-wide text-purple-700 dark:text-purple-200">Projeção futura</div>
+        <div id="invest-manager-total-projecao" class="text-2xl font-semibold text-purple-800 dark:text-purple-200">R$ 0,00</div>
+        <p id="invest-manager-projecao-hint" class="text-[0.7rem] text-purple-600/80 dark:text-purple-200/70">Projeção considerando 1% ao mês.</p>
+      </div>
+    </div>
+
+    <div class="space-y-3 border-t border-slate-200 dark:border-slate-700 pt-4">
+      <div class="flex items-center justify-between gap-3">
+        <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100">Distribuição por tipo</h3>
+        <span id="invest-manager-types-badge" class="text-sm font-medium text-slate-500 dark:text-slate-400 hidden"></span>
+      </div>
+      <div id="invest-manager-types-empty" class="text-sm text-slate-500 dark:text-slate-400">Cadastre investimentos para visualizar a distribuição por tipo.</div>
+      <div id="invest-manager-types-list" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+    </div>
+
+    <div class="space-y-3 border-t border-slate-200 dark:border-slate-700 pt-4">
+      <div class="flex items-center justify-between gap-3">
+        <h3 class="text-lg font-semibold text-slate-900 dark:text-slate-100">Histórico completo de aportes</h3>
+        <span class="text-xs text-slate-500 dark:text-slate-400">Ordenado do mais recente ao mais antigo</span>
+      </div>
+      <div id="invest-manager-list" data-investimentos-list class="space-y-2 max-h-64 overflow-y-auto text-sm border border-slate-200 dark:border-slate-700 rounded-xl p-3 bg-slate-50/60 dark:bg-slate-800/40">
+        <div class="text-slate-500 dark:text-slate-400">Nenhum investimento registrado ainda.</div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -3600,11 +3661,14 @@ const accessManagerSectionCarets = {};
 const accessManagerSectionState = {};
 const walletManageButton = document.getElementById('btn-gerenciar-carteira');
 const walletInvestButton = document.getElementById('btn-wallet-move-invest');
+const investManagerButton = document.getElementById('btn-gerenciar-investimentos');
 const walletOpeningButton = document.getElementById('btn-wallet-opening');
 const walletAccountsModal = document.getElementById('modal-wallet-accounts');
+const investManagerModal = document.getElementById('modal-investimentos');
 const walletInvestModal = document.getElementById('modal-wallet-invest');
 const walletOpeningModal = document.getElementById('modal-wallet-opening');
 const walletAccountsClose = document.getElementById('wallet-accounts-close');
+const investManagerClose = document.getElementById('modal-investimentos-close');
 const walletInvestClose = document.getElementById('wallet-invest-close');
 const walletOpeningClose = document.getElementById('wallet-opening-close');
 const walletAccountForm = document.getElementById('wallet-account-form');
@@ -3651,6 +3715,11 @@ const walletOpeningSubmit = document.getElementById('wallet-opening-submit');
 const walletTimelineToggle = document.getElementById('wallet-timeline-toggle');
 const walletTimelinePanel = document.getElementById('wallet-timeline-panel');
 const walletTimelineChevron = document.querySelector('[data-wallet-timeline-chevron]');
+const investimentosRecentesToggle = document.getElementById('investimentos-recentes-toggle');
+const investimentosRecentesPanel = document.getElementById('investimentos-recentes-panel');
+const investimentosRecentesChevron = document.querySelector('[data-investimentos-recentes-chevron]');
+const investimentosRecentesMeta = document.getElementById('investimentos-recentes-meta');
+const investProjectionLabel = document.getElementById('investimentos-projecao-label');
 const recursosOverviewModal = document.getElementById('modal-recursos-overview');
 const recursosOverviewClose = document.getElementById('recursos-overview-close');
 const recursosOverviewBody = document.getElementById('recursos-overview-body');
@@ -6524,6 +6593,11 @@ if (walletInvestButton && walletInvestModal) {
     openWalletInvestModal();
   });
 }
+if (investManagerButton && investManagerModal) {
+  investManagerButton.addEventListener('click', () => {
+    openInvestimentosModal();
+  });
+}
 if (walletOpeningButton && walletOpeningModal) {
   walletOpeningButton.addEventListener('click', () => {
     openWalletOpeningModal();
@@ -6549,6 +6623,11 @@ if (walletInvestClose) {
     closeWalletInvestModal();
   });
 }
+if (investManagerClose) {
+  investManagerClose.addEventListener('click', () => {
+    closeInvestimentosModal();
+  });
+}
 if (walletOpeningClose) {
   walletOpeningClose.addEventListener('click', () => {
     closeWalletOpeningModal();
@@ -6559,6 +6638,13 @@ if (walletInvestModal) {
   walletInvestModal.addEventListener('click', (event) => {
     if (event.target === walletInvestModal) {
       closeWalletInvestModal();
+    }
+  });
+}
+if (investManagerModal) {
+  investManagerModal.addEventListener('click', (event) => {
+    if (event.target === investManagerModal) {
+      closeInvestimentosModal();
     }
   });
 }
@@ -6650,6 +6736,23 @@ if (walletTimelineToggle && walletTimelinePanel) {
     }
     if (walletTimelineChevron) {
       walletTimelineChevron.style.transform = nextState ? 'rotate(180deg)' : 'rotate(0deg)';
+    }
+  });
+}
+
+if (investimentosRecentesToggle && investimentosRecentesPanel) {
+  investimentosRecentesToggle.addEventListener('click', () => {
+    const expanded = investimentosRecentesToggle.getAttribute('aria-expanded') === 'true';
+    const nextState = !expanded;
+    investimentosRecentesToggle.setAttribute('aria-expanded', String(nextState));
+    investimentosRecentesPanel.classList.toggle('hidden', !nextState);
+    if (nextState) {
+      investimentosRecentesPanel.removeAttribute('hidden');
+    } else {
+      investimentosRecentesPanel.setAttribute('hidden', '');
+    }
+    if (investimentosRecentesChevron) {
+      investimentosRecentesChevron.style.transform = nextState ? 'rotate(180deg)' : 'rotate(0deg)';
     }
   });
 }
@@ -6964,6 +7067,22 @@ const INSIGHTS_TOGGLE_LABELS = {
 };
 const SIMULADOR_DEFAULT_TAXA = appConfig.investimentos?.simulador?.defaultTaxaMensalPercent ?? 1;
 const SIMULADOR_DEFAULT_PERIODO = appConfig.investimentos?.simulador?.defaultPeriodoMeses ?? 12;
+const INVEST_PROJECTION_MONTHLY_RATE = (appConfig.investimentos?.projecao?.taxaMensalPercent ?? 1) / 100;
+const INVEST_PROJECTION_FUTURE_MONTHS = appConfig.investimentos?.projecao?.periodoMeses ?? 12;
+
+if (investProjectionLabel) {
+  let taxaPercent = (INVEST_PROJECTION_MONTHLY_RATE * 100).toLocaleString('pt-BR', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  });
+  if (taxaPercent.endsWith(',00')) {
+    taxaPercent = taxaPercent.slice(0, -3);
+  }
+  const monthsText = INVEST_PROJECTION_FUTURE_MONTHS > 0
+    ? `${INVEST_PROJECTION_FUTURE_MONTHS} ${INVEST_PROJECTION_FUTURE_MONTHS === 1 ? 'mês' : 'meses'} à frente`
+    : 'sem projeção futura';
+  investProjectionLabel.textContent = `Projeção com ${taxaPercent}% ao mês${INVEST_PROJECTION_FUTURE_MONTHS > 0 ? ` • ${monthsText}` : ''}`;
+}
 const HISTORICO_MENSAL_CHART_CFG = appConfig.charts?.historicoMensal || {};
 const PARCELADOS_PROJECAO_CHART_CFG = appConfig.charts?.parceladosProjecao || {};
 
@@ -8779,6 +8898,7 @@ function fecharTodosOsModais() {
     'modal-graficos-fixos',
     'modal-gerenciar-cartoes',
     'modal-wallet-accounts',
+    'modal-investimentos',
   ];
 
   modalsToClose.forEach((modalId) => {
@@ -9940,6 +10060,20 @@ function closeWalletAccountsModal() {
   walletAccountsModal.classList.add('hidden');
   unlockBodyScrollIfAllowed();
   resetWalletAccountForm();
+}
+
+function openInvestimentosModal() {
+  if (!investManagerModal) return;
+  investManagerModal.classList.remove('hidden');
+  lockBodyScroll();
+  activateDialog(investManagerModal, { initialFocus: investManagerClose || investManagerModal });
+}
+
+function closeInvestimentosModal() {
+  if (!investManagerModal) return;
+  deactivateDialog(investManagerModal);
+  investManagerModal.classList.add('hidden');
+  unlockBodyScrollIfAllowed();
 }
 
 function resetWalletInvestForm() {
@@ -11870,66 +12004,87 @@ function renderInvestimentosSidebar(docs = []) {
   mesesInvestimentosDisponiveis = new Set();
   allInvestimentosDocs = docs;
 
-  lista.innerHTML = '';
-
   const mesSel = document.getElementById('filtro-mes').value || yyyymm(new Date());
   const mostrarTodos = mesSel === 'all';
   const hoje = new Date();
+  const futureMonths = Math.max(0, INVEST_PROJECTION_FUTURE_MONTHS || 0);
+  const projectionFactorFuture = Math.pow(1 + INVEST_PROJECTION_MONTHLY_RATE, futureMonths);
+  const projectionLabel = futureMonths > 0 ? `${futureMonths}m` : 'atual';
 
   let totalMes = 0;
   let totalGeral = 0;
   let totalProjetado = 0;
   const totaisPorMes = {};
   const investimentosPorTipoOverview = {};
+  const selectedItemsHtml = [];
+  const allItemsHtml = [];
 
-  docs.forEach(doc => {
-    const data = doc.data();
-    if (!data || !data.data) return;
-    const dt = data.data.toDate ? data.data.toDate() : new Date(data.data);
-    if (Number.isNaN(dt.getTime())) return;
-    const key = yyyymm(dt);
+  const parsedDocs = Array.isArray(docs) ? docs.map((doc) => {
+    const raw = typeof doc.data === 'function' ? doc.data() : doc.data;
+    if (!raw || !raw.data) return null;
+    const dt = raw.data.toDate ? raw.data.toDate() : new Date(raw.data);
+    if (!dt || Number.isNaN(dt.getTime())) return null;
+    const valorBruto = Number(raw.valor ?? raw.valorInvestimento ?? raw.investimentoValorAplicado ?? 0) || 0;
+    const tipo = raw.tipo || 'outros';
+    const descricao = (raw.descricao || '').trim();
+    return {
+      doc,
+      data: raw,
+      dt,
+      key: yyyymm(dt),
+      valor: valorBruto,
+      tipo,
+      descricao,
+    };
+  }).filter(Boolean) : [];
+
+  parsedDocs.sort((a, b) => b.dt - a.dt);
+
+  parsedDocs.forEach((item) => {
+    const { doc, dt, key, valor, tipo, descricao } = item;
     mesesInvestimentosDisponiveis.add(key);
-
-    const valor = Number(data.valor) || 0;
-    const tipo = data.tipo || 'outros';
-    const descricao = (data.descricao || '').trim();
 
     totalGeral += valor;
     totaisPorMes[key] = (totaisPorMes[key] || 0) + valor;
     investimentosPorTipoOverview[tipo] = (investimentosPorTipoOverview[tipo] || 0) + valor;
+
     const mesesPassados = Math.max(0, monthDiff(dt, hoje));
-    const valorProjetado = valor * Math.pow(1.01, mesesPassados);
+    const valorAtualizado = valor * Math.pow(1 + INVEST_PROJECTION_MONTHLY_RATE, mesesPassados);
+    const valorProjetado = valorAtualizado * projectionFactorFuture;
     totalProjetado += valorProjetado;
+
+    const baseInfoHtml = `
+      <div class="flex-1">
+        <div class="flex items-center gap-2">
+          <span class="text-xs uppercase tracking-wide bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-200 px-2 py-0.5 rounded">${investimentoTipoLabels[tipo] || tipo}</span>
+          ${descricao ? `<span class="text-sm font-medium text-gray-700 dark:text-gray-200">${descricao}</span>` : ''}
+        </div>
+        <div class="text-xs text-gray-500 dark:text-gray-400">${formatDate(dt)}</div>
+      </div>
+      <div class="text-right">
+        <div class="font-semibold text-indigo-700 dark:text-indigo-200">R$ ${moeda(valor)}</div>
+        <div class="text-xs text-gray-500 dark:text-gray-400">Proj. ${projectionLabel}: R$ ${moeda(valorProjetado)}</div>
+      </div>
+      <button class="text-gray-400 hover:text-red-500 transition" data-remove-investimento="${doc.id}" aria-label="Remover investimento">
+        <i class="fa fa-times"></i>
+      </button>`;
+
+    allItemsHtml.push(`<div class="flex items-center gap-3 rounded-xl border border-indigo-100 dark:border-indigo-900/40 bg-indigo-50/70 dark:bg-indigo-900/20 p-2">${baseInfoHtml}</div>`);
 
     if (mostrarTodos || key === mesSel) {
       totalMes += valor;
-      const item = document.createElement('div');
-      item.className = 'flex items-center gap-3 p-2 bg-indigo-50 dark:bg-indigo-900/20 rounded';
-      item.innerHTML = `
-        <div class="flex-1">
-          <div class="flex items-center gap-2">
-            <span class="text-xs uppercase tracking-wide bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-200 px-2 py-0.5 rounded">${investimentoTipoLabels[tipo] || tipo}</span>
-            ${descricao ? `<span class="text-sm font-medium text-gray-700 dark:text-gray-200">${descricao}</span>` : ''}
-          </div>
-          <div class="text-xs text-gray-500 dark:text-gray-400">${formatDate(dt)}</div>
-        </div>
-        <div class="text-right">
-          <div class="font-semibold text-indigo-700 dark:text-indigo-200">R$ ${moeda(valor)}</div>
-          <div class="text-xs text-gray-500 dark:text-gray-400">Proj.: R$ ${moeda(valorProjetado)}</div>
-        </div>
-        <button class="text-gray-400 hover:text-red-500 transition" data-remove-investimento="${doc.id}" aria-label="Remover investimento">
-          <i class="fa fa-times"></i>
-        </button>
-      `;
-      lista.appendChild(item);
+      selectedItemsHtml.push(`<div class="flex items-center gap-3 rounded-xl bg-indigo-50/70 dark:bg-indigo-900/20 p-2">${baseInfoHtml}</div>`);
     }
   });
 
-  if (!lista.children.length) {
-    const empty = document.createElement('div');
-    empty.className = 'text-gray-500 dark:text-gray-400';
-    empty.textContent = 'Nenhum investimento registrado para o período selecionado.';
-    lista.appendChild(empty);
+  lista.innerHTML = selectedItemsHtml.length
+    ? selectedItemsHtml.join('')
+    : '<div class="text-gray-500 dark:text-gray-400">Nenhum investimento registrado para o período selecionado.</div>';
+
+  if (investimentosRecentesMeta) {
+    investimentosRecentesMeta.textContent = selectedItemsHtml.length
+      ? `${selectedItemsHtml.length} ${selectedItemsHtml.length === 1 ? 'lançamento' : 'lançamentos'}`
+      : 'Sem registros';
   }
 
   totalMesEl.textContent = moeda(totalMes);
@@ -11940,9 +12095,10 @@ function renderInvestimentosSidebar(docs = []) {
   painelFinanceiroState.investimentosTotais = totalGeral;
   painelFinanceiroState.investimentosProjetados = totalProjetado;
   recursosInvestimentosDataset = Object.entries(investimentosPorTipoOverview)
-    .map(([tipo, valor]) => [investimentoTipoLabels?.[tipo] || tipo, roundCurrency(valor)])
-    .filter(([, valor]) => valor > 0.005)
+    .map(([tipo, valorTotal]) => [investimentoTipoLabels?.[tipo] || tipo, roundCurrency(valorTotal)])
+    .filter(([, valorTotal]) => valorTotal > 0.005)
     .sort((a, b) => b[1] - a[1]);
+
   updateRecursosInvestimentosChart();
   renderGraficoInvestimentos(totaisPorMes);
   atualizarResumoRapido();
@@ -11951,6 +12107,85 @@ function renderInvestimentosSidebar(docs = []) {
   atualizarSimuladorResultados();
   atualizarFiltroMeses();
   updateWalletSummaryUI();
+  updateInvestimentosManagerUI({
+    totalMes,
+    totalGeral,
+    totalProjetado,
+    totaisPorTipo: investimentosPorTipoOverview,
+    allItemsHtml,
+  });
+}
+
+function updateInvestimentosManagerUI({ totalMes = 0, totalGeral = 0, totalProjetado = 0, totaisPorTipo = {}, allItemsHtml = [] }) {
+  const totalMesManager = document.getElementById('invest-manager-total-mes');
+  const totalGeralManager = document.getElementById('invest-manager-total-geral');
+  const totalProjManager = document.getElementById('invest-manager-total-projecao');
+  const projHintEl = document.getElementById('invest-manager-projecao-hint');
+  const typesListEl = document.getElementById('invest-manager-types-list');
+  const typesEmptyEl = document.getElementById('invest-manager-types-empty');
+  const typesBadgeEl = document.getElementById('invest-manager-types-badge');
+  const managerListEl = document.getElementById('invest-manager-list');
+
+  if (totalMesManager) totalMesManager.textContent = `R$ ${moeda(totalMes)}`;
+  if (totalGeralManager) totalGeralManager.textContent = `R$ ${moeda(totalGeral)}`;
+  if (totalProjManager) totalProjManager.textContent = `R$ ${moeda(totalProjetado)}`;
+
+  if (projHintEl) {
+    let taxaPercent = (INVEST_PROJECTION_MONTHLY_RATE * 100).toLocaleString('pt-BR', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
+    });
+    if (taxaPercent.endsWith(',00')) {
+      taxaPercent = taxaPercent.slice(0, -3);
+    }
+    const periodoTexto = INVEST_PROJECTION_FUTURE_MONTHS > 0
+      ? `${INVEST_PROJECTION_FUTURE_MONTHS} ${INVEST_PROJECTION_FUTURE_MONTHS === 1 ? 'mês adicional' : 'meses adicionais'}`
+      : 'sem horizonte extra';
+    projHintEl.textContent = INVEST_PROJECTION_FUTURE_MONTHS > 0
+      ? `Projeção considerando ${taxaPercent}% ao mês por ${periodoTexto}.`
+      : `Valor atualizado com ${taxaPercent}% ao mês até a data atual.`;
+  }
+
+  if (typesListEl) {
+    const entries = Object.entries(totaisPorTipo || {})
+      .filter(([, valor]) => (Number(valor) || 0) > 0.005)
+      .sort((a, b) => b[1] - a[1]);
+
+    typesListEl.innerHTML = entries.map(([tipo, valor]) => {
+      const label = investimentoTipoLabels?.[tipo] || tipo;
+      const percent = totalGeral > 0.005 ? Math.min(100, Math.max(0, (valor / totalGeral) * 100)) : 0;
+      return `
+        <div class="p-3 rounded-xl bg-indigo-50/70 dark:bg-indigo-900/20 border border-indigo-100/80 dark:border-indigo-900/40 space-y-2">
+          <div class="flex items-center justify-between text-sm font-semibold text-indigo-800 dark:text-indigo-200">
+            <span>${label}</span>
+            <span>R$ ${moeda(valor)}</span>
+          </div>
+          <div class="h-2 rounded-full bg-indigo-100 dark:bg-indigo-900/40">
+            <div class="h-2 rounded-full bg-indigo-500 dark:bg-indigo-400" style="width:${percent.toFixed(1)}%"></div>
+          </div>
+          <div class="text-[0.7rem] text-indigo-600 dark:text-indigo-300">${percent.toFixed(1)}% do total investido</div>
+        </div>`;
+    }).join('');
+
+    if (typesEmptyEl) {
+      typesEmptyEl.classList.toggle('hidden', entries.length > 0);
+    }
+    if (typesBadgeEl) {
+      if (entries.length) {
+        typesBadgeEl.textContent = `${entries.length} ${entries.length === 1 ? 'tipo' : 'tipos'}`;
+        typesBadgeEl.classList.remove('hidden');
+      } else {
+        typesBadgeEl.textContent = '';
+        typesBadgeEl.classList.add('hidden');
+      }
+    }
+  }
+
+  if (managerListEl) {
+    managerListEl.innerHTML = allItemsHtml.length
+      ? allItemsHtml.join('')
+      : '<div class="text-slate-500 dark:text-slate-400">Nenhum investimento registrado ainda.</div>';
+  }
 }
 
 function renderGraficoInvestimentos(totaisPorMes = {}) {
@@ -13299,24 +13534,22 @@ if (formInvestimento) {
     });
   });
 
-  const investimentosLista = document.getElementById('investimentos-lista');
-  if (investimentosLista) {
-    investimentosLista.addEventListener('click', e => {
-      const btn = e.target.closest('[data-remove-investimento]');
-      if (!btn) return;
-      const id = btn.getAttribute('data-remove-investimento');
-      if (!id) return;
-      abrirModalConfirmacao('Remover investimento', 'Deseja remover este lançamento de investimento?', () => {
-        userCollectionRef('investimentos').doc(id).delete()
-          .then(() => showToast('Investimento removido!', 'success'))
-          .catch(err => {
-            console.error('Erro ao remover investimento:', err);
-            showToast('Erro ao remover investimento.', 'error');
-          });
-      });
-    });
-  }
 }
+
+document.addEventListener('click', (event) => {
+  const btn = event.target.closest('[data-remove-investimento]');
+  if (!btn) return;
+  const id = btn.getAttribute('data-remove-investimento');
+  if (!id) return;
+  abrirModalConfirmacao('Remover investimento', 'Deseja remover este lançamento de investimento?', () => {
+    userCollectionRef('investimentos').doc(id).delete()
+      .then(() => showToast('Investimento removido!', 'success'))
+      .catch(err => {
+        console.error('Erro ao remover investimento:', err);
+        showToast('Erro ao remover investimento.', 'error');
+      });
+  });
+});
 
 document.getElementById('exportar-csv').addEventListener('click', exportarCSVmes);
 document.getElementById('exportar-tudo').addEventListener('click', exportarCSVtudo);
