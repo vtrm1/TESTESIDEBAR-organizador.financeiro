@@ -2135,8 +2135,8 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
               <input id="entrada-direciona-invest" type="checkbox" class="h-4 w-4 rounded border-emerald-300 dark:border-emerald-600 text-emerald-600 focus:ring-emerald-500" />
               Reservar parte para investimentos
             </label>
-            <div id="entrada-invest-config" class="grid grid-cols-1 lg:grid-cols-[minmax(0,260px)_minmax(0,1fr)] gap-3 hidden">
-              <div class="space-y-2">
+            <div id="entrada-invest-config" class="grid grid-cols-1 lg:grid-cols-[minmax(0,200px)_minmax(0,1fr)] gap-3 hidden">
+              <div class="space-y-2 lg:max-w-[200px]">
                 <label class="text-xs font-semibold uppercase tracking-wide text-emerald-800 dark:text-emerald-200" for="entrada-invest-tipo">Tipo de investimento</label>
                 <select id="entrada-invest-tipo" class="px-3 py-2 sm:py-1.5 lg:px-2.5 lg:py-1.5 rounded border border-emerald-200 dark:border-emerald-700 bg-white dark:bg-slate-900 text-sm text-emerald-700 dark:text-emerald-200">
                   <option value="renda_fixa">Renda fixa</option>
@@ -2147,13 +2147,13 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
                 </select>
               </div>
               <div class="grid grid-cols-1 gap-3">
-                <label class="text-xs font-semibold uppercase tracking-wide text-emerald-800 dark:text-emerald-200 flex flex-col gap-1">
-                  Percentual (%)
-                  <input id="entrada-percentual-invest" type="number" min="0" max="100" step="1" class="w-full px-3 py-1.5 rounded border border-emerald-200 dark:border-emerald-700 bg-white dark:bg-slate-900 text-right text-emerald-700 dark:text-emerald-200" value="0" />
+                <label class="text-xs font-semibold uppercase tracking-wide text-emerald-800 dark:text-emerald-200 flex flex-col">
+                  <span class="sr-only">Percentual (%)</span>
+                  <input id="entrada-percentual-invest" type="number" min="0" max="100" step="1" class="w-full px-3 py-1.5 rounded border border-emerald-200 dark:border-emerald-700 bg-white dark:bg-slate-900 text-right text-emerald-700 dark:text-emerald-200" value="0" aria-label="Percentual (%)" />
                 </label>
-                <label class="text-xs font-semibold uppercase tracking-wide text-emerald-800 dark:text-emerald-200 flex flex-col gap-1">
-                  Valor estimado (R$)
-                  <input id="entrada-valor-invest" type="number" min="0" step="0.01" class="w-full px-3 py-1.5 rounded border border-emerald-200 dark:border-emerald-700 bg-white dark:bg-slate-900 text-right text-emerald-700 dark:text-emerald-200" readonly />
+                <label class="text-xs font-semibold uppercase tracking-wide text-emerald-800 dark:text-emerald-200 flex flex-col">
+                  <span class="sr-only">Valor estimado (R$)</span>
+                  <input id="entrada-valor-invest" type="number" min="0" step="0.01" class="w-full px-3 py-1.5 rounded border border-emerald-200 dark:border-emerald-700 bg-white dark:bg-slate-900 text-right text-emerald-700 dark:text-emerald-200" readonly aria-label="Valor estimado (R$)" />
                 </label>
               </div>
             </div>
