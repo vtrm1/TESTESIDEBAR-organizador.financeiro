@@ -2981,6 +2981,24 @@ let swControllerChangeHandled = false;
 const NOTIFICATION_PROMPT_KEY = 'of-notification-prompted';
 let notificationPrompted = false;
 
+let observersContext = { workspaceId: null, monthKey: null };
+const monthTotals = {
+  gastos: new Map(),
+  entradas: new Map(),
+  investimentos: new Map(),
+};
+let cachedMesesGastos = new Set();
+let cachedMesesEntradas = new Set();
+let cachedMesesInvestimentos = new Set();
+let monthCacheWorkspaceId = null;
+let monthCacheLoadedAt = 0;
+const MONTH_CACHE_TTL = 1000 * 60 * 15;
+const SNAPSHOT_LIMITS = {
+  gastos: 240,
+  entradas: 240,
+  investimentos: 240,
+};
+
 try {
   notificationPrompted = localStorage.getItem(NOTIFICATION_PROMPT_KEY) === '1';
 } catch (error) {
@@ -3733,43 +3751,52 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function profileDoc(uid) {
+      return get(/databases/$(database)/documents/profiles/$(uid));
+    }
+
     function isAdmin() {
       return isSignedIn() &&
         exists(/databases/$(database)/documents/profiles/$(request.auth.uid)) &&
-        get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.role == 'admin';
+        profileDoc(request.auth.uid).data.role == 'admin';
     }
 
     function workspaceAllowed(workspaceId) {
-      return isSignedIn() &&
-        (workspaceId == request.auth.uid ||
-         (exists(/databases/$(database)/documents/sharedWorkspaces/$(workspaceId)) &&
-          request.auth.uid in
-            get(/databases/$(database)/documents/sharedWorkspaces/$(workspaceId)).data.memberUids));
+      return isSignedIn() && (
+        workspaceId == request.auth.uid ||
+        (
+          exists(/databases/$(database)/documents/sharedWorkspaces/$(workspaceId)) &&
+          request.auth.uid in get(/databases/$(database)/documents/sharedWorkspaces/$(workspaceId)).data.memberUids
+        )
+      );
+    }
+
+    function validateWorkspaceDoc(ownerUid) {
+      return (!('ownerUid' in request.resource.data) || request.resource.data.ownerUid == ownerUid)
+        && (!('workspaceId' in request.resource.data) || workspaceAllowed(request.resource.data.workspaceId))
+        && (request.method == 'create' || !('ownerUid' in resource.data) || resource.data.ownerUid == ownerUid)
+        && (request.method == 'create' || !('workspaceId' in resource.data) || resource.data.workspaceId == request.resource.data.workspaceId);
     }
 
     // 👤 Perfis de acesso (aprovação, bloqueio, etc.)
     match /profiles/{uid} {
-      // Usuário autenticado cria o próprio perfil
       allow create: if isSignedIn() && uid == request.auth.uid;
 
-      // Pode ler o próprio perfil; admins leem todos
       allow read: if isSignedIn() && (uid == request.auth.uid || isAdmin());
 
-      // Admins podem atualizar qualquer perfil.
-      // Usuário comum pode atualizar o próprio enquanto o status original ainda está "pending"
-      // (permite concluir o cadastro) ou manter campos básicos sem mudar status/cargo.
       allow update: if isSignedIn() && (
         isAdmin() ||
-        (uid == request.auth.uid &&
-         (resource.data.status == 'pending' || (
-           request.resource.data.role == resource.data.role &&
-           request.resource.data.status == resource.data.status &&
-           request.resource.data.approvedAt == resource.data.approvedAt &&
-           request.resource.data.approvedBy == resource.data.approvedBy &&
-           request.resource.data.blockedAt == resource.data.blockedAt &&
-           request.resource.data.blockedBy == resource.data.blockedBy &&
-           request.resource.data.blockedReason == resource.data.blockedReason
-         )))
+        (uid == request.auth.uid && (
+          resource.data.status == 'pending' || (
+            request.resource.data.role == resource.data.role &&
+            request.resource.data.status == resource.data.status &&
+            request.resource.data.approvedAt == resource.data.approvedAt &&
+            request.resource.data.approvedBy == resource.data.approvedBy &&
+            request.resource.data.blockedAt == resource.data.blockedAt &&
+            request.resource.data.blockedBy == resource.data.blockedBy &&
+            request.resource.data.blockedReason == resource.data.blockedReason
+          )
+        ))
       );
 
       allow delete: if false;
@@ -3782,7 +3809,7 @@ service cloud.firestore {
 
     // 💼 Dados financeiros do workspace
     match /users/{ownerUid}/{collection}/{docId} {
-      allow read, write: if workspaceAllowed(ownerUid);
+      allow read, write: if workspaceAllowed(ownerUid) && validateWorkspaceDoc(ownerUid);
     }
 
     // 🚫 Tudo que não foi mapeado permanece bloqueado
@@ -6800,6 +6827,43 @@ const getCurrentWalletMonthKey = () => {
 };
 const addMonths = (d,n) => new Date(d.getFullYear(), d.getMonth()+n, 1);
 const monthDiff = (dStart,dEnd) => (dEnd.getFullYear()-dStart.getFullYear())*12 + (dEnd.getMonth()-dStart.getMonth());
+const getMonthRangeFromKey = (key) => {
+  if (!key || key === 'all') {
+    return null;
+  }
+  const parsed = parseMonthKeyToDate(key);
+  if (!parsed) {
+    return null;
+  }
+  const start = new Date(parsed.getFullYear(), parsed.getMonth(), 1, 0, 0, 0, 0);
+  const end = new Date(parsed.getFullYear(), parsed.getMonth() + 1, 1, 0, 0, 0, 0);
+  return { start, end };
+};
+const mergeMonthSets = (...sets) => {
+  const merged = new Set();
+  sets.forEach((set) => {
+    if (!set) return;
+    Array.from(set).forEach((value) => {
+      if (value) {
+        merged.add(value);
+      }
+    });
+  });
+  return merged;
+};
+const pruneMonthTotals = (map, limit = 48) => {
+  if (!map || typeof map.size !== 'number') {
+    return;
+  }
+  if (map.size <= limit) {
+    return;
+  }
+  const orderedKeys = Array.from(map.keys()).sort();
+  while (orderedKeys.length > limit) {
+    const keyToRemove = orderedKeys.shift();
+    map.delete(keyToRemove);
+  }
+};
 const formatDate = value => {
   const date = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(date.getTime())) return '-';
@@ -9510,6 +9574,12 @@ function walletSnapshotsEqual(a, b) {
 
 function computeWalletEntriesForMonth(monthKey) {
   if (!monthKey) return 0;
+  if (monthTotals.entradas.has(monthKey)) {
+    const bucket = monthTotals.entradas.get(monthKey);
+    if (bucket && typeof bucket.fluxo === 'number') {
+      return roundCurrency(bucket.fluxo);
+    }
+  }
   let total = 0;
   (allEntradasDocs || []).forEach((doc) => {
     if (!doc || typeof doc.data !== 'function') return;
@@ -9531,11 +9601,36 @@ function computeWalletEntriesForMonth(monthKey) {
       total += roundCurrency(fluxo < 0 ? 0 : fluxo);
     }
   });
+
+  Object.entries(monthAggregates).forEach(([key, totals]) => {
+    monthTotals.entradas.set(key, {
+      bruto: roundCurrency(totals.bruto),
+      fluxo: roundCurrency(totals.fluxo),
+    });
+  });
+  pruneMonthTotals(monthTotals.entradas);
+
+  const aggregatedMonthSet = new Set(monthTotals.entradas.keys());
+  mesesEntradasDisponiveis = mergeMonthSets(snapshotMonths, aggregatedMonthSet, cachedMesesEntradas);
+
+  const aggregatedTotals = Array.from(monthTotals.entradas.values()).reduce((acc, bucket) => {
+    acc.bruto += bucket?.bruto || 0;
+    acc.fluxo += bucket?.fluxo || 0;
+    return acc;
+  }, { bruto: 0, fluxo: 0 });
+  totalRegistradoBruto = roundCurrency(aggregatedTotals.bruto);
+  totalRegistradoFluxo = roundCurrency(aggregatedTotals.fluxo);
   return roundCurrency(total);
 }
 
 function computeWalletGastosVariaveisForMonth(monthKey) {
   if (!monthKey) return 0;
+  if (monthTotals.gastos.has(monthKey)) {
+    const cached = monthTotals.gastos.get(monthKey);
+    if (typeof cached === 'number') {
+      return cached;
+    }
+  }
   let total = 0;
   (allGastosDocs || []).forEach((doc) => {
     if (!doc || typeof doc.data !== 'function') return;
@@ -10943,7 +11038,97 @@ async function handleWalletSettingsSubmit(event) {
   }
 }
 
-async function startObservers(){
+async function preloadMonthCaches(force = false) {
+  const workspaceId = getActiveWorkspaceId();
+  if (!workspaceId) {
+    return;
+  }
+  const now = Date.now();
+  if (!force && monthCacheWorkspaceId === workspaceId && (now - monthCacheLoadedAt) < MONTH_CACHE_TTL) {
+    return;
+  }
+
+  try {
+    const limit = 24;
+    const [gastosSnap, entradasSnap, investimentosSnap] = await Promise.all([
+      userCollectionRef('gastos').orderBy('mesFatura', 'desc').limit(limit).get().catch(() => null),
+      userCollectionRef('entradas').orderBy('data', 'desc').limit(limit).get().catch(() => null),
+      userCollectionRef('investimentos').orderBy('data', 'desc').limit(limit).get().catch(() => null),
+    ]);
+
+    const nextCachedMesesGastos = new Set();
+    if (gastosSnap && !gastosSnap.empty) {
+      gastosSnap.docs.forEach((doc) => {
+        const data = typeof doc.data === 'function' ? doc.data() : doc.data;
+        if (!data) return;
+        const key = data.mesFatura || (data.data ? yyyymm(data.data.toDate ? data.data.toDate() : new Date(data.data)) : null);
+        if (key) {
+          nextCachedMesesGastos.add(key);
+        }
+      });
+    }
+
+    const nextCachedMesesEntradas = new Set();
+    if (entradasSnap && !entradasSnap.empty) {
+      entradasSnap.docs.forEach((doc) => {
+        const data = typeof doc.data === 'function' ? doc.data() : doc.data;
+        if (!data?.data) return;
+        const dt = data.data.toDate ? data.data.toDate() : new Date(data.data);
+        if (!Number.isNaN(dt?.getTime?.())) {
+          nextCachedMesesEntradas.add(yyyymm(dt));
+        }
+      });
+    }
+
+    const nextCachedMesesInvestimentos = new Set();
+    if (investimentosSnap && !investimentosSnap.empty) {
+      investimentosSnap.docs.forEach((doc) => {
+        const data = typeof doc.data === 'function' ? doc.data() : doc.data;
+        if (!data?.data) return;
+        const dt = data.data.toDate ? data.data.toDate() : new Date(data.data);
+        if (!Number.isNaN(dt?.getTime?.())) {
+          nextCachedMesesInvestimentos.add(yyyymm(dt));
+        }
+      });
+    }
+
+    cachedMesesGastos = nextCachedMesesGastos;
+    cachedMesesEntradas = nextCachedMesesEntradas;
+    cachedMesesInvestimentos = nextCachedMesesInvestimentos;
+    monthCacheWorkspaceId = workspaceId;
+    monthCacheLoadedAt = Date.now();
+
+    mesesDisponiveis = mergeMonthSets(new Set(monthTotals.gastos.keys()), cachedMesesGastos);
+    mesesEntradasDisponiveis = mergeMonthSets(new Set(monthTotals.entradas.keys()), cachedMesesEntradas);
+    mesesInvestimentosDisponiveis = mergeMonthSets(new Set(monthTotals.investimentos.keys()), cachedMesesInvestimentos);
+    atualizarFiltroMeses();
+  } catch (error) {
+    console.error('Erro ao pré-carregar meses disponíveis:', error);
+    if (force) {
+      monthCacheWorkspaceId = null;
+      monthCacheLoadedAt = 0;
+    }
+  }
+}
+
+async function startObservers(force = false){
+  const filtroMesEl = document.getElementById('filtro-mes');
+  const selectedRaw = filtroMesEl ? filtroMesEl.value : null;
+  const normalizedMonth = selectedRaw && selectedRaw.trim() ? selectedRaw : yyyymm(new Date());
+  const workspaceId = getActiveWorkspaceId();
+  const contextMatches = observersContext.workspaceId === workspaceId && observersContext.monthKey === normalizedMonth;
+  const hasActiveObservers = Boolean(
+    unsubLimits || unsubConfig || unsubFixos || unsubGastos || unsubParcelados
+    || unsubEntradas || unsubEntradasRecorrentes || unsubInvestimentos
+    || unsubWalletSettings || unsubWalletAccounts || unsubWalletSnapshot || unsubWalletTimeline
+  );
+
+  if (!force && contextMatches && hasActiveObservers) {
+    return;
+  }
+
+  observersContext = { workspaceId, monthKey: normalizedMonth };
+
   // Desinscrever observers antigos para evitar múltiplos listeners
   if (unsubLimits) unsubLimits();
   if (unsubConfig) unsubConfig();
@@ -10966,9 +11151,15 @@ async function startObservers(){
 
   if (!currentUser) return;
 
+  const monthRange = getMonthRangeFromKey(normalizedMonth);
+  const hasMonthFilter = Boolean(monthRange);
+  const monthStartTimestamp = hasMonthFilter ? firebase.firestore.Timestamp.fromDate(monthRange.start) : null;
+  const monthEndTimestamp = hasMonthFilter ? firebase.firestore.Timestamp.fromDate(monthRange.end) : null;
+
   const walletMonthKey = getCurrentWalletMonthKey();
   await ensureWalletSettingsDoc();
   await ensureWalletSnapshotDoc(walletMonthKey);
+  await preloadMonthCaches(force);
 
   const walletSettingsRef = userDocRef('walletSettings', 'config');
   unsubWalletSettings = walletSettingsRef.onSnapshot((snap) => {
@@ -11066,10 +11257,19 @@ async function startObservers(){
     hideSpinner('cartoes-loading-spinner');
   });
 
-  unsubEntradas = userCollectionRef('entradas').orderBy('data','desc').onSnapshot(snap => {
+  let entradasQuery = userCollectionRef('entradas');
+  if (hasMonthFilter && monthStartTimestamp && monthEndTimestamp) {
+    entradasQuery = entradasQuery
+      .where('data', '>=', monthStartTimestamp)
+      .where('data', '<', monthEndTimestamp)
+      .orderBy('data', 'desc');
+  } else {
+    entradasQuery = entradasQuery.orderBy('data', 'desc').limit(SNAPSHOT_LIMITS.entradas);
+  }
+  unsubEntradas = entradasQuery.onSnapshot((snap) => {
     renderEntradasSidebar(snap.docs);
     updateWalletSummaryUI();
-  }, err => {
+  }, (err) => {
     console.error('Erro ao carregar entradas:', err);
     showToast('Erro ao carregar entradas.', 'error');
   });
@@ -11087,9 +11287,18 @@ async function startObservers(){
     console.error('Erro ao carregar recorrências de entradas:', error);
   });
 
-  unsubInvestimentos = userCollectionRef('investimentos').orderBy('data','desc').onSnapshot(snap => {
+  let investimentosQuery = userCollectionRef('investimentos');
+  if (hasMonthFilter && monthStartTimestamp && monthEndTimestamp) {
+    investimentosQuery = investimentosQuery
+      .where('data', '>=', monthStartTimestamp)
+      .where('data', '<', monthEndTimestamp)
+      .orderBy('data', 'desc');
+  } else {
+    investimentosQuery = investimentosQuery.orderBy('data', 'desc').limit(SNAPSHOT_LIMITS.investimentos);
+  }
+  unsubInvestimentos = investimentosQuery.onSnapshot((snap) => {
     renderInvestimentosSidebar(snap.docs);
-  }, err => {
+  }, (err) => {
     console.error('Erro ao carregar investimentos:', err);
     showToast('Erro ao carregar investimentos.', 'error');
   });
@@ -11110,7 +11319,15 @@ async function startObservers(){
 
 
   // === SEÇÃO CORRIGIDA: OBSERVER DE GASTOS ===
-  unsubGastos = userCollectionRef('gastos').orderBy('data','desc').onSnapshot(snap=>{
+  let gastosQuery = userCollectionRef('gastos');
+  if (hasMonthFilter) {
+    gastosQuery = gastosQuery
+      .where('mesFatura', '==', normalizedMonth)
+      .orderBy('data', 'desc');
+  } else {
+    gastosQuery = gastosQuery.orderBy('data', 'desc').limit(SNAPSHOT_LIMITS.gastos);
+  }
+  unsubGastos = gastosQuery.onSnapshot(snap=>{
     hideSpinner('historico-loading-spinner'); // Oculta spinner de histórico
     allGastosDocs = snap.docs; // ATUALIZA allGastosDocs AQUI
 
@@ -11121,7 +11338,8 @@ async function startObservers(){
     let totaisPorCartaoHist = {};
     let totaisPorCategoria = {}; // Objeto para armazenar totais por categoria
 
-    mesesDisponiveis = new Set();
+    const snapshotGastosMonths = new Set();
+    const gastosAggregates = {};
     const docsToProcessForMonth = [];
     allGastosDocs.forEach(doc=>{
       const d = doc.data();
@@ -11130,19 +11348,28 @@ async function startObservers(){
       const keyTransacao = yyyymm(dt); // Mês da transação
       const keyFatura = d.mesFatura || keyTransacao; // Usa mesFatura se existir, senão usa mês da transação
 
-      mesesDisponiveis.add(keyFatura); // Adiciona o mês da fatura aos meses disponíveis
+      snapshotGastosMonths.add(keyFatura); // Adiciona o mês da fatura aos meses disponíveis
 
       if(mesSel === 'all' || keyFatura === mesSel) { // FILTRA POR mesFatura
         docsToProcessForMonth.push(doc);
         const tipo = (d.tipo || '').toLowerCase();
-        if(tipo === 'variavel') somaVariavel += (d.valor || 0);
-        if(tipo === 'fixo') somaFixoAvulso += (d.valor || 0);
-        if(d.cartao) totaisPorCartaoHist[d.cartao] = (totaisPorCartaoHist[d.cartao]||0) + (d.valor||0);
+        const valorGasto = Number(d.valor || 0);
+        if(tipo === 'variavel') somaVariavel += valorGasto;
+        if(tipo === 'fixo') somaFixoAvulso += valorGasto;
+        if(d.cartao) totaisPorCartaoHist[d.cartao] = (totaisPorCartaoHist[d.cartao]||0) + valorGasto;
+        gastosAggregates[keyFatura] = (gastosAggregates[keyFatura] || 0) + valorGasto;
         
         // Soma por categoria para o mês selecionado
         if(d.categoria) totaisPorCategoria[d.categoria] = (totaisPorCategoria[d.categoria]||0) + (d.valor||0);
       }
     });
+
+    Object.entries(gastosAggregates).forEach(([key, total]) => {
+      monthTotals.gastos.set(key, roundCurrency(total));
+    });
+    pruneMonthTotals(monthTotals.gastos);
+    const gastosMonthSet = new Set(monthTotals.gastos.keys());
+    mesesDisponiveis = mergeMonthSets(snapshotGastosMonths, gastosMonthSet, cachedMesesGastos);
 
     renderHistoricoWithFilters(); // Chama a função de renderização com filtros
     renderCategorias(totaisPorCategoria);
@@ -11455,7 +11682,8 @@ function renderEntradasSidebar(docs = []) {
   const totalGeralEl = document.getElementById('entradas-total-geral');
   if (!lista || !totalMesEl) return;
 
-  mesesEntradasDisponiveis = new Set();
+  const snapshotMonths = new Set();
+  const monthAggregates = {};
   allEntradasDocs = docs;
 
   lista.innerHTML = '';
@@ -11483,7 +11711,7 @@ function renderEntradasSidebar(docs = []) {
     const dt = data.data.toDate ? data.data.toDate() : new Date(data.data);
     if (Number.isNaN(dt.getTime())) return;
     const key = yyyymm(dt);
-    mesesEntradasDisponiveis.add(key);
+    snapshotMonths.add(key);
 
     const valor = Number(data.valor) || 0;
     const tipo = data.tipo || 'outros';
@@ -11510,6 +11738,11 @@ function renderEntradasSidebar(docs = []) {
     totaisPorMesFluxo[key] = (totaisPorMesFluxo[key] || 0) + valorFluxoLivre;
     totalRegistradoBruto += valor;
     totalRegistradoFluxo += valorFluxoLivre;
+    if (!monthAggregates[key]) {
+      monthAggregates[key] = { bruto: 0, fluxo: 0 };
+    }
+    monthAggregates[key].bruto += valor;
+    monthAggregates[key].fluxo += valorFluxoLivre;
     if (!ultimaEntradaDate || dt > ultimaEntradaDate) {
       ultimaEntradaDate = dt;
     }
@@ -11633,8 +11866,21 @@ function renderEntradasSidebar(docs = []) {
 
 function updateRecursosEntradasChart(dataset) {
   if (dataset) {
-    recursosEntradasDataset = { ...dataset };
+    Object.entries(dataset).forEach(([key, value]) => {
+      const existing = monthTotals.entradas.get(key) || { bruto: 0, fluxo: 0 };
+      monthTotals.entradas.set(key, {
+        bruto: existing.bruto,
+        fluxo: roundCurrency(value),
+      });
+    });
+    pruneMonthTotals(monthTotals.entradas);
   }
+
+  const combinedDataset = {};
+  monthTotals.entradas.forEach((bucket, key) => {
+    combinedDataset[key] = roundCurrency(bucket?.fluxo || 0);
+  });
+  recursosEntradasDataset = combinedDataset;
 
   const chartCanvas = document.getElementById('recursos-entradas-chart');
   const rangeSelect = document.getElementById('recursos-entradas-range');
@@ -12001,7 +12247,8 @@ function renderInvestimentosSidebar(docs = []) {
   const projEl = document.getElementById('investimento-projecao');
   if (!lista || !totalMesEl || !totalGeralEl || !projEl) return;
 
-  mesesInvestimentosDisponiveis = new Set();
+  const snapshotInvestmentMonths = new Set();
+  const investmentAggregates = {};
   allInvestimentosDocs = docs;
 
   const mesSel = document.getElementById('filtro-mes').value || yyyymm(new Date());
@@ -12042,7 +12289,8 @@ function renderInvestimentosSidebar(docs = []) {
 
   parsedDocs.forEach((item) => {
     const { doc, dt, key, valor, tipo, descricao } = item;
-    mesesInvestimentosDisponiveis.add(key);
+    snapshotInvestmentMonths.add(key);
+    investmentAggregates[key] = (investmentAggregates[key] || 0) + valor;
 
     totalGeral += valor;
     totaisPorMes[key] = (totaisPorMes[key] || 0) + valor;
@@ -12076,6 +12324,19 @@ function renderInvestimentosSidebar(docs = []) {
       selectedItemsHtml.push(`<div class="flex items-center gap-3 rounded-xl bg-indigo-50/70 dark:bg-indigo-900/20 p-2">${baseInfoHtml}</div>`);
     }
   });
+
+  Object.entries(investmentAggregates).forEach(([key, total]) => {
+    monthTotals.investimentos.set(key, roundCurrency(total));
+  });
+  pruneMonthTotals(monthTotals.investimentos);
+
+  const investmentMonthSet = new Set(monthTotals.investimentos.keys());
+  mesesInvestimentosDisponiveis = mergeMonthSets(snapshotInvestmentMonths, investmentMonthSet, cachedMesesInvestimentos);
+
+  const aggregatedInvestimentosTotal = Array.from(monthTotals.investimentos.values()).reduce((sum, value) => sum + value, 0);
+  const totalGeralAggregated = roundCurrency(aggregatedInvestimentosTotal);
+
+  totalGeral = totalGeralAggregated;
 
   lista.innerHTML = selectedItemsHtml.length
     ? selectedItemsHtml.join('')
