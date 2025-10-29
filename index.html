@@ -3061,6 +3061,10 @@ const SNAPSHOT_LIMITS = {
   investimentos: 240,
 };
 
+const investmentSnapshotTotals = new Map();
+const investmentSummaryTotals = new Map();
+let investmentTotalsWorkspaceId = null;
+
 let walletAccountsRealtimeHydrated = false;
 let investimentosRealtimeHydrated = false;
 
@@ -3086,7 +3090,7 @@ function getInvestmentSummaryTotalForMonth(monthKey) {
 
 function resolveInvestmentTotalsContext(monthKey) {
   const normalizedKey = monthKey && monthKey !== 'all' ? monthKey : null;
-  const contributions = Array.from(monthTotals.investimentos.entries())
+  const contributions = Array.from(investmentSnapshotTotals.entries())
     .map(([key, value]) => ({ key, value: Number(value) || 0 }))
     .filter(({ value }) => Number.isFinite(value));
 
@@ -3135,7 +3139,7 @@ function resolveInvestmentTotalsContext(monthKey) {
   const globalTotal = summaryTotals.reduce((max, entry) => Math.max(max, entry.total), cumulative);
 
   const monthContribution = normalizedKey
-    ? roundCurrency(Number(monthTotals.investimentos.get(normalizedKey)) || 0)
+    ? roundCurrency(Number(investmentSnapshotTotals.get(normalizedKey)) || 0)
     : 0;
 
   const resolvedCarry = normalizedKey ? carry : roundCurrency(Math.max(carry, globalTotal));
@@ -3247,10 +3251,16 @@ function applyMonthlySummaryToState(monthKey, normalized) {
   if (Object.keys(investimentosSection).length) {
     const monthInvestimentos = roundCurrency(investimentosSection.mes || 0);
     if (monthInvestimentos > 0.005) {
-      monthTotals.investimentos.set(monthKey, monthInvestimentos);
+      setInvestmentSummaryTotal(monthKey, monthInvestimentos);
+      cachedMesesInvestimentos.add(monthKey);
+    } else {
+      clearInvestmentSummaryTotal(monthKey);
     }
-    cachedMesesInvestimentos.add(monthKey);
+  } else {
+    clearInvestmentSummaryTotal(monthKey);
   }
+
+  finalizeInvestmentTotalsState();
 
   mesesDisponiveis = mergeMonthSets(new Set(monthTotals.gastos.keys()), cachedMesesGastos, mesesDisponiveis);
   mesesEntradasDisponiveis = mergeMonthSets(new Set(monthTotals.entradas.keys()), cachedMesesEntradas, mesesEntradasDisponiveis);
@@ -7381,6 +7391,84 @@ const pruneMonthTotals = (map, limit = 48) => {
     map.delete(keyToRemove);
   }
 };
+
+function ensureInvestmentWorkspaceScope(workspaceId) {
+  if (!workspaceId) {
+    investmentTotalsWorkspaceId = null;
+    investmentSnapshotTotals.clear();
+    investmentSummaryTotals.clear();
+    monthTotals.investimentos.clear();
+    return;
+  }
+  if (investmentTotalsWorkspaceId && investmentTotalsWorkspaceId !== workspaceId) {
+    investmentSnapshotTotals.clear();
+    investmentSummaryTotals.clear();
+    monthTotals.investimentos.clear();
+  }
+  investmentTotalsWorkspaceId = workspaceId;
+}
+
+function setInvestmentSnapshotTotal(monthKey, total) {
+  if (!monthKey) return;
+  const rounded = roundCurrency(Number(total) || 0);
+  if (Math.abs(rounded) > 0.005) {
+    investmentSnapshotTotals.set(monthKey, rounded);
+  } else {
+    investmentSnapshotTotals.delete(monthKey);
+  }
+}
+
+function clearInvestmentSnapshotTotal(monthKey) {
+  if (!monthKey) return;
+  investmentSnapshotTotals.delete(monthKey);
+}
+
+function setInvestmentSummaryTotal(monthKey, total) {
+  if (!monthKey) return;
+  const rounded = roundCurrency(Number(total) || 0);
+  if (Math.abs(rounded) > 0.005) {
+    investmentSummaryTotals.set(monthKey, rounded);
+  } else {
+    investmentSummaryTotals.delete(monthKey);
+  }
+}
+
+function clearInvestmentSummaryTotal(monthKey) {
+  if (!monthKey) return;
+  investmentSummaryTotals.delete(monthKey);
+}
+
+function finalizeInvestmentTotalsState() {
+  monthTotals.investimentos.clear();
+  const keys = new Set([
+    ...investmentSummaryTotals.keys(),
+    ...investmentSnapshotTotals.keys(),
+  ]);
+  keys.forEach((key) => {
+    if (!key) return;
+    const snapshotValue = Number(investmentSnapshotTotals.get(key) || 0);
+    const summaryValue = Number(investmentSummaryTotals.get(key) || 0);
+    let value = snapshotValue;
+    if (!(Number.isFinite(value) && Math.abs(value) > 0.005)) {
+      value = summaryValue;
+    }
+    if (Number.isFinite(value) && Math.abs(value) > 0.005) {
+      monthTotals.investimentos.set(key, roundCurrency(value));
+    }
+  });
+  pruneMonthTotals(monthTotals.investimentos);
+  const validKeys = new Set(monthTotals.investimentos.keys());
+  Array.from(investmentSnapshotTotals.keys()).forEach((key) => {
+    if (!validKeys.has(key)) {
+      investmentSnapshotTotals.delete(key);
+    }
+  });
+  Array.from(investmentSummaryTotals.keys()).forEach((key) => {
+    if (!validKeys.has(key) && !investmentSnapshotTotals.has(key)) {
+      investmentSummaryTotals.delete(key);
+    }
+  });
+}
 const formatDate = value => {
   const date = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(date.getTime())) return '-';
@@ -12190,6 +12278,7 @@ async function startObservers(force = false){
   const selectedRaw = filtroMesEl ? filtroMesEl.value : null;
   const normalizedMonth = selectedRaw && selectedRaw.trim() ? selectedRaw : yyyymm(new Date());
   const workspaceId = getActiveWorkspaceId();
+  ensureInvestmentWorkspaceScope(workspaceId);
   const contextMatches = observersContext.workspaceId === workspaceId && observersContext.monthKey === normalizedMonth;
   const hasActiveObservers = Boolean(
     unsubLimits || unsubConfig || unsubFixos || unsubGastos || unsubParcelados
@@ -13443,21 +13532,22 @@ function renderInvestimentosSidebar(docs = []) {
   const aggregateKeys = new Set(Object.keys(investmentAggregates));
   if (normalizedMonthKey) {
     if (aggregateKeys.has(normalizedMonthKey)) {
-      monthTotals.investimentos.set(normalizedMonthKey, roundCurrency(investmentAggregates[normalizedMonthKey]));
-    } else if (parsedDocs.length && monthTotals.investimentos.has(normalizedMonthKey)) {
-      monthTotals.investimentos.delete(normalizedMonthKey);
+      setInvestmentSnapshotTotal(normalizedMonthKey, investmentAggregates[normalizedMonthKey]);
+    } else {
+      clearInvestmentSnapshotTotal(normalizedMonthKey);
     }
   } else {
     Object.entries(investmentAggregates).forEach(([key, total]) => {
-      monthTotals.investimentos.set(key, roundCurrency(total));
+      setInvestmentSnapshotTotal(key, total);
     });
-    Array.from(monthTotals.investimentos.keys()).forEach((key) => {
-      if (!aggregateKeys.has(key) && !monthlySummariesCache.has(key)) {
-        monthTotals.investimentos.delete(key);
+    const existingSnapshotKeys = Array.from(investmentSnapshotTotals.keys());
+    existingSnapshotKeys.forEach((key) => {
+      if (!aggregateKeys.has(key)) {
+        clearInvestmentSnapshotTotal(key);
       }
     });
   }
-  pruneMonthTotals(monthTotals.investimentos);
+  finalizeInvestmentTotalsState();
 
   const investmentMonthSet = new Set(monthTotals.investimentos.keys());
   mesesInvestimentosDisponiveis = mergeMonthSets(snapshotInvestmentMonths, investmentMonthSet, cachedMesesInvestimentos);
