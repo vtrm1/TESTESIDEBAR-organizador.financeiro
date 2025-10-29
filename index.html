@@ -3106,9 +3106,9 @@ function applyMonthlySummaryToState(monthKey, normalized) {
   }
 
   if (Object.keys(investimentosSection).length) {
-    const totalInvestimentos = roundCurrency(investimentosSection.total || investimentosSection.mes || 0);
-    if (totalInvestimentos > 0.005) {
-      monthTotals.investimentos.set(monthKey, totalInvestimentos);
+    const monthInvestimentos = roundCurrency(investimentosSection.mes || 0);
+    if (monthInvestimentos > 0.005) {
+      monthTotals.investimentos.set(monthKey, monthInvestimentos);
     }
     cachedMesesInvestimentos.add(monthKey);
   }
@@ -12952,13 +12952,17 @@ function renderInvestimentosSidebar(docs = []) {
   if (monthSummary) {
     const investSection = monthSummary.investimentos || {};
     const patrimonioSection = monthSummary.patrimonio || {};
-    const summaryCandidates = [
-      investSection.mes,
-      investSection.total,
-      patrimonioSection.investimentos,
-    ].map((value) => Number(value) || 0).filter((value) => Number.isFinite(value) && value > 0);
-    if (summaryCandidates.length) {
-      summaryMonthFallback = Math.max(...summaryCandidates);
+    const monthContribution = Number(investSection.mes) || 0;
+    if (Number.isFinite(monthContribution) && monthContribution > 0.005) {
+      summaryMonthFallback = roundCurrency(monthContribution);
+    } else {
+      const summaryCandidates = [
+        investSection.total,
+        patrimonioSection.investimentos,
+      ].map((value) => Number(value) || 0).filter((value) => Number.isFinite(value) && value > 0);
+      if (summaryCandidates.length) {
+        summaryMonthFallback = roundCurrency(Math.max(...summaryCandidates));
+      }
     }
   }
 
