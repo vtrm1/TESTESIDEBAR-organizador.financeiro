@@ -1398,10 +1398,10 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
   <nav id="mobile-panels-nav" class="text-sm font-medium">
     <div class="flex gap-2 overflow-x-auto no-scrollbar">
       <button type="button" class="mobile-tab-button" data-panel-target="painel-gastos">Gastos</button>
-      <button type="button" class="mobile-tab-button" data-panel-target="painel-saidas">Saídas</button>
+      <button type="button" class="mobile-tab-button" data-panel-target="painel-investimentos">Invest.</button>
       <button type="button" class="mobile-tab-button" data-panel-target="painel-entradas">Entradas</button>
       <button type="button" class="mobile-tab-button" data-panel-target="painel-carteira">Carteira</button>
-      <button type="button" class="mobile-tab-button" data-panel-target="painel-investimentos">Invest.</button>
+      <button type="button" class="mobile-tab-button" data-panel-target="painel-saidas">Saídas</button>
       <button type="button" class="mobile-tab-button" data-panel-target="painel-saude-financeira">Saúde</button>
       <button type="button" class="mobile-tab-button" data-panel-target="painel-fixos">Fixos</button>
       <button type="button" class="mobile-tab-button" data-panel-target="painel-cartoes">Cartões</button>
@@ -1629,9 +1629,9 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
                 <span class="hint">Após rendimento de 1% a.m.</span>
               </div>
               <div class="resumo-item">
-                <span class="label">Ganho em investimentos</span>
-                <span class="value">R$ <span id="resumo-ganho-invest">0,00</span></span>
-                <span class="hint">Comparado ao aporte total</span>
+                <span class="label">Patrimônio consolidado</span>
+                <span class="value">R$ <span id="resumo-patrimonio-total">0,00</span></span>
+                <span class="hint">Contas + investimentos registrados</span>
               </div>
             </div>
           </section>
@@ -2023,9 +2023,29 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
             <p id="wallet-fluxo-liquido" class="text-xs font-semibold leading-snug text-slate-700 dark:text-slate-200">Fluxo líquido: R$ 0,00</p>
             <p id="wallet-entradas-saidas" class="text-[0.7rem] text-emerald-700/80 dark:text-emerald-200/80">Entradas: R$ 0,00 • Saídas: R$ 0,00</p>
           </div>
-          <div class="rounded-2xl bg-white/80 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/60 p-4 shadow-sm">
-            <div class="text-[0.65rem] uppercase tracking-wide text-slate-600 dark:text-slate-300">Distribuição por tipo</div>
-            <div id="entradas-tipos-resumo" class="grid grid-cols-1 gap-2 text-sm mt-2"></div>
+          <div class="rounded-2xl bg-white/80 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/60 p-4 shadow-sm space-y-3">
+            <div class="flex items-start justify-between gap-3">
+              <div>
+                <div class="text-[0.65rem] uppercase tracking-wide text-slate-600 dark:text-slate-300">Tendência das entradas</div>
+                <p class="text-[0.7rem] text-slate-500 dark:text-slate-400">Visualize rapidamente a evolução das receitas recentes.</p>
+              </div>
+              <label for="entradas-trend-range" class="text-[0.65rem] uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                Período
+                <select id="entradas-trend-range" class="mt-1 w-full rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-2 py-1.5 text-[0.7rem] text-slate-700 dark:text-slate-200">
+                  <option value="3">3 meses</option>
+                  <option value="6">6 meses</option>
+                  <option value="12">12 meses</option>
+                </select>
+              </label>
+            </div>
+            <div class="relative h-32">
+              <canvas id="entradas-trend-chart" class="w-full h-full"></canvas>
+              <div id="entradas-trend-empty" class="absolute inset-0 flex items-center justify-center text-[0.7rem] text-slate-500 dark:text-slate-400">Cadastre entradas para visualizar a evolução.</div>
+            </div>
+            <div class="text-xs text-slate-600 dark:text-slate-300">
+              <span class="font-semibold text-slate-700 dark:text-slate-200">Insight:</span>
+              <span id="entradas-trend-highlight" class="ml-1">Sem dados suficientes para analisar.</span>
+            </div>
           </div>
         </div>
       </div>
@@ -2663,6 +2683,7 @@ if (toggleBtn) {
     html.classList.toggle('dark');
     localStorage.theme = html.classList.contains('dark') ? 'dark' : 'light';
     syncDarkToggleUI();
+    updateEntradasTrendChart();
   });
 }
 
@@ -2678,6 +2699,7 @@ try {
         html.classList.remove('dark');
       }
       syncDarkToggleUI();
+      updateEntradasTrendChart();
     }
   };
   if (typeof mediaQuery.addEventListener === 'function') {
@@ -7204,10 +7226,12 @@ let allInvestimentosDocs = [];
 let recursosEntradasChartInstance = null;
 let recursosPatrimonioChartInstance = null;
 let recursosInvestimentosChartInstance = null;
+let entradasTrendChartInstance = null;
 let entradaRecorrenciasDocs = [];
 let entradasResumoTiposAtual = {};
 let recursosEntradasDataset = {};
 let recursosInvestimentosDataset = [];
+let entradasTrendDataset = {};
 
 const painelFinanceiroState = {
   entradasMes: 0,
@@ -7248,7 +7272,7 @@ let resumoFinanceiroAtual = {
   entradasMes: 0,
   totalGastosMes: 0,
   saldoProjetado: 0,
-  ganhoInvest: 0,
+  patrimonioTotal: 0,
 };
 
 /* resumo */
@@ -11265,13 +11289,15 @@ function renderEntradasSidebar(docs = []) {
   const tiposContainer = document.getElementById('entradas-tipos-resumo');
   const ultimaDataEl = document.getElementById('entradas-ultima-data');
   const totalGeralEl = document.getElementById('entradas-total-geral');
-  if (!lista || !totalMesEl || !tiposContainer) return;
+  if (!lista || !totalMesEl) return;
 
   mesesEntradasDisponiveis = new Set();
   allEntradasDocs = docs;
 
   lista.innerHTML = '';
-  tiposContainer.innerHTML = '';
+  if (tiposContainer) {
+    tiposContainer.innerHTML = '';
+  }
 
   const mesSel = document.getElementById('filtro-mes').value || yyyymm(new Date());
   const mostrarTodos = mesSel === 'all';
@@ -11377,21 +11403,25 @@ function renderEntradasSidebar(docs = []) {
 
   if (Object.keys(totaisPorTipoPeriodo).length === 0) {
     entradasResumoTiposAtual = {};
-    const emptyTipos = document.createElement('div');
-    emptyTipos.className = 'col-span-2 text-gray-500 dark:text-gray-400';
-    emptyTipos.textContent = 'Cadastre entradas para ver a distribuição.';
-    tiposContainer.appendChild(emptyTipos);
+    if (tiposContainer) {
+      const emptyTipos = document.createElement('div');
+      emptyTipos.className = 'col-span-2 text-gray-500 dark:text-gray-400';
+      emptyTipos.textContent = 'Cadastre entradas para ver a distribuição.';
+      tiposContainer.appendChild(emptyTipos);
+    }
   } else {
     entradasResumoTiposAtual = {};
     Object.entries(totaisPorTipoPeriodo).sort((a, b) => b[1] - a[1]).forEach(([tipo, valorTipo]) => {
-      const card = document.createElement('div');
-      card.className = 'p-2 bg-green-50 dark:bg-green-900/10 rounded';
-      card.innerHTML = `
-        <div class="text-xs uppercase text-green-700 dark:text-green-200">${entradaTipoLabels[tipo] || tipo}</div>
-        <div class="text-sm font-semibold text-green-800 dark:text-green-300">R$ ${moeda(valorTipo)}</div>
-      `;
-      tiposContainer.appendChild(card);
       entradasResumoTiposAtual[tipo] = roundCurrency(valorTipo);
+      if (tiposContainer) {
+        const card = document.createElement('div');
+        card.className = 'p-2 bg-green-50 dark:bg-green-900/10 rounded';
+        card.innerHTML = `
+          <div class="text-xs uppercase text-green-700 dark:text-green-200">${entradaTipoLabels[tipo] || tipo}</div>
+          <div class="text-sm font-semibold text-green-800 dark:text-green-300">R$ ${moeda(valorTipo)}</div>
+        `;
+        tiposContainer.appendChild(card);
+      }
     });
   }
 
@@ -11407,8 +11437,132 @@ function renderEntradasSidebar(docs = []) {
   atualizarResumoRapido();
   atualizarSaudeFinanceira();
   atualizarFiltroMeses();
+  updateEntradasTrendChart(totaisPorMesGeral);
   updateRecursosEntradasChart(totaisPorMesGeral);
   updateWalletSummaryUI();
+}
+
+function updateEntradasTrendChart(dataset) {
+  if (dataset) {
+    entradasTrendDataset = { ...dataset };
+  }
+
+  const canvas = document.getElementById('entradas-trend-chart');
+  const rangeSelect = document.getElementById('entradas-trend-range');
+  const emptyEl = document.getElementById('entradas-trend-empty');
+  const highlightEl = document.getElementById('entradas-trend-highlight');
+
+  if (!canvas || !rangeSelect) {
+    if (entradasTrendChartInstance) {
+      entradasTrendChartInstance.destroy();
+      entradasTrendChartInstance = null;
+    }
+    if (highlightEl) {
+      highlightEl.textContent = 'Sem dados suficientes para analisar.';
+    }
+    if (emptyEl) {
+      emptyEl.classList.remove('hidden');
+    }
+    return;
+  }
+
+  const entries = Object.entries(entradasTrendDataset || {}).sort(([a], [b]) => a.localeCompare(b));
+  const range = Number(rangeSelect.value || 3);
+  const subset = entries.slice(-range);
+  const labels = subset.map(([key]) => mmYYYY(key));
+  const values = subset.map(([, value]) => roundCurrency(value));
+  const hasData = values.some(value => value > 0.005);
+
+  if (highlightEl) {
+    if (!hasData) {
+      highlightEl.textContent = 'Cadastre novas entradas para gerar insights.';
+    } else if (values.length === 1) {
+      highlightEl.textContent = `Em ${labels[0]} você registrou R$ ${moeda(values[0])}.`;
+    } else {
+      const lastValue = values[values.length - 1];
+      const prevValue = values[values.length - 2] || 0;
+      const diff = roundCurrency(lastValue - prevValue);
+      const diffAbs = Math.abs(diff);
+      const percent = prevValue > 0.005 ? Math.abs(diff) / prevValue * 100 : null;
+      const trendEmoji = diff >= 0 ? '⬆️' : '⬇️';
+      if (percent !== null) {
+        highlightEl.textContent = `${trendEmoji} ${labels[labels.length - 1]} fechou em R$ ${moeda(lastValue)}, ${diff >= 0 ? 'acima' : 'abaixo'} do mês anterior em R$ ${moeda(diffAbs)} (${percent.toFixed(1)}%).`;
+      } else {
+        highlightEl.textContent = `${trendEmoji} ${labels[labels.length - 1]} fechou em R$ ${moeda(lastValue)} (${diff >= 0 ? 'R$ +' : 'R$ -'}${moeda(diffAbs)} versus o mês anterior).`;
+      }
+    }
+  }
+
+  if (emptyEl) {
+    emptyEl.classList.toggle('hidden', hasData);
+  }
+
+  if (!hasData || typeof Chart === 'undefined') {
+    if (entradasTrendChartInstance) {
+      entradasTrendChartInstance.destroy();
+      entradasTrendChartInstance = null;
+    }
+    return;
+  }
+
+  const ctx = canvas.getContext('2d');
+  if (!ctx) {
+    return;
+  }
+
+  if (entradasTrendChartInstance) {
+    entradasTrendChartInstance.destroy();
+  }
+
+  const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height || canvas.clientHeight || 160);
+  gradient.addColorStop(0, 'rgba(16, 185, 129, 0.55)');
+  gradient.addColorStop(1, 'rgba(16, 185, 129, 0.05)');
+
+  entradasTrendChartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Entradas',
+          data: values,
+          backgroundColor: gradient,
+          borderRadius: 6,
+          borderSkipped: false,
+          maxBarThickness: 32,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (context) => `R$ ${moeda(context.parsed.y || 0)}`,
+          },
+        },
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: {
+            color: html.classList.contains('dark') ? '#cbd5f5' : '#475569',
+            font: { size: 10 },
+          },
+        },
+        y: {
+          grid: { color: 'rgba(148, 163, 184, 0.18)' },
+          ticks: {
+            color: html.classList.contains('dark') ? '#94a3b8' : '#334155',
+            font: { size: 10 },
+            callback: (value) => `R$ ${moeda(value)}`,
+          },
+        },
+      },
+    },
+  });
 }
 
 function updateRecursosEntradasChart(dataset) {
@@ -12100,26 +12254,29 @@ function atualizarResumoRapido() {
     ? walletState.closingBalance
     : (entradasMes - totalGastosMes);
   const saldoProjetado = saldoBaseCarteira + ganhoInvest;
+  const contasTotal = roundCurrency(walletState.accountsTotal || 0);
+  const investimentosTotal = roundCurrency(walletState.investmentsTotal || Number(painelFinanceiroState?.investimentosTotais || 0));
+  const patrimonioTotal = roundCurrency(walletState.patrimonioTotal || (contasTotal + investimentosTotal));
 
-  atualizarResumoIndicadoresFinanceiros({ entradasMes, totalGastosMes, saldoProjetado, ganhoInvest });
+  atualizarResumoIndicadoresFinanceiros({ entradasMes, totalGastosMes, saldoProjetado, patrimonioTotal });
 
-  resumoFinanceiroAtual = { entradasMes, totalGastosMes, saldoProjetado, ganhoInvest };
+  resumoFinanceiroAtual = { entradasMes, totalGastosMes, saldoProjetado, patrimonioTotal };
   atualizarSimuladorResultados();
   return resumoFinanceiroAtual;
 }
 
-function atualizarResumoIndicadoresFinanceiros({ entradasMes, totalGastosMes, saldoProjetado, ganhoInvest }) {
+function atualizarResumoIndicadoresFinanceiros({ entradasMes, totalGastosMes, saldoProjetado, patrimonioTotal }) {
   const entradasMesEl = document.getElementById('resumo-entradas-mes');
   const saidasMesEl = document.getElementById('resumo-saidas-mes');
   const saldoProjetadoEl = document.getElementById('resumo-saldo-projetado');
-  const ganhoInvestEl = document.getElementById('resumo-ganho-invest');
+  const patrimonioEl = document.getElementById('resumo-patrimonio-total');
 
-  if (!entradasMesEl || !saidasMesEl || !saldoProjetadoEl || !ganhoInvestEl) return;
+  if (!entradasMesEl || !saidasMesEl || !saldoProjetadoEl || !patrimonioEl) return;
 
   entradasMesEl.textContent = moeda(entradasMes);
   saidasMesEl.textContent = moeda(totalGastosMes);
   saldoProjetadoEl.textContent = moeda(saldoProjetado);
-  ganhoInvestEl.textContent = moeda(Math.max(0, ganhoInvest));
+  patrimonioEl.textContent = moeda(Math.max(0, patrimonioTotal));
 
   const saldoItem = saldoProjetadoEl.closest('.resumo-item');
   if (saldoItem) {
@@ -12133,13 +12290,13 @@ function atualizarResumoIndicadoresFinanceiros({ entradasMes, totalGastosMes, sa
     }
   }
 
-  const ganhoItem = ganhoInvestEl.closest('.resumo-item');
-  if (ganhoItem) {
-    ganhoItem.classList.remove('positivo', 'alerta', 'neutro');
-    if (ganhoInvest > 0) {
-      ganhoItem.classList.add('positivo');
+  const patrimonioItem = patrimonioEl.closest('.resumo-item');
+  if (patrimonioItem) {
+    patrimonioItem.classList.remove('positivo', 'alerta', 'neutro');
+    if (patrimonioTotal > 0.005) {
+      patrimonioItem.classList.add('positivo');
     } else {
-      ganhoItem.classList.add('neutro');
+      patrimonioItem.classList.add('neutro');
     }
   }
 
@@ -13216,6 +13373,11 @@ if (reservarTodosBtn) {
     e.preventDefault();
     reservarSobrasAutomatico();
   });
+}
+
+const entradasTrendRange = document.getElementById('entradas-trend-range');
+if (entradasTrendRange) {
+  entradasTrendRange.addEventListener('change', () => updateEntradasTrendChart());
 }
 
 const limparReservasBtn = document.getElementById('btn-envelopes-limpar-reservas');
