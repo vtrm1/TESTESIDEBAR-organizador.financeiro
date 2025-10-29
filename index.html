@@ -3090,64 +3090,86 @@ function getInvestmentSummaryTotalForMonth(monthKey) {
 
 function resolveInvestmentTotalsContext(monthKey) {
   const normalizedKey = monthKey && monthKey !== 'all' ? monthKey : null;
-  const contributions = Array.from(investmentSnapshotTotals.entries())
-    .map(([key, value]) => ({ key, value: Number(value) || 0 }))
-    .filter(({ value }) => Number.isFinite(value));
 
-  contributions.sort((a, b) => a.key.localeCompare(b.key));
+  const contributions = new Map();
+
+  investmentSummaryTotals.forEach((value, key) => {
+    if (!key) return;
+    const rounded = roundCurrency(Number(value) || 0);
+    if (Math.abs(rounded) > 0.005) {
+      contributions.set(key, rounded);
+    }
+  });
+
+  investmentSnapshotTotals.forEach((value, key) => {
+    if (!key) return;
+    const rounded = roundCurrency(Number(value) || 0);
+    if (Math.abs(rounded) > 0.005) {
+      contributions.set(key, rounded);
+    } else {
+      contributions.delete(key);
+    }
+  });
+
+  const entries = Array.from(contributions.entries())
+    .sort((a, b) => a[0].localeCompare(b[0]));
 
   let cumulative = 0;
-  let carry = normalizedKey ? null : 0;
+  let carry = normalizedKey ? 0 : 0;
 
-  contributions.forEach(({ key, value }) => {
-    cumulative = roundCurrency(cumulative + value);
+  entries.forEach(([key, value]) => {
+    const numeric = Number(value) || 0;
+    cumulative = roundCurrency(cumulative + numeric);
     if (!normalizedKey || key <= normalizedKey) {
       carry = cumulative;
     }
   });
 
-  const summaryTotals = [];
-  monthlySummariesCache.forEach((summary, key) => {
-    const total = getInvestmentSummaryTotalForMonth(key);
-    if (total != null) {
-      summaryTotals.push({ key, total });
+  let monthContribution = 0;
+  if (normalizedKey) {
+    const entry = entries.find(([key]) => key === normalizedKey);
+    if (entry) {
+      monthContribution = roundCurrency(Number(entry[1]) || 0);
+    }
+  }
+
+  const globalTotal = roundCurrency(cumulative);
+  const resolvedCarry = normalizedKey
+    ? roundCurrency(Math.max(carry, monthContribution))
+    : globalTotal;
+
+  if (entries.length === 0) {
+    let fallbackCarry = 0;
+    const fallbackEntries = [];
+    monthlySummariesCache.forEach((summary, key) => {
+      const total = getInvestmentSummaryTotalForMonth(key);
+      if (total != null) {
+        fallbackEntries.push({ key, total: roundCurrency(total) });
+      }
+    });
+    fallbackEntries.sort((a, b) => a.key.localeCompare(b.key));
+    let cumulativeFallback = 0;
+    fallbackEntries.forEach(({ key, total }) => {
+      cumulativeFallback = roundCurrency(cumulativeFallback + total);
       if (!normalizedKey || key <= normalizedKey) {
-        if (carry == null || total > carry) {
-          carry = total;
+        fallbackCarry = cumulativeFallback;
+        if (normalizedKey && key === normalizedKey) {
+          monthContribution = roundCurrency(total);
         }
       }
-    }
-  });
-
-  summaryTotals.sort((a, b) => a.key.localeCompare(b.key));
-
-  if (carry == null) {
-    const previousSummary = summaryTotals
-      .filter(({ key }) => !normalizedKey || key <= normalizedKey)
-      .pop();
-    if (previousSummary) {
-      carry = previousSummary.total;
-    }
+    });
+    const fallbackGlobal = roundCurrency(cumulativeFallback);
+    return {
+      monthContribution,
+      carryTotal: normalizedKey ? roundCurrency(Math.max(fallbackCarry, monthContribution)) : fallbackGlobal,
+      globalTotal: fallbackGlobal,
+    };
   }
-
-  if (carry == null) {
-    carry = cumulative;
-  }
-
-  carry = roundCurrency(Math.max(carry, cumulative));
-
-  const globalTotal = summaryTotals.reduce((max, entry) => Math.max(max, entry.total), cumulative);
-
-  const monthContribution = normalizedKey
-    ? roundCurrency(Number(investmentSnapshotTotals.get(normalizedKey)) || 0)
-    : 0;
-
-  const resolvedCarry = normalizedKey ? carry : roundCurrency(Math.max(carry, globalTotal));
 
   return {
     monthContribution,
     carryTotal: resolvedCarry,
-    globalTotal: roundCurrency(Math.max(globalTotal, cumulative, resolvedCarry)),
+    globalTotal,
   };
 }
 
@@ -13613,9 +13635,22 @@ function renderInvestimentosSidebar(docs = []) {
     ? roundCurrency(Number(investmentAggregates[normalizedMonthKey] || 0))
     : 0;
   const hasSnapshotDocs = parsedDocs.length > 0;
+  const contextMonthContribution = roundCurrency(Number(totalsContext.monthContribution || 0));
+  const contextCarryTotal = roundCurrency(Number(totalsContext.carryTotal || 0));
+  const contextGlobalTotal = roundCurrency(Number(totalsContext.globalTotal || 0));
 
   if (!mostrarTodos) {
-    totalMes = monthAggregateValue;
+    let resolvedMes = monthAggregateValue;
+    if (resolvedMes <= 0.005) {
+      if (contextMonthContribution > 0.005) {
+        resolvedMes = contextMonthContribution;
+      } else if (summaryMonthFallback > 0.005) {
+        resolvedMes = summaryMonthFallback;
+      } else if (!hasSnapshotDocs) {
+        resolvedMes = 0;
+      }
+    }
+    totalMes = roundCurrency(resolvedMes);
   } else {
     totalMes = roundCurrency(totalMes);
   }
@@ -13623,25 +13658,23 @@ function renderInvestimentosSidebar(docs = []) {
   const docsPossiblyTruncated = mostrarTodos && docs.length >= SNAPSHOT_LIMITS.investimentos;
   let totalGeral;
   if (mostrarTodos) {
-    totalGeral = Math.max(totalFromDocs, totalsContext.globalTotal);
+    totalGeral = Math.max(totalFromDocs, contextGlobalTotal);
     if (docsPossiblyTruncated) {
-      totalGeral = Math.max(totalGeral, totalsContext.globalTotal);
+      totalGeral = Math.max(totalGeral, contextGlobalTotal);
     }
   } else {
-    totalGeral = monthAggregateValue;
-    const carry = roundCurrency(Number(totalsContext.carryTotal || 0));
-    if (carry > totalGeral) {
-      totalGeral = carry;
+    totalGeral = contextCarryTotal;
+    if (totalGeral <= 0.005) {
+      if (monthAggregateValue > 0.005) {
+        totalGeral = monthAggregateValue;
+      } else if (contextMonthContribution > 0.005) {
+        totalGeral = contextMonthContribution;
+      } else if (summaryMonthFallback > 0.005) {
+        totalGeral = summaryMonthFallback;
+      } else {
+        totalGeral = 0;
+      }
     }
-    if (!hasSnapshotDocs && summaryMonthFallback > 0.005) {
-      totalGeral = Math.max(totalGeral, summaryMonthFallback);
-    }
-    if (!hasSnapshotDocs && monthAggregateValue <= 0.005 && totalGeral <= 0.005) {
-      totalGeral = 0;
-    }
-  }
-  if (!mostrarTodos && !hasSnapshotDocs && monthAggregateValue <= 0.005 && summaryMonthFallback <= 0.005) {
-    totalMes = 0;
   }
   totalGeral = roundCurrency(totalGeral);
 
