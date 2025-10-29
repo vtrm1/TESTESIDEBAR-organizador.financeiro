@@ -3005,6 +3005,9 @@ const SNAPSHOT_LIMITS = {
   investimentos: 240,
 };
 
+let walletAccountsRealtimeHydrated = false;
+let investimentosRealtimeHydrated = false;
+
 function sanitizeMonthlySummarySection(section = {}) {
   const result = {};
   Object.entries(section || {}).forEach(([key, value]) => {
@@ -3149,10 +3152,12 @@ function applyMonthlySummaryToState(monthKey, normalized) {
     painelFinanceiroState.investimentosProjetados = roundCurrency(investimentosSection.projetado || painelFinanceiroState.investimentosProjetados || 0);
 
     const patrimonioTotal = roundCurrency(patrimonioSection.total || walletState.patrimonioTotal || 0);
-    if (Number.isFinite(patrimonioSection.contas)) {
+    const hasRealtimeAccounts = walletAccountsRealtimeHydrated;
+    const hasRealtimeInvestments = investimentosRealtimeHydrated;
+    if (!hasRealtimeAccounts && Number.isFinite(patrimonioSection.contas)) {
       walletState.accountsTotal = roundCurrency(patrimonioSection.contas);
     }
-    if (Number.isFinite(patrimonioSection.investimentos)) {
+    if (!hasRealtimeInvestments && Number.isFinite(patrimonioSection.investimentos)) {
       walletState.investmentsTotal = roundCurrency(patrimonioSection.investimentos);
     }
     if (patrimonioTotal > 0.005) {
@@ -9628,6 +9633,7 @@ function resetWalletState({ resetUI = true } = {}) {
     walletSnapshotSyncTimeout = null;
   }
   walletAccountsDocs = [];
+  walletAccountsRealtimeHydrated = false;
   walletTimelineDocs = [];
   walletState = createDefaultWalletState();
   walletSettingsEnsureCache.clear();
@@ -10202,8 +10208,17 @@ async function updateWalletSummaryUI() {
   walletState.openingAllocatedTotal = allocatedTotal;
   walletState.openingRemaining = roundCurrency(Math.max(walletState.openingBalance - walletState.openingAllocatedTotal, 0));
 
-  const entries = roundCurrency(computeWalletEntriesForMonth(monthKey));
-  const expenses = roundCurrency(computeWalletExpensesForMonth(monthKey));
+  let entries = Number(painelFinanceiroState?.entradasMes);
+  if (!Number.isFinite(entries)) {
+    entries = computeWalletEntriesForMonth(monthKey);
+  }
+  entries = roundCurrency(entries);
+
+  let expenses = Number(painelFinanceiroState?.totalGastosMes);
+  if (!Number.isFinite(expenses)) {
+    expenses = computeWalletExpensesForMonth(monthKey);
+  }
+  expenses = roundCurrency(expenses);
   walletState.entriesMonth = entries;
   walletState.expensesMonth = expenses;
 
@@ -11693,6 +11708,9 @@ async function startObservers(force = false){
   if (unsubWalletSnapshot) unsubWalletSnapshot();
   if (unsubWalletTimeline) unsubWalletTimeline();
 
+  walletAccountsRealtimeHydrated = false;
+  investimentosRealtimeHydrated = false;
+
   // Mostrar spinners antes de carregar os dados
   showSpinner('historico-loading-spinner');
   showSpinner('fixos-loading-spinner');
@@ -11795,6 +11813,7 @@ async function startObservers(force = false){
         updatedAt,
       };
     });
+    walletAccountsRealtimeHydrated = true;
     renderWalletAccountsList();
     updateWalletSummaryUI();
   }, (error) => {
@@ -12805,6 +12824,7 @@ function renderInvestimentosSidebar(docs = []) {
   const snapshotInvestmentMonths = new Set();
   const investmentAggregates = {};
   allInvestimentosDocs = docs;
+  investimentosRealtimeHydrated = true;
 
   const mesSel = document.getElementById('filtro-mes').value || yyyymm(new Date());
   const mostrarTodos = mesSel === 'all';
@@ -12923,6 +12943,7 @@ function renderInvestimentosSidebar(docs = []) {
   atualizarSimuladorResultados();
   atualizarFiltroMeses();
   updateWalletSummaryUI();
+  persistMonthlySummaryFromState();
   updateInvestimentosManagerUI({
     totalMes,
     totalGeral,
