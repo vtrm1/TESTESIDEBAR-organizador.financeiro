@@ -3061,6 +3061,130 @@ function normalizeMonthlySummarySnapshot(data = {}) {
   return normalizeMonthlySummaryPayload(data.month, data) || null;
 }
 
+function applyMonthlySummaryToState(monthKey, normalized) {
+  if (!monthKey || monthKey === 'all') {
+    return;
+  }
+  const summary = normalizeMonthlySummaryPayload(monthKey, normalized);
+  if (!summary) {
+    return;
+  }
+
+  monthlySummariesCache.set(monthKey, summary);
+
+  const entradasSection = summary.entradas || {};
+  const gastosSection = summary.gastos || {};
+  const investimentosSection = summary.investimentos || {};
+  const patrimonioSection = summary.patrimonio || {};
+  const netSection = summary.net || {};
+
+  if (Object.keys(entradasSection).length) {
+    monthTotals.entradas.set(monthKey, {
+      bruto: roundCurrency(entradasSection.bruto || 0),
+      fluxo: roundCurrency(entradasSection.fluxo || 0),
+      carteira: roundCurrency(entradasSection.carteira || 0),
+      investimento: roundCurrency(entradasSection.investimento || 0),
+    });
+    cachedMesesEntradas.add(monthKey);
+  }
+
+  if (Object.keys(gastosSection).length) {
+    const variavelLike = roundCurrency(
+      (gastosSection.variavel || 0)
+      + (gastosSection.cartoes || 0)
+      + (gastosSection.pix || 0)
+      + (gastosSection.fixoAvulso || 0)
+    );
+    const totalGastos = gastosSection.total != null
+      ? roundCurrency(gastosSection.total)
+      : roundCurrency(variavelLike + (gastosSection.fixos || 0) + (gastosSection.parcelados || 0));
+    monthTotals.gastos.set(monthKey, variavelLike > 0 ? variavelLike : totalGastos);
+    cachedMesesGastos.add(monthKey);
+  }
+
+  if (Object.keys(investimentosSection).length) {
+    const totalInvestimentos = roundCurrency(investimentosSection.total || investimentosSection.mes || 0);
+    if (totalInvestimentos > 0.005) {
+      monthTotals.investimentos.set(monthKey, totalInvestimentos);
+    }
+    cachedMesesInvestimentos.add(monthKey);
+  }
+
+  mesesDisponiveis = mergeMonthSets(new Set(monthTotals.gastos.keys()), cachedMesesGastos, mesesDisponiveis);
+  mesesEntradasDisponiveis = mergeMonthSets(new Set(monthTotals.entradas.keys()), cachedMesesEntradas, mesesEntradasDisponiveis);
+  mesesInvestimentosDisponiveis = mergeMonthSets(new Set(monthTotals.investimentos.keys()), cachedMesesInvestimentos, mesesInvestimentosDisponiveis);
+
+  const filtroMesEl = document.getElementById('filtro-mes');
+  const selected = filtroMesEl ? filtroMesEl.value : null;
+  const activeMonthKey = selected && selected !== 'all' ? selected : getCurrentWalletMonthKey();
+  const isActiveMonth = activeMonthKey === monthKey;
+
+  if (isActiveMonth) {
+    painelFinanceiroState.entradasMes = roundCurrency(entradasSection.fluxo || painelFinanceiroState.entradasMes || 0);
+    painelFinanceiroState.entradasDistribuicaoMes = {
+      bruto: roundCurrency(entradasSection.bruto || painelFinanceiroState.entradasDistribuicaoMes?.bruto || 0),
+      fluxo: roundCurrency(entradasSection.fluxo || painelFinanceiroState.entradasDistribuicaoMes?.fluxo || 0),
+      carteira: roundCurrency(entradasSection.carteira || painelFinanceiroState.entradasDistribuicaoMes?.carteira || 0),
+      investimento: roundCurrency(entradasSection.investimento || painelFinanceiroState.entradasDistribuicaoMes?.investimento || 0),
+    };
+
+    const totalGastosPeriodo = gastosSection.total != null
+      ? roundCurrency(gastosSection.total)
+      : roundCurrency((gastosSection.variavel || 0) + (gastosSection.fixos || 0) + (gastosSection.parcelados || 0));
+    painelFinanceiroState.totalGastosMes = totalGastosPeriodo;
+
+    resumo.historicoMes = roundCurrency(
+      (gastosSection.variavel || 0)
+        + (gastosSection.cartoes || 0)
+        + (gastosSection.pix || 0)
+        + (gastosSection.fixoAvulso || 0)
+    );
+    resumo.fixosMes = roundCurrency(gastosSection.fixos || resumo.fixosMes || 0);
+    resumo.parcelasMes = roundCurrency(gastosSection.parcelados || resumo.parcelasMes || 0);
+    resumo.cartoesMes = roundCurrency(gastosSection.cartoes || resumo.cartoesMes || 0);
+    resumo.pixMes = roundCurrency(gastosSection.pix || resumo.pixMes || 0);
+
+    painelFinanceiroState.investimentosMes = roundCurrency(investimentosSection.mes || painelFinanceiroState.investimentosMes || 0);
+    painelFinanceiroState.investimentosTotais = roundCurrency(investimentosSection.total || painelFinanceiroState.investimentosTotais || 0);
+    painelFinanceiroState.investimentosProjetados = roundCurrency(investimentosSection.projetado || painelFinanceiroState.investimentosProjetados || 0);
+
+    const patrimonioTotal = roundCurrency(patrimonioSection.total || walletState.patrimonioTotal || 0);
+    if (Number.isFinite(patrimonioSection.contas)) {
+      walletState.accountsTotal = roundCurrency(patrimonioSection.contas);
+    }
+    if (Number.isFinite(patrimonioSection.investimentos)) {
+      walletState.investmentsTotal = roundCurrency(patrimonioSection.investimentos);
+    }
+    if (patrimonioTotal > 0.005) {
+      walletState.patrimonioTotal = patrimonioTotal;
+    }
+
+    const saldoProjetado = netSection.saldoProjetado != null
+      ? roundCurrency(netSection.saldoProjetado)
+      : roundCurrency((painelFinanceiroState.entradasMes || 0) - (painelFinanceiroState.totalGastosMes || 0));
+
+    atualizarResumoIndicadoresFinanceiros({
+      entradasMes: painelFinanceiroState.entradasMes || 0,
+      totalGastosMes: painelFinanceiroState.totalGastosMes || 0,
+      saldoProjetado,
+      patrimonioTotal: walletState.patrimonioTotal || patrimonioTotal,
+    });
+
+    resumoFinanceiroAtual = {
+      entradasMes: painelFinanceiroState.entradasMes || 0,
+      totalGastosMes: painelFinanceiroState.totalGastosMes || 0,
+      saldoProjetado,
+      patrimonioTotal: walletState.patrimonioTotal || patrimonioTotal,
+    };
+
+    Promise.resolve(updateWalletSummaryUI()).catch((error) => {
+      console.error('Erro ao aplicar resumo mensal na carteira:', error);
+    });
+  }
+
+  atualizarFiltroMeses();
+}
+
 function queueMonthlySummaryUpdate(monthKey, payload = {}) {
   if (!monthKey || monthKey === 'all') {
     return;
@@ -3104,7 +3228,7 @@ async function flushMonthlySummaryUpdates() {
         ...normalized,
         computedAt: firebase.firestore.Timestamp.now(),
       }), { merge: true });
-      monthlySummariesCache.set(monthKey, normalized);
+      applyMonthlySummaryToState(monthKey, normalized);
     } catch (error) {
       console.error('Erro ao salvar resumo mensal:', error);
     }
@@ -3130,8 +3254,10 @@ function attachMonthlySummaryListener(monthKey) {
       if (snap.exists) {
         const normalized = normalizeMonthlySummarySnapshot(snap.data() || {});
         if (normalized) {
-          monthlySummariesCache.set(monthKey, normalized);
+          applyMonthlySummaryToState(monthKey, normalized);
         }
+      } else {
+        monthlySummariesCache.delete(monthKey);
       }
     }, (error) => {
       console.error('Erro ao acompanhar resumo mensal:', error);
@@ -11335,7 +11461,7 @@ async function preloadMonthCaches(force = false) {
         if (!normalized || !normalized.month) {
           return;
         }
-        monthlySummariesCache.set(normalized.month, normalized);
+        applyMonthlySummaryToState(normalized.month, normalized);
         nextCachedMesesGastos.add(normalized.month);
         nextCachedMesesEntradas.add(normalized.month);
         nextCachedMesesInvestimentos.add(normalized.month);
@@ -11617,16 +11743,35 @@ async function startObservers(force = false){
   if (hasMonthFilter) {
     gastosQuery = gastosQuery
       .where('mesFatura', '==', normalizedMonth)
-      .orderBy('data', 'desc');
+      .limit(SNAPSHOT_LIMITS.gastos);
   } else {
     gastosQuery = gastosQuery.orderBy('data', 'desc').limit(SNAPSHOT_LIMITS.gastos);
   }
   unsubGastos = gastosQuery.onSnapshot(snap=>{
     hideSpinner('historico-loading-spinner'); // Oculta spinner de histórico
-    allGastosDocs = snap.docs; // ATUALIZA allGastosDocs AQUI
+    const docsOrdered = [...snap.docs].sort((a, b) => {
+      const dataA = typeof a.data === 'function' ? a.data() : a.data;
+      const dataB = typeof b.data === 'function' ? b.data() : b.data;
+
+      const dateA = dataA?.data
+        ? (typeof dataA.data.toDate === 'function' ? dataA.data.toDate() : new Date(dataA.data))
+        : null;
+      const dateB = dataB?.data
+        ? (typeof dataB.data.toDate === 'function' ? dataB.data.toDate() : new Date(dataB.data))
+        : null;
+
+      const timeA = dateA instanceof Date && !Number.isNaN(dateA.getTime()) ? dateA.getTime() : 0;
+      const timeB = dateB instanceof Date && !Number.isNaN(dateB.getTime()) ? dateB.getTime() : 0;
+
+      if (timeA !== timeB) {
+        return timeB - timeA;
+      }
+      return a.id < b.id ? 1 : (a.id > b.id ? -1 : 0);
+    });
+    allGastosDocs = docsOrdered; // ATUALIZA allGastosDocs AQUI
 
     const mesSel = document.getElementById('filtro-mes').value || yyyymm(new Date());
-    
+
     let somaVariavel = 0;
     let somaFixoAvulso = 0;
     let totaisPorCartaoHist = {};
