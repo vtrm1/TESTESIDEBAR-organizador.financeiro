@@ -13531,10 +13531,32 @@ function renderInvestimentosSidebar(docs = []) {
 
   const aggregateKeys = new Set(Object.keys(investmentAggregates));
   if (normalizedMonthKey) {
-    if (aggregateKeys.has(normalizedMonthKey)) {
-      setInvestmentSnapshotTotal(normalizedMonthKey, investmentAggregates[normalizedMonthKey]);
+    const monthAggregate = roundCurrency(Number(investmentAggregates[normalizedMonthKey] || 0));
+    if (monthAggregate > 0.005) {
+      setInvestmentSnapshotTotal(normalizedMonthKey, monthAggregate);
     } else {
       clearInvestmentSnapshotTotal(normalizedMonthKey);
+      clearInvestmentSummaryTotal(normalizedMonthKey);
+      const cachedSummary = monthlySummariesCache.get(normalizedMonthKey);
+      if (cachedSummary) {
+        const nextInvestSection = {
+          ...(cachedSummary.investimentos || {}),
+          mes: 0,
+          total: 0,
+          projetado: 0,
+        };
+        const nextPatrimonioSection = {
+          ...(cachedSummary.patrimonio || {}),
+        };
+        if (Number(nextPatrimonioSection.investimentos || 0) !== 0) {
+          nextPatrimonioSection.investimentos = 0;
+        }
+        monthlySummariesCache.set(normalizedMonthKey, {
+          ...cachedSummary,
+          investimentos: nextInvestSection,
+          patrimonio: nextPatrimonioSection,
+        });
+      }
     }
   } else {
     Object.entries(investmentAggregates).forEach(([key, total]) => {
@@ -13581,34 +13603,45 @@ function renderInvestimentosSidebar(docs = []) {
       totaisPorMes[key] = rounded;
     }
   });
-  if (normalizedMonthKey && summaryMonthFallback > 0.005 && !(normalizedMonthKey in totaisPorMes)) {
-    totaisPorMes[normalizedMonthKey] = summaryMonthFallback;
+  if (normalizedMonthKey) {
+    const monthAggregate = roundCurrency(Number(investmentAggregates[normalizedMonthKey] || 0));
+    totaisPorMes[normalizedMonthKey] = monthAggregate;
   }
 
   const totalsContext = resolveInvestmentTotalsContext(mesSel);
-  const cachedMonthContribution = totalsContext.monthContribution;
+  const monthAggregateValue = normalizedMonthKey
+    ? roundCurrency(Number(investmentAggregates[normalizedMonthKey] || 0))
+    : 0;
+  const hasSnapshotDocs = parsedDocs.length > 0;
 
   if (!mostrarTodos) {
-    const aggregateForMonth = investmentAggregates[mesSel] || 0;
-    if (aggregateForMonth > 0.005) {
-      totalMes = roundCurrency(aggregateForMonth);
-    } else if (cachedMonthContribution > 0.005) {
-      totalMes = roundCurrency(cachedMonthContribution);
-    } else if (summaryMonthFallback > 0.005) {
-      totalMes = roundCurrency(summaryMonthFallback);
-    } else {
-      totalMes = roundCurrency(totalMes);
-    }
+    totalMes = monthAggregateValue;
   } else {
     totalMes = roundCurrency(totalMes);
   }
 
   const docsPossiblyTruncated = mostrarTodos && docs.length >= SNAPSHOT_LIMITS.investimentos;
-  let totalGeral = mostrarTodos
-    ? Math.max(totalFromDocs, totalsContext.globalTotal)
-    : Math.max(totalFromDocs, totalsContext.carryTotal);
-  if (docsPossiblyTruncated) {
-    totalGeral = Math.max(totalGeral, totalsContext.globalTotal);
+  let totalGeral;
+  if (mostrarTodos) {
+    totalGeral = Math.max(totalFromDocs, totalsContext.globalTotal);
+    if (docsPossiblyTruncated) {
+      totalGeral = Math.max(totalGeral, totalsContext.globalTotal);
+    }
+  } else {
+    totalGeral = monthAggregateValue;
+    const carry = roundCurrency(Number(totalsContext.carryTotal || 0));
+    if (carry > totalGeral) {
+      totalGeral = carry;
+    }
+    if (!hasSnapshotDocs && summaryMonthFallback > 0.005) {
+      totalGeral = Math.max(totalGeral, summaryMonthFallback);
+    }
+    if (!hasSnapshotDocs && monthAggregateValue <= 0.005 && totalGeral <= 0.005) {
+      totalGeral = 0;
+    }
+  }
+  if (!mostrarTodos && !hasSnapshotDocs && monthAggregateValue <= 0.005 && summaryMonthFallback <= 0.005) {
+    totalMes = 0;
   }
   totalGeral = roundCurrency(totalGeral);
 
