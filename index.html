@@ -12937,6 +12937,8 @@ function renderInvestimentosSidebar(docs = []) {
     }
   });
 
+  const totalFromDocs = roundCurrency(totalGeral);
+
   Object.entries(investmentAggregates).forEach(([key, total]) => {
     monthTotals.investimentos.set(key, roundCurrency(total));
   });
@@ -12945,10 +12947,28 @@ function renderInvestimentosSidebar(docs = []) {
   const investmentMonthSet = new Set(monthTotals.investimentos.keys());
   mesesInvestimentosDisponiveis = mergeMonthSets(snapshotInvestmentMonths, investmentMonthSet, cachedMesesInvestimentos);
 
-  const aggregatedInvestimentosTotal = Array.from(monthTotals.investimentos.values()).reduce((sum, value) => sum + value, 0);
-  const totalGeralAggregated = roundCurrency(aggregatedInvestimentosTotal);
+  const aggregatedValues = Array.from(monthTotals.investimentos.values()).map((value) => roundCurrency(Number(value) || 0));
+  const summaryPeakTotal = aggregatedValues.length ? Math.max(...aggregatedValues) : 0;
 
-  totalGeral = totalGeralAggregated;
+  let summaryMonthTotal = 0;
+  if (!mostrarTodos) {
+    const monthSummary = monthlySummariesCache.get(mesSel);
+    if (monthSummary) {
+      const investSection = monthSummary.investimentos || {};
+      const patrimonioSection = monthSummary.patrimonio || {};
+      const summaryCandidates = [
+        investSection.total,
+        investSection.mes,
+        patrimonioSection.investimentos,
+      ].map((value) => Number(value) || 0).filter((value) => Number.isFinite(value));
+      if (summaryCandidates.length) {
+        summaryMonthTotal = Math.max(...summaryCandidates, 0);
+      }
+    }
+  }
+
+  const bestSummaryTotal = roundCurrency(Math.max(summaryPeakTotal, summaryMonthTotal));
+  totalGeral = Math.max(totalFromDocs, bestSummaryTotal);
 
   lista.innerHTML = selectedItemsHtml.length
     ? selectedItemsHtml.join('')
