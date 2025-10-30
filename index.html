@@ -7210,6 +7210,7 @@ const createDefaultWalletState = () => ({
   openingRemaining: 0,
   closingBalance: 0,
   netFlow: 0,
+  projectedMonthlyNet: 0,
   entriesMonth: 0,
   expensesMonth: 0,
   accounts: [],
@@ -8973,6 +8974,7 @@ function resetWalletRuntimeForMonth(monthKey) {
   walletState.openingRemaining = 0;
   walletState.closingBalance = 0;
   walletState.netFlow = 0;
+  walletState.projectedMonthlyNet = 0;
   walletState.entriesMonth = 0;
   walletState.expensesMonth = 0;
   walletState.accounts = [];
@@ -9543,18 +9545,25 @@ async function updateWalletSummaryUI() {
   walletState.openingAllocatedTotal = allocatedTotal;
   walletState.openingRemaining = roundCurrency(Math.max(walletState.openingBalance - walletState.openingAllocatedTotal, 0));
 
-  const entries = roundCurrency(computeWalletEntriesForMonth(monthKey));
-  const expenses = roundCurrency(computeWalletExpensesForMonth(monthKey));
+  const preferPanelTotals = !painelFinanceiroState.entradasFiltroTodos
+    && Number.isFinite(Number(painelFinanceiroState.entradasMes));
+  const entries = preferPanelTotals
+    ? roundCurrency(Number(painelFinanceiroState.entradasMes || 0))
+    : roundCurrency(computeWalletEntriesForMonth(monthKey));
+  const expenses = Number.isFinite(Number(painelFinanceiroState.totalGastosMes))
+    ? roundCurrency(Number(painelFinanceiroState.totalGastosMes || 0))
+    : roundCurrency(computeWalletExpensesForMonth(monthKey));
   walletState.entriesMonth = entries;
   walletState.expensesMonth = expenses;
 
   const net = roundCurrency(entries - expenses);
   walletState.netFlow = net;
-  const closing = roundCurrency(walletState.openingBalance + net);
-  walletState.closingBalance = closing;
+  const carryForward = roundCurrency(walletState.openingBalance + net);
+  walletState.projectedMonthlyNet = net;
+  walletState.closingBalance = carryForward;
   const activeWorkspaceId = getActiveWorkspaceId();
   if (activeWorkspaceId && walletState.monthKey) {
-    walletOpeningCarryCache.set(`${activeWorkspaceId}:${walletState.monthKey}:closing`, closing);
+    walletOpeningCarryCache.set(`${activeWorkspaceId}:${walletState.monthKey}:closing`, carryForward);
   }
 
   const accountsTotal = (walletAccountsDocs || []).reduce((sum, account) => {
@@ -9566,16 +9575,18 @@ async function updateWalletSummaryUI() {
   walletState.investmentsTotal = investmentsTotal;
   const patrimonioTotal = roundCurrency(walletState.accountsTotal + investmentsTotal);
   walletState.patrimonioTotal = patrimonioTotal;
-  const difference = roundCurrency(patrimonioTotal - closing);
+  const difference = roundCurrency(patrimonioTotal - carryForward);
   walletState.difference = difference;
 
   const destaqueEl = document.getElementById('wallet-saldo-projetado-destaque');
   if (destaqueEl) {
-    destaqueEl.textContent = `R$ ${moeda(closing)}`;
+    destaqueEl.textContent = `R$ ${moeda(net)}`;
   }
   const helperEl = document.getElementById('wallet-saldo-projetado-helper');
   if (helperEl) {
-    helperEl.textContent = monthLabel ? `Saldo anterior + entradas - saídas de ${monthLabel}.` : 'Saldo anterior + entradas - saídas do mês selecionado.';
+    helperEl.textContent = monthLabel
+      ? `Entradas menos saídas planejadas em ${monthLabel}.`
+      : 'Entradas menos saídas do mês selecionado.';
   }
   const saldoInicialEl = document.getElementById('wallet-saldo-inicial');
   if (saldoInicialEl) {
@@ -9707,6 +9718,7 @@ function scheduleWalletSnapshotSync() {
       openingAllocatedTotal: walletState.openingAllocatedTotal,
     };
     const normalized = normalizeWalletSnapshot(basePayload, walletState.monthKey);
+    walletState.projectedMonthlyNet = normalized.netFlow;
 
     if (walletState.currentSnapshotNormalized && walletSnapshotsEqual(normalized, walletState.currentSnapshotNormalized)) {
       walletState.pendingSnapshotNormalized = null;
@@ -9768,6 +9780,7 @@ function scheduleWalletSnapshotSync() {
         walletState.expensesMonth = pendingNormalized.expensesTotal;
         walletState.closingBalance = pendingNormalized.closingBalance;
         walletState.netFlow = pendingNormalized.netFlow;
+        walletState.projectedMonthlyNet = pendingNormalized.netFlow;
         scheduleWalletSnapshotSync();
       } else {
         walletState.pendingSnapshotNormalized = null;
@@ -9884,6 +9897,7 @@ async function ensureWalletSnapshotDoc(monthKey) {
     walletState.currentSnapshotNormalized = cached.normalized
       ? { ...cached.normalized }
       : null;
+    walletState.projectedMonthlyNet = walletState.currentSnapshotNormalized?.netFlow ?? walletState.netFlow;
     walletState.pendingSnapshotNormalized = null;
     walletState.pendingSnapshotPayload = null;
     walletState.snapshotSyncInFlight = false;
@@ -9916,6 +9930,7 @@ async function ensureWalletSnapshotDoc(monthKey) {
       walletState.currentSnapshot = snapshot.data() || {};
       walletState.currentSnapshotNormalized = normalizeWalletSnapshot(walletState.currentSnapshot, monthKey);
     }
+    walletState.projectedMonthlyNet = walletState.currentSnapshotNormalized?.netFlow ?? walletState.netFlow;
     walletState.pendingSnapshotNormalized = null;
     walletState.pendingSnapshotPayload = null;
     walletState.snapshotSyncInFlight = false;
@@ -10347,7 +10362,11 @@ function renderRecursosOverview() {
   const saldoInicial = roundCurrency(walletState.openingBalance || 0);
   const saldoDistribuido = roundCurrency(walletState.openingAllocatedTotal || 0);
   const saldoRestante = roundCurrency(walletState.openingRemaining || Math.max(walletState.openingBalance - walletState.openingAllocatedTotal, 0));
-  const saldoProjetado = roundCurrency(walletState.closingBalance || (walletState.openingBalance + fluxoLiquido));
+  const saldoProjetado = roundCurrency(
+    Number.isFinite(Number(walletState.projectedMonthlyNet))
+      ? Number(walletState.projectedMonthlyNet)
+      : fluxoLiquido,
+  );
   const contasTotal = roundCurrency(walletState.accountsTotal || 0);
   const investimentosTotal = roundCurrency(walletState.investmentsTotal || Number(painelFinanceiroState.investimentosTotais || 0));
   const patrimonio = roundCurrency(walletState.patrimonioTotal || (contasTotal + investimentosTotal));
@@ -10940,6 +10959,7 @@ async function startObservers(){
     if (snap.exists) {
       walletState.currentSnapshot = snap.data() || {};
       walletState.currentSnapshotNormalized = normalizeWalletSnapshot(walletState.currentSnapshot, walletMonthKey);
+      walletState.projectedMonthlyNet = walletState.currentSnapshotNormalized?.netFlow ?? walletState.netFlow;
       const workspaceId = getActiveWorkspaceId();
       if (workspaceId) {
         const cacheKey = `${workspaceId}:${walletMonthKey}`;
@@ -12277,8 +12297,8 @@ function atualizarResumoRapido() {
   const projInvest = painelFinanceiroState.investimentosProjetados || 0;
   const totalInvest = painelFinanceiroState.investimentosTotais || 0;
   const ganhoInvest = Math.max(0, projInvest - totalInvest);
-  const saldoBaseCarteira = typeof walletState?.closingBalance === 'number'
-    ? walletState.closingBalance
+  const saldoBaseCarteira = Number.isFinite(Number(walletState?.projectedMonthlyNet))
+    ? Number(walletState.projectedMonthlyNet)
     : (entradasMes - totalGastosMes);
   const saldoProjetado = saldoBaseCarteira + ganhoInvest;
 
@@ -12346,8 +12366,8 @@ function atualizarSaudeFinanceira() {
   const projInvest = painelFinanceiroState.investimentosProjetados || 0;
   const totalInvest = painelFinanceiroState.investimentosTotais || 0;
   const ganhoInvest = Math.max(0, projInvest - totalInvest);
-  const saldoBaseCarteira = typeof walletState?.closingBalance === 'number'
-    ? walletState.closingBalance
+  const saldoBaseCarteira = Number.isFinite(Number(walletState?.projectedMonthlyNet))
+    ? Number(walletState.projectedMonthlyNet)
     : (entradasMes - totalGastosMes);
   const saldoProjetado = saldoBaseCarteira + ganhoInvest;
 
