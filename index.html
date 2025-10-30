@@ -1443,15 +1443,7 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
       </div>
       <div>
         <label for="parcelado-cartao" class="block font-medium mb-1 text-gray-800 dark:text-gray-100">Cartão</label>
-        <select id="parcelado-cartao" name="cartao" class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600">
-          <option value="">Nenhum</option>
-          <option value="nubank">Nubank</option>
-          <option value="itau">Itaú</option>
-          <option value="univ">Univ</option>
-          <option value="amazon">Amazon</option>
-          <option value="mercado">Mercado Pago</option>
-          <option value="pix">PIX</option>
-        </select>
+        <select id="parcelado-cartao" name="cartao" class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" data-cartao-select data-default-card="" data-allow-empty="true"></select>
       </div>
       <div>
         <label for="parcelado-inicio" class="block font-medium mb-1 text-gray-800 dark:text-gray-100">Data de Início</label>
@@ -1507,6 +1499,10 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
         <label for="fixo-valor" class="block font-medium mb-1 text-gray-800 dark:text-gray-100">Valor (R$)</label>
         <input type="number" id="fixo-valor" name="valor" min="0" step="0.01" required class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600"/>
       </div>
+      <div>
+        <label for="fixo-cartao" class="block font-medium mb-1 text-gray-800 dark:text-gray-100">Cartão (opcional)</label>
+        <select id="fixo-cartao" name="cartao" class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" data-cartao-select data-default-card="" data-allow-empty="true"></select>
+      </div>
       <div class="flex items-center space-x-2">
         <input type="checkbox" id="fixo-ativo" name="ativo" checked class="form-checkbox h-4 w-4 text-blue-600 dark:text-blue-400 border-gray-300 dark:border-gray-600 rounded"/>
         <label for="fixo-ativo" class="font-medium text-gray-800 dark:text-gray-100">Ativo</label>
@@ -1525,15 +1521,7 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
     <button id="modal-close" class="absolute top-3 right-3 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 text-2xl font-bold" aria-label="Fechar modal">&times;</button>
     <h2 class="text-xl font-bold mb-4 text-gray-800 dark:text-gray-100">Adicionar Gasto Variável</h2>
     <form id="form-add-gasto-modal" class="space-y-4">
-      <select id="modal-cartao" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600">
-        <option value="pix" selected>PIX</option>
-        <option value="nubank">Nubank</option>
-        <option value="itau">Itaú</option>
-        <option value="univ">Univ</option>
-        <option value="amazon">Amazon</option>
-        <option value="mercado">Mercado Pago</option>
-        <option value="">Nenhum</option>
-      </select>
+      <select id="modal-cartao" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" data-cartao-select data-default-card="pix" data-allow-empty="true"></select>
       <div class="text-xs text-gray-500 dark:text-gray-400 mt-1" id="mes-fatura-estimado">Mês de Pagamento Estimado: <span class="font-semibold">Mês Atual</span></div>
       <select id="modal-categoria" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600">
         <option value="" disabled selected>Categoria (opcional)</option>
@@ -1857,15 +1845,7 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
         <input id="p-desc" class="px-2 py-1 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" placeholder="Descrição (ex: Guarda-roupa)" required/>
         <input id="p-valor" type="number" step="0.01" class="px-2 py-1 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" placeholder="Valor da parcela (R$)" required/>
         <input id="p-num" type="number" min="1" class="px-2 py-1 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" placeholder="Nº parcelas" required/>
-        <select id="p-cartao" class="px-2 py-1 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600">
-          <option value="">Nenhum</option>
-          <option value="nubank">Nubank</option>
-          <option value="itau">Itaú</option>
-          <option value="univ">Univ</option>
-          <option value="amazon">Amazon</option>
-          <option value="mercado">Mercado Pago</option>
-          <option value="pix">PIX</option>
-        </select>
+        <select id="p-cartao" class="px-2 py-1 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" data-cartao-select data-default-card="" data-allow-empty="true"></select>
         <input id="p-inicio" type="month" class="px-2 py-1 border rounded bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" required/>
         <button class="bg-purple-600 dark:bg-purple-700 text-white px-3 py-1 rounded hover:bg-purple-700 dark:hover:bg-purple-800 transition-colors">Adicionar Parcelado</button>
       </form>
@@ -2455,8 +2435,8 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
          <div>
     <label for="novo-cartao-offset" class="block font-medium mb-1 text-gray-800 dark:text-gray-100">Offset de Vencimento</label>
     <select id="novo-cartao-offset" name="offset" class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600">
-      <option value="0">Mesmo Mês (ex: Itaú, Nubank)</option>
-      <option value="1" selected>Próximo Mês (ex: Univ, Amazon)</option>
+      <option value="0" selected>Mesmo Mês (ex: Itaú, Nubank)</option>
+      <option value="1">Próximo Mês (ex: Univ, Amazon)</option>
     </select>
     <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">0: Vencimento no mesmo mês da fatura. 1: Vencimento no mês seguinte.</p>
   </div>
@@ -7197,6 +7177,7 @@ let cartoesCfg = {...cartoesCfgDefault};
 let mesesDisponiveis = new Set(); // Meses com gastos (para filtro geral)
 let mesesParceladosColetados = new Set(); // Meses que contêm parcelados (do início ao fim, para filtro geral)
 let allFixosDocs = []; // NOVO: Cache global dos documentos de fixos
+let fixosPorCartao = {};
 let mesesEntradasDisponiveis = new Set();
 let mesesInvestimentosDisponiveis = new Set();
 let allEntradasDocs = [];
@@ -8142,7 +8123,7 @@ function renderListaCartoesExistentes() {
 
    // Função nova para editar offset
     function editarOffsetCartao(key) {
-      const cfg = cartoesCfg[key] || { mesVencimentoOffset: 1 };
+      const cfg = cartoesCfg[key] || { mesVencimentoOffset: 0 };
       const novoOffset = prompt(`Offset de vencimento para ${cfg.label} (0 = mesmo mês, 1 = próximo mês):`, cfg.mesVencimentoOffset);
       if (novoOffset === null) return;
       const val = parseInt(novoOffset);
@@ -8219,24 +8200,36 @@ function renderFixos(docs) {
   // Renderização melhorada com cards
   const container = document.getElementById('fixos-cards-container');
   container.innerHTML = '';
-  
+
   let totalAtivos = 0;
   let totalInativos = 0;
-  
-  if (!docs.length) { 
+  const totaisFixosPorCartao = {};
+
+  if (!docs.length) {
     container.innerHTML = '<div class="text-center text-gray-500 dark:text-gray-400 py-4">Sem fixos cadastrados</div>';
   } else {
     docs.forEach(doc => {
       const f = doc.data();
       const id = doc.id;
       const ativo = f.ativo !== false;
-      
+      const cardKey = (f.cartao || '').trim();
+      const cardLabel = cardKey ? obterLabelCartao(cardKey) : '';
+      const cardIcon = cardKey === 'pix' ? 'fa-bolt' : 'fa-credit-card';
+      const cardBadge = cardLabel
+        ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-100 text-xs font-medium">` +
+            `<i class="fa-solid ${cardIcon} text-[0.7rem]"></i>${cardLabel}` +
+          `</span>`
+        : '';
+
       if (ativo) {
         totalAtivos += (f.valor || 0);
+        if (cardKey) {
+          totaisFixosPorCartao[cardKey] = (totaisFixosPorCartao[cardKey] || 0) + (f.valor || 0);
+        }
       } else {
         totalInativos += (f.valor || 0);
       }
-      
+
       const card = document.createElement('div');
       card.className = `fixo-card section-card p-3 sm:p-4 ${ativo ? 'ativo' : 'inativo'}`;
       const statusBadgeClass = ativo ? 'fixo-status-badge fixo-status-ativo' : 'fixo-status-badge fixo-status-inativo';
@@ -8249,6 +8242,7 @@ function renderFixos(docs) {
             <div class="fixo-title font-semibold text-slate-900 dark:text-slate-100 leading-snug">${f.nome || ''}</div>
             ${f.categoria ? `<span class="fixo-category-pill">${f.categoria}</span>` : ''}
             ${f.subcategoria ? `<div class="fixo-subcategoria">${f.subcategoria}</div>` : ''}
+            ${cardBadge}
           </div>
           <div class="flex flex-col items-end gap-2 text-right">
             <div class="fixo-amount font-semibold text-slate-900 dark:text-slate-100 leading-none">R$ ${moeda(f.valor)}</div>
@@ -8273,7 +8267,10 @@ function renderFixos(docs) {
       container.appendChild(card);
     });
   }
-  
+
+  fixosPorCartao = totaisFixosPorCartao;
+  window._fixosPorCartao = totaisFixosPorCartao;
+
   // Atualiza resumos
   document.getElementById('resumo-fixos-ativos').textContent = `R$ ${moeda(totalAtivos)}`;
   document.getElementById('resumo-fixos-inativos').textContent = `R$ ${moeda(totalInativos)}`;
@@ -8324,7 +8321,8 @@ function editarFixoPrompt(id){
       categoria: d.categoria,
       subcategoria: d.subcategoria,
       valor: d.valor,
-      ativo: d.ativo
+      ativo: d.ativo,
+      cartao: d.cartao || ''
     });
   });
 }
@@ -8334,42 +8332,68 @@ document.getElementById('add-fixo-open').addEventListener('click', () => {
 });
 
 // NOVO: Função para popular os selects de cartão
+function obterLabelCartao(key) {
+  if (!key) return '';
+  if (key === 'pix') return 'PIX';
+  return cartoesCfg[key]?.label || cartoesCfgDefault[key]?.label || capitalize(key);
+}
+
 function popularSelectCartoes() {
-  const selectsCartao = document.querySelectorAll('#modal-cartao, #p-cartao'); 
-  
-  selectsCartao.forEach(select => {
-    const valorAtual = select.value; 
-    select.innerHTML = ''; 
-    // Adiciona a opção "PIX" primeiro
-    const pixOption = document.createElement('option');
-    pixOption.value = 'pix';
-    pixOption.textContent = 'PIX';
-    select.appendChild(pixOption);
-    // Adiciona os outros cartões configurados
-    const cartoesOrdenados = Object.keys(cartoesCfg).filter(key => key !== 'pix').sort((a, b) => {
-      const labelA = (cartoesCfg[a]?.label || a).toLowerCase();
-      const labelB = (cartoesCfg[b]?.label || b).toLowerCase();
+  const selectsCartao = document.querySelectorAll('[data-cartao-select]');
+
+  const cartoesOrdenados = Object.keys(cartoesCfg)
+    .filter((key) => key !== 'pix')
+    .sort((a, b) => {
+      const labelA = (cartoesCfg[a]?.label || obterLabelCartao(a)).toLowerCase();
+      const labelB = (cartoesCfg[b]?.label || obterLabelCartao(b)).toLowerCase();
       return labelA.localeCompare(labelB);
     });
-    cartoesOrdenados.forEach(key => {
+
+  selectsCartao.forEach((select) => {
+    const valorAtual = select.value;
+    const fallback = select.dataset.defaultCard ?? '';
+    const includePix = select.dataset.includePix !== 'false';
+    const allowEmpty = select.dataset.allowEmpty !== 'false';
+
+    select.innerHTML = '';
+
+    if (includePix) {
+      const pixOption = document.createElement('option');
+      pixOption.value = 'pix';
+      pixOption.textContent = obterLabelCartao('pix');
+      select.appendChild(pixOption);
+    }
+
+    cartoesOrdenados.forEach((key) => {
       const option = document.createElement('option');
-      option.value = key; // O 'key' é o ID gerado
-      option.textContent = cartoesCfg[key].label; // O 'label' é o nome amigável
+      option.value = key;
+      option.textContent = obterLabelCartao(key);
       select.appendChild(option);
     });
-    // Adiciona a opção "Nenhum" por último
-    const nenhumOption = document.createElement('option');
-    nenhumOption.value = '';
-    nenhumOption.textContent = 'Nenhum';
-    select.appendChild(nenhumOption);
-    // Tenta restaurar o valor selecionado
-    if (select.querySelector(`option[value="${valorAtual}"]`)) {
+
+    if (allowEmpty) {
+      const nenhumOption = document.createElement('option');
+      nenhumOption.value = '';
+      nenhumOption.textContent = 'Nenhum';
+      select.appendChild(nenhumOption);
+    }
+
+    const availableValues = Array.from(select.options).map((option) => option.value);
+
+    if (availableValues.includes(valorAtual)) {
       select.value = valorAtual;
-    } else {
-      select.value = 'pix'; 
+    } else if (availableValues.includes(fallback)) {
+      select.value = fallback;
+    } else if (includePix && availableValues.includes('pix')) {
+      select.value = 'pix';
+    } else if (allowEmpty && availableValues.includes('')) {
+      select.value = '';
+    } else if (select.options.length > 0) {
+      select.selectedIndex = 0;
     }
   });
-  atualizarMesFaturaEstimado(); 
+
+  atualizarMesFaturaEstimado();
 }
 
 
@@ -8409,7 +8433,8 @@ formAddCartao.addEventListener('submit', (e) => {
     showToast('Dia de fechamento inválido. Use um número entre 1 e 31 ou deixe vazio.', 'error');
     return;
   }
-  const offset = parseInt(document.getElementById('novo-cartao-offset').value) || 1;  // <-- NOVO
+  const offsetRaw = Number(document.getElementById('novo-cartao-offset').value);
+  const offset = Number.isFinite(offsetRaw) ? offsetRaw : 0;
   cartoesCfg[id] = { label, fechamento, mesVencimentoOffset: offset };  // <-- NOVO: Salva offset
   userDocRef('config', 'cartoes').set(cartoesCfg, { merge: true })
     .then(() => {
@@ -11051,92 +11076,112 @@ totalRestanteParcelados += restantesIncluindoAtual * (p.valorParcela || 0);
   });
 
   resumo.parcelasMes = parcelasMesTotal;
-  renderCartoes(totaisPorCartao);
-
-  resumo.cartoesMes = Object.entries(totaisPorCartao).filter(([k])=>k!=='pix').reduce((acc,[,v])=> acc + (v||0), 0);
-  resumo.pixMes = (window._totaisPorCartaoHistorico && window._totaisPorCartaoHistorico['pix']) || resumo.pixMes || 0;
-
   document.getElementById('p-total-restante').textContent = moeda(totalRestanteParcelados);
 
   // === FIXOS ===
-    userCollectionRef('fixos').get().then(fixSnap=>{
-      const somaFixosAtivos = fixSnap.docs.reduce((a,d)=> 
-        a + ((d.data().ativo && d.data().valor) ? d.data().valor : 0), 0);
+  const fixDocs = allFixosDocs || [];
+  let somaFixosAtivos = 0;
+  const totaisFixosAtivosPorCartao = {};
 
-      // salva no resumo para entrar no total geral
-      resumo.fixosMes = somaFixosAtivos;
+  fixDocs.forEach((doc) => {
+    const data = typeof doc.data === 'function' ? doc.data() : doc;
+    if (data.ativo === false) {
+      return;
+    }
+    const valor = Number(data.valor) || 0;
+    somaFixosAtivos += valor;
+    const cardKey = (data.cartao || '').trim();
+    if (cardKey) {
+      totaisFixosAtivosPorCartao[cardKey] = (totaisFixosAtivosPorCartao[cardKey] || 0) + valor;
+    }
+  });
 
-let totalGastosAcumulado = 0;
-// Gastos variáveis (todos realizados)
-allGastosDocs.forEach(doc => totalGastosAcumulado += (doc.data().valor || 0));
-// Parcelados: Somar apenas parcelas pagas até agora (não o total futuro)
-const hoje = new Date();
-allParceladosDocs.forEach(doc => {
-  const p = doc.data();
-  const inicio = p.dataInicio && p.dataInicio.toDate ? p.dataInicio.toDate() : new Date(p.dataInicio);
-  const parcelasPagas = Math.max(0, monthDiff(inicio, hoje) + 1); // Parcelas pagas até agora
-  const valorPagas = Math.min(parcelasPagas, p.numParcelas || 1) * (p.valorParcela || 0);
-  totalGastosAcumulado += valorPagas;
-});
-// Fixos: Somar valor mensal * número de meses com dados (aproximação)
-const mesesComDados = new Set([...mesesDisponiveis, ...mesesParceladosColetados]);
-allFixosDocs.forEach(doc => {
-  if (doc.data().ativo !== false) {
-    totalGastosAcumulado += (doc.data().valor || 0) * mesesComDados.size; // Multiplica pelo número de meses únicos
+  fixosPorCartao = totaisFixosAtivosPorCartao;
+  window._fixosPorCartao = totaisFixosAtivosPorCartao;
+
+  Object.entries(totaisFixosAtivosPorCartao).forEach(([key, total]) => {
+    totaisPorCartao[key] = (totaisPorCartao[key] || 0) + total;
+  });
+
+  // salva no resumo para entrar no total geral
+  resumo.fixosMes = somaFixosAtivos;
+
+  let totalGastosAcumulado = 0;
+  // Gastos variáveis (todos realizados)
+  allGastosDocs.forEach(doc => totalGastosAcumulado += (doc.data().valor || 0));
+  // Parcelados: Somar apenas parcelas pagas até agora (não o total futuro)
+  const hoje = new Date();
+  allParceladosDocs.forEach(doc => {
+    const p = doc.data();
+    const inicio = p.dataInicio && p.dataInicio.toDate ? p.dataInicio.toDate() : new Date(p.dataInicio);
+    const parcelasPagas = Math.max(0, monthDiff(inicio, hoje) + 1); // Parcelas pagas até agora
+    const valorPagas = Math.min(parcelasPagas, p.numParcelas || 1) * (p.valorParcela || 0);
+    totalGastosAcumulado += valorPagas;
+  });
+  // Fixos: Somar valor mensal * número de meses com dados (aproximação)
+  const mesesComDados = new Set([...mesesDisponiveis, ...mesesParceladosColetados]);
+  fixDocs.forEach(doc => {
+    const data = typeof doc.data === 'function' ? doc.data() : doc;
+    if (data.ativo !== false) {
+      totalGastosAcumulado += (Number(data.valor) || 0) * mesesComDados.size; // Multiplica pelo número de meses únicos
+    }
+  });
+
+
+  // Verifica todos os tipos de gastos que ultrapassam o limite
+  const metaParcelado = getEnvelopeMeta('parcelado');
+  const metaFixoAtual = getEnvelopeMeta('fixo');
+  const metaVariavel = getEnvelopeMeta('variavel');
+  const triggerParcelado = metaParcelado > 0 && parcelasMesTotal > metaParcelado;
+  const triggerFixo = metaFixoAtual > 0 && somaFixosAtivos > metaFixoAtual;
+  const somaVariavel = window._somaVariavelAtual || 0;
+  const triggerVariavel = metaVariavel > 0 && somaVariavel > metaVariavel;
+
+  const banner = document.getElementById('danger-banner');
+  const alertas = [];
+
+  if(triggerFixo) {
+    alertas.push(`<strong>Fixos:</strong> R$ ${moeda(somaFixosAtivos)} / R$ ${moeda(metaFixoAtual)} (${((somaFixosAtivos/metaFixoAtual)*100).toFixed(1)}%)`);
   }
-});
 
+  if(triggerParcelado) {
+    alertas.push(`<strong>Parcelados:</strong> R$ ${moeda(parcelasMesTotal)} / R$ ${moeda(metaParcelado)} (${((parcelasMesTotal/metaParcelado)*100).toFixed(1)}%)`);
+  }
 
-      // Verifica todos os tipos de gastos que ultrapassam o limite
-      const metaParcelado = getEnvelopeMeta('parcelado');
-      const metaFixoAtual = getEnvelopeMeta('fixo');
-      const metaVariavel = getEnvelopeMeta('variavel');
-      const triggerParcelado = metaParcelado > 0 && parcelasMesTotal > metaParcelado;
-      const triggerFixo = metaFixoAtual > 0 && somaFixosAtivos > metaFixoAtual;
-      const somaVariavel = window._somaVariavelAtual || 0;
-      const triggerVariavel = metaVariavel > 0 && somaVariavel > metaVariavel;
-      
-      const banner = document.getElementById('danger-banner');
-      const alertas = [];
+  if(triggerVariavel) {
+    alertas.push(`<strong>Variáveis:</strong> R$ ${moeda(somaVariavel)} / R$ ${moeda(metaVariavel)} (${((somaVariavel/metaVariavel)*100).toFixed(1)}%)`);
+  }
 
-      if(triggerFixo) {
-        alertas.push(`<strong>Fixos:</strong> R$ ${moeda(somaFixosAtivos)} / R$ ${moeda(metaFixoAtual)} (${((somaFixosAtivos/metaFixoAtual)*100).toFixed(1)}%)`);
-      }
-
-      if(triggerParcelado) {
-        alertas.push(`<strong>Parcelados:</strong> R$ ${moeda(parcelasMesTotal)} / R$ ${moeda(metaParcelado)} (${((parcelasMesTotal/metaParcelado)*100).toFixed(1)}%)`);
-      }
-
-      if(triggerVariavel) {
-        alertas.push(`<strong>Variáveis:</strong> R$ ${moeda(somaVariavel)} / R$ ${moeda(metaVariavel)} (${((somaVariavel/metaVariavel)*100).toFixed(1)}%)`);
-      }
-
-      if(alertas.length > 0) {
-        banner.style.display = 'block';
-        banner.innerHTML = `
-          <div class="flex items-start gap-2">
-            <span class="text-xl">🚨</span>
-            <div class="flex-1">
-              <div class="font-bold mb-2">Atenção: Limite(s) ultrapassado(s)!</div>
-              <div class="space-y-1">
-                ${alertas.map(alerta => `<div class="text-sm">• ${alerta}</div>`).join('')}
-              </div>
-              <div class="text-xs mt-2 text-red-800 dark:text-red-300">
-                💡 <strong>Dica:</strong> Considere revisar gastos desnecessários ou ajustar seus limites.
-              </div>
-            </div>
+  if(alertas.length > 0) {
+    banner.style.display = 'block';
+    banner.innerHTML = `
+      <div class="flex items-start gap-2">
+        <span class="text-xl">🚨</span>
+        <div class="flex-1">
+          <div class="font-bold mb-2">Atenção: Limite(s) ultrapassado(s)!</div>
+          <div class="space-y-1">
+            ${alertas.map(alerta => `<div class="text-sm">• ${alerta}</div>`).join('')}
           </div>
-        `;
-      } else {
-        banner.style.display = 'none';
-      }
+          <div class="text-xs mt-2 text-red-800 dark:text-red-300">
+            💡 <strong>Dica:</strong> Considere revisar gastos desnecessários ou ajustar seus limites.
+          </div>
+        </div>
+      </div>
+    `;
+  } else {
+    banner.style.display = 'none';
+  }
 
-      document.getElementById('gasto-fixo').textContent = moeda(somaFixosAtivos);
-      atualizarBarra('fixo', somaFixosAtivos);
+  document.getElementById('gasto-fixo').textContent = moeda(somaFixosAtivos);
+  atualizarBarra('fixo', somaFixosAtivos);
 
-      // agora que já temos fixos, atualiza resumo
-      atualizarResumoUI();
-    });
+  renderCartoes(totaisPorCartao);
+
+  resumo.cartoesMes = Object.entries(totaisPorCartao).filter(([k])=>k!=='pix').reduce((acc,[,v])=> acc + (v||0), 0);
+  resumo.pixMes = totaisPorCartao['pix'] || 0;
+
+  // agora que já temos fixos, atualiza resumo
+  atualizarResumoUI();
 }
 
 
@@ -13545,6 +13590,7 @@ const modalFixo = document.getElementById('modal-fixo');
 const formFixo = document.getElementById('form-fixo');
 const selectCategoria = document.getElementById('fixo-categoria');
 const selectSubcategoria = document.getElementById('fixo-subcategoria');
+const selectCartaoFixo = document.getElementById('fixo-cartao');
 const btnCancelarFixo = document.getElementById('btn-cancelar-fixo');
 
 const subcategoriasPorCategoria = {
@@ -13560,6 +13606,10 @@ function abrirModalFixo(dados = null) {
   formFixo.reset();
   selectSubcategoria.innerHTML = '<option value="">Selecione uma categoria primeiro</option>';
   selectSubcategoria.disabled = true;
+  if (selectCartaoFixo) {
+    const fallbackCard = selectCartaoFixo.dataset.defaultCard ?? '';
+    selectCartaoFixo.value = fallbackCard;
+  }
 
   if (dados) {
     document.getElementById('modal-fixo-title').textContent = 'Editar Gasto Fixo';
@@ -13569,6 +13619,9 @@ function abrirModalFixo(dados = null) {
     formFixo.subcategoria.value = dados.subcategoria || '';
     formFixo.valor.value = dados.valor || '';
     formFixo.ativo.checked = dados.ativo ?? true;
+    if (selectCartaoFixo) {
+      selectCartaoFixo.value = dados.cartao || '';
+    }
     formFixo.dataset.docId = dados.id; // para edição
   } else {
     document.getElementById('modal-fixo-title').textContent = 'Adicionar Gasto Fixo';
@@ -13612,7 +13665,8 @@ formFixo.addEventListener('submit', e => {
     categoria: formFixo.categoria.value,
     subcategoria: formFixo.subcategoria.value || '',
     valor: parseFloat(formFixo.valor.value),
-    ativo: formFixo.ativo.checked
+    ativo: formFixo.ativo.checked,
+    cartao: (selectCartaoFixo ? selectCartaoFixo.value : '') || ''
   };
 
   if (!novoFixo.nome || !novoFixo.categoria || isNaN(novoFixo.valor)) {
