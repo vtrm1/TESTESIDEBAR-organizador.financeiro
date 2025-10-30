@@ -12403,8 +12403,42 @@ async function startObservers(force = false){
   if (unsubWalletSnapshot) unsubWalletSnapshot();
   if (unsubWalletTimeline) unsubWalletTimeline();
 
+  if (walletSnapshotSyncTimeout) {
+    clearTimeout(walletSnapshotSyncTimeout);
+    walletSnapshotSyncTimeout = null;
+  }
+
   walletAccountsRealtimeHydrated = false;
   investimentosRealtimeHydrated = false;
+
+  walletState.currentSnapshot = null;
+  walletState.currentSnapshotNormalized = null;
+  walletState.currentSnapshotRef = null;
+  walletState.snapshotSyncInFlight = false;
+  walletState.pendingSnapshotNormalized = null;
+  walletState.pendingSnapshotPayload = null;
+  setWalletOpeningSource('default');
+
+  painelFinanceiroState.entradasMes = 0;
+  painelFinanceiroState.entradasMesBrutas = 0;
+  painelFinanceiroState.entradasTotais = 0;
+  painelFinanceiroState.entradasTotaisBrutas = 0;
+  painelFinanceiroState.entradasDistribuicaoMes = {
+    bruto: 0,
+    fluxo: 0,
+    carteira: 0,
+    investimento: 0,
+  };
+  painelFinanceiroState.totalGastosMes = 0;
+  painelFinanceiroState.investimentosMes = 0;
+  painelFinanceiroState.investimentosTotais = 0;
+  painelFinanceiroState.investimentosProjetados = 0;
+  painelFinanceiroState.entradasFiltroTodos = normalizedMonth === 'all';
+
+  atualizarEntradasDistribuicaoCard();
+  atualizarSaldoLiquidoEntradas();
+  atualizarResumoRapido();
+  updateWalletSummaryUI();
 
   // Mostrar spinners antes de carregar os dados
   showSpinner('historico-loading-spinner');
@@ -15544,8 +15578,9 @@ function atualizarFiltroMeses(){
   }
 
   select.value = finalValue;
-  if (finalValue && finalValue !== 'all') {
+  if (finalValue) {
     painelFinanceiroState.entradasUltimoMesSelecionado = finalValue;
+    painelFinanceiroState.entradasFiltroTodos = finalValue === 'all';
   }
 
 }
@@ -15555,8 +15590,9 @@ document.getElementById('filtro-mes').addEventListener('change', () => {
   const filtroMesEl = document.getElementById('filtro-mes');
   if (!filtroMesEl) return;
   const valorSelecionado = filtroMesEl.value;
-  if (valorSelecionado && valorSelecionado !== 'all') {
+  if (valorSelecionado) {
     painelFinanceiroState.entradasUltimoMesSelecionado = valorSelecionado;
+    painelFinanceiroState.entradasFiltroTodos = valorSelecionado === 'all';
   }
   // Ao mudar o filtro de mês, reinicia os observers para carregar os dados do novo mês
   startObservers();
