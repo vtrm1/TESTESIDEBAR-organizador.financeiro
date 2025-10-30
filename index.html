@@ -669,6 +669,22 @@
     color: #64748b;
   }
 
+  .fixo-cartao {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #2563eb;
+    margin-top: 0.15rem;
+  }
+  .fixo-cartao i {
+    font-size: 0.7rem;
+  }
+  .dark .fixo-cartao {
+    color: #93c5fd;
+  }
+
   .fixo-amount {
     font-size: 1rem;
     white-space: nowrap;
@@ -1495,6 +1511,12 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
         <label for="fixo-subcategoria" class="block font-medium mb-1 text-gray-800 dark:text-gray-100">Subcategoria</label>
         <select id="fixo-subcategoria" name="subcategoria" class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600" disabled>
           <option value="">Selecione uma categoria primeiro</option>
+        </select>
+      </div>
+      <div>
+        <label for="fixo-cartao" class="block font-medium mb-1 text-gray-800 dark:text-gray-100">Cartão (opcional)</label>
+        <select id="fixo-cartao" name="cartao" data-default="" data-allow-empty="true" data-include-pix="false" class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 border-gray-300 dark:border-gray-600">
+          <option value="" disabled>Carregando cartões…</option>
         </select>
       </div>
       <div>
@@ -8024,6 +8046,10 @@ let cartoesCfg = {...cartoesCfgDefault};
 let mesesDisponiveis = new Set(); // Meses com gastos (para filtro geral)
 let mesesParceladosColetados = new Set(); // Meses que contêm parcelados (do início ao fim, para filtro geral)
 let allFixosDocs = []; // NOVO: Cache global dos documentos de fixos
+let totaisFixosAtivosPorCartao = {};
+if (typeof window !== 'undefined') {
+  window._totaisFixosAtivosPorCartao = totaisFixosAtivosPorCartao;
+}
 let mesesEntradasDisponiveis = new Set();
 let mesesInvestimentosDisponiveis = new Set();
 let allEntradasDocs = [];
@@ -9175,10 +9201,11 @@ function renderFixos(docs) {
   // Renderização melhorada com cards
   const container = document.getElementById('fixos-cards-container');
   container.innerHTML = '';
-  
+
   let totalAtivos = 0;
   let totalInativos = 0;
-  
+  const totaisPorCartaoAtivos = {};
+
   if (!docs.length) {
     container.innerHTML = '<div class="text-center text-gray-500 dark:text-gray-400 py-4">Sem fixos cadastrados</div>';
   } else {
@@ -9186,13 +9213,21 @@ function renderFixos(docs) {
       const f = doc.data();
       const id = doc.id;
       const ativo = f.ativo !== false;
-      
+      const cardKey = typeof f.cartao === 'string' ? f.cartao.trim() : '';
+      const cardLabel = cardKey
+        ? (cartoesCfg[cardKey]?.label || cartoesCfgDefault[cardKey]?.label || 'Cartão não disponível')
+        : '';
+
       if (ativo) {
-        totalAtivos += (f.valor || 0);
+        const valorFixo = Number(f.valor || 0);
+        totalAtivos += valorFixo;
+        if (cardKey) {
+          totaisPorCartaoAtivos[cardKey] = (totaisPorCartaoAtivos[cardKey] || 0) + valorFixo;
+        }
       } else {
         totalInativos += (f.valor || 0);
       }
-      
+
       const card = document.createElement('div');
       card.className = `fixo-card section-card p-3 sm:p-4 ${ativo ? 'ativo' : 'inativo'}`;
       const statusBadgeClass = ativo ? 'fixo-status-badge fixo-status-ativo' : 'fixo-status-badge fixo-status-inativo';
@@ -9205,6 +9240,7 @@ function renderFixos(docs) {
             <div class="fixo-title font-semibold text-slate-900 dark:text-slate-100 leading-snug">${f.nome || ''}</div>
             ${f.categoria ? `<span class="fixo-category-pill">${f.categoria}</span>` : ''}
             ${f.subcategoria ? `<div class="fixo-subcategoria">${f.subcategoria}</div>` : ''}
+            ${cardLabel ? `<div class="fixo-cartao"><i class="fa-solid fa-credit-card"></i>${cardLabel}</div>` : ''}
           </div>
           <div class="flex flex-col items-end gap-2 text-right">
             <div class="fixo-amount font-semibold text-slate-900 dark:text-slate-100 leading-none">R$ ${moeda(f.valor)}</div>
@@ -9228,6 +9264,11 @@ function renderFixos(docs) {
       `;
       container.appendChild(card);
     });
+  }
+
+  totaisFixosAtivosPorCartao = totaisPorCartaoAtivos;
+  if (typeof window !== 'undefined') {
+    window._totaisFixosAtivosPorCartao = totaisFixosAtivosPorCartao;
   }
 
   // Atualiza resumos
@@ -9285,6 +9326,7 @@ function editarFixoPrompt(id){
       nome: d.nome,
       categoria: d.categoria,
       subcategoria: d.subcategoria,
+      cartao: d.cartao,
       valor: d.valor,
       ativo: d.ativo
     });
@@ -9297,7 +9339,7 @@ document.getElementById('add-fixo-open').addEventListener('click', () => {
 
 // NOVO: Função para popular os selects de cartão
 function popularSelectCartoes() {
-  const selectsCartao = document.querySelectorAll('#modal-cartao, #p-cartao, #parcelado-cartao');
+  const selectsCartao = document.querySelectorAll('#modal-cartao, #p-cartao, #parcelado-cartao, #fixo-cartao');
 
   selectsCartao.forEach((select) => {
     const valorAtual = select.value;
@@ -9779,6 +9821,17 @@ function editarParceladoPrompt(id){
 /* ===========================
    CARTÕES (compact sidebar + edit fechamento)
    =========================== */
+function getTotaisPorCartaoComFixos(baseTotais = {}) {
+  const merged = { ...(baseTotais || {}) };
+  const fixosPorCartao = (window._totaisFixosAtivosPorCartao || totaisFixosAtivosPorCartao || {});
+  Object.entries(fixosPorCartao).forEach(([key, valor]) => {
+    if (!key) return;
+    const parsed = Number(valor) || 0;
+    merged[key] = (merged[key] || 0) + parsed;
+  });
+  return merged;
+}
+
 function renderCartoes(totaisPorCartao){
   const container=document.getElementById('cartoes-container'); container.innerHTML='';
   const hoje=new Date();
@@ -12476,7 +12529,7 @@ async function startObservers(force = false){
 
   unsubConfig = userDocRef('config', 'cartoes').onSnapshot(snap=>{
     if(snap.exists) cartoesCfg = {...cartoesCfgDefault, ...snap.data()};
-    renderCartoes(window._totaisPorCartaoHistorico || {});
+    renderCartoes(getTotaisPorCartaoComFixos(window._totaisPorCartaoHistorico || {}));
     popularSelectCartoes(); // <--- NOVO: Chama para atualizar os selects
     hideSpinner('cartoes-loading-spinner'); // Oculta spinner de cartões
   }, err => {
@@ -12688,7 +12741,7 @@ function atualizarTudoComParcelados(){
 
   const parcSnapDocs = allParceladosDocs || []; 
   let parcelasMesTotal = 0;
-  let totaisPorCartao = {...(window._totaisPorCartaoHistorico || {})};
+  let totaisPorCartao = getTotaisPorCartaoComFixos(window._totaisPorCartaoHistorico || {});
   let totalRestanteParcelados = 0;
 
   parcSnapDocs.forEach(doc=>{
@@ -12716,7 +12769,7 @@ totalRestanteParcelados += restantesIncluindoAtual * (p.valorParcela || 0);
   renderCartoes(totaisPorCartao);
 
   resumo.cartoesMes = Object.entries(totaisPorCartao).filter(([k])=>k!=='pix').reduce((acc,[,v])=> acc + (v||0), 0);
-  resumo.pixMes = (window._totaisPorCartaoHistorico && window._totaisPorCartaoHistorico['pix']) || resumo.pixMes || 0;
+  resumo.pixMes = totaisPorCartao['pix'] || 0;
 
   document.getElementById('p-total-restante').textContent = moeda(totalRestanteParcelados);
 
@@ -15720,6 +15773,7 @@ const modalFixo = document.getElementById('modal-fixo');
 const formFixo = document.getElementById('form-fixo');
 const selectCategoria = document.getElementById('fixo-categoria');
 const selectSubcategoria = document.getElementById('fixo-subcategoria');
+const selectCartaoFixo = document.getElementById('fixo-cartao');
 const btnCancelarFixo = document.getElementById('btn-cancelar-fixo');
 
 const subcategoriasPorCategoria = {
@@ -15729,12 +15783,41 @@ const subcategoriasPorCategoria = {
   'Outros': []
 };
 
+function definirCartaoFixoSelecionado(valor = '') {
+  if (!selectCartaoFixo) return;
+  const alvo = valor || '';
+
+  if (!selectCartaoFixo.options.length) {
+    const option = document.createElement('option');
+    option.value = '';
+    option.textContent = 'Nenhum';
+    selectCartaoFixo.appendChild(option);
+  }
+
+  if (alvo) {
+    const existeOpcao = Array.from(selectCartaoFixo.options).some(opt => opt.value === alvo);
+    if (!existeOpcao) {
+      const option = document.createElement('option');
+      option.value = alvo;
+      option.textContent = (cartoesCfg[alvo]?.label || cartoesCfgDefault[alvo]?.label || alvo);
+      selectCartaoFixo.appendChild(option);
+    }
+  }
+
+  try {
+    selectCartaoFixo.value = alvo;
+  } catch (error) {
+    selectCartaoFixo.value = '';
+  }
+}
+
 // Abrir modal para adicionar fixo
 function abrirModalFixo(dados = null) {
   modalFixo.classList.remove('hidden');
   formFixo.reset();
   selectSubcategoria.innerHTML = '<option value="">Selecione uma categoria primeiro</option>';
   selectSubcategoria.disabled = true;
+  definirCartaoFixoSelecionado('');
 
   if (dados) {
     document.getElementById('modal-fixo-title').textContent = 'Editar Gasto Fixo';
@@ -15744,6 +15827,7 @@ function abrirModalFixo(dados = null) {
     formFixo.subcategoria.value = dados.subcategoria || '';
     formFixo.valor.value = dados.valor || '';
     formFixo.ativo.checked = dados.ativo ?? true;
+    definirCartaoFixoSelecionado(dados.cartao || '');
     formFixo.dataset.docId = dados.id; // para edição
   } else {
     document.getElementById('modal-fixo-title').textContent = 'Adicionar Gasto Fixo';
@@ -15786,6 +15870,7 @@ formFixo.addEventListener('submit', e => {
     nome: formFixo.nome.value.trim(),
     categoria: formFixo.categoria.value,
     subcategoria: formFixo.subcategoria.value || '',
+    cartao: (selectCartaoFixo && selectCartaoFixo.value) || '',
     valor: parseFloat(formFixo.valor.value),
     ativo: formFixo.ativo.checked
   };
