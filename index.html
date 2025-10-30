@@ -7225,6 +7225,8 @@ const createDefaultWalletState = () => ({
   pendingSnapshotPayload: null,
 });
 let walletState = createDefaultWalletState();
+const walletSnapshotCache = new Map();
+const walletOpeningCarryCache = new Map();
 let resumoFinanceiroAtual = {
   entradasMes: 0,
   totalGastosMes: 0,
@@ -8960,6 +8962,32 @@ const walletSettingsEnsureCache = new Set();
 const walletSnapshotEnsureCache = new Set();
 let walletAccountEditingId = null;
 
+function resetWalletRuntimeForMonth(monthKey) {
+  const targetMonth = monthKey || getCurrentWalletMonthKey();
+  walletState.monthKey = targetMonth;
+  walletState.openingBalance = 0;
+  walletState.openingSource = { type: 'default', month: null };
+  walletState.openingAllocatedAccounts = 0;
+  walletState.openingAllocatedInvestments = 0;
+  walletState.openingAllocatedTotal = 0;
+  walletState.openingRemaining = 0;
+  walletState.closingBalance = 0;
+  walletState.netFlow = 0;
+  walletState.entriesMonth = 0;
+  walletState.expensesMonth = 0;
+  walletState.accounts = [];
+  walletState.accountsTotal = 0;
+  walletState.investmentsTotal = 0;
+  walletState.patrimonioTotal = 0;
+  walletState.difference = 0;
+  walletState.currentSnapshot = null;
+  walletState.currentSnapshotRef = null;
+  walletState.currentSnapshotNormalized = null;
+  walletState.snapshotSyncInFlight = false;
+  walletState.pendingSnapshotNormalized = null;
+  walletState.pendingSnapshotPayload = null;
+}
+
 // Funções para mostrar/ocultar spinners
 function showSpinner(id) {
   const el = document.getElementById(id);
@@ -8996,6 +9024,8 @@ function resetWalletState({ resetUI = true } = {}) {
   walletState = createDefaultWalletState();
   walletSettingsEnsureCache.clear();
   walletSnapshotEnsureCache.clear();
+  walletSnapshotCache.clear();
+  walletOpeningCarryCache.clear();
   if (resetUI) {
     updateWalletSummaryUI();
     renderWalletAccountsList();
@@ -9313,6 +9343,15 @@ function renderWalletTimeline() {
     walletTimelineContainer.appendChild(row);
   });
 
+  const workspaceId = getActiveWorkspaceId();
+  if (workspaceId) {
+    docs.forEach((item) => {
+      if (item?.month) {
+        walletOpeningCarryCache.set(`${workspaceId}:${item.month}:closing`, roundCurrency(item.closingBalance || 0));
+      }
+    });
+  }
+
   const latest = docs[0];
   if (walletTimelineLastSync) {
     walletTimelineLastSync.textContent = latest && latest.month
@@ -9439,10 +9478,11 @@ function computeWalletExpensesForMonth(monthKey) {
   return variavel + parcelados + fixos;
 }
 
-function resolveWalletOpeningBalance(monthKey) {
-  if (walletState.currentSnapshot && typeof walletState.currentSnapshot.openingBalance === 'number') {
+function resolveWalletOpeningBalanceLocal(monthKey) {
+  const normalized = walletState.currentSnapshotNormalized;
+  if (normalized && normalized.month === monthKey && typeof normalized.openingBalance === 'number') {
     walletState.openingSource = { type: 'snapshot', month: monthKey };
-    return walletState.currentSnapshot.openingBalance;
+    return normalized.openingBalance;
   }
   const timeline = Array.isArray(walletTimelineDocs) ? walletTimelineDocs : [];
   let candidate = null;
@@ -9512,6 +9552,10 @@ async function updateWalletSummaryUI() {
   walletState.netFlow = net;
   const closing = roundCurrency(walletState.openingBalance + net);
   walletState.closingBalance = closing;
+  const activeWorkspaceId = getActiveWorkspaceId();
+  if (activeWorkspaceId && walletState.monthKey) {
+    walletOpeningCarryCache.set(`${activeWorkspaceId}:${walletState.monthKey}:closing`, closing);
+  }
 
   const accountsTotal = (walletAccountsDocs || []).reduce((sum, account) => {
     if (!account || account.include === false) return sum;
@@ -9684,9 +9728,23 @@ function scheduleWalletSnapshotSync() {
         computedAt: firebase.firestore.Timestamp.now(),
       });
       await walletState.currentSnapshotRef.set(payload, { merge: true });
+      walletState.currentSnapshot = {
+        ...(walletState.currentSnapshot || {}),
+        ...basePayload,
+        computedAt: payload.computedAt,
+      };
       walletState.currentSnapshotNormalized = normalized;
       walletState.pendingSnapshotNormalized = null;
       walletState.pendingSnapshotPayload = null;
+      const workspaceId = getActiveWorkspaceId();
+      if (workspaceId && walletState.monthKey) {
+        const cacheKey = `${workspaceId}:${walletState.monthKey}`;
+        walletSnapshotCache.set(cacheKey, {
+          raw: walletState.currentSnapshot ? { ...walletState.currentSnapshot } : null,
+          normalized: normalized ? { ...normalized } : null,
+        });
+        walletOpeningCarryCache.set(`${workspaceId}:${walletState.monthKey}:closing`, normalized.closingBalance);
+      }
     } catch (error) {
       console.warn('Não foi possível sincronizar o snapshot da carteira agora:', error);
       walletState.currentSnapshotNormalized = previousNormalized;
@@ -9755,28 +9813,60 @@ async function ensureWalletSettingsDoc(force = false) {
 }
 
 async function resolveWalletOpeningBalance(monthKey) {
+  const key = monthKey || getCurrentWalletMonthKey();
   await ensureWalletSettingsDoc();
-  const settingsInitial = Number(walletState.settings?.initialBalance) || 0;
-  const previousKey = previousMonthKey(monthKey);
-  if (!previousKey) {
-    return settingsInitial;
+  let opening = resolveWalletOpeningBalanceLocal(key);
+  const currentSource = walletState.openingSource?.type || 'default';
+  if (currentSource !== 'default') {
+    return roundCurrency(opening);
   }
+
+  const workspaceId = getActiveWorkspaceId();
+  const previousKey = previousMonthKey(key);
+  if (!workspaceId || !previousKey) {
+    return roundCurrency(opening);
+  }
+
+  const carryCacheKey = `${workspaceId}:${previousKey}:closing`;
+  if (walletOpeningCarryCache.has(carryCacheKey)) {
+    const cached = Number(walletOpeningCarryCache.get(carryCacheKey)) || 0;
+    walletState.openingSource = { type: 'carry', month: previousKey };
+    return roundCurrency(cached);
+  }
+
+  const cachedSnapshot = walletSnapshotCache.get(`${workspaceId}:${previousKey}`);
+  if (cachedSnapshot) {
+    const cachedClosing = typeof cachedSnapshot?.normalized?.closingBalance === 'number'
+      ? cachedSnapshot.normalized.closingBalance
+      : Number(cachedSnapshot?.raw?.closingBalance);
+    if (Number.isFinite(cachedClosing)) {
+      const rounded = roundCurrency(cachedClosing);
+      walletOpeningCarryCache.set(carryCacheKey, rounded);
+      walletState.openingSource = { type: 'carry', month: previousKey };
+      return rounded;
+    }
+  }
+
   try {
     const prevRef = userDocRef('walletSnapshots', previousKey);
     const prevSnap = await prevRef.get();
     if (prevSnap.exists) {
       const prevData = prevSnap.data() || {};
-      if (typeof prevData.closingBalance === 'number') {
-        return prevData.closingBalance;
-      }
-      if (typeof prevData.openingBalance === 'number' && typeof prevData.netFlow === 'number') {
-        return Number(prevData.openingBalance) + Number(prevData.netFlow);
-      }
+      const normalizedPrev = normalizeWalletSnapshot(prevData, previousKey);
+      walletSnapshotCache.set(`${workspaceId}:${previousKey}`, {
+        raw: prevData,
+        normalized: normalizedPrev,
+      });
+      const closing = roundCurrency(normalizedPrev.closingBalance || 0);
+      walletOpeningCarryCache.set(carryCacheKey, closing);
+      walletState.openingSource = { type: 'carry', month: previousKey };
+      return closing;
     }
   } catch (error) {
     console.warn('Não foi possível recuperar o saldo de abertura do mês anterior:', error);
   }
-  return settingsInitial;
+
+  return roundCurrency(opening);
 }
 
 async function ensureWalletSnapshotDoc(monthKey) {
@@ -9786,9 +9876,22 @@ async function ensureWalletSnapshotDoc(monthKey) {
   }
   const cacheKey = `${workspaceId}:${monthKey}`;
   const ref = userDocRef('walletSnapshots', monthKey);
-  if (walletSnapshotEnsureCache.has(cacheKey)) {
-    walletState.currentSnapshotRef = ref;
-    return walletState.currentSnapshot || null;
+  walletState.currentSnapshotRef = ref;
+
+  const cached = walletSnapshotCache.get(cacheKey);
+  if (cached && cached.raw) {
+    walletState.currentSnapshot = { ...cached.raw };
+    walletState.currentSnapshotNormalized = cached.normalized
+      ? { ...cached.normalized }
+      : null;
+    walletState.pendingSnapshotNormalized = null;
+    walletState.pendingSnapshotPayload = null;
+    walletState.snapshotSyncInFlight = false;
+    if (cached?.normalized?.closingBalance != null) {
+      walletOpeningCarryCache.set(`${workspaceId}:${monthKey}:closing`, roundCurrency(cached.normalized.closingBalance));
+    }
+    walletSnapshotEnsureCache.add(cacheKey);
+    return walletState.currentSnapshot;
   }
   try {
     const snapshot = await ref.get();
@@ -9813,10 +9916,18 @@ async function ensureWalletSnapshotDoc(monthKey) {
       walletState.currentSnapshot = snapshot.data() || {};
       walletState.currentSnapshotNormalized = normalizeWalletSnapshot(walletState.currentSnapshot, monthKey);
     }
-    walletState.currentSnapshotRef = ref;
     walletState.pendingSnapshotNormalized = null;
     walletState.pendingSnapshotPayload = null;
     walletState.snapshotSyncInFlight = false;
+    walletSnapshotCache.set(cacheKey, {
+      raw: walletState.currentSnapshot ? { ...walletState.currentSnapshot } : null,
+      normalized: walletState.currentSnapshotNormalized
+        ? { ...walletState.currentSnapshotNormalized }
+        : null,
+    });
+    if (walletState.currentSnapshotNormalized?.closingBalance != null) {
+      walletOpeningCarryCache.set(`${workspaceId}:${monthKey}:closing`, walletState.currentSnapshotNormalized.closingBalance);
+    }
     walletSnapshotEnsureCache.add(cacheKey);
     return walletState.currentSnapshot;
   } catch (error) {
@@ -10803,7 +10914,13 @@ async function startObservers(){
 
   if (!currentUser) return;
 
+  if (walletSnapshotSyncTimeout) {
+    clearTimeout(walletSnapshotSyncTimeout);
+    walletSnapshotSyncTimeout = null;
+  }
+
   const walletMonthKey = getCurrentWalletMonthKey();
+  resetWalletRuntimeForMonth(walletMonthKey);
   await ensureWalletSettingsDoc();
   await ensureWalletSnapshotDoc(walletMonthKey);
 
@@ -10823,9 +10940,28 @@ async function startObservers(){
     if (snap.exists) {
       walletState.currentSnapshot = snap.data() || {};
       walletState.currentSnapshotNormalized = normalizeWalletSnapshot(walletState.currentSnapshot, walletMonthKey);
+      const workspaceId = getActiveWorkspaceId();
+      if (workspaceId) {
+        const cacheKey = `${workspaceId}:${walletMonthKey}`;
+        walletSnapshotCache.set(cacheKey, {
+          raw: walletState.currentSnapshot ? { ...walletState.currentSnapshot } : null,
+          normalized: walletState.currentSnapshotNormalized
+            ? { ...walletState.currentSnapshotNormalized }
+            : null,
+        });
+        if (walletState.currentSnapshotNormalized?.closingBalance != null) {
+          walletOpeningCarryCache.set(`${workspaceId}:${walletMonthKey}:closing`, walletState.currentSnapshotNormalized.closingBalance);
+        }
+      }
     } else {
       walletState.currentSnapshot = null;
       walletState.currentSnapshotNormalized = null;
+      const workspaceId = getActiveWorkspaceId();
+      if (workspaceId) {
+        const cacheKey = `${workspaceId}:${walletMonthKey}`;
+        walletSnapshotCache.delete(cacheKey);
+        walletOpeningCarryCache.delete(`${workspaceId}:${walletMonthKey}:closing`);
+      }
     }
     updateWalletSummaryUI();
   }, (error) => {
