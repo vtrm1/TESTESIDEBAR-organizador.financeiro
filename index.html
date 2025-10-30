@@ -9521,14 +9521,11 @@ async function updateWalletSummaryUI() {
   const monthKey = getCurrentWalletMonthKey();
   walletState.monthKey = monthKey;
   const monthLabel = monthKey ? mmYYYY(monthKey) : '';
-  let opening = 0;
   try {
-    opening = Number(await resolveWalletOpeningBalance(monthKey) || 0);
+    await resolveWalletOpeningBalance(monthKey);
   } catch (error) {
     console.error('Erro ao calcular saldo de abertura da carteira:', error);
-    opening = 0;
   }
-  walletState.openingBalance = roundCurrency(opening);
 
   const snapshotNormalized = walletState.currentSnapshotNormalized || null;
   const allocatedAccounts = snapshotNormalized && typeof snapshotNormalized.openingAllocatedAccounts === 'number'
@@ -9543,7 +9540,6 @@ async function updateWalletSummaryUI() {
   walletState.openingAllocatedAccounts = allocatedAccounts;
   walletState.openingAllocatedInvestments = allocatedInvestments;
   walletState.openingAllocatedTotal = allocatedTotal;
-  walletState.openingRemaining = roundCurrency(Math.max(walletState.openingBalance - walletState.openingAllocatedTotal, 0));
 
   const preferPanelTotals = !painelFinanceiroState.entradasFiltroTodos
     && Number.isFinite(Number(painelFinanceiroState.entradasMes));
@@ -9558,8 +9554,10 @@ async function updateWalletSummaryUI() {
 
   const net = roundCurrency(entries - expenses);
   walletState.netFlow = net;
-  const carryForward = roundCurrency(walletState.openingBalance + net);
   walletState.projectedMonthlyNet = net;
+  walletState.openingBalance = net;
+  walletState.openingRemaining = roundCurrency(Math.max(walletState.openingBalance - walletState.openingAllocatedTotal, 0));
+  const carryForward = roundCurrency(walletState.openingBalance);
   walletState.closingBalance = carryForward;
   const activeWorkspaceId = getActiveWorkspaceId();
   if (activeWorkspaceId && walletState.monthKey) {
@@ -9595,14 +9593,13 @@ async function updateWalletSummaryUI() {
   const saldoInicialLabel = document.getElementById('wallet-saldo-inicial-label');
   if (saldoInicialLabel) {
     const origem = walletState.openingSource || { type: 'default', month: null };
-    if (origem.type === 'snapshot') {
-      saldoInicialLabel.textContent = 'Saldo herdado do fechamento anterior. Planeje para onde ele deve ir.';
-    } else if (origem.type === 'carry' && origem.month) {
-      saldoInicialLabel.textContent = `Resultado que sobrou em ${mmYYYY(origem.month)} e está disponível para distribuir.`;
-    } else if (origem.type === 'settings') {
+    const legendaMes = monthLabel || 'mês selecionado';
+    if (origem.type === 'settings') {
       saldoInicialLabel.textContent = 'Saldo inicial definido manualmente nas preferências da carteira.';
+    } else if (origem.type === 'default' && !walletState.openingBalance) {
+      saldoInicialLabel.textContent = 'Cadastre entradas e saídas para calcular o saldo líquido disponível.';
     } else {
-      saldoInicialLabel.textContent = 'Cadastre o fechamento anterior ou informe um saldo inicial para começar.';
+      saldoInicialLabel.textContent = `Saldo líquido projetado para ${legendaMes}. Distribua entre contas e investimentos.`;
     }
   }
   const saldoInicialRestanteEl = document.getElementById('wallet-saldo-inicial-restante');
@@ -10373,13 +10370,12 @@ function renderRecursosOverview() {
   const patrimonioResumo = `Contas: R$ ${moeda(contasTotal)} • Invest.: R$ ${moeda(investimentosTotal)}`;
 
   const origem = walletState.openingSource || { type: 'default', month: null };
-  let origemDescricao = 'Defina o saldo inicial para começar o mês com clareza.';
-  if (origem.type === 'snapshot') {
-    origemDescricao = 'Saldo herdado do fechamento anterior.';
-  } else if (origem.type === 'carry' && origem.month) {
-    origemDescricao = `Sobra de ${mmYYYY(origem.month)} disponível para distribuir.`;
-  } else if (origem.type === 'settings') {
+  const origemMesDescricao = monthLabel || 'mês selecionado';
+  let origemDescricao = `Saldo líquido projetado para ${origemMesDescricao}.`;
+  if (origem.type === 'settings') {
     origemDescricao = 'Saldo inicial definido manualmente nas preferências.';
+  } else if (!walletState.openingBalance) {
+    origemDescricao = 'Cadastre entradas e saídas para calcular o saldo disponível.';
   }
 
   const tiposResumo = Object.entries(entradasResumoTiposAtual || {});
