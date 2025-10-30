@@ -12635,9 +12635,11 @@ async function startObservers(force = false){
 
   // === SEÇÃO CORRIGIDA: OBSERVER DE GASTOS ===
   let gastosQuery = userCollectionRef('gastos');
-  if (hasMonthFilter) {
+  if (hasMonthFilter && monthStartTimestamp && monthEndTimestamp) {
     gastosQuery = gastosQuery
-      .where('mesFatura', '==', normalizedMonth)
+      .where('data', '>=', monthStartTimestamp)
+      .where('data', '<', monthEndTimestamp)
+      .orderBy('data', 'desc')
       .limit(SNAPSHOT_LIMITS.gastos);
   } else {
     gastosQuery = gastosQuery.orderBy('data', 'desc').limit(SNAPSHOT_LIMITS.gastos);
