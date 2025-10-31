@@ -10781,11 +10781,13 @@ async function updateWalletSummaryUI() {
 
   const destaqueEl = document.getElementById('wallet-saldo-projetado-destaque');
   if (destaqueEl) {
-    destaqueEl.textContent = `R$ ${moeda(closing)}`;
+    destaqueEl.textContent = `R$ ${moeda(net)}`;
   }
   const helperEl = document.getElementById('wallet-saldo-projetado-helper');
   if (helperEl) {
-    helperEl.textContent = monthLabel ? `Saldo anterior + entradas - saídas de ${monthLabel}.` : 'Saldo anterior + entradas - saídas do mês selecionado.';
+    helperEl.textContent = monthLabel
+      ? `Entradas - saídas de ${monthLabel}.`
+      : 'Entradas - saídas do período selecionado.';
   }
   const saldoInicialEl = document.getElementById('wallet-saldo-inicial');
   if (saldoInicialEl) {
