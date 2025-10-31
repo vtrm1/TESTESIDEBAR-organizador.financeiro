@@ -9552,12 +9552,13 @@ async function updateWalletSummaryUI() {
   walletState.entriesMonth = entries;
   walletState.expensesMonth = expenses;
 
+  const openingBalance = roundCurrency(walletState.openingBalance || 0);
+  walletState.openingBalance = openingBalance;
   const net = roundCurrency(entries - expenses);
   walletState.netFlow = net;
   walletState.projectedMonthlyNet = net;
-  walletState.openingBalance = net;
-  walletState.openingRemaining = roundCurrency(Math.max(walletState.openingBalance - walletState.openingAllocatedTotal, 0));
-  const carryForward = roundCurrency(walletState.openingBalance);
+  walletState.openingRemaining = roundCurrency(Math.max(openingBalance - walletState.openingAllocatedTotal, 0));
+  const carryForward = roundCurrency(net);
   walletState.closingBalance = carryForward;
   const activeWorkspaceId = getActiveWorkspaceId();
   if (activeWorkspaceId && walletState.monthKey) {
@@ -9588,7 +9589,7 @@ async function updateWalletSummaryUI() {
   }
   const saldoInicialEl = document.getElementById('wallet-saldo-inicial');
   if (saldoInicialEl) {
-    saldoInicialEl.textContent = `R$ ${moeda(walletState.openingBalance)}`;
+    saldoInicialEl.textContent = `R$ ${moeda(openingBalance)}`;
   }
   const saldoInicialLabel = document.getElementById('wallet-saldo-inicial-label');
   if (saldoInicialLabel) {
@@ -9596,10 +9597,16 @@ async function updateWalletSummaryUI() {
     const legendaMes = monthLabel || 'mês selecionado';
     if (origem.type === 'settings') {
       saldoInicialLabel.textContent = 'Saldo inicial definido manualmente nas preferências da carteira.';
-    } else if (origem.type === 'default' && !walletState.openingBalance) {
+    } else if (origem.type === 'snapshot') {
+      saldoInicialLabel.textContent = `Saldo inicial registrado para ${legendaMes}.`;
+    } else if (origem.type === 'carry' && origem.month) {
+      saldoInicialLabel.textContent = `Saldo que sobrou em ${mmYYYY(origem.month)} e está disponível para ${legendaMes}.`;
+    } else if (origem.type === 'carry') {
+      saldoInicialLabel.textContent = 'Saldo que sobrou do mês anterior, disponível para distribuir.';
+    } else if (origem.type === 'default' && !openingBalance) {
       saldoInicialLabel.textContent = 'Cadastre entradas e saídas para calcular o saldo líquido disponível.';
     } else {
-      saldoInicialLabel.textContent = `Saldo líquido projetado para ${legendaMes}. Distribua entre contas e investimentos.`;
+      saldoInicialLabel.textContent = 'Saldo disponível herdado de meses anteriores. Distribua entre contas e investimentos.';
     }
   }
   const saldoInicialRestanteEl = document.getElementById('wallet-saldo-inicial-restante');
@@ -9825,23 +9832,26 @@ async function ensureWalletSettingsDoc(force = false) {
 async function resolveWalletOpeningBalance(monthKey) {
   const key = monthKey || getCurrentWalletMonthKey();
   await ensureWalletSettingsDoc();
-  let opening = resolveWalletOpeningBalanceLocal(key);
+  let opening = roundCurrency(resolveWalletOpeningBalanceLocal(key));
+  walletState.openingBalance = opening;
   const currentSource = walletState.openingSource?.type || 'default';
   if (currentSource !== 'default') {
-    return roundCurrency(opening);
+    return walletState.openingBalance;
   }
 
   const workspaceId = getActiveWorkspaceId();
   const previousKey = previousMonthKey(key);
   if (!workspaceId || !previousKey) {
-    return roundCurrency(opening);
+    walletState.openingBalance = opening;
+    return walletState.openingBalance;
   }
 
   const carryCacheKey = `${workspaceId}:${previousKey}:closing`;
   if (walletOpeningCarryCache.has(carryCacheKey)) {
-    const cached = Number(walletOpeningCarryCache.get(carryCacheKey)) || 0;
+    const cached = roundCurrency(Number(walletOpeningCarryCache.get(carryCacheKey)) || 0);
     walletState.openingSource = { type: 'carry', month: previousKey };
-    return roundCurrency(cached);
+    walletState.openingBalance = cached;
+    return walletState.openingBalance;
   }
 
   const cachedSnapshot = walletSnapshotCache.get(`${workspaceId}:${previousKey}`);
@@ -9853,7 +9863,8 @@ async function resolveWalletOpeningBalance(monthKey) {
       const rounded = roundCurrency(cachedClosing);
       walletOpeningCarryCache.set(carryCacheKey, rounded);
       walletState.openingSource = { type: 'carry', month: previousKey };
-      return rounded;
+      walletState.openingBalance = rounded;
+      return walletState.openingBalance;
     }
   }
 
@@ -9870,13 +9881,15 @@ async function resolveWalletOpeningBalance(monthKey) {
       const closing = roundCurrency(normalizedPrev.closingBalance || 0);
       walletOpeningCarryCache.set(carryCacheKey, closing);
       walletState.openingSource = { type: 'carry', month: previousKey };
-      return closing;
+      walletState.openingBalance = closing;
+      return walletState.openingBalance;
     }
   } catch (error) {
     console.warn('Não foi possível recuperar o saldo de abertura do mês anterior:', error);
   }
 
-  return roundCurrency(opening);
+  walletState.openingBalance = opening;
+  return walletState.openingBalance;
 }
 
 async function ensureWalletSnapshotDoc(monthKey) {
