@@ -9482,9 +9482,14 @@ function computeWalletExpensesForMonth(monthKey) {
 
 function resolveWalletOpeningBalanceLocal(monthKey) {
   const normalized = walletState.currentSnapshotNormalized;
-  if (normalized && normalized.month === monthKey && typeof normalized.openingBalance === 'number') {
-    walletState.openingSource = { type: 'snapshot', month: monthKey };
-    return normalized.openingBalance;
+  const autoCarryEnabled = walletState?.settings?.autoCarry !== false;
+  if (normalized && normalized.month === monthKey) {
+    const normalizedOpening = roundCurrency(Number(normalized.openingBalance ?? 0));
+    const shouldPreferCarry = autoCarryEnabled && Math.abs(normalizedOpening) < 0.01;
+    if (!shouldPreferCarry) {
+      walletState.openingSource = { type: 'snapshot', month: monthKey };
+      return normalizedOpening;
+    }
   }
   const timeline = Array.isArray(walletTimelineDocs) ? walletTimelineDocs : [];
   let candidate = null;
@@ -9506,12 +9511,13 @@ function resolveWalletOpeningBalanceLocal(monthKey) {
     }
   }
   if (candidate) {
+    const carry = roundCurrency(Number(candidate.closing) || 0);
     walletState.openingSource = { type: 'carry', month: candidate.month };
-    return candidate.closing;
+    return carry;
   }
   if (walletState.settings && typeof walletState.settings.initialBalance === 'number') {
     walletState.openingSource = { type: 'settings', month: null };
-    return walletState.settings.initialBalance;
+    return roundCurrency(walletState.settings.initialBalance);
   }
   walletState.openingSource = { type: 'default', month: null };
   return 0;
@@ -11019,6 +11025,7 @@ async function startObservers(){
       };
     });
     renderWalletTimeline();
+    updateWalletSummaryUI();
   }, (error) => {
     console.error('Erro ao carregar histórico da carteira:', error);
   });
