@@ -1,0 +1,71 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function profileDoc(uid) {
+      return get(/databases/$(database)/documents/profiles/$(uid));
+    }
+
+    function isAdmin() {
+      return isSignedIn() &&
+        exists(/databases/$(database)/documents/profiles/$(request.auth.uid)) &&
+        profileDoc(request.auth.uid).data.role == 'admin';
+    }
+
+    function workspaceAllowed(workspaceId) {
+      return isSignedIn() && (
+        workspaceId == request.auth.uid ||
+        (
+          exists(/databases/$(database)/documents/sharedWorkspaces/$(workspaceId)) &&
+          request.auth.uid in get(/databases/$(database)/documents/sharedWorkspaces/$(workspaceId)).data.memberUids
+        )
+      );
+    }
+
+    function validateWorkspaceDoc(ownerUid) {
+      return (!('ownerUid' in request.resource.data) || request.resource.data.ownerUid == ownerUid)
+        && (!('workspaceId' in request.resource.data) || workspaceAllowed(request.resource.data.workspaceId))
+        && (request.method == 'create' || !('ownerUid' in resource.data) || resource.data.ownerUid == ownerUid)
+        && (request.method == 'create' || !('workspaceId' in resource.data) || resource.data.workspaceId == request.resource.data.workspaceId);
+    }
+
+    match /profiles/{uid} {
+      allow create: if isSignedIn() && uid == request.auth.uid;
+
+      allow read: if isSignedIn() && (uid == request.auth.uid || isAdmin());
+
+      allow update: if isSignedIn() && (
+        isAdmin() ||
+        (uid == request.auth.uid && (
+          resource.data.status == 'pending' || (
+            request.resource.data.role == resource.data.role &&
+            request.resource.data.status == resource.data.status &&
+            request.resource.data.approvedAt == resource.data.approvedAt &&
+            request.resource.data.approvedBy == resource.data.approvedBy &&
+            request.resource.data.blockedAt == resource.data.blockedAt &&
+            request.resource.data.blockedBy == resource.data.blockedBy &&
+            request.resource.data.blockedReason == resource.data.blockedReason
+          )
+        ))
+      );
+
+      allow delete: if false;
+    }
+
+    match /sharedWorkspaces/{workspaceId} {
+      allow read, write: if workspaceAllowed(workspaceId);
+    }
+
+    match /users/{ownerUid}/{collection}/{docId} {
+      allow read, write: if workspaceAllowed(ownerUid) && validateWorkspaceDoc(ownerUid);
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
