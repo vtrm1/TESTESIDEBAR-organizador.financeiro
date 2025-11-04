@@ -3273,6 +3273,50 @@ function normalizeMonthlySummarySnapshot(data = {}) {
   return normalizeMonthlySummaryPayload(data.month, data) || null;
 }
 
+const SUMMARY_MIN_VALUE = 0.005;
+
+const summaryNumber = (value) => {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : 0;
+};
+
+function resolveSummaryVariavelTotal(gastosSection = {}) {
+  const variavelTotal = summaryNumber(gastosSection.variavel);
+  if (variavelTotal > SUMMARY_MIN_VALUE) {
+    return roundCurrency(variavelTotal);
+  }
+
+  const total = summaryNumber(gastosSection.total);
+  if (total > SUMMARY_MIN_VALUE) {
+    const fixos = summaryNumber(gastosSection.fixos);
+    const parcelados = summaryNumber(gastosSection.parcelados);
+    const inferred = total - fixos - parcelados;
+    if (inferred > SUMMARY_MIN_VALUE) {
+      return roundCurrency(inferred);
+    }
+  }
+
+  const pagamentos = summaryNumber(gastosSection.cartoes)
+    + summaryNumber(gastosSection.pix)
+    + summaryNumber(gastosSection.fixoAvulso);
+  if (pagamentos > SUMMARY_MIN_VALUE) {
+    return roundCurrency(pagamentos);
+  }
+
+  return 0;
+}
+
+function resolveSummaryTotalGastos(gastosSection = {}, variavelTotal = 0) {
+  const total = summaryNumber(gastosSection.total);
+  if (total > SUMMARY_MIN_VALUE) {
+    return roundCurrency(total);
+  }
+  const fixos = summaryNumber(gastosSection.fixos);
+  const parcelados = summaryNumber(gastosSection.parcelados);
+  const computed = variavelTotal + fixos + parcelados;
+  return computed > SUMMARY_MIN_VALUE ? roundCurrency(computed) : 0;
+}
+
 function applyMonthlySummaryToState(monthKey, normalized) {
   if (!monthKey || monthKey === 'all') {
     return;
@@ -3301,16 +3345,10 @@ function applyMonthlySummaryToState(monthKey, normalized) {
   }
 
   if (Object.keys(gastosSection).length) {
-    const variavelLike = roundCurrency(
-      (gastosSection.variavel || 0)
-      + (gastosSection.cartoes || 0)
-      + (gastosSection.pix || 0)
-      + (gastosSection.fixoAvulso || 0)
-    );
-    const totalGastos = gastosSection.total != null
-      ? roundCurrency(gastosSection.total)
-      : roundCurrency(variavelLike + (gastosSection.fixos || 0) + (gastosSection.parcelados || 0));
-    monthTotals.gastos.set(monthKey, variavelLike > 0 ? variavelLike : totalGastos);
+    const variavelTotal = resolveSummaryVariavelTotal(gastosSection);
+    const totalGastos = resolveSummaryTotalGastos(gastosSection, variavelTotal);
+    const monthTotal = variavelTotal > SUMMARY_MIN_VALUE ? variavelTotal : totalGastos;
+    monthTotals.gastos.set(monthKey, monthTotal);
     cachedMesesGastos.add(monthKey);
   }
 
@@ -3346,17 +3384,11 @@ function applyMonthlySummaryToState(monthKey, normalized) {
       investimento: roundCurrency(entradasSection.investimento || painelFinanceiroState.entradasDistribuicaoMes?.investimento || 0),
     };
 
-    const totalGastosPeriodo = gastosSection.total != null
-      ? roundCurrency(gastosSection.total)
-      : roundCurrency((gastosSection.variavel || 0) + (gastosSection.fixos || 0) + (gastosSection.parcelados || 0));
+    const variavelTotal = resolveSummaryVariavelTotal(gastosSection);
+    const totalGastosPeriodo = resolveSummaryTotalGastos(gastosSection, variavelTotal);
     painelFinanceiroState.totalGastosMes = totalGastosPeriodo;
 
-    resumo.historicoMes = roundCurrency(
-      (gastosSection.variavel || 0)
-        + (gastosSection.cartoes || 0)
-        + (gastosSection.pix || 0)
-        + (gastosSection.fixoAvulso || 0)
-    );
+    resumo.historicoMes = variavelTotal;
     resumo.fixosMes = roundCurrency(gastosSection.fixos || resumo.fixosMes || 0);
     resumo.parcelasMes = roundCurrency(gastosSection.parcelados || resumo.parcelasMes || 0);
     resumo.cartoesMes = roundCurrency(gastosSection.cartoes || resumo.cartoesMes || 0);
