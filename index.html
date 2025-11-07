@@ -10627,6 +10627,70 @@ function extrairDataEntradaRelatorio(dados = {}) {
   return null;
 }
 
+function normalizeMesKey(value) {
+  if (!value) return null;
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    if (/^\d{4}[-/]\d{2}$/.test(trimmed)) {
+      return trimmed.replace('/', '-');
+    }
+  }
+  if (value instanceof Date) {
+    return yyyymm(value);
+  }
+  if (typeof value?.toDate === 'function') {
+    const date = value.toDate();
+    if (date instanceof Date && !Number.isNaN(date.getTime())) {
+      return yyyymm(date);
+    }
+  }
+  return null;
+}
+
+function enumerateFullMonthsInRange(range) {
+  if (!range?.start || !range?.end) {
+    return [];
+  }
+  const result = [];
+  const cursor = new Date(range.start.getFullYear(), range.start.getMonth(), 1, 0, 0, 0, 0);
+  const limit = new Date(range.end.getFullYear(), range.end.getMonth(), 1, 0, 0, 0, 0);
+  while (cursor.getTime() <= limit.getTime()) {
+    const monthStart = new Date(cursor.getFullYear(), cursor.getMonth(), 1, 0, 0, 0, 0);
+    const monthEnd = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0, 23, 59, 59, 999);
+    if (monthStart.getTime() >= range.start.getTime() && monthEnd.getTime() <= range.end.getTime()) {
+      result.push({
+        key: yyyymm(monthStart),
+        start: monthStart,
+        end: monthEnd,
+      });
+    }
+    cursor.setMonth(cursor.getMonth() + 1);
+  }
+  return result;
+}
+
+function filterDocsByMesFatura(cache, monthKey, workspaceId) {
+  const normalizedMonth = normalizeMesKey(monthKey);
+  if (!normalizedMonth || !Array.isArray(cache)) {
+    return [];
+  }
+  return cache.filter((doc) => {
+    const data = typeof doc?.data === 'function' ? doc.data() : null;
+    if (!data) return false;
+    if (workspaceId && data.workspaceId && data.workspaceId !== workspaceId) {
+      return false;
+    }
+    const docMonth = normalizeMesKey(data.mesFatura || data.mesReferencia);
+    if (docMonth) {
+      return docMonth === normalizedMonth;
+    }
+    const date = extrairDataGasto(data);
+    if (!date) return false;
+    return yyyymm(date) === normalizedMonth;
+  });
+}
+
 function filterDocsByRange(cache, range, tipo, workspaceId) {
   if (!Array.isArray(cache) || !cache.length) {
     return [];
@@ -10676,6 +10740,45 @@ function mergeDocsWithFallback(primaryDocs, fallbackDocs, tipo) {
     })
     .sort((a, b) => a.time - b.time)
     .map((entry) => entry.doc);
+}
+
+async function fetchGastosPorMesFatura(range, workspaceId, existingDocs = []) {
+  const meses = enumerateFullMonthsInRange(range);
+  if (!meses.length) {
+    return [];
+  }
+  const collected = [];
+  const seen = new Set((Array.isArray(existingDocs) ? existingDocs : []).map((doc) => doc?.id).filter(Boolean));
+  await Promise.all(meses.map(async ({ key }) => {
+    if (!key) {
+      return;
+    }
+    try {
+      let query = userCollectionRef('gastos');
+      if (workspaceId) {
+        query = query.where('workspaceId', '==', workspaceId);
+      }
+      query = query.where('mesFatura', '==', key);
+      const snapshot = await query.get();
+      snapshot.docs.forEach((doc) => {
+        if (!doc?.id || seen.has(doc.id)) {
+          return;
+        }
+        seen.add(doc.id);
+        collected.push(doc);
+      });
+    } catch (error) {
+      console.warn(`[Relatório PDF] Falha ao consultar gastos por mesFatura ${key}. Utilizando cache local.`, error);
+      filterDocsByMesFatura(allGastosDocs, key, workspaceId).forEach((doc) => {
+        if (!doc?.id || seen.has(doc.id)) {
+          return;
+        }
+        seen.add(doc.id);
+        collected.push(doc);
+      });
+    }
+  }));
+  return collected;
 }
 
 function buildRelatorioDataset(range, gastosDocs, entradasDocs) {
@@ -10906,7 +11009,14 @@ async function prepareRelatorioPreview(range) {
     Promise.resolve(filterDocsByRange(allEntradasDocs, range, 'entradas', workspaceId)),
   ]);
 
-  const gastosCompletos = mergeDocsWithFallback(gastosDocs, gastosFallback, 'gastos');
+  const gastosMesFatura = await fetchGastosPorMesFatura(range, workspaceId, [
+    ...(Array.isArray(gastosDocs) ? gastosDocs : []),
+    ...(Array.isArray(gastosFallback) ? gastosFallback : []),
+  ]);
+  const gastosComMerged = mergeDocsWithFallback(gastosDocs, gastosFallback, 'gastos');
+  const gastosCompletos = gastosMesFatura.length
+    ? mergeDocsWithFallback(gastosComMerged, gastosMesFatura, 'gastos')
+    : gastosComMerged;
   const entradasCompletas = mergeDocsWithFallback(entradasDocs, entradasFallback, 'entradas');
 
   const dataset = buildRelatorioDataset(range, gastosCompletos, entradasCompletas);
