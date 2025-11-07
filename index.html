@@ -389,65 +389,88 @@
 </div>
 
 <!-- Modal de relatório financeiro em PDF -->
-<div id="modal-relatorio-pdf" class="fixed inset-0 z-[9700] hidden flex items-center justify-center bg-slate-900/80 backdrop-blur px-4 py-8 overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="relatorio-pdf-title" aria-hidden="true">
-  <div class="bg-white dark:bg-slate-900 w-full max-w-3xl rounded-2xl shadow-2xl relative p-6 sm:p-8 space-y-6 modal-content">
-    <button id="relatorio-pdf-close" class="absolute top-4 right-4 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white text-2xl font-bold" type="button" aria-label="Fechar modal">&times;</button>
-    <div class="space-y-2">
-      <h2 id="relatorio-pdf-title" class="text-2xl font-semibold text-slate-900 dark:text-slate-100">Relatório financeiro (PDF)</h2>
-      <p class="text-sm text-slate-500 dark:text-slate-400">Selecione um intervalo de até 93 dias para gerar um resumo leve das entradas, saídas e categorias do workspace atual.</p>
-    </div>
-    <form id="relatorio-pdf-form" class="space-y-4" autocomplete="off">
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <label class="text-sm font-medium text-slate-700 dark:text-slate-200 flex flex-col gap-1">
-          Data inicial
-          <input id="relatorio-data-inicio" type="date" class="px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" required />
-        </label>
-        <label class="text-sm font-medium text-slate-700 dark:text-slate-200 flex flex-col gap-1">
-          Data final
-          <input id="relatorio-data-fim" type="date" class="px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" required />
-        </label>
-      </div>
-      <div class="flex flex-wrap gap-2" role="group" aria-label="Seletores rápidos de período">
-        <button type="button" data-relatorio-range="last7" class="px-3 py-1.5 text-xs font-semibold rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition">Últimos 7 dias</button>
-        <button type="button" data-relatorio-range="last30" class="px-3 py-1.5 text-xs font-semibold rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition">Últimos 30 dias</button>
-        <button type="button" data-relatorio-range="current_month" class="px-3 py-1.5 text-xs font-semibold rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition">Mês atual</button>
-        <button type="button" data-relatorio-range="previous_month" class="px-3 py-1.5 text-xs font-semibold rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition">Mês anterior</button>
-      </div>
-      <p class="text-xs text-slate-500 dark:text-slate-400">Intervalos superiores a 93 dias podem ser divididos para manter a geração rápida e confiável.</p>
-    </form>
-    <div id="relatorio-pdf-status" class="text-sm hidden"></div>
-    <div id="relatorio-pdf-preview" class="hidden border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50/70 dark:bg-slate-800/60 p-4 space-y-4">
-      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
-        <div class="rounded-lg border border-emerald-100 dark:border-emerald-900/30 bg-white dark:bg-slate-900/40 p-3">
-          <div class="text-xs uppercase tracking-wide text-emerald-500 dark:text-emerald-300 font-semibold">Entradas</div>
-          <div id="relatorio-total-entradas" class="mt-1 text-lg font-semibold text-emerald-600 dark:text-emerald-300">R$ 0,00</div>
+<div id="modal-relatorio-pdf" class="fixed inset-0 z-[9700] hidden bg-slate-900/80 backdrop-blur px-4 py-8" role="dialog" aria-modal="true" aria-labelledby="relatorio-pdf-title" aria-hidden="true">
+  <div class="w-full max-w-3xl mx-auto">
+    <div class="modal-content relative flex max-h-[calc(100vh-3rem)] flex-col overflow-hidden rounded-2xl bg-white dark:bg-slate-900 shadow-2xl">
+      <button id="relatorio-pdf-close" class="absolute top-4 right-4 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white text-2xl font-bold" type="button" aria-label="Fechar modal">&times;</button>
+      <div class="flex-1 overflow-y-auto px-6 py-6 sm:px-8 sm:py-8 space-y-6">
+        <div class="space-y-2">
+          <h2 id="relatorio-pdf-title" class="text-2xl font-semibold text-slate-900 dark:text-slate-100">Relatório financeiro (PDF)</h2>
+          <p class="text-sm text-slate-500 dark:text-slate-400">Selecione um intervalo de até 93 dias, visualize a prévia e só então exporte o PDF com entradas, saídas e categorias do workspace atual.</p>
         </div>
-        <div class="rounded-lg border border-rose-100 dark:border-rose-900/30 bg-white dark:bg-slate-900/40 p-3">
-          <div class="text-xs uppercase tracking-wide text-rose-500 dark:text-rose-300 font-semibold">Saídas</div>
-          <div id="relatorio-total-saidas" class="mt-1 text-lg font-semibold text-rose-600 dark:text-rose-300">R$ 0,00</div>
+        <form id="relatorio-pdf-form" class="space-y-4" autocomplete="off">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <label class="text-sm font-medium text-slate-700 dark:text-slate-200 flex flex-col gap-1">
+              Data inicial
+              <input id="relatorio-data-inicio" type="date" class="px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" required />
+            </label>
+            <label class="text-sm font-medium text-slate-700 dark:text-slate-200 flex flex-col gap-1">
+              Data final
+              <input id="relatorio-data-fim" type="date" class="px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" required />
+            </label>
+          </div>
+          <div class="flex flex-wrap gap-2" role="group" aria-label="Seletores rápidos de período">
+            <button type="button" data-relatorio-range="last7" class="px-3 py-1.5 text-xs font-semibold rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition">Últimos 7 dias</button>
+            <button type="button" data-relatorio-range="last30" class="px-3 py-1.5 text-xs font-semibold rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition">Últimos 30 dias</button>
+            <button type="button" data-relatorio-range="current_month" class="px-3 py-1.5 text-xs font-semibold rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition">Mês atual</button>
+            <button type="button" data-relatorio-range="previous_month" class="px-3 py-1.5 text-xs font-semibold rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition">Mês anterior</button>
+          </div>
+          <p class="text-xs text-slate-500 dark:text-slate-400">Intervalos superiores a 93 dias podem ser divididos para manter a geração rápida e confiável.</p>
+        </form>
+        <div id="relatorio-pdf-status" class="text-sm hidden"></div>
+        <div id="relatorio-pdf-preview-placeholder" class="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/40 p-4 text-sm text-slate-600 dark:text-slate-300">
+          Selecione o período desejado e clique em <strong>Atualizar prévia</strong> para visualizar os totais antes de exportar.
         </div>
-        <div class="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/40 p-3">
-          <div class="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-300 font-semibold">Saldo</div>
-          <div id="relatorio-total-saldo" class="mt-1 text-lg font-semibold text-slate-700 dark:text-slate-100">R$ 0,00</div>
+        <div id="relatorio-pdf-preview" class="hidden border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50/70 dark:bg-slate-900/40 p-4 space-y-5">
+          <div class="space-y-1">
+            <p class="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400 font-semibold">Período selecionado</p>
+            <p id="relatorio-preview-periodo" class="text-sm font-semibold text-slate-700 dark:text-slate-200">—</p>
+            <p id="relatorio-preview-transacoes" class="text-xs text-slate-500 dark:text-slate-400"></p>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
+            <div class="rounded-lg border border-emerald-100 dark:border-emerald-900/30 bg-white dark:bg-slate-900/50 p-3">
+              <div class="text-xs uppercase tracking-wide text-emerald-500 dark:text-emerald-300 font-semibold">Entradas</div>
+              <div id="relatorio-total-entradas" class="mt-1 text-lg font-semibold text-emerald-600 dark:text-emerald-300">R$ 0,00</div>
+            </div>
+            <div class="rounded-lg border border-rose-100 dark:border-rose-900/30 bg-white dark:bg-slate-900/50 p-3">
+              <div class="text-xs uppercase tracking-wide text-rose-500 dark:text-rose-300 font-semibold">Saídas</div>
+              <div id="relatorio-total-saidas" class="mt-1 text-lg font-semibold text-rose-600 dark:text-rose-300">R$ 0,00</div>
+            </div>
+            <div class="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/50 p-3">
+              <div class="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-300 font-semibold">Saldo</div>
+              <div id="relatorio-total-saldo" class="mt-1 text-lg font-semibold text-slate-700 dark:text-slate-100">R$ 0,00</div>
+            </div>
+          </div>
+          <div class="space-y-3">
+            <div>
+              <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">Distribuição por categoria</h3>
+              <div class="relative flex w-full flex-col items-center" style="min-height: 18rem;">
+                <canvas id="relatorio-pdf-categorias" class="w-full max-w-xs sm:max-w-sm"></canvas>
+                <div id="relatorio-pdf-empty" class="absolute inset-0 flex items-center justify-center text-xs text-slate-500 dark:text-slate-400">Nenhum gasto categorizado no período selecionado.</div>
+              </div>
+            </div>
+            <div>
+              <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">Categorias detalhadas</h3>
+              <div id="relatorio-pdf-categorias-lista" class="max-h-56 overflow-y-auto pr-1 space-y-2 text-xs text-slate-600 dark:text-slate-300"></div>
+            </div>
+          </div>
         </div>
       </div>
-      <div>
-        <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">Distribuição por categoria</h3>
-        <div class="relative w-full" style="min-height: 16rem;">
-          <canvas id="relatorio-pdf-categorias" class="w-full h-full"></canvas>
-          <div id="relatorio-pdf-empty" class="absolute inset-0 flex items-center justify-center text-xs text-slate-500 dark:text-slate-400">Nenhum gasto categorizado no período selecionado.</div>
+      <div class="border-t border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/40 px-6 py-4 sm:px-8">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div id="relatorio-pdf-last-generated" class="text-xs text-slate-400 dark:text-slate-500"></div>
+          <div class="flex flex-wrap gap-2 justify-end">
+            <button type="button" id="relatorio-gerar-previa" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+              <i class="fa-solid fa-arrows-rotate"></i>
+              <span>Atualizar prévia</span>
+            </button>
+            <button type="button" id="relatorio-gerar-pdf" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold transition">
+              <i class="fa-solid fa-file-arrow-down"></i>
+              <span>Exportar PDF</span>
+            </button>
+            <button type="button" id="relatorio-cancelar" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition">Cancelar</button>
+          </div>
         </div>
-      </div>
-      <div id="relatorio-pdf-categorias-lista" class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-600 dark:text-slate-300"></div>
-    </div>
-    <div class="flex flex-wrap justify-between items-center gap-3">
-      <div id="relatorio-pdf-last-generated" class="text-xs text-slate-400 dark:text-slate-500"></div>
-      <div class="flex flex-wrap gap-2 justify-end">
-        <button type="button" id="relatorio-gerar-pdf" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold transition">
-          <i class="fa-solid fa-file-arrow-down"></i>
-          <span>Exportar PDF</span>
-        </button>
-        <button type="button" id="relatorio-cancelar" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition">Cancelar</button>
       </div>
     </div>
   </div>
@@ -10339,8 +10362,12 @@ relatorioOpenButton = document.getElementById('btn-relatorio-pdf');
 relatorioCloseButton = document.getElementById('relatorio-pdf-close');
 relatorioCancelButton = document.getElementById('relatorio-cancelar');
 relatorioGerarButton = document.getElementById('relatorio-gerar-pdf');
+relatorioPreviewButton = document.getElementById('relatorio-gerar-previa');
 relatorioStatus = document.getElementById('relatorio-pdf-status');
 relatorioPreview = document.getElementById('relatorio-pdf-preview');
+relatorioPreviewPlaceholder = document.getElementById('relatorio-pdf-preview-placeholder');
+relatorioPreviewPeriodo = document.getElementById('relatorio-preview-periodo');
+relatorioPreviewTransacoes = document.getElementById('relatorio-preview-transacoes');
 relatorioTotalEntradas = document.getElementById('relatorio-total-entradas');
 relatorioTotalSaidas = document.getElementById('relatorio-total-saidas');
 relatorioTotalSaldo = document.getElementById('relatorio-total-saldo');
@@ -10350,6 +10377,7 @@ relatorioCategoriasList = document.getElementById('relatorio-pdf-categorias-list
 relatorioLastGenerated = document.getElementById('relatorio-pdf-last-generated');
 relatorioRangeButtons = Array.from(document.querySelectorAll('[data-relatorio-range]'));
 let relatorioCategoriaChart = null;
+let relatorioPreviewCache = null;
 let relatorioPdfCache = null;
 let relatorioActivePreset = null;
 const RELATORIO_COLOR_PALETTE = ['#4f46e5', '#0ea5e9', '#22c55e', '#f97316', '#ef4444', '#8b5cf6', '#14b8a6', '#f59e0b', '#06b6d4', '#d946ef', '#f472b6', '#10b981'];
@@ -10357,8 +10385,9 @@ const RELATORIO_COLOR_PALETTE = ['#4f46e5', '#0ea5e9', '#22c55e', '#f97316', '#e
 function openRelatorioModal() {
   if (!relatorioModal) return;
   clearRelatorioPreview();
+  setRelatorioExportEnabled(false);
   applyRelatorioRangePreset('current_month', { silent: true });
-  updateRelatorioStatus('Selecione o período e clique em Exportar PDF.', 'info');
+  updateRelatorioStatus('Selecione o período e clique em Atualizar prévia para visualizar antes de exportar.', 'info');
   relatorioModal.classList.remove('hidden');
   relatorioModal.setAttribute('aria-hidden', 'false');
   lockBodyScroll();
@@ -10394,6 +10423,17 @@ function updateRelatorioStatus(message, type = 'info') {
   }
 }
 
+function setRelatorioExportEnabled(isEnabled) {
+  if (!relatorioGerarButton) return;
+  relatorioGerarButton.disabled = !isEnabled;
+  relatorioGerarButton.setAttribute('aria-disabled', String(!isEnabled));
+  if (isEnabled) {
+    relatorioGerarButton.classList.remove('opacity-60', 'cursor-not-allowed', 'pointer-events-none');
+  } else {
+    relatorioGerarButton.classList.add('opacity-60', 'cursor-not-allowed', 'pointer-events-none');
+  }
+}
+
 function setButtonLoading(button, isLoading, loadingLabel = 'Processando...') {
   if (!button) return;
   if (isLoading) {
@@ -10421,10 +10461,20 @@ function destroyRelatorioChart() {
 }
 
 function clearRelatorioPreview() {
+  relatorioPreviewCache = null;
   relatorioPdfCache = null;
   destroyRelatorioChart();
   if (relatorioPreview) {
     relatorioPreview.classList.add('hidden');
+  }
+  if (relatorioPreviewPlaceholder) {
+    relatorioPreviewPlaceholder.classList.remove('hidden');
+  }
+  if (relatorioPreviewPeriodo) {
+    relatorioPreviewPeriodo.textContent = '—';
+  }
+  if (relatorioPreviewTransacoes) {
+    relatorioPreviewTransacoes.textContent = '';
   }
   if (relatorioCategoriasList) {
     relatorioCategoriasList.innerHTML = '';
@@ -10449,10 +10499,12 @@ function clearRelatorioPreview() {
   if (relatorioCategoriasCanvas) {
     relatorioCategoriasCanvas.classList.add('hidden');
     relatorioCategoriasCanvas.height = 0;
+    relatorioCategoriasCanvas.width = 0;
     if (relatorioCategoriasCanvas.parentElement) {
-      relatorioCategoriasCanvas.parentElement.style.minHeight = '16rem';
+      relatorioCategoriasCanvas.parentElement.style.minHeight = '18rem';
     }
   }
+  setRelatorioExportEnabled(false);
 }
 
 function clampDateToToday(date) {
@@ -10513,7 +10565,7 @@ function applyRelatorioRangePreset(preset, { silent = false } = {}) {
   setActiveRangeButton(preset);
   clearRelatorioPreview();
   if (!silent) {
-    updateRelatorioStatus('Período ajustado. Gere um novo PDF.', 'info');
+    updateRelatorioStatus('Período ajustado. Clique em Atualizar prévia.', 'info');
   }
 }
 
@@ -10661,7 +10713,26 @@ function buildRelatorioDataset(range, gastosDocs, entradasDocs) {
 
 function renderRelatorioPreview(dataset) {
   if (!dataset || !relatorioPreview) return;
+  if (relatorioPreviewPlaceholder) {
+    relatorioPreviewPlaceholder.classList.add('hidden');
+  }
   relatorioPreview.classList.remove('hidden');
+  if (relatorioPreviewPeriodo) {
+    relatorioPreviewPeriodo.textContent = dataset.periodLabel || 'Período selecionado';
+  }
+  if (relatorioPreviewTransacoes) {
+    const partes = [];
+    if (Number.isFinite(dataset.totalTransacoes)) {
+      partes.push(`${dataset.totalTransacoes} lançamentos`);
+    }
+    if (Number.isFinite(dataset.entradasCount)) {
+      partes.push(`${dataset.entradasCount} entradas`);
+    }
+    if (Number.isFinite(dataset.gastosCount)) {
+      partes.push(`${dataset.gastosCount} saídas`);
+    }
+    relatorioPreviewTransacoes.textContent = partes.join(' • ');
+  }
   if (relatorioTotalEntradas) {
     relatorioTotalEntradas.textContent = `R$ ${moeda(dataset.totalEntradas)}`;
   }
@@ -10686,9 +10757,13 @@ function renderRelatorioPreview(dataset) {
     if (!dataset.categorias.length) {
       relatorioCategoriasList.innerHTML = '<p class="text-xs text-slate-500 dark:text-slate-400">Nenhuma categoria com valores no período.</p>';
     } else {
-      relatorioCategoriasList.innerHTML = dataset.categorias.slice(0, 10).map((categoria) => `
-        <div class="flex items-center justify-between gap-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/60 px-3 py-2">
-          <span class="font-medium text-slate-700 dark:text-slate-200">${escapeHtmlRelatorio(categoria.label)}</span>
+      const coresCategorias = buildRelatorioChartColors(dataset.categorias.length);
+      relatorioCategoriasList.innerHTML = dataset.categorias.map((categoria, index) => `
+        <div class="flex items-center justify-between gap-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/60 px-3 py-2">
+          <span class="flex items-center gap-2 font-medium text-slate-700 dark:text-slate-200">
+            <span class="inline-block h-2.5 w-2.5 rounded-full" style="background:${coresCategorias[index]};"></span>
+            ${escapeHtmlRelatorio(categoria.label)}
+          </span>
           <span class="text-xs font-semibold text-slate-600 dark:text-slate-200">R$ ${moeda(categoria.total)} • ${categoria.percent.toFixed(1)}%</span>
         </div>
       `).join('');
@@ -10714,67 +10789,47 @@ async function renderRelatorioChart(dataset) {
   const ctx = relatorioCategoriasCanvas.getContext('2d');
   const labels = dataset.categorias.map((item) => item.label);
   const data = dataset.categorias.map((item) => item.total);
-  const dynamicHeight = Math.max(240, Math.min(520, labels.length * 32 + 80));
-  relatorioCategoriasCanvas.height = dynamicHeight;
-  if (relatorioCategoriasCanvas.parentElement) {
-    relatorioCategoriasCanvas.parentElement.style.minHeight = `${Math.max(dynamicHeight, 260)}px`;
+  const container = relatorioCategoriasCanvas.parentElement;
+  let baseSize = 320;
+  if (container) {
+    const available = container.clientWidth || baseSize;
+    baseSize = Math.min(Math.max(available, 260), 420);
+    container.style.minHeight = `${Math.max(baseSize + 60, 320)}px`;
   }
+  relatorioCategoriasCanvas.width = baseSize;
+  relatorioCategoriasCanvas.height = baseSize;
   relatorioCategoriaChart = new Chart(ctx, {
-    type: 'bar',
+    type: 'doughnut',
     data: {
       labels,
       datasets: [{
         data,
         backgroundColor: buildRelatorioChartColors(labels.length),
         borderWidth: 0,
-        borderRadius: 6,
-        barPercentage: 0.7,
-        categoryPercentage: 0.7,
       }],
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
       animation: false,
-      indexAxis: 'y',
-      layout: {
-        padding: { top: 12, right: 24, bottom: 12, left: 12 },
-      },
-      scales: {
-        x: {
-          beginAtZero: true,
-          grid: {
-            color: html.classList.contains('dark') ? 'rgba(148, 163, 184, 0.15)' : 'rgba(148, 163, 184, 0.2)',
-          },
-          ticks: {
-            callback(value) {
-              return `R$ ${moeda(value)}`;
-            },
-            color: html.classList.contains('dark') ? '#cbd5f5' : '#0f172a',
-            font: { size: 11 },
-          },
-        },
-        y: {
-          grid: {
-            display: false,
-          },
-          ticks: {
-            color: html.classList.contains('dark') ? '#e2e8f0' : '#0f172a',
-            font: { size: 11 },
-            callback(value, index) {
-              return labels[index] || value;
-            },
-          },
-        },
-      },
+      cutout: '58%',
       plugins: {
         legend: {
-          display: false,
+          position: 'bottom',
+          labels: {
+            color: html.classList.contains('dark') ? '#e2e8f0' : '#0f172a',
+            boxWidth: 12,
+            boxHeight: 12,
+            font: { size: 11 },
+            padding: 14,
+          },
         },
         tooltip: {
           callbacks: {
             label(context) {
-              const valor = context.parsed.x ?? context.parsed;
+              const valor = Array.isArray(context.parsed)
+                ? context.parsed[0]
+                : context.parsed;
               const percent = dataset.categorias[context.dataIndex]?.percent ?? 0;
               return `R$ ${moeda(valor)} (${percent.toFixed(1)}%)`;
             },
@@ -10788,6 +10843,48 @@ async function renderRelatorioChart(dataset) {
   return typeof relatorioCategoriaChart?.toBase64Image === 'function'
     ? relatorioCategoriaChart.toBase64Image('image/png', 1)
     : null;
+}
+
+async function prepareRelatorioPreview(range) {
+  await firebaseReady.catch(() => { throw new Error('Firebase não está pronto para consultas.'); });
+  if (!db) {
+    throw new Error('Banco de dados indisponível no momento.');
+  }
+  const startTimestamp = firebase.firestore.Timestamp.fromDate(range.start);
+  const endTimestamp = firebase.firestore.Timestamp.fromDate(range.end);
+  const workspaceId = getActiveWorkspaceId();
+
+  const fetchDocs = async (collection) => {
+    try {
+      let query = userCollectionRef(collection);
+      if (workspaceId) {
+        query = query.where('workspaceId', '==', workspaceId);
+      }
+      query = query
+        .where('data', '>=', startTimestamp)
+        .where('data', '<=', endTimestamp)
+        .orderBy('data', 'asc');
+      const snapshot = await query.get();
+      return snapshot.docs;
+    } catch (error) {
+      console.warn(`[Relatório PDF] Falha ao consultar ${collection} no Firestore. Tentando cache local.`, error);
+      const cache = collection === 'gastos' ? allGastosDocs : allEntradasDocs;
+      return filterDocsByRange(cache, range, collection, workspaceId);
+    }
+  };
+
+  const [gastosDocs, entradasDocs] = await Promise.all([
+    fetchDocs('gastos'),
+    fetchDocs('entradas'),
+  ]);
+
+  const dataset = buildRelatorioDataset(range, gastosDocs, entradasDocs);
+  renderRelatorioPreview(dataset);
+  const chartImage = await renderRelatorioChart(dataset);
+  const key = `${range.startISO}|${range.endISO}`;
+  relatorioPdfCache = null;
+  relatorioPreviewCache = { key, dataset, chartImage };
+  return relatorioPreviewCache;
 }
 
 function arrayBufferToBase64(buffer) {
@@ -10915,41 +11012,12 @@ function createRelatorioPdf(dataset, chartImage) {
 }
 
 async function generateRelatorioPdf(range) {
-  await firebaseReady.catch(() => { throw new Error('Firebase não está pronto para consultas.'); });
-  if (!db) {
-    throw new Error('Banco de dados indisponível no momento.');
-  }
-  const startTimestamp = firebase.firestore.Timestamp.fromDate(range.start);
-  const endTimestamp = firebase.firestore.Timestamp.fromDate(range.end);
-  const workspaceId = getActiveWorkspaceId();
-
-  const fetchDocs = async (collection) => {
-    try {
-      let query = userCollectionRef(collection);
-      if (workspaceId) {
-        query = query.where('workspaceId', '==', workspaceId);
-      }
-      query = query
-        .where('data', '>=', startTimestamp)
-        .where('data', '<=', endTimestamp)
-        .orderBy('data', 'asc');
-      const snapshot = await query.get();
-      return snapshot.docs;
-    } catch (error) {
-      console.warn(`[Relatório PDF] Falha ao consultar ${collection} no Firestore. Tentando cache local.`, error);
-      const cache = collection === 'gastos' ? allGastosDocs : allEntradasDocs;
-      return filterDocsByRange(cache, range, collection, workspaceId);
-    }
-  };
-
-  const [gastosDocs, entradasDocs] = await Promise.all([
-    fetchDocs('gastos'),
-    fetchDocs('entradas'),
-  ]);
-
-  const dataset = buildRelatorioDataset(range, gastosDocs, entradasDocs);
-  renderRelatorioPreview(dataset);
-  const chartImage = await renderRelatorioChart(dataset);
+  const key = `${range.startISO}|${range.endISO}`;
+  const preview = (relatorioPreviewCache && relatorioPreviewCache.key === key)
+    ? relatorioPreviewCache
+    : await prepareRelatorioPreview(range);
+  const dataset = preview.dataset;
+  const chartImage = preview.chartImage ?? await renderRelatorioChart(dataset);
   const pdfDoc = createRelatorioPdf(dataset, chartImage);
   const arrayBuffer = pdfDoc.output('arraybuffer');
   const blob = new Blob([arrayBuffer], { type: 'application/pdf' });
@@ -10961,6 +11029,8 @@ async function generateRelatorioPdf(range) {
     blob,
     base64,
     fileName,
+    chartImage,
+    key,
   };
 }
 
@@ -10970,7 +11040,7 @@ async function ensureRelatorioPdf(range) {
     return relatorioPdfCache;
   }
   const resultado = await generateRelatorioPdf(range);
-  relatorioPdfCache = { ...resultado, key };
+  relatorioPdfCache = resultado;
   return relatorioPdfCache;
 }
 
@@ -10984,6 +11054,43 @@ function downloadRelatorioPdf(result) {
   anchor.click();
   document.body.removeChild(anchor);
   setTimeout(() => URL.revokeObjectURL(url), 1500);
+}
+
+async function handleRelatorioPreview() {
+  let range;
+  try {
+    range = parseRelatorioRange();
+  } catch (error) {
+    updateRelatorioStatus(error.message, 'error');
+    showToast(error.message, 'error');
+    return;
+  }
+  const key = `${range.startISO}|${range.endISO}`;
+  if (relatorioPreviewCache && relatorioPreviewCache.key === key) {
+    updateRelatorioStatus(`Prévia já atualizada para ${relatorioPreviewCache.dataset?.periodLabel || 'o período selecionado'}.`, 'success');
+    setRelatorioExportEnabled(true);
+    return;
+  }
+  setRelatorioExportEnabled(false);
+  setButtonLoading(relatorioPreviewButton, true, 'Atualizando...');
+  updateRelatorioStatus('Carregando a prévia do período selecionado...', 'info');
+  try {
+    const preview = await prepareRelatorioPreview(range);
+    if (preview?.dataset) {
+      updateRelatorioStatus(`Prévia atualizada para ${preview.dataset.periodLabel}.`, 'success');
+    } else {
+      updateRelatorioStatus('Nenhum dado encontrado para o período selecionado.', 'info');
+    }
+    setRelatorioExportEnabled(true);
+  } catch (error) {
+    console.error('Erro ao preparar a prévia do relatório:', error);
+    const message = error?.message || 'Não foi possível carregar a prévia agora.';
+    updateRelatorioStatus(message, 'error');
+    showToast(message, 'error');
+    clearRelatorioPreview();
+  } finally {
+    setButtonLoading(relatorioPreviewButton, false);
+  }
 }
 
 async function handleRelatorioGerar() {
@@ -11009,12 +11116,13 @@ async function handleRelatorioGerar() {
     showToast(message, 'error');
   } finally {
     setButtonLoading(relatorioGerarButton, false);
+    setRelatorioExportEnabled(Boolean(relatorioPreviewCache && relatorioPreviewCache.dataset));
   }
 }
 
 function handleRelatorioDataInputChange() {
   clearRelatorioPreview();
-  updateRelatorioStatus('Período atualizado. Gere um novo PDF.', 'info');
+  updateRelatorioStatus('Período atualizado. Clique em Atualizar prévia.', 'info');
   setActiveRangeButton(null);
 }
 
@@ -11036,6 +11144,9 @@ if (relatorioModal) {
 }
 if (relatorioForm) {
   relatorioForm.addEventListener('submit', (event) => event.preventDefault());
+}
+if (relatorioPreviewButton) {
+  relatorioPreviewButton.addEventListener('click', handleRelatorioPreview);
 }
 if (relatorioGerarButton) {
   relatorioGerarButton.addEventListener('click', handleRelatorioGerar);
