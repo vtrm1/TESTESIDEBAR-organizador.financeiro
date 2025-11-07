@@ -10670,6 +10670,30 @@ function enumerateFullMonthsInRange(range) {
   return result;
 }
 
+function isFirestoreIndexError(error) {
+  if (!error) return false;
+  const code = error.code || error?.error?.code;
+  const message = String(error.message || error?.error?.message || '').toLowerCase();
+  return code === 'failed-precondition' || message.includes('index');
+}
+
+function filterDocsByWorkspaceId(docs, workspaceId) {
+  if (!workspaceId || !Array.isArray(docs)) {
+    return Array.isArray(docs) ? docs : [];
+  }
+  return docs.filter((doc) => {
+    if (!doc || typeof doc.data !== 'function') {
+      return false;
+    }
+    const data = doc.data();
+    const docWorkspace = data.workspaceId || data.workspace?.id || data.workspace || null;
+    if (!docWorkspace) {
+      return true;
+    }
+    return docWorkspace === workspaceId;
+  });
+}
+
 function filterDocsByMesFatura(cache, monthKey, workspaceId) {
   const normalizedMonth = normalizeMesKey(monthKey);
   if (!normalizedMonth || !Array.isArray(cache)) {
@@ -10984,22 +11008,37 @@ async function prepareRelatorioPreview(range) {
   const workspaceId = getActiveWorkspaceId();
 
   const fetchDocs = async (collection) => {
-    try {
-      let query = userCollectionRef(collection);
-      if (workspaceId) {
-        query = query.where('workspaceId', '==', workspaceId);
-      }
-      query = query
+    const cache = collection === 'gastos' ? allGastosDocs : allEntradasDocs;
+    const runQuery = async (includeWorkspaceFilter) => {
+      let query = userCollectionRef(collection)
         .where('data', '>=', startTimestamp)
         .where('data', '<=', endTimestamp)
         .orderBy('data', 'asc');
+      if (includeWorkspaceFilter && workspaceId) {
+        query = query.where('workspaceId', '==', workspaceId);
+      }
       const snapshot = await query.get();
-      return snapshot.docs;
+      const docs = snapshot.docs;
+      return includeWorkspaceFilter ? docs : filterDocsByWorkspaceId(docs, workspaceId);
+    };
+
+    try {
+      return await runQuery(true);
     } catch (error) {
-      console.warn(`[Relatório PDF] Falha ao consultar ${collection} no Firestore. Tentando cache local.`, error);
-      const cache = collection === 'gastos' ? allGastosDocs : allEntradasDocs;
-      return filterDocsByRange(cache, range, collection, workspaceId);
+      console.warn(`[Relatório PDF] Falha ao consultar ${collection} com filtro de workspace.`, error);
+      if (workspaceId && isFirestoreIndexError(error)) {
+        try {
+          const docs = await runQuery(false);
+          console.info(`[Relatório PDF] Consulta de ${collection} refeita sem filtro de workspace devido a índice ausente.`);
+          return docs;
+        } catch (retryError) {
+          console.warn(`[Relatório PDF] Falha ao consultar ${collection} sem filtro de workspace.`, retryError);
+        }
+      }
     }
+
+    console.warn(`[Relatório PDF] Usando cache local para ${collection}.`);
+    return filterDocsByRange(cache, range, collection, workspaceId);
   };
 
   const [gastosDocs, entradasDocs, gastosFallback, entradasFallback] = await Promise.all([
