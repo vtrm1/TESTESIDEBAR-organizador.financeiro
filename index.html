@@ -28,6 +28,7 @@
 
 <!-- Adicione no <head> para incluir Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 
 <!-- NOVO: Modal de Gráficos Interativos com filtros -->
 <div id="modal-graficos" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden" role="dialog" aria-modal="true" aria-labelledby="modal-graficos-title">
@@ -382,6 +383,80 @@
             <span class="text-[0.7rem] opacity-80">Registra como aporte ou reserva</span>
           </button>
         </div>
+      </div>
+    </div>
+</div>
+</div>
+
+<!-- Modal de relatório financeiro em PDF -->
+<div id="modal-relatorio-pdf" class="fixed inset-0 z-[9700] hidden flex items-center justify-center bg-slate-900/80 backdrop-blur px-4 py-8 overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="relatorio-pdf-title" aria-hidden="true">
+  <div class="bg-white dark:bg-slate-900 w-full max-w-3xl rounded-2xl shadow-2xl relative p-6 sm:p-8 space-y-6 modal-content">
+    <button id="relatorio-pdf-close" class="absolute top-4 right-4 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white text-2xl font-bold" type="button" aria-label="Fechar modal">&times;</button>
+    <div class="space-y-2">
+      <h2 id="relatorio-pdf-title" class="text-2xl font-semibold text-slate-900 dark:text-slate-100">Relatório financeiro (PDF)</h2>
+      <p class="text-sm text-slate-500 dark:text-slate-400">Selecione um intervalo de até 93 dias para gerar um resumo leve das entradas, saídas e categorias do workspace atual.</p>
+    </div>
+    <form id="relatorio-pdf-form" class="space-y-4" autocomplete="off">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <label class="text-sm font-medium text-slate-700 dark:text-slate-200 flex flex-col gap-1">
+          Data inicial
+          <input id="relatorio-data-inicio" type="date" class="px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" required />
+        </label>
+        <label class="text-sm font-medium text-slate-700 dark:text-slate-200 flex flex-col gap-1">
+          Data final
+          <input id="relatorio-data-fim" type="date" class="px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" required />
+        </label>
+      </div>
+      <div class="flex flex-wrap gap-2" role="group" aria-label="Seletores rápidos de período">
+        <button type="button" data-relatorio-range="last7" class="px-3 py-1.5 text-xs font-semibold rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition">Últimos 7 dias</button>
+        <button type="button" data-relatorio-range="last30" class="px-3 py-1.5 text-xs font-semibold rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition">Últimos 30 dias</button>
+        <button type="button" data-relatorio-range="current_month" class="px-3 py-1.5 text-xs font-semibold rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition">Mês atual</button>
+        <button type="button" data-relatorio-range="previous_month" class="px-3 py-1.5 text-xs font-semibold rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition">Mês anterior</button>
+      </div>
+      <p class="text-xs text-slate-500 dark:text-slate-400">Intervalos superiores a 93 dias podem ser divididos para manter a geração rápida e confiável.</p>
+      <label class="text-sm font-medium text-slate-700 dark:text-slate-200 flex flex-col gap-1">
+        E-mail para envio (opcional)
+        <input id="relatorio-email-destino" type="email" class="px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" placeholder="cliente@exemplo.com" autocomplete="email" />
+        <span id="relatorio-email-hint" class="text-xs text-slate-400 dark:text-slate-500">Deixe vazio para apenas baixar o PDF.</span>
+      </label>
+    </form>
+    <div id="relatorio-pdf-status" class="text-sm hidden"></div>
+    <div id="relatorio-pdf-preview" class="hidden border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50/70 dark:bg-slate-800/60 p-4 space-y-4">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
+        <div class="rounded-lg border border-emerald-100 dark:border-emerald-900/30 bg-white dark:bg-slate-900/40 p-3">
+          <div class="text-xs uppercase tracking-wide text-emerald-500 dark:text-emerald-300 font-semibold">Entradas</div>
+          <div id="relatorio-total-entradas" class="mt-1 text-lg font-semibold text-emerald-600 dark:text-emerald-300">R$ 0,00</div>
+        </div>
+        <div class="rounded-lg border border-rose-100 dark:border-rose-900/30 bg-white dark:bg-slate-900/40 p-3">
+          <div class="text-xs uppercase tracking-wide text-rose-500 dark:text-rose-300 font-semibold">Saídas</div>
+          <div id="relatorio-total-saidas" class="mt-1 text-lg font-semibold text-rose-600 dark:text-rose-300">R$ 0,00</div>
+        </div>
+        <div class="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/40 p-3">
+          <div class="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-300 font-semibold">Saldo</div>
+          <div id="relatorio-total-saldo" class="mt-1 text-lg font-semibold text-slate-700 dark:text-slate-100">R$ 0,00</div>
+        </div>
+      </div>
+      <div>
+        <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">Distribuição por categoria</h3>
+        <div class="relative h-48">
+          <canvas id="relatorio-pdf-categorias" class="w-full h-full"></canvas>
+          <div id="relatorio-pdf-empty" class="absolute inset-0 flex items-center justify-center text-xs text-slate-500 dark:text-slate-400">Nenhum gasto categorizado no período selecionado.</div>
+        </div>
+      </div>
+      <div id="relatorio-pdf-categorias-lista" class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-600 dark:text-slate-300"></div>
+    </div>
+    <div class="flex flex-wrap justify-between items-center gap-3">
+      <div id="relatorio-pdf-last-generated" class="text-xs text-slate-400 dark:text-slate-500"></div>
+      <div class="flex flex-wrap gap-2 justify-end">
+        <button type="button" id="relatorio-gerar-pdf" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold transition">
+          <i class="fa-solid fa-file-arrow-down"></i>
+          <span>Exportar PDF</span>
+        </button>
+        <button type="button" id="relatorio-enviar-email" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold transition">
+          <i class="fa-solid fa-paper-plane"></i>
+          <span>Enviar por e-mail</span>
+        </button>
+        <button type="button" id="relatorio-cancelar" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition">Cancelar</button>
       </div>
     </div>
   </div>
@@ -2754,6 +2829,10 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
     <!-- ações rápidas - MOVIDO PARA O FINAL DA ASIDE -->
     <div class="section-card text-sm">
       <div class="font-semibold mb-2">Ações rápidas</div>
+      <button id="btn-relatorio-pdf" class="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded mb-2 font-semibold transition-colors">
+        <i class="fa-solid fa-file-lines"></i>
+        Relatório financeiro (PDF)
+      </button>
       <button id="exportar-tudo" class="w-full bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-100 px-3 py-2 rounded mb-2 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">Exportar tudo (CSV)</button>
       <div class="text-xs text-gray-500 dark:text-gray-400">Notas: exportar mês filtra só o mês selecionado; exportar tudo pega tudo.</div>
     </div>
@@ -3077,6 +3156,27 @@ let accessGuardMode = null;
 let workspaceMetadataNormalizationExecuted = false;
 let serviceWorkerRegistrationRef = null;
 let swControllerChangeHandled = false;
+let relatorioModal = null;
+let relatorioForm = null;
+let relatorioDataInicioInput = null;
+let relatorioDataFimInput = null;
+let relatorioEmailInput = null;
+let relatorioEmailHint = null;
+let relatorioOpenButton = null;
+let relatorioCloseButton = null;
+let relatorioCancelButton = null;
+let relatorioGerarButton = null;
+let relatorioEnviarButton = null;
+let relatorioStatus = null;
+let relatorioPreview = null;
+let relatorioTotalEntradas = null;
+let relatorioTotalSaidas = null;
+let relatorioTotalSaldo = null;
+let relatorioCategoriasCanvas = null;
+let relatorioCategoriasEmpty = null;
+let relatorioCategoriasList = null;
+let relatorioLastGenerated = null;
+let relatorioRangeButtons = [];
 
 const NOTIFICATION_PROMPT_KEY = 'of-notification-prompted';
 let notificationPrompted = false;
@@ -4646,8 +4746,9 @@ function unlockBodyScrollIfAllowed() {
   const recursosOverviewVisible = recursosOverviewModal && !recursosOverviewModal.classList.contains('hidden');
   const investManagerVisible = investManagerModal && !investManagerModal.classList.contains('hidden');
   const investEditVisible = investEditModal && !investEditModal.classList.contains('hidden');
+  const relatorioPdfVisible = relatorioModal && !relatorioModal.classList.contains('hidden');
   if (!authVisible && !accessVisible && !workspaceVisible && !accessManagerVisible && !walletManageVisible && !walletInvestVisible
-    && !walletOpeningVisible && !recursosOverviewVisible && !investManagerVisible && !investEditVisible) {
+    && !walletOpeningVisible && !recursosOverviewVisible && !investManagerVisible && !investEditVisible && !relatorioPdfVisible) {
     document.body.classList.remove('overflow-hidden');
   }
 }
@@ -10217,7 +10318,7 @@ function exportarCSVtudo(){
   Promise.all([
     userCollectionRef('gastos').orderBy('data','desc').get(),
     userCollectionRef('parcelados').orderBy('dataInicio','desc').get(),
-  ]).then(([gastoSnap, parcSnap])=>{ 
+  ]).then(([gastoSnap, parcSnap])=>{
     let csv = 'Tipo,Data Transação,Mês Fatura,Cartão/PIX,Descrição,Valor,Parcelas,Observação,Categoria\n'; // MODIFICADO HEADER
     gastoSnap.forEach(doc=>{
       const d=doc.data(); 
@@ -10236,6 +10337,785 @@ function exportarCSVtudo(){
     showToast('Todos os dados exportados para CSV!');
   }).catch(err => showToast('Erro ao exportar todos os dados para CSV.', 'error'));
 }
+
+
+/* ===========================
+   RELATÓRIO FINANCEIRO EM PDF
+   =========================== */
+const RELATORIO_MAX_RANGE_DAYS = 93;
+relatorioModal = document.getElementById('modal-relatorio-pdf');
+relatorioForm = document.getElementById('relatorio-pdf-form');
+relatorioDataInicioInput = document.getElementById('relatorio-data-inicio');
+relatorioDataFimInput = document.getElementById('relatorio-data-fim');
+relatorioEmailInput = document.getElementById('relatorio-email-destino');
+relatorioEmailHint = document.getElementById('relatorio-email-hint');
+relatorioOpenButton = document.getElementById('btn-relatorio-pdf');
+relatorioCloseButton = document.getElementById('relatorio-pdf-close');
+relatorioCancelButton = document.getElementById('relatorio-cancelar');
+relatorioGerarButton = document.getElementById('relatorio-gerar-pdf');
+relatorioEnviarButton = document.getElementById('relatorio-enviar-email');
+relatorioStatus = document.getElementById('relatorio-pdf-status');
+relatorioPreview = document.getElementById('relatorio-pdf-preview');
+relatorioTotalEntradas = document.getElementById('relatorio-total-entradas');
+relatorioTotalSaidas = document.getElementById('relatorio-total-saidas');
+relatorioTotalSaldo = document.getElementById('relatorio-total-saldo');
+relatorioCategoriasCanvas = document.getElementById('relatorio-pdf-categorias');
+relatorioCategoriasEmpty = document.getElementById('relatorio-pdf-empty');
+relatorioCategoriasList = document.getElementById('relatorio-pdf-categorias-lista');
+relatorioLastGenerated = document.getElementById('relatorio-pdf-last-generated');
+relatorioRangeButtons = Array.from(document.querySelectorAll('[data-relatorio-range]'));
+let relatorioCategoriaChart = null;
+let relatorioPdfCache = null;
+let relatorioActivePreset = null;
+
+const RELATORIO_COLOR_PALETTE = ['#4f46e5', '#0ea5e9', '#22c55e', '#f97316', '#ef4444', '#8b5cf6', '#14b8a6', '#f59e0b', '#06b6d4', '#d946ef', '#f472b6', '#10b981'];
+
+function openRelatorioModal() {
+  if (!relatorioModal) return;
+  clearRelatorioPreview();
+  applyRelatorioRangePreset('current_month', { silent: true });
+  if (relatorioEmailInput && currentUser?.email) {
+    relatorioEmailInput.value = currentUser.email;
+  }
+  updateRelatorioStatus('Selecione o período e clique em Exportar PDF.', 'info');
+  relatorioModal.classList.remove('hidden');
+  relatorioModal.setAttribute('aria-hidden', 'false');
+  lockBodyScroll();
+  activateDialog(relatorioModal, { initialFocus: relatorioDataInicioInput || relatorioModal });
+  updateFloatingMenuVisibility();
+  updateRelatorioConnectivityState();
+}
+
+function closeRelatorioModal() {
+  if (!relatorioModal) return;
+  relatorioModal.classList.add('hidden');
+  relatorioModal.setAttribute('aria-hidden', 'true');
+  deactivateDialog(relatorioModal);
+  unlockBodyScrollIfAllowed();
+  updateFloatingMenuVisibility();
+}
+
+function updateRelatorioConnectivityState() {
+  if (!relatorioEnviarButton) return;
+  const online = navigator.onLine !== false;
+  relatorioEnviarButton.disabled = !online;
+  relatorioEnviarButton.classList.toggle('opacity-60', !online);
+  relatorioEnviarButton.classList.toggle('cursor-not-allowed', !online);
+  if (relatorioEmailHint) {
+    relatorioEmailHint.textContent = online
+      ? 'Deixe vazio para apenas baixar o PDF.'
+      : 'Envio indisponível offline. Conecte-se para enviar o PDF por e-mail.';
+  }
+}
+
+function updateRelatorioStatus(message, type = 'info') {
+  if (!relatorioStatus) return;
+  if (!message) {
+    relatorioStatus.textContent = '';
+    relatorioStatus.classList.add('hidden');
+    relatorioStatus.classList.remove('text-emerald-500', 'dark:text-emerald-300', 'text-rose-500', 'dark:text-rose-300', 'text-slate-500', 'dark:text-slate-300');
+    return;
+  }
+  relatorioStatus.textContent = message;
+  relatorioStatus.classList.remove('hidden', 'text-emerald-500', 'dark:text-emerald-300', 'text-rose-500', 'dark:text-rose-300', 'text-slate-500', 'dark:text-slate-300');
+  if (type === 'success') {
+    relatorioStatus.classList.add('text-emerald-500', 'dark:text-emerald-300');
+  } else if (type === 'error') {
+    relatorioStatus.classList.add('text-rose-500', 'dark:text-rose-300');
+  } else {
+    relatorioStatus.classList.add('text-slate-500', 'dark:text-slate-300');
+  }
+}
+
+function setButtonLoading(button, isLoading, loadingLabel = 'Processando...') {
+  if (!button) return;
+  if (isLoading) {
+    if (!button.dataset.originalHtml) {
+      button.dataset.originalHtml = button.innerHTML;
+    }
+    button.disabled = true;
+    button.classList.add('opacity-70', 'cursor-not-allowed');
+    button.innerHTML = `<i class="fa-solid fa-circle-notch fa-spin"></i><span>${loadingLabel}</span>`;
+  } else {
+    button.disabled = false;
+    button.classList.remove('opacity-70', 'cursor-not-allowed');
+    if (button.dataset.originalHtml) {
+      button.innerHTML = button.dataset.originalHtml;
+      delete button.dataset.originalHtml;
+    }
+  }
+}
+
+function destroyRelatorioChart() {
+  if (relatorioCategoriaChart && typeof relatorioCategoriaChart.destroy === 'function') {
+    relatorioCategoriaChart.destroy();
+  }
+  relatorioCategoriaChart = null;
+}
+
+function clearRelatorioPreview() {
+  relatorioPdfCache = null;
+  destroyRelatorioChart();
+  if (relatorioPreview) {
+    relatorioPreview.classList.add('hidden');
+  }
+  if (relatorioCategoriasList) {
+    relatorioCategoriasList.innerHTML = '';
+  }
+  if (relatorioLastGenerated) {
+    relatorioLastGenerated.textContent = '';
+  }
+  if (relatorioTotalEntradas) {
+    relatorioTotalEntradas.textContent = 'R$ 0,00';
+  }
+  if (relatorioTotalSaidas) {
+    relatorioTotalSaidas.textContent = 'R$ 0,00';
+  }
+  if (relatorioTotalSaldo) {
+    relatorioTotalSaldo.textContent = 'R$ 0,00';
+    relatorioTotalSaldo.classList.remove('text-emerald-600', 'dark:text-emerald-300', 'text-rose-600', 'dark:text-rose-300');
+    relatorioTotalSaldo.classList.add('text-slate-700', 'dark:text-slate-100');
+  }
+  if (relatorioCategoriasEmpty) {
+    relatorioCategoriasEmpty.classList.remove('hidden');
+  }
+  if (relatorioCategoriasCanvas) {
+    relatorioCategoriasCanvas.classList.add('hidden');
+  }
+}
+
+function clampDateToToday(date) {
+  const now = new Date();
+  if (date.getTime() > now.getTime()) {
+    return new Date(now.getFullYear(), now.getMonth(), now.getDate(), date.getHours(), date.getMinutes(), date.getSeconds(), date.getMilliseconds());
+  }
+  return date;
+}
+
+function setActiveRangeButton(preset) {
+  relatorioActivePreset = preset || null;
+  relatorioRangeButtons.forEach((button) => {
+    const isActive = button.dataset.relatorioRange === relatorioActivePreset;
+    if (isActive) {
+      button.classList.remove('bg-slate-100', 'dark:bg-slate-800', 'text-slate-700', 'dark:text-slate-200');
+      button.classList.add('bg-emerald-600', 'text-white', 'dark:bg-emerald-500', 'dark:text-white', 'ring-2', 'ring-emerald-400');
+      button.setAttribute('aria-pressed', 'true');
+    } else {
+      button.classList.remove('bg-emerald-600', 'text-white', 'dark:bg-emerald-500', 'dark:text-white', 'ring-2', 'ring-emerald-400');
+      button.classList.add('bg-slate-100', 'dark:bg-slate-800', 'text-slate-700', 'dark:text-slate-200');
+      button.setAttribute('aria-pressed', 'false');
+    }
+  });
+}
+
+function applyRelatorioRangePreset(preset, { silent = false } = {}) {
+  if (!relatorioDataInicioInput || !relatorioDataFimInput) return;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  let start = new Date(today);
+  let end = new Date(today);
+
+  switch (preset) {
+    case 'last7':
+      start.setDate(start.getDate() - 6);
+      break;
+    case 'last30':
+      start.setDate(start.getDate() - 29);
+      break;
+    case 'previous_month': {
+      const previousMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+      start = new Date(previousMonth.getFullYear(), previousMonth.getMonth(), 1, 0, 0, 0, 0);
+      end = new Date(previousMonth.getFullYear(), previousMonth.getMonth() + 1, 0, 23, 59, 59, 999);
+      break;
+    }
+    case 'current_month':
+    default:
+      start = new Date(today.getFullYear(), today.getMonth(), 1, 0, 0, 0, 0);
+      end = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
+      break;
+  }
+
+  end = clampDateToToday(end);
+
+  relatorioDataInicioInput.value = formatDateInputValue(start);
+  relatorioDataFimInput.value = formatDateInputValue(end);
+  setActiveRangeButton(preset);
+  clearRelatorioPreview();
+  if (!silent) {
+    updateRelatorioStatus('Período ajustado. Gere um novo PDF.', 'info');
+  }
+}
+
+function parseRelatorioRange() {
+  if (!relatorioDataInicioInput || !relatorioDataFimInput) {
+    throw new Error('Defina as datas inicial e final.');
+  }
+  const inicioStr = relatorioDataInicioInput.value;
+  const fimStr = relatorioDataFimInput.value;
+  if (!inicioStr || !fimStr) {
+    throw new Error('Informe a data inicial e final do relatório.');
+  }
+  const inicio = new Date(`${inicioStr}T00:00:00`);
+  const fim = new Date(`${fimStr}T23:59:59`);
+  if (Number.isNaN(inicio.getTime()) || Number.isNaN(fim.getTime())) {
+    throw new Error('Datas do relatório inválidas.');
+  }
+  if (inicio.getTime() > fim.getTime()) {
+    throw new Error('A data inicial não pode ser maior que a final.');
+  }
+  const diffDays = Math.floor((new Date(`${fimStr}T00:00:00`).getTime() - inicio.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+  if (diffDays > RELATORIO_MAX_RANGE_DAYS) {
+    throw new Error(`Escolha um intervalo de no máximo ${RELATORIO_MAX_RANGE_DAYS} dias.`);
+  }
+  const periodoLabel = formatDate(inicio) === formatDate(fim)
+    ? formatDate(inicio)
+    : `${formatDate(inicio)} – ${formatDate(fim)}`;
+  return {
+    start: inicio,
+    end: fim,
+    startISO: inicioStr,
+    endISO: fimStr,
+    diffDays,
+    periodLabel: periodoLabel,
+  };
+}
+
+function escapeHtmlRelatorio(value) {
+  const replacements = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+  return String(value || '').replace(/[&<>"']/g, (char) => replacements[char] || char);
+}
+
+function extrairDataEntradaRelatorio(dados = {}) {
+  const candidatos = [dados.data, dados.dataLancamento, dados.dataReferencia, dados.createdAt];
+  for (const value of candidatos) {
+    if (!value) continue;
+    let date = null;
+    if (value instanceof Date) {
+      date = value;
+    } else if (typeof value?.toDate === 'function') {
+      date = value.toDate();
+    } else {
+      date = new Date(value);
+    }
+    if (date && !Number.isNaN(date.getTime())) {
+      return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0, 0);
+    }
+  }
+  return null;
+}
+
+function filterDocsByRange(cache, range, tipo, workspaceId) {
+  if (!Array.isArray(cache) || !cache.length) {
+    return [];
+  }
+  const startTime = range.start.getTime();
+  const endTime = range.end.getTime();
+  const extractor = tipo === 'gastos' ? extrairDataGasto : extrairDataEntradaRelatorio;
+  return cache
+    .map((doc) => {
+      const data = typeof doc?.data === 'function' ? doc.data() : null;
+      if (!data) return null;
+      if (workspaceId && data.workspaceId && data.workspaceId !== workspaceId) {
+        return null;
+      }
+      const date = extractor(data);
+      if (!date) return null;
+      const time = date.getTime();
+      if (time < startTime || time > endTime) return null;
+      return { doc, time };
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.time - b.time)
+    .map((entry) => entry.doc);
+}
+
+function buildRelatorioDataset(range, gastosDocs, entradasDocs) {
+  let totalSaidas = 0;
+  let totalEntradas = 0;
+  const categorias = new Map();
+
+  (Array.isArray(gastosDocs) ? gastosDocs : []).forEach((doc) => {
+    if (!doc || typeof doc.data !== 'function') return;
+    const data = doc.data();
+    const valor = parseValorGasto(data.valor);
+    if (!Number.isFinite(valor) || valor === 0) return;
+    totalSaidas += valor;
+    const categoriaKey = registrarCategoriaLabel(data.categoria || 'Outros');
+    if (categoriaKey) {
+      categorias.set(categoriaKey, (categorias.get(categoriaKey) || 0) + valor);
+    }
+  });
+
+  (Array.isArray(entradasDocs) ? entradasDocs : []).forEach((doc) => {
+    if (!doc || typeof doc.data !== 'function') return;
+    const data = doc.data();
+    const valor = parseValorGasto(data.valor);
+    if (!Number.isFinite(valor) || valor === 0) return;
+    totalEntradas += valor;
+  });
+
+  const totalSaidasRounded = roundCurrency(totalSaidas);
+  const categoriasOrdenadas = Array.from(categorias.entries())
+    .map(([key, valor]) => {
+      const total = roundCurrency(valor);
+      const percent = totalSaidasRounded > 0 ? (total / totalSaidasRounded) * 100 : 0;
+      return {
+        key,
+        label: formatarCategoriaLabel(key) || 'Outros',
+        total,
+        percent,
+      };
+    })
+    .filter((item) => item.total > 0)
+    .sort((a, b) => b.total - a.total);
+
+  return {
+    start: range.start,
+    end: range.end,
+    startISO: range.startISO,
+    endISO: range.endISO,
+    periodLabel: range.periodLabel,
+    diffDays: range.diffDays,
+    totalEntradas: roundCurrency(totalEntradas),
+    totalSaidas: totalSaidasRounded,
+    saldo: roundCurrency(totalEntradas - totalSaidas),
+    categorias: categoriasOrdenadas,
+    totalTransacoes: (Array.isArray(gastosDocs) ? gastosDocs.length : 0) + (Array.isArray(entradasDocs) ? entradasDocs.length : 0),
+    gastosCount: Array.isArray(gastosDocs) ? gastosDocs.length : 0,
+    entradasCount: Array.isArray(entradasDocs) ? entradasDocs.length : 0,
+    workspaceName: getActiveWorkspaceDisplayName() || 'Workspace atual',
+    generatedAt: new Date(),
+  };
+}
+
+function renderRelatorioPreview(dataset) {
+  if (!dataset || !relatorioPreview) return;
+  relatorioPreview.classList.remove('hidden');
+  if (relatorioTotalEntradas) {
+    relatorioTotalEntradas.textContent = `R$ ${moeda(dataset.totalEntradas)}`;
+  }
+  if (relatorioTotalSaidas) {
+    relatorioTotalSaidas.textContent = `R$ ${moeda(dataset.totalSaidas)}`;
+  }
+  if (relatorioTotalSaldo) {
+    relatorioTotalSaldo.classList.remove('text-slate-700', 'dark:text-slate-100', 'text-emerald-600', 'dark:text-emerald-300', 'text-rose-600', 'dark:text-rose-300');
+    const saldoLabel = `R$ ${moeda(Math.abs(dataset.saldo))}`;
+    if (dataset.saldo >= 0) {
+      relatorioTotalSaldo.textContent = saldoLabel;
+      relatorioTotalSaldo.classList.add('text-emerald-600', 'dark:text-emerald-300');
+    } else {
+      relatorioTotalSaldo.textContent = `- ${saldoLabel}`;
+      relatorioTotalSaldo.classList.add('text-rose-600', 'dark:text-rose-300');
+    }
+  }
+  if (relatorioLastGenerated) {
+    relatorioLastGenerated.textContent = `${dataset.periodLabel} • ${dataset.totalTransacoes} lançamentos analisados • ${formatDateTime(dataset.generatedAt)}`;
+  }
+  if (relatorioCategoriasList) {
+    if (!dataset.categorias.length) {
+      relatorioCategoriasList.innerHTML = '<p class="text-xs text-slate-500 dark:text-slate-400">Nenhuma categoria com valores no período.</p>';
+    } else {
+      relatorioCategoriasList.innerHTML = dataset.categorias.slice(0, 10).map((categoria) => `
+        <div class="flex items-center justify-between gap-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/60 px-3 py-2">
+          <span class="font-medium text-slate-700 dark:text-slate-200">${escapeHtmlRelatorio(categoria.label)}</span>
+          <span class="text-xs font-semibold text-slate-600 dark:text-slate-200">R$ ${moeda(categoria.total)} • ${categoria.percent.toFixed(1)}%</span>
+        </div>
+      `).join('');
+    }
+  }
+}
+
+function buildRelatorioChartColors(count) {
+  return Array.from({ length: count }, (_, index) => RELATORIO_COLOR_PALETTE[index % RELATORIO_COLOR_PALETTE.length]);
+}
+
+async function renderRelatorioChart(dataset) {
+  if (!relatorioCategoriasCanvas || !relatorioCategoriasEmpty) return null;
+  destroyRelatorioChart();
+  const hasData = Array.isArray(dataset?.categorias) && dataset.categorias.some((item) => item.total > 0);
+  if (!hasData) {
+    relatorioCategoriasCanvas.classList.add('hidden');
+    relatorioCategoriasEmpty.classList.remove('hidden');
+    return null;
+  }
+  relatorioCategoriasCanvas.classList.remove('hidden');
+  relatorioCategoriasEmpty.classList.add('hidden');
+  const ctx = relatorioCategoriasCanvas.getContext('2d');
+  const labels = dataset.categorias.map((item) => item.label);
+  const data = dataset.categorias.map((item) => item.total);
+  relatorioCategoriaChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels,
+      datasets: [{
+        data,
+        backgroundColor: buildRelatorioChartColors(labels.length),
+        borderWidth: 1,
+        borderColor: html.classList.contains('dark') ? '#0f172a' : '#ffffff',
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: {
+            color: html.classList.contains('dark') ? '#e2e8f0' : '#0f172a',
+            boxWidth: 12,
+          },
+        },
+        tooltip: {
+          callbacks: {
+            label(context) {
+              const valor = context.parsed;
+              const percent = dataset.categorias[context.dataIndex]?.percent ?? 0;
+              return `R$ ${moeda(valor)} (${percent.toFixed(1)}%)`;
+            },
+          },
+        },
+      },
+    },
+  });
+  await new Promise((resolve) => requestAnimationFrame(resolve));
+  return typeof relatorioCategoriaChart?.toBase64Image === 'function'
+    ? relatorioCategoriaChart.toBase64Image('image/png', 1)
+    : null;
+}
+
+function arrayBufferToBase64(buffer) {
+  if (!(buffer instanceof ArrayBuffer)) return '';
+  let binary = '';
+  const bytes = new Uint8Array(buffer);
+  const chunkSize = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    const chunk = bytes.subarray(i, i + chunkSize);
+    binary += String.fromCharCode.apply(null, chunk);
+  }
+  return btoa(binary);
+}
+
+function createRelatorioPdf(dataset, chartImage) {
+  const namespace = window.jspdf || window.jsPDF || {};
+  const { jsPDF } = namespace;
+  if (typeof jsPDF !== 'function') {
+    throw new Error('Biblioteca de PDF indisponível.');
+  }
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
+  const margin = 48;
+  let cursorY = margin + 12;
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(18);
+  doc.text('Economeo — Relatório financeiro', margin, cursorY);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(12);
+  cursorY += 26;
+  doc.text(`Workspace: ${dataset.workspaceName}`, margin, cursorY);
+  cursorY += 18;
+  doc.text(`Período: ${dataset.periodLabel}`, margin, cursorY);
+  cursorY += 18;
+  doc.text(`Lançamentos analisados: ${dataset.totalTransacoes}`, margin, cursorY);
+
+  cursorY += 26;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(14);
+  doc.text('Resumo financeiro', margin, cursorY);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(12);
+  cursorY += 20;
+  doc.text(`Entradas: R$ ${moeda(dataset.totalEntradas)}`, margin, cursorY);
+  cursorY += 18;
+  doc.text(`Saídas: R$ ${moeda(dataset.totalSaidas)}`, margin, cursorY);
+  cursorY += 18;
+  const saldoLabel = `R$ ${moeda(Math.abs(dataset.saldo))}`;
+  doc.text(`Saldo: ${dataset.saldo >= 0 ? saldoLabel : `- ${saldoLabel}`}`, margin, cursorY);
+  cursorY += 18;
+  doc.text(`Gerado em: ${formatDateTime(dataset.generatedAt)}`, margin, cursorY);
+
+  cursorY += 28;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(14);
+  doc.text('Categorias', margin, cursorY);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(11);
+  cursorY += 16;
+
+  if (chartImage) {
+    doc.addImage(chartImage, 'PNG', margin, cursorY, 220, 220);
+    let rightY = cursorY + 12;
+    const rightColumnX = margin + 240 + 24;
+    const categoriasParaResumo = dataset.categorias.slice(0, 12);
+    categoriasParaResumo.forEach((categoria) => {
+      if (rightY > 760) {
+        doc.addPage();
+        rightY = margin;
+      }
+      doc.text(`${categoria.label}: R$ ${moeda(categoria.total)} (${categoria.percent.toFixed(1)}%)`, rightColumnX, rightY, { maxWidth: 250 });
+      rightY += 16;
+    });
+    cursorY += 220 + 32;
+    const restantes = dataset.categorias.slice(12);
+    if (restantes.length) {
+      doc.addPage();
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(14);
+      doc.text('Detalhamento adicional de categorias', margin, margin);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(11);
+      let listY = margin + 20;
+      restantes.forEach((categoria) => {
+        if (listY > 760) {
+          doc.addPage();
+          doc.setFont('helvetica', 'normal');
+          doc.setFontSize(11);
+          listY = margin;
+        }
+        doc.text(`${categoria.label}: R$ ${moeda(categoria.total)} (${categoria.percent.toFixed(1)}%)`, margin, listY, { maxWidth: 500 });
+        listY += 16;
+      });
+    }
+  } else if (!dataset.categorias.length) {
+    doc.text('Nenhum gasto categorizado no período selecionado.', margin, cursorY + 14);
+    cursorY += 40;
+  } else {
+    const categoriasParaResumo = dataset.categorias.slice(0, 14);
+    categoriasParaResumo.forEach((categoria) => {
+      if (cursorY > 760) {
+        doc.addPage();
+        cursorY = margin;
+      }
+      doc.text(`${categoria.label}: R$ ${moeda(categoria.total)} (${categoria.percent.toFixed(1)}%)`, margin, cursorY, { maxWidth: 500 });
+      cursorY += 16;
+    });
+  }
+
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(10);
+  doc.text('Relatório gerado automaticamente pelo Economeo', margin, 812);
+  return doc;
+}
+
+async function generateRelatorioPdf(range) {
+  await firebaseReady.catch(() => { throw new Error('Firebase não está pronto para consultas.'); });
+  if (!db) {
+    throw new Error('Banco de dados indisponível no momento.');
+  }
+  const startTimestamp = firebase.firestore.Timestamp.fromDate(range.start);
+  const endTimestamp = firebase.firestore.Timestamp.fromDate(range.end);
+  const workspaceId = getActiveWorkspaceId();
+
+  const fetchDocs = async (collection) => {
+    try {
+      let query = userCollectionRef(collection);
+      if (workspaceId) {
+        query = query.where('workspaceId', '==', workspaceId);
+      }
+      query = query
+        .where('data', '>=', startTimestamp)
+        .where('data', '<=', endTimestamp)
+        .orderBy('data', 'asc');
+      const snapshot = await query.get();
+      return snapshot.docs;
+    } catch (error) {
+      console.warn(`[Relatório PDF] Falha ao consultar ${collection} no Firestore. Tentando cache local.`, error);
+      const cache = collection === 'gastos' ? allGastosDocs : allEntradasDocs;
+      return filterDocsByRange(cache, range, collection, workspaceId);
+    }
+  };
+
+  const [gastosDocs, entradasDocs] = await Promise.all([
+    fetchDocs('gastos'),
+    fetchDocs('entradas'),
+  ]);
+
+  const dataset = buildRelatorioDataset(range, gastosDocs, entradasDocs);
+  renderRelatorioPreview(dataset);
+  const chartImage = await renderRelatorioChart(dataset);
+  const pdfDoc = createRelatorioPdf(dataset, chartImage);
+  const arrayBuffer = pdfDoc.output('arraybuffer');
+  const blob = new Blob([arrayBuffer], { type: 'application/pdf' });
+  const base64 = arrayBufferToBase64(arrayBuffer);
+  const fileName = `relatorio-economeo-${range.startISO.replace(/-/g, '')}-${range.endISO.replace(/-/g, '')}.pdf`;
+
+  return {
+    dataset,
+    blob,
+    base64,
+    fileName,
+  };
+}
+
+async function ensureRelatorioPdf(range) {
+  const key = `${range.startISO}|${range.endISO}`;
+  if (relatorioPdfCache && relatorioPdfCache.key === key) {
+    return relatorioPdfCache;
+  }
+  const resultado = await generateRelatorioPdf(range);
+  relatorioPdfCache = { ...resultado, key };
+  return relatorioPdfCache;
+}
+
+function downloadRelatorioPdf(result) {
+  if (!result?.blob) return;
+  const url = URL.createObjectURL(result.blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = result.fileName || 'relatorio-economeo.pdf';
+  document.body.appendChild(anchor);
+  anchor.click();
+  document.body.removeChild(anchor);
+  setTimeout(() => URL.revokeObjectURL(url), 1500);
+}
+
+function isValidRelatorioEmail(value) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || '').trim());
+}
+
+async function handleRelatorioGerar() {
+  let range;
+  try {
+    range = parseRelatorioRange();
+  } catch (error) {
+    updateRelatorioStatus(error.message, 'error');
+    showToast(error.message, 'error');
+    return;
+  }
+  setButtonLoading(relatorioGerarButton, true, 'Gerando...');
+  updateRelatorioStatus('Gerando PDF com os lançamentos selecionados...', 'info');
+  try {
+    const resultado = await ensureRelatorioPdf(range);
+    downloadRelatorioPdf(resultado);
+    updateRelatorioStatus(`PDF gerado para ${resultado.dataset.periodLabel}.`, 'success');
+    showToast('Relatório exportado com sucesso!', 'success');
+  } catch (error) {
+    console.error('Erro ao gerar relatório em PDF:', error);
+    const message = error?.message || 'Não foi possível gerar o relatório agora.';
+    updateRelatorioStatus(message, 'error');
+    showToast(message, 'error');
+  } finally {
+    setButtonLoading(relatorioGerarButton, false);
+  }
+}
+
+async function handleRelatorioEnviar() {
+  if (!navigator.onLine) {
+    const message = 'Você está offline. Conecte-se para enviar o relatório por e-mail.';
+    updateRelatorioStatus(message, 'error');
+    showToast(message, 'error');
+    return;
+  }
+  const email = (relatorioEmailInput?.value || '').trim();
+  if (!email) {
+    const message = 'Informe um e-mail para envio.';
+    updateRelatorioStatus(message, 'error');
+    showToast(message, 'error');
+    if (relatorioEmailInput) relatorioEmailInput.focus();
+    return;
+  }
+  if (!isValidRelatorioEmail(email)) {
+    const message = 'E-mail inválido. Verifique e tente novamente.';
+    updateRelatorioStatus(message, 'error');
+    showToast(message, 'error');
+    if (relatorioEmailInput) relatorioEmailInput.focus();
+    return;
+  }
+  let range;
+  try {
+    range = parseRelatorioRange();
+  } catch (error) {
+    updateRelatorioStatus(error.message, 'error');
+    showToast(error.message, 'error');
+    return;
+  }
+  setButtonLoading(relatorioEnviarButton, true, 'Enviando...');
+  updateRelatorioStatus('Preparando e enviando o PDF...', 'info');
+  try {
+    const resultado = await ensureRelatorioPdf(range);
+    const response = await fetch('/api/send-report', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        to: email,
+        period: resultado.dataset.periodLabel,
+        start: resultado.dataset.startISO,
+        end: resultado.dataset.endISO,
+        workspace: resultado.dataset.workspaceName,
+        totalEntradas: resultado.dataset.totalEntradas,
+        totalSaidas: resultado.dataset.totalSaidas,
+        saldo: resultado.dataset.saldo,
+        fileName: resultado.fileName,
+        pdfBase64: resultado.base64,
+        subject: `Relatório financeiro — ${resultado.dataset.periodLabel}`,
+      }),
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const message = payload?.error || 'Não foi possível enviar o relatório agora.';
+      throw new Error(message);
+    }
+    updateRelatorioStatus(`Relatório enviado para ${email}.`, 'success');
+    showToast('Relatório enviado por e-mail!', 'success');
+  } catch (error) {
+    console.error('Erro ao enviar relatório por e-mail:', error);
+    const message = error?.message || 'Falha ao enviar o relatório.';
+    updateRelatorioStatus(message, 'error');
+    showToast(message, 'error');
+  } finally {
+    setButtonLoading(relatorioEnviarButton, false);
+  }
+}
+
+function handleRelatorioDataInputChange() {
+  clearRelatorioPreview();
+  updateRelatorioStatus('Período atualizado. Gere um novo PDF.', 'info');
+  setActiveRangeButton(null);
+}
+
+if (relatorioOpenButton) {
+  relatorioOpenButton.addEventListener('click', openRelatorioModal);
+}
+if (relatorioCloseButton) {
+  relatorioCloseButton.addEventListener('click', closeRelatorioModal);
+}
+if (relatorioCancelButton) {
+  relatorioCancelButton.addEventListener('click', closeRelatorioModal);
+}
+if (relatorioModal) {
+  relatorioModal.addEventListener('click', (event) => {
+    if (event.target === relatorioModal) {
+      closeRelatorioModal();
+    }
+  });
+}
+if (relatorioForm) {
+  relatorioForm.addEventListener('submit', (event) => event.preventDefault());
+}
+if (relatorioGerarButton) {
+  relatorioGerarButton.addEventListener('click', handleRelatorioGerar);
+}
+if (relatorioEnviarButton) {
+  relatorioEnviarButton.addEventListener('click', handleRelatorioEnviar);
+}
+if (relatorioDataInicioInput) {
+  relatorioDataInicioInput.addEventListener('change', handleRelatorioDataInputChange);
+}
+if (relatorioDataFimInput) {
+  relatorioDataFimInput.addEventListener('change', handleRelatorioDataInputChange);
+}
+if (relatorioRangeButtons.length) {
+  relatorioRangeButtons.forEach((button) => {
+    button.addEventListener('click', () => {
+      const preset = button.dataset.relatorioRange;
+      applyRelatorioRangePreset(preset);
+    });
+  });
+}
+
+window.addEventListener('online', updateRelatorioConnectivityState);
+window.addEventListener('offline', updateRelatorioConnectivityState);
 
 
 /* ===========================
@@ -17529,7 +18409,8 @@ function updateFloatingMenuVisibility() {
                        !document.getElementById('modal-graficos-fixos').classList.contains('hidden') ||
                        !document.getElementById('modal-planejamento-envelopes').classList.contains('hidden') ||
                        !document.getElementById('modal-confirmacao').classList.contains('hidden') ||
-                       !document.getElementById('modal-gerenciar-cartoes').classList.contains('hidden');
+                       !document.getElementById('modal-gerenciar-cartoes').classList.contains('hidden') ||
+                       !document.getElementById('modal-relatorio-pdf').classList.contains('hidden');
 
   if (isModalOpen) {
     floatingMenu.classList.add('invisible');
@@ -18028,7 +18909,7 @@ document.addEventListener('keydown', (e) => {
 
   // ESC = Fechar modals e dropdowns
   if (e.key === 'Escape') {
-    ['modal-add-gasto', 'modal-fixo', 'modal-parcelado', 'modal-graficos', 'modal-graficos-fixos', 'modal-planejamento-envelopes', 'modal-confirmacao', 'modal-gerenciar-cartoes']
+    ['modal-add-gasto', 'modal-fixo', 'modal-parcelado', 'modal-graficos', 'modal-graficos-fixos', 'modal-planejamento-envelopes', 'modal-confirmacao', 'modal-gerenciar-cartoes', 'modal-relatorio-pdf']
       .forEach((modalId) => {
         if (modalId === 'modal-confirmacao') {
           fecharModalConfirmacao();
@@ -18038,7 +18919,7 @@ document.addEventListener('keydown', (e) => {
         if (!modalElement) return;
         deactivateDialog(modalElement);
         modalElement.classList.add('hidden');
-        if (modalId === 'modal-planejamento-envelopes') {
+        if (modalId === 'modal-planejamento-envelopes' || modalId === 'modal-relatorio-pdf') {
           modalElement.setAttribute('aria-hidden', 'true');
         }
       });
