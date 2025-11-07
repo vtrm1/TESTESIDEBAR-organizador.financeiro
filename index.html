@@ -10367,6 +10367,8 @@ relatorioRangeButtons = Array.from(document.querySelectorAll('[data-relatorio-ra
 let relatorioCategoriaChart = null;
 let relatorioPdfCache = null;
 let relatorioActivePreset = null;
+let relatorioEmailDisponivel = null;
+let relatorioEmailCheckPromise = null;
 
 const RELATORIO_COLOR_PALETTE = ['#4f46e5', '#0ea5e9', '#22c55e', '#f97316', '#ef4444', '#8b5cf6', '#14b8a6', '#f59e0b', '#06b6d4', '#d946ef', '#f472b6', '#10b981'];
 
@@ -10383,6 +10385,7 @@ function openRelatorioModal() {
   lockBodyScroll();
   activateDialog(relatorioModal, { initialFocus: relatorioDataInicioInput || relatorioModal });
   updateFloatingMenuVisibility();
+  ensureRelatorioEmailCapability().catch(() => {});
   updateRelatorioConnectivityState();
 }
 
@@ -10398,13 +10401,30 @@ function closeRelatorioModal() {
 function updateRelatorioConnectivityState() {
   if (!relatorioEnviarButton) return;
   const online = navigator.onLine !== false;
-  relatorioEnviarButton.disabled = !online;
-  relatorioEnviarButton.classList.toggle('opacity-60', !online);
-  relatorioEnviarButton.classList.toggle('cursor-not-allowed', !online);
+  const emailConfigured = relatorioEmailDisponivel !== false;
+  const canSend = emailConfigured && online;
+
+  relatorioEnviarButton.classList.toggle('hidden', !emailConfigured);
+  relatorioEnviarButton.disabled = !canSend;
+  relatorioEnviarButton.classList.toggle('opacity-60', !canSend);
+  relatorioEnviarButton.classList.toggle('cursor-not-allowed', !canSend);
+
+  if (relatorioEmailInput) {
+    const wrapper = relatorioEmailInput.closest('label');
+    if (wrapper) {
+      wrapper.classList.toggle('hidden', !emailConfigured);
+    }
+    relatorioEmailInput.disabled = !emailConfigured;
+  }
+
   if (relatorioEmailHint) {
-    relatorioEmailHint.textContent = online
-      ? 'Deixe vazio para apenas baixar o PDF.'
-      : 'Envio indisponível offline. Conecte-se para enviar o PDF por e-mail.';
+    if (!emailConfigured) {
+      relatorioEmailHint.textContent = 'Envio por e-mail indisponível nesta instalação.';
+    } else if (!online) {
+      relatorioEmailHint.textContent = 'Envio indisponível offline. Conecte-se para enviar o PDF por e-mail.';
+    } else {
+      relatorioEmailHint.textContent = 'Deixe vazio para apenas baixar o PDF.';
+    }
   }
 }
 
@@ -10425,6 +10445,43 @@ function updateRelatorioStatus(message, type = 'info') {
   } else {
     relatorioStatus.classList.add('text-slate-500', 'dark:text-slate-300');
   }
+}
+
+async function ensureRelatorioEmailCapability() {
+  if (relatorioEmailDisponivel !== null) {
+    return relatorioEmailDisponivel;
+  }
+
+  if (!relatorioEmailCheckPromise) {
+    relatorioEmailCheckPromise = (async () => {
+      try {
+        const response = await fetch('/api/send-report?status=1', {
+          method: 'GET',
+          headers: { Accept: 'application/json' },
+        });
+        if (!response.ok) {
+          throw new Error(`Status ${response.status}`);
+        }
+        const payload = await response.json().catch(() => ({}));
+        if (typeof payload?.enabled === 'boolean') {
+          relatorioEmailDisponivel = payload.enabled;
+        } else {
+          relatorioEmailDisponivel = payload?.enabled === true;
+        }
+      } catch (error) {
+        console.warn('Não foi possível verificar a disponibilidade de envio por e-mail do relatório.', error);
+        relatorioEmailDisponivel = relatorioEmailDisponivel === null ? null : relatorioEmailDisponivel;
+      } finally {
+        updateRelatorioConnectivityState();
+        if (relatorioEmailDisponivel === null) {
+          relatorioEmailCheckPromise = null;
+        }
+      }
+      return relatorioEmailDisponivel;
+    })();
+  }
+
+  return relatorioEmailCheckPromise;
 }
 
 function setButtonLoading(button, isLoading, loadingLabel = 'Processando...') {
@@ -10757,6 +10814,10 @@ async function renderRelatorioChart(dataset) {
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      animation: false,
+      layout: {
+        padding: 16,
+      },
       plugins: {
         legend: {
           position: 'bottom',
@@ -10778,6 +10839,7 @@ async function renderRelatorioChart(dataset) {
     },
   });
   await new Promise((resolve) => requestAnimationFrame(resolve));
+  await new Promise((resolve) => setTimeout(resolve, 20));
   return typeof relatorioCategoriaChart?.toBase64Image === 'function'
     ? relatorioCategoriaChart.toBase64Image('image/png', 1)
     : null;
@@ -10842,9 +10904,20 @@ function createRelatorioPdf(dataset, chartImage) {
   cursorY += 16;
 
   if (chartImage) {
-    doc.addImage(chartImage, 'PNG', margin, cursorY, 220, 220);
+    let chartWidth = 240;
+    let chartHeight = 240;
+    try {
+      const props = doc.getImageProperties(chartImage);
+      if (props?.width && props?.height) {
+        chartWidth = 240;
+        chartHeight = Math.max(200, Math.min(280, (props.height / props.width) * chartWidth));
+      }
+    } catch (error) {
+      console.warn('Não foi possível calcular as proporções do gráfico para o PDF.', error);
+    }
+    doc.addImage(chartImage, 'PNG', margin, cursorY, chartWidth, chartHeight);
     let rightY = cursorY + 12;
-    const rightColumnX = margin + 240 + 24;
+    const rightColumnX = margin + chartWidth + 24;
     const categoriasParaResumo = dataset.categorias.slice(0, 12);
     categoriasParaResumo.forEach((categoria) => {
       if (rightY > 760) {
@@ -10854,7 +10927,7 @@ function createRelatorioPdf(dataset, chartImage) {
       doc.text(`${categoria.label}: R$ ${moeda(categoria.total)} (${categoria.percent.toFixed(1)}%)`, rightColumnX, rightY, { maxWidth: 250 });
       rightY += 16;
     });
-    cursorY += 220 + 32;
+    cursorY += chartHeight + 32;
     const restantes = dataset.categorias.slice(12);
     if (restantes.length) {
       doc.addPage();
@@ -11018,6 +11091,14 @@ async function handleRelatorioEnviar() {
     updateRelatorioStatus(message, 'error');
     showToast(message, 'error');
     if (relatorioEmailInput) relatorioEmailInput.focus();
+    return;
+  }
+  const emailDisponivel = await ensureRelatorioEmailCapability();
+  if (emailDisponivel === false) {
+    const message = 'Envio por e-mail indisponível nesta instalação.';
+    updateRelatorioStatus(message, 'error');
+    showToast(message, 'error');
+    updateRelatorioConnectivityState();
     return;
   }
   let range;

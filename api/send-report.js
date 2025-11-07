@@ -49,8 +49,18 @@ function formatCurrency(value) {
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store, max-age=0');
 
+  const resendApiKey = process.env.RESEND_API_KEY;
+  const fromAddress = process.env.REPORT_EMAIL_FROM || process.env.RESEND_FROM_EMAIL || process.env.RESEND_FROM || '';
+
+  if (req.method === 'GET') {
+    const enabled = Boolean(resendApiKey && fromAddress);
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    res.status(200).json({ enabled });
+    return;
+  }
+
   if (req.method !== 'POST') {
-    res.setHeader('Allow', 'POST');
+    res.setHeader('Allow', 'POST, GET');
     res.status(405).json({ error: 'Método não permitido.' });
     return;
   }
@@ -74,9 +84,6 @@ export default async function handler(req, res) {
     res.status(400).json({ error: 'Conteúdo do PDF não informado.' });
     return;
   }
-
-  const resendApiKey = process.env.RESEND_API_KEY;
-  const fromAddress = process.env.REPORT_EMAIL_FROM || process.env.RESEND_FROM_EMAIL || process.env.RESEND_FROM || '';
 
   if (!resendApiKey || !fromAddress) {
     res.status(501).json({
