@@ -29,6 +29,7 @@
 <!-- Adicione no <head> para incluir Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 
 <!-- NOVO: Modal de Gráficos Interativos com filtros -->
 <div id="modal-graficos" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden" role="dialog" aria-modal="true" aria-labelledby="modal-graficos-title">
@@ -475,6 +476,10 @@
             <button type="button" id="relatorio-gerar-previa" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
               <i class="fa-solid fa-arrows-rotate"></i>
               <span>Atualizar prévia</span>
+            </button>
+            <button type="button" id="relatorio-capturar-imagem" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 transition">
+              <i class="fa-solid fa-image"></i>
+              <span>Salvar imagem</span>
             </button>
             <button type="button" id="relatorio-gerar-pdf" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold transition">
               <i class="fa-solid fa-file-arrow-down"></i>
@@ -10375,6 +10380,7 @@ relatorioCloseButton = document.getElementById('relatorio-pdf-close');
 relatorioCancelButton = document.getElementById('relatorio-cancelar');
 relatorioGerarButton = document.getElementById('relatorio-gerar-pdf');
 relatorioPreviewButton = document.getElementById('relatorio-gerar-previa');
+const relatorioCapturarButton = document.getElementById('relatorio-capturar-imagem');
 relatorioStatus = document.getElementById('relatorio-pdf-status');
 relatorioPreview = document.getElementById('relatorio-pdf-preview');
 relatorioPreviewPlaceholder = document.getElementById('relatorio-pdf-preview-placeholder');
@@ -10451,6 +10457,17 @@ function setRelatorioExportEnabled(isEnabled) {
   }
 }
 
+function setRelatorioCaptureEnabled(isEnabled) {
+  if (!relatorioCapturarButton) return;
+  relatorioCapturarButton.disabled = !isEnabled;
+  relatorioCapturarButton.setAttribute('aria-disabled', String(!isEnabled));
+  if (isEnabled) {
+    relatorioCapturarButton.classList.remove('opacity-60', 'cursor-not-allowed', 'pointer-events-none');
+  } else {
+    relatorioCapturarButton.classList.add('opacity-60', 'cursor-not-allowed', 'pointer-events-none');
+  }
+}
+
 function setButtonLoading(button, isLoading, loadingLabel = 'Processando...') {
   if (!button) return;
   if (isLoading) {
@@ -10481,6 +10498,7 @@ function clearRelatorioPreview() {
   relatorioPreviewCache = null;
   relatorioPdfCache = null;
   destroyRelatorioChart();
+  setRelatorioCaptureEnabled(false);
   if (relatorioPreview) {
     relatorioPreview.classList.add('hidden');
   }
@@ -10724,6 +10742,43 @@ function enumerateMonthsIntersectingRange(range) {
   return months;
 }
 
+function determineFixosCompetencias(range) {
+  if (!range?.start || !range?.end) {
+    return [];
+  }
+  const fullMonths = enumerateFullMonthsInRange(range);
+  if (fullMonths.length) {
+    return fullMonths;
+  }
+  const intersecting = enumerateMonthsIntersectingRange(range);
+  if (intersecting.length <= 1) {
+    return intersecting;
+  }
+  const DAY_MS = 24 * 60 * 60 * 1000;
+  let bestMonth = null;
+  let bestDays = -1;
+  const startTime = range.start.getTime();
+  const endTime = range.end.getTime();
+  intersecting.forEach((month) => {
+    const overlapStart = Math.max(startTime, month.start.getTime());
+    const overlapEnd = Math.min(endTime, month.end.getTime());
+    let overlapDays = 0;
+    if (overlapEnd >= overlapStart) {
+      overlapDays = Math.floor((overlapEnd - overlapStart) / DAY_MS) + 1;
+    }
+    const containsRangeStart = startTime >= month.start.getTime() && startTime <= month.end.getTime();
+    if (overlapDays > bestDays || (overlapDays === bestDays && containsRangeStart)) {
+      bestDays = overlapDays;
+      bestMonth = month;
+    }
+  });
+  if (bestMonth) {
+    return [bestMonth];
+  }
+  const fallback = intersecting.find((month) => startTime >= month.start.getTime() && startTime <= month.end.getTime());
+  return [fallback || intersecting[0]];
+}
+
 function toDateAtMidday(value) {
   if (!value) return null;
   let date = null;
@@ -10907,8 +10962,8 @@ function collectRelatorioFixos(range, workspaceId) {
     return { total: 0, count: 0, categorias: new Map() };
   }
 
-  const months = enumerateMonthsIntersectingRange(range);
-  if (!months.length) {
+  const competencias = determineFixosCompetencias(range);
+  if (!competencias.length) {
     return { total: 0, count: 0, categorias: new Map() };
   }
 
@@ -10932,7 +10987,7 @@ function collectRelatorioFixos(range, workspaceId) {
       ? new Date(criado.getFullYear(), criado.getMonth(), 1, 0, 0, 0, 0).getTime()
       : null;
     let mesesConsiderados = 0;
-    months.forEach(({ end }) => {
+    competencias.forEach(({ end }) => {
       if (createdMonthTime && end.getTime() < createdMonthTime) {
         return;
       }
@@ -11188,6 +11243,7 @@ function renderRelatorioPreview(dataset) {
       `).join('');
     }
   }
+  setRelatorioCaptureEnabled(true);
 }
 
 function buildRelatorioChartColors(count) {
@@ -11345,7 +11401,7 @@ function arrayBufferToBase64(buffer) {
   return btoa(binary);
 }
 
-function createRelatorioPdf(dataset, chartImage) {
+function createRelatorioPdf(dataset) {
   const namespace = window.jspdf || window.jsPDF || {};
   const { jsPDF } = namespace;
   if (typeof jsPDF !== 'function') {
@@ -11416,62 +11472,24 @@ function createRelatorioPdf(dataset, chartImage) {
   doc.setFontSize(11);
   cursorY += 16;
 
-  if (chartImage) {
-    const pageWidth = doc.internal.pageSize.getWidth();
-    let chartWidth = Math.min(pageWidth - margin * 2, 440);
-    let chartHeight = 280;
-    try {
-      const props = doc.getImageProperties(chartImage);
-      if (props?.width && props?.height) {
-        chartHeight = Math.max(220, Math.min(520, (props.height / props.width) * chartWidth));
-      }
-    } catch (error) {
-      console.warn('Não foi possível calcular as proporções do gráfico para o PDF.', error);
-    }
-    doc.addImage(chartImage, 'PNG', margin, cursorY, chartWidth, chartHeight);
-    cursorY += chartHeight + 24;
-    const categoriasParaResumo = dataset.categorias.slice(0, 18);
-    categoriasParaResumo.forEach((categoria) => {
-      if (cursorY > 760) {
-        doc.addPage();
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(11);
-        cursorY = margin + 12;
-      }
-      doc.text(`${categoria.label}: R$ ${moeda(categoria.total)} (${categoria.percent.toFixed(1)}%)`, margin, cursorY, { maxWidth: pageWidth - margin * 2 });
-      cursorY += 16;
-    });
-    const restantes = dataset.categorias.slice(18);
-    if (restantes.length) {
-      doc.addPage();
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(14);
-      doc.text('Detalhamento adicional de categorias', margin, margin);
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(11);
-      let listY = margin + 20;
-      restantes.forEach((categoria) => {
-        if (listY > 760) {
-          doc.addPage();
-          doc.setFont('helvetica', 'normal');
-          doc.setFontSize(11);
-          listY = margin + 12;
-        }
-        doc.text(`${categoria.label}: R$ ${moeda(categoria.total)} (${categoria.percent.toFixed(1)}%)`, margin, listY, { maxWidth: pageWidth - margin * 2 });
-        listY += 16;
-      });
-    }
-  } else if (!dataset.categorias.length) {
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const maxWidth = pageWidth - margin * 2;
+  if (!dataset.categorias.length) {
     doc.text('Nenhum gasto categorizado no período selecionado.', margin, cursorY + 14);
     cursorY += 40;
   } else {
-    const categoriasParaResumo = dataset.categorias.slice(0, 14);
-    categoriasParaResumo.forEach((categoria) => {
+    dataset.categorias.forEach((categoria, index) => {
       if (cursorY > 760) {
         doc.addPage();
-        cursorY = margin;
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(14);
+        doc.text('Categorias (continuação)', margin, margin);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(11);
+        cursorY = margin + 20;
       }
-      doc.text(`${categoria.label}: R$ ${moeda(categoria.total)} (${categoria.percent.toFixed(1)}%)`, margin, cursorY, { maxWidth: 500 });
+      const prefixo = `${String(index + 1).padStart(2, '0')}.`;
+      doc.text(`${prefixo} ${categoria.label}: R$ ${moeda(categoria.total)} (${categoria.percent.toFixed(1)}%)`, margin, cursorY, { maxWidth });
       cursorY += 16;
     });
   }
@@ -11488,8 +11506,8 @@ async function generateRelatorioPdf(range) {
     ? relatorioPreviewCache
     : await prepareRelatorioPreview(range);
   const dataset = preview.dataset;
-  const chartImage = preview.chartImage ?? await renderRelatorioChart(dataset);
-  const pdfDoc = createRelatorioPdf(dataset, chartImage);
+  const chartImage = preview.chartImage ?? null;
+  const pdfDoc = createRelatorioPdf(dataset);
   const arrayBuffer = pdfDoc.output('arraybuffer');
   const blob = new Blob([arrayBuffer], { type: 'application/pdf' });
   const base64 = arrayBufferToBase64(arrayBuffer);
@@ -11525,6 +11543,100 @@ function downloadRelatorioPdf(result) {
   anchor.click();
   document.body.removeChild(anchor);
   setTimeout(() => URL.revokeObjectURL(url), 1500);
+}
+
+async function handleRelatorioCapturar() {
+  if (!relatorioPreview || relatorioPreview.classList.contains('hidden')) {
+    const message = 'Atualize a prévia antes de gerar a imagem.';
+    updateRelatorioStatus(message, 'info');
+    showToast(message, 'info');
+    return;
+  }
+  const html2canvas = window.html2canvas;
+  if (typeof html2canvas !== 'function') {
+    const message = 'Ferramenta de captura indisponível no momento.';
+    updateRelatorioStatus(message, 'error');
+    showToast(message, 'error');
+    return;
+  }
+  let range;
+  try {
+    range = parseRelatorioRange();
+  } catch (error) {
+    range = null;
+  }
+  setButtonLoading(relatorioCapturarButton, true, 'Capturando...');
+  updateRelatorioStatus('Gerando imagem do relatório para compartilhar...', 'info');
+  try {
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    const scale = Math.min(2, Math.max(1.2, window.devicePixelRatio || 1));
+    const canvas = await html2canvas(relatorioPreview, {
+      backgroundColor: html.classList.contains('dark') ? '#0f172a' : '#f8fafc',
+      scale,
+      useCORS: true,
+      logging: false,
+      scrollX: 0,
+      scrollY: -window.scrollY,
+      windowWidth: document.documentElement.clientWidth,
+    });
+    const blob = await new Promise((resolve, reject) => {
+      canvas.toBlob((resultBlob) => {
+        if (resultBlob) {
+          resolve(resultBlob);
+        } else {
+          reject(new Error('Não foi possível gerar a imagem.'));
+        }
+      }, 'image/png', 0.95);
+    });
+    const baseName = range
+      ? `relatorio-economeo-${range.startISO.replace(/-/g, '')}-${range.endISO.replace(/-/g, '')}`
+      : `relatorio-economeo-${Date.now()}`;
+    const fileName = `${baseName}.png`;
+    const dataset = relatorioPreviewCache?.dataset || null;
+    let shared = false;
+    let shareFile = null;
+    if (typeof window.File === 'function') {
+      try {
+        shareFile = new File([blob], fileName, { type: 'image/png' });
+      } catch (fileError) {
+        shareFile = null;
+      }
+    }
+    if (shareFile && navigator?.canShare && navigator.canShare({ files: [shareFile] })) {
+      try {
+        const shareData = {
+          files: [shareFile],
+          title: 'Relatório Economeo',
+          text: dataset?.periodLabel ? `Relatório ${dataset.periodLabel}` : 'Relatório financeiro gerado pelo Economeo',
+        };
+        await navigator.share(shareData);
+        shared = true;
+      } catch (shareError) {
+        if (shareError?.name !== 'AbortError') {
+          console.warn('Falha ao compartilhar imagem, efetuando download local.', shareError);
+        }
+      }
+    }
+    if (!shared) {
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(url), 1500);
+    }
+    updateRelatorioStatus(shared ? 'Imagem compartilhada com sucesso.' : 'Imagem gerada e salva com sucesso.', 'success');
+    showToast(shared ? 'Imagem compartilhada com sucesso!' : 'Imagem salva na galeria.', 'success');
+  } catch (error) {
+    console.error('Erro ao capturar imagem do relatório:', error);
+    const message = error?.message || 'Não foi possível gerar a imagem agora.';
+    updateRelatorioStatus(message, 'error');
+    showToast(message, 'error');
+  } finally {
+    setButtonLoading(relatorioCapturarButton, false);
+  }
 }
 
 async function handleRelatorioPreview() {
@@ -11618,6 +11730,9 @@ if (relatorioForm) {
 }
 if (relatorioPreviewButton) {
   relatorioPreviewButton.addEventListener('click', handleRelatorioPreview);
+}
+if (relatorioCapturarButton) {
+  relatorioCapturarButton.addEventListener('click', handleRelatorioCapturar);
 }
 if (relatorioGerarButton) {
   relatorioGerarButton.addEventListener('click', handleRelatorioGerar);
