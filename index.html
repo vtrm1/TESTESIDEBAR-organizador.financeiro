@@ -414,11 +414,6 @@
         <button type="button" data-relatorio-range="previous_month" class="px-3 py-1.5 text-xs font-semibold rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition">Mês anterior</button>
       </div>
       <p class="text-xs text-slate-500 dark:text-slate-400">Intervalos superiores a 93 dias podem ser divididos para manter a geração rápida e confiável.</p>
-      <label class="text-sm font-medium text-slate-700 dark:text-slate-200 flex flex-col gap-1">
-        E-mail para envio (opcional)
-        <input id="relatorio-email-destino" type="email" class="px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" placeholder="cliente@exemplo.com" autocomplete="email" />
-        <span id="relatorio-email-hint" class="text-xs text-slate-400 dark:text-slate-500">Deixe vazio para apenas baixar o PDF.</span>
-      </label>
     </form>
     <div id="relatorio-pdf-status" class="text-sm hidden"></div>
     <div id="relatorio-pdf-preview" class="hidden border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50/70 dark:bg-slate-800/60 p-4 space-y-4">
@@ -438,7 +433,7 @@
       </div>
       <div>
         <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">Distribuição por categoria</h3>
-        <div class="relative h-48">
+        <div class="relative w-full" style="min-height: 16rem;">
           <canvas id="relatorio-pdf-categorias" class="w-full h-full"></canvas>
           <div id="relatorio-pdf-empty" class="absolute inset-0 flex items-center justify-center text-xs text-slate-500 dark:text-slate-400">Nenhum gasto categorizado no período selecionado.</div>
         </div>
@@ -451,10 +446,6 @@
         <button type="button" id="relatorio-gerar-pdf" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold transition">
           <i class="fa-solid fa-file-arrow-down"></i>
           <span>Exportar PDF</span>
-        </button>
-        <button type="button" id="relatorio-enviar-email" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold transition">
-          <i class="fa-solid fa-paper-plane"></i>
-          <span>Enviar por e-mail</span>
         </button>
         <button type="button" id="relatorio-cancelar" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition">Cancelar</button>
       </div>
@@ -3160,13 +3151,10 @@ let relatorioModal = null;
 let relatorioForm = null;
 let relatorioDataInicioInput = null;
 let relatorioDataFimInput = null;
-let relatorioEmailInput = null;
-let relatorioEmailHint = null;
 let relatorioOpenButton = null;
 let relatorioCloseButton = null;
 let relatorioCancelButton = null;
 let relatorioGerarButton = null;
-let relatorioEnviarButton = null;
 let relatorioStatus = null;
 let relatorioPreview = null;
 let relatorioTotalEntradas = null;
@@ -10347,13 +10335,10 @@ relatorioModal = document.getElementById('modal-relatorio-pdf');
 relatorioForm = document.getElementById('relatorio-pdf-form');
 relatorioDataInicioInput = document.getElementById('relatorio-data-inicio');
 relatorioDataFimInput = document.getElementById('relatorio-data-fim');
-relatorioEmailInput = document.getElementById('relatorio-email-destino');
-relatorioEmailHint = document.getElementById('relatorio-email-hint');
 relatorioOpenButton = document.getElementById('btn-relatorio-pdf');
 relatorioCloseButton = document.getElementById('relatorio-pdf-close');
 relatorioCancelButton = document.getElementById('relatorio-cancelar');
 relatorioGerarButton = document.getElementById('relatorio-gerar-pdf');
-relatorioEnviarButton = document.getElementById('relatorio-enviar-email');
 relatorioStatus = document.getElementById('relatorio-pdf-status');
 relatorioPreview = document.getElementById('relatorio-pdf-preview');
 relatorioTotalEntradas = document.getElementById('relatorio-total-entradas');
@@ -10367,26 +10352,18 @@ relatorioRangeButtons = Array.from(document.querySelectorAll('[data-relatorio-ra
 let relatorioCategoriaChart = null;
 let relatorioPdfCache = null;
 let relatorioActivePreset = null;
-let relatorioEmailDisponivel = null;
-let relatorioEmailCheckPromise = null;
-
 const RELATORIO_COLOR_PALETTE = ['#4f46e5', '#0ea5e9', '#22c55e', '#f97316', '#ef4444', '#8b5cf6', '#14b8a6', '#f59e0b', '#06b6d4', '#d946ef', '#f472b6', '#10b981'];
 
 function openRelatorioModal() {
   if (!relatorioModal) return;
   clearRelatorioPreview();
   applyRelatorioRangePreset('current_month', { silent: true });
-  if (relatorioEmailInput && currentUser?.email) {
-    relatorioEmailInput.value = currentUser.email;
-  }
   updateRelatorioStatus('Selecione o período e clique em Exportar PDF.', 'info');
   relatorioModal.classList.remove('hidden');
   relatorioModal.setAttribute('aria-hidden', 'false');
   lockBodyScroll();
   activateDialog(relatorioModal, { initialFocus: relatorioDataInicioInput || relatorioModal });
   updateFloatingMenuVisibility();
-  ensureRelatorioEmailCapability().catch(() => {});
-  updateRelatorioConnectivityState();
 }
 
 function closeRelatorioModal() {
@@ -10396,36 +10373,6 @@ function closeRelatorioModal() {
   deactivateDialog(relatorioModal);
   unlockBodyScrollIfAllowed();
   updateFloatingMenuVisibility();
-}
-
-function updateRelatorioConnectivityState() {
-  if (!relatorioEnviarButton) return;
-  const online = navigator.onLine !== false;
-  const emailConfigured = relatorioEmailDisponivel !== false;
-  const canSend = emailConfigured && online;
-
-  relatorioEnviarButton.classList.toggle('hidden', !emailConfigured);
-  relatorioEnviarButton.disabled = !canSend;
-  relatorioEnviarButton.classList.toggle('opacity-60', !canSend);
-  relatorioEnviarButton.classList.toggle('cursor-not-allowed', !canSend);
-
-  if (relatorioEmailInput) {
-    const wrapper = relatorioEmailInput.closest('label');
-    if (wrapper) {
-      wrapper.classList.toggle('hidden', !emailConfigured);
-    }
-    relatorioEmailInput.disabled = !emailConfigured;
-  }
-
-  if (relatorioEmailHint) {
-    if (!emailConfigured) {
-      relatorioEmailHint.textContent = 'Envio por e-mail indisponível nesta instalação.';
-    } else if (!online) {
-      relatorioEmailHint.textContent = 'Envio indisponível offline. Conecte-se para enviar o PDF por e-mail.';
-    } else {
-      relatorioEmailHint.textContent = 'Deixe vazio para apenas baixar o PDF.';
-    }
-  }
 }
 
 function updateRelatorioStatus(message, type = 'info') {
@@ -10445,43 +10392,6 @@ function updateRelatorioStatus(message, type = 'info') {
   } else {
     relatorioStatus.classList.add('text-slate-500', 'dark:text-slate-300');
   }
-}
-
-async function ensureRelatorioEmailCapability() {
-  if (relatorioEmailDisponivel !== null) {
-    return relatorioEmailDisponivel;
-  }
-
-  if (!relatorioEmailCheckPromise) {
-    relatorioEmailCheckPromise = (async () => {
-      try {
-        const response = await fetch('/api/send-report?status=1', {
-          method: 'GET',
-          headers: { Accept: 'application/json' },
-        });
-        if (!response.ok) {
-          throw new Error(`Status ${response.status}`);
-        }
-        const payload = await response.json().catch(() => ({}));
-        if (typeof payload?.enabled === 'boolean') {
-          relatorioEmailDisponivel = payload.enabled;
-        } else {
-          relatorioEmailDisponivel = payload?.enabled === true;
-        }
-      } catch (error) {
-        console.warn('Não foi possível verificar a disponibilidade de envio por e-mail do relatório.', error);
-        relatorioEmailDisponivel = relatorioEmailDisponivel === null ? null : relatorioEmailDisponivel;
-      } finally {
-        updateRelatorioConnectivityState();
-        if (relatorioEmailDisponivel === null) {
-          relatorioEmailCheckPromise = null;
-        }
-      }
-      return relatorioEmailDisponivel;
-    })();
-  }
-
-  return relatorioEmailCheckPromise;
 }
 
 function setButtonLoading(button, isLoading, loadingLabel = 'Processando...') {
@@ -10538,6 +10448,10 @@ function clearRelatorioPreview() {
   }
   if (relatorioCategoriasCanvas) {
     relatorioCategoriasCanvas.classList.add('hidden');
+    relatorioCategoriasCanvas.height = 0;
+    if (relatorioCategoriasCanvas.parentElement) {
+      relatorioCategoriasCanvas.parentElement.style.minHeight = '16rem';
+    }
   }
 }
 
@@ -10800,36 +10714,67 @@ async function renderRelatorioChart(dataset) {
   const ctx = relatorioCategoriasCanvas.getContext('2d');
   const labels = dataset.categorias.map((item) => item.label);
   const data = dataset.categorias.map((item) => item.total);
+  const dynamicHeight = Math.max(240, Math.min(520, labels.length * 32 + 80));
+  relatorioCategoriasCanvas.height = dynamicHeight;
+  if (relatorioCategoriasCanvas.parentElement) {
+    relatorioCategoriasCanvas.parentElement.style.minHeight = `${Math.max(dynamicHeight, 260)}px`;
+  }
   relatorioCategoriaChart = new Chart(ctx, {
-    type: 'doughnut',
+    type: 'bar',
     data: {
       labels,
       datasets: [{
         data,
         backgroundColor: buildRelatorioChartColors(labels.length),
-        borderWidth: 1,
-        borderColor: html.classList.contains('dark') ? '#0f172a' : '#ffffff',
+        borderWidth: 0,
+        borderRadius: 6,
+        barPercentage: 0.7,
+        categoryPercentage: 0.7,
       }],
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
       animation: false,
+      indexAxis: 'y',
       layout: {
-        padding: 16,
+        padding: { top: 12, right: 24, bottom: 12, left: 12 },
+      },
+      scales: {
+        x: {
+          beginAtZero: true,
+          grid: {
+            color: html.classList.contains('dark') ? 'rgba(148, 163, 184, 0.15)' : 'rgba(148, 163, 184, 0.2)',
+          },
+          ticks: {
+            callback(value) {
+              return `R$ ${moeda(value)}`;
+            },
+            color: html.classList.contains('dark') ? '#cbd5f5' : '#0f172a',
+            font: { size: 11 },
+          },
+        },
+        y: {
+          grid: {
+            display: false,
+          },
+          ticks: {
+            color: html.classList.contains('dark') ? '#e2e8f0' : '#0f172a',
+            font: { size: 11 },
+            callback(value, index) {
+              return labels[index] || value;
+            },
+          },
+        },
       },
       plugins: {
         legend: {
-          position: 'bottom',
-          labels: {
-            color: html.classList.contains('dark') ? '#e2e8f0' : '#0f172a',
-            boxWidth: 12,
-          },
+          display: false,
         },
         tooltip: {
           callbacks: {
             label(context) {
-              const valor = context.parsed;
+              const valor = context.parsed.x ?? context.parsed;
               const percent = dataset.categorias[context.dataIndex]?.percent ?? 0;
               return `R$ ${moeda(valor)} (${percent.toFixed(1)}%)`;
             },
@@ -10839,7 +10784,7 @@ async function renderRelatorioChart(dataset) {
     },
   });
   await new Promise((resolve) => requestAnimationFrame(resolve));
-  await new Promise((resolve) => setTimeout(resolve, 20));
+  await new Promise((resolve) => setTimeout(resolve, 40));
   return typeof relatorioCategoriaChart?.toBase64Image === 'function'
     ? relatorioCategoriaChart.toBase64Image('image/png', 1)
     : null;
@@ -10904,31 +10849,31 @@ function createRelatorioPdf(dataset, chartImage) {
   cursorY += 16;
 
   if (chartImage) {
-    let chartWidth = 240;
-    let chartHeight = 240;
+    const pageWidth = doc.internal.pageSize.getWidth();
+    let chartWidth = Math.min(pageWidth - margin * 2, 440);
+    let chartHeight = 280;
     try {
       const props = doc.getImageProperties(chartImage);
       if (props?.width && props?.height) {
-        chartWidth = 240;
-        chartHeight = Math.max(200, Math.min(280, (props.height / props.width) * chartWidth));
+        chartHeight = Math.max(220, Math.min(520, (props.height / props.width) * chartWidth));
       }
     } catch (error) {
       console.warn('Não foi possível calcular as proporções do gráfico para o PDF.', error);
     }
     doc.addImage(chartImage, 'PNG', margin, cursorY, chartWidth, chartHeight);
-    let rightY = cursorY + 12;
-    const rightColumnX = margin + chartWidth + 24;
-    const categoriasParaResumo = dataset.categorias.slice(0, 12);
+    cursorY += chartHeight + 24;
+    const categoriasParaResumo = dataset.categorias.slice(0, 18);
     categoriasParaResumo.forEach((categoria) => {
-      if (rightY > 760) {
+      if (cursorY > 760) {
         doc.addPage();
-        rightY = margin;
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(11);
+        cursorY = margin + 12;
       }
-      doc.text(`${categoria.label}: R$ ${moeda(categoria.total)} (${categoria.percent.toFixed(1)}%)`, rightColumnX, rightY, { maxWidth: 250 });
-      rightY += 16;
+      doc.text(`${categoria.label}: R$ ${moeda(categoria.total)} (${categoria.percent.toFixed(1)}%)`, margin, cursorY, { maxWidth: pageWidth - margin * 2 });
+      cursorY += 16;
     });
-    cursorY += chartHeight + 32;
-    const restantes = dataset.categorias.slice(12);
+    const restantes = dataset.categorias.slice(18);
     if (restantes.length) {
       doc.addPage();
       doc.setFont('helvetica', 'bold');
@@ -10942,9 +10887,9 @@ function createRelatorioPdf(dataset, chartImage) {
           doc.addPage();
           doc.setFont('helvetica', 'normal');
           doc.setFontSize(11);
-          listY = margin;
+          listY = margin + 12;
         }
-        doc.text(`${categoria.label}: R$ ${moeda(categoria.total)} (${categoria.percent.toFixed(1)}%)`, margin, listY, { maxWidth: 500 });
+        doc.text(`${categoria.label}: R$ ${moeda(categoria.total)} (${categoria.percent.toFixed(1)}%)`, margin, listY, { maxWidth: pageWidth - margin * 2 });
         listY += 16;
       });
     }
@@ -11041,10 +10986,6 @@ function downloadRelatorioPdf(result) {
   setTimeout(() => URL.revokeObjectURL(url), 1500);
 }
 
-function isValidRelatorioEmail(value) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || '').trim());
-}
-
 async function handleRelatorioGerar() {
   let range;
   try {
@@ -11068,84 +11009,6 @@ async function handleRelatorioGerar() {
     showToast(message, 'error');
   } finally {
     setButtonLoading(relatorioGerarButton, false);
-  }
-}
-
-async function handleRelatorioEnviar() {
-  if (!navigator.onLine) {
-    const message = 'Você está offline. Conecte-se para enviar o relatório por e-mail.';
-    updateRelatorioStatus(message, 'error');
-    showToast(message, 'error');
-    return;
-  }
-  const email = (relatorioEmailInput?.value || '').trim();
-  if (!email) {
-    const message = 'Informe um e-mail para envio.';
-    updateRelatorioStatus(message, 'error');
-    showToast(message, 'error');
-    if (relatorioEmailInput) relatorioEmailInput.focus();
-    return;
-  }
-  if (!isValidRelatorioEmail(email)) {
-    const message = 'E-mail inválido. Verifique e tente novamente.';
-    updateRelatorioStatus(message, 'error');
-    showToast(message, 'error');
-    if (relatorioEmailInput) relatorioEmailInput.focus();
-    return;
-  }
-  const emailDisponivel = await ensureRelatorioEmailCapability();
-  if (emailDisponivel === false) {
-    const message = 'Envio por e-mail indisponível nesta instalação.';
-    updateRelatorioStatus(message, 'error');
-    showToast(message, 'error');
-    updateRelatorioConnectivityState();
-    return;
-  }
-  let range;
-  try {
-    range = parseRelatorioRange();
-  } catch (error) {
-    updateRelatorioStatus(error.message, 'error');
-    showToast(error.message, 'error');
-    return;
-  }
-  setButtonLoading(relatorioEnviarButton, true, 'Enviando...');
-  updateRelatorioStatus('Preparando e enviando o PDF...', 'info');
-  try {
-    const resultado = await ensureRelatorioPdf(range);
-    const response = await fetch('/api/send-report', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        to: email,
-        period: resultado.dataset.periodLabel,
-        start: resultado.dataset.startISO,
-        end: resultado.dataset.endISO,
-        workspace: resultado.dataset.workspaceName,
-        totalEntradas: resultado.dataset.totalEntradas,
-        totalSaidas: resultado.dataset.totalSaidas,
-        saldo: resultado.dataset.saldo,
-        fileName: resultado.fileName,
-        pdfBase64: resultado.base64,
-        subject: `Relatório financeiro — ${resultado.dataset.periodLabel}`,
-      }),
-    });
-    const payload = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      const message = payload?.error || 'Não foi possível enviar o relatório agora.';
-      throw new Error(message);
-    }
-    updateRelatorioStatus(`Relatório enviado para ${email}.`, 'success');
-    showToast('Relatório enviado por e-mail!', 'success');
-  } catch (error) {
-    console.error('Erro ao enviar relatório por e-mail:', error);
-    const message = error?.message || 'Falha ao enviar o relatório.';
-    updateRelatorioStatus(message, 'error');
-    showToast(message, 'error');
-  } finally {
-    setButtonLoading(relatorioEnviarButton, false);
   }
 }
 
@@ -11177,9 +11040,6 @@ if (relatorioForm) {
 if (relatorioGerarButton) {
   relatorioGerarButton.addEventListener('click', handleRelatorioGerar);
 }
-if (relatorioEnviarButton) {
-  relatorioEnviarButton.addEventListener('click', handleRelatorioEnviar);
-}
 if (relatorioDataInicioInput) {
   relatorioDataInicioInput.addEventListener('change', handleRelatorioDataInputChange);
 }
@@ -11194,10 +11054,6 @@ if (relatorioRangeButtons.length) {
     });
   });
 }
-
-window.addEventListener('online', updateRelatorioConnectivityState);
-window.addEventListener('offline', updateRelatorioConnectivityState);
-
 
 /* ===========================
    ATUALIZAÇÕES & SNAPSHOTS
