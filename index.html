@@ -10652,6 +10652,32 @@ function filterDocsByRange(cache, range, tipo, workspaceId) {
     .map((entry) => entry.doc);
 }
 
+function mergeDocsWithFallback(primaryDocs, fallbackDocs, tipo) {
+  const merged = [];
+  const seen = new Set();
+  const addDoc = (doc) => {
+    if (!doc || typeof doc !== 'object') return;
+    if (!doc.id || seen.has(doc.id)) return;
+    seen.add(doc.id);
+    merged.push(doc);
+  };
+  (Array.isArray(primaryDocs) ? primaryDocs : []).forEach(addDoc);
+  (Array.isArray(fallbackDocs) ? fallbackDocs : []).forEach(addDoc);
+  if (!merged.length) {
+    return merged;
+  }
+  const extractor = tipo === 'gastos' ? extrairDataGasto : extrairDataEntradaRelatorio;
+  return merged
+    .map((doc) => {
+      const data = typeof doc?.data === 'function' ? doc.data() : null;
+      const date = data ? extractor(data) : null;
+      const time = date instanceof Date && !Number.isNaN(date.getTime()) ? date.getTime() : 0;
+      return { doc, time };
+    })
+    .sort((a, b) => a.time - b.time)
+    .map((entry) => entry.doc);
+}
+
 function buildRelatorioDataset(range, gastosDocs, entradasDocs) {
   let totalSaidas = 0;
   let totalEntradas = 0;
@@ -10873,12 +10899,17 @@ async function prepareRelatorioPreview(range) {
     }
   };
 
-  const [gastosDocs, entradasDocs] = await Promise.all([
+  const [gastosDocs, entradasDocs, gastosFallback, entradasFallback] = await Promise.all([
     fetchDocs('gastos'),
     fetchDocs('entradas'),
+    Promise.resolve(filterDocsByRange(allGastosDocs, range, 'gastos', workspaceId)),
+    Promise.resolve(filterDocsByRange(allEntradasDocs, range, 'entradas', workspaceId)),
   ]);
 
-  const dataset = buildRelatorioDataset(range, gastosDocs, entradasDocs);
+  const gastosCompletos = mergeDocsWithFallback(gastosDocs, gastosFallback, 'gastos');
+  const entradasCompletas = mergeDocsWithFallback(entradasDocs, entradasFallback, 'entradas');
+
+  const dataset = buildRelatorioDataset(range, gastosCompletos, entradasCompletas);
   renderRelatorioPreview(dataset);
   const chartImage = await renderRelatorioChart(dataset);
   const key = `${range.startISO}|${range.endISO}`;
