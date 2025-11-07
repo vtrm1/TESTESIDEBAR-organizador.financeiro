@@ -10652,6 +10652,73 @@ function filterDocsByRange(cache, range, tipo, workspaceId) {
     .map((entry) => entry.doc);
 }
 
+function getRelatorioDocTime(doc) {
+  if (!doc || typeof doc.data !== 'function') return 0;
+  const data = doc.data();
+  const date = extrairDataGasto(data);
+  if (date instanceof Date && !Number.isNaN(date.getTime())) {
+    return date.getTime();
+  }
+  const monthDate = parseMonthKeyToDate(data?.mesFatura);
+  if (monthDate instanceof Date && !Number.isNaN(monthDate.getTime())) {
+    return monthDate.getTime();
+  }
+  return 0;
+}
+
+function buildRelatorioRangeMonthSet(range) {
+  const set = new Set();
+  if (!range || !(range.start instanceof Date) || !(range.end instanceof Date)) {
+    return set;
+  }
+  const cursor = new Date(range.start.getFullYear(), range.start.getMonth(), 1);
+  const limit = new Date(range.end.getFullYear(), range.end.getMonth(), 1);
+  while (cursor.getTime() <= limit.getTime()) {
+    set.add(yyyymm(cursor));
+    cursor.setMonth(cursor.getMonth() + 1);
+  }
+  return set;
+}
+
+function shouldIncludeGastoByMesFatura(data, monthSet) {
+  if (!data || !(monthSet instanceof Set) || monthSet.size === 0) return false;
+  const mesFatura = typeof data.mesFatura === 'string' ? data.mesFatura : null;
+  if (!mesFatura || !monthSet.has(mesFatura)) return false;
+  const resolvedKey = resolveCartaoKey(data.cartao);
+  if (!resolvedKey) return false;
+  const cardConfig = (cartoesCfg && cartoesCfg[resolvedKey]) || (cartoesCfgDefault && cartoesCfgDefault[resolvedKey]);
+  if (!cardConfig || cardConfig.fechamento === null || cardConfig.fechamento === undefined) {
+    return false;
+  }
+  return true;
+}
+
+function ensureRelatorioGastosIncludeMesFatura(gastosDocs, range, workspaceId) {
+  const baseDocs = Array.isArray(gastosDocs) ? [...gastosDocs] : [];
+  const monthSet = buildRelatorioRangeMonthSet(range);
+  if (!monthSet.size) {
+    return baseDocs;
+  }
+  const seenIds = new Set(baseDocs.map((doc) => doc && doc.id).filter(Boolean));
+  const extras = [];
+  (allGastosDocs || []).forEach((doc) => {
+    if (!doc || typeof doc.data !== 'function') return;
+    if (seenIds.has(doc.id)) return;
+    const data = doc.data();
+    if (!data) return;
+    if (workspaceId && data.workspaceId && data.workspaceId !== workspaceId) return;
+    if (!shouldIncludeGastoByMesFatura(data, monthSet)) return;
+    extras.push(doc);
+    seenIds.add(doc.id);
+  });
+  if (!extras.length) {
+    return baseDocs;
+  }
+  const combined = baseDocs.concat(extras);
+  combined.sort((a, b) => getRelatorioDocTime(a) - getRelatorioDocTime(b));
+  return combined;
+}
+
 function buildRelatorioDataset(range, gastosDocs, entradasDocs) {
   let totalSaidas = 0;
   let totalEntradas = 0;
@@ -10873,10 +10940,12 @@ async function prepareRelatorioPreview(range) {
     }
   };
 
-  const [gastosDocs, entradasDocs] = await Promise.all([
+  const [rawGastosDocs, entradasDocs] = await Promise.all([
     fetchDocs('gastos'),
     fetchDocs('entradas'),
   ]);
+
+  const gastosDocs = ensureRelatorioGastosIncludeMesFatura(rawGastosDocs, range, workspaceId);
 
   const dataset = buildRelatorioDataset(range, gastosDocs, entradasDocs);
   renderRelatorioPreview(dataset);
