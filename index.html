@@ -441,6 +441,18 @@
               <div id="relatorio-total-saldo" class="mt-1 text-lg font-semibold text-slate-700 dark:text-slate-100">R$ 0,00</div>
             </div>
           </div>
+          <div id="relatorio-preview-extras" class="hidden grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div class="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/50 p-3 space-y-1">
+              <div class="uppercase tracking-wide text-[0.7rem] font-semibold text-slate-500 dark:text-slate-300">Fixos incluídos</div>
+              <div class="text-sm font-semibold text-slate-700 dark:text-slate-100">R$ <span id="relatorio-extras-fixos">0,00</span></div>
+              <p class="text-[0.7rem] text-slate-500 dark:text-slate-400">Estimativa considerando <span id="relatorio-extras-fixos-count">0</span> competência(s) ativa(s) no período.</p>
+            </div>
+            <div class="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/50 p-3 space-y-1">
+              <div class="uppercase tracking-wide text-[0.7rem] font-semibold text-slate-500 dark:text-slate-300">Parcelados incluídos</div>
+              <div class="text-sm font-semibold text-slate-700 dark:text-slate-100">R$ <span id="relatorio-extras-parcelados">0,00</span></div>
+              <p class="text-[0.7rem] text-slate-500 dark:text-slate-400">Somatório de <span id="relatorio-extras-parcelados-count">0</span> parcela(s) no intervalo selecionado.</p>
+            </div>
+          </div>
           <div class="space-y-3">
             <div>
               <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">Distribuição por categoria</h3>
@@ -10375,6 +10387,11 @@ relatorioCategoriasCanvas = document.getElementById('relatorio-pdf-categorias');
 relatorioCategoriasEmpty = document.getElementById('relatorio-pdf-empty');
 relatorioCategoriasList = document.getElementById('relatorio-pdf-categorias-lista');
 relatorioLastGenerated = document.getElementById('relatorio-pdf-last-generated');
+const relatorioExtrasContainer = document.getElementById('relatorio-preview-extras');
+const relatorioExtrasFixos = document.getElementById('relatorio-extras-fixos');
+const relatorioExtrasParcelados = document.getElementById('relatorio-extras-parcelados');
+const relatorioExtrasFixosCount = document.getElementById('relatorio-extras-fixos-count');
+const relatorioExtrasParceladosCount = document.getElementById('relatorio-extras-parcelados-count');
 relatorioRangeButtons = Array.from(document.querySelectorAll('[data-relatorio-range]'));
 let relatorioCategoriaChart = null;
 let relatorioPreviewCache = null;
@@ -10503,6 +10520,21 @@ function clearRelatorioPreview() {
     if (relatorioCategoriasCanvas.parentElement) {
       relatorioCategoriasCanvas.parentElement.style.minHeight = '18rem';
     }
+  }
+  if (relatorioExtrasContainer) {
+    relatorioExtrasContainer.classList.add('hidden');
+  }
+  if (relatorioExtrasFixos) {
+    relatorioExtrasFixos.textContent = '0,00';
+  }
+  if (relatorioExtrasParcelados) {
+    relatorioExtrasParcelados.textContent = '0,00';
+  }
+  if (relatorioExtrasFixosCount) {
+    relatorioExtrasFixosCount.textContent = '0';
+  }
+  if (relatorioExtrasParceladosCount) {
+    relatorioExtrasParceladosCount.textContent = '0';
   }
   setRelatorioExportEnabled(false);
 }
@@ -10670,6 +10702,52 @@ function enumerateFullMonthsInRange(range) {
   return result;
 }
 
+function enumerateMonthsIntersectingRange(range) {
+  if (!range?.start || !range?.end) {
+    return [];
+  }
+  const months = [];
+  const cursor = new Date(range.start.getFullYear(), range.start.getMonth(), 1, 0, 0, 0, 0);
+  const limit = new Date(range.end.getFullYear(), range.end.getMonth(), 1, 0, 0, 0, 0);
+  while (cursor.getTime() <= limit.getTime()) {
+    const monthStart = new Date(cursor.getFullYear(), cursor.getMonth(), 1, 0, 0, 0, 0);
+    const monthEnd = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 0, 23, 59, 59, 999);
+    if (monthEnd.getTime() >= range.start.getTime() && monthStart.getTime() <= range.end.getTime()) {
+      months.push({
+        key: yyyymm(monthStart),
+        start: monthStart,
+        end: monthEnd,
+      });
+    }
+    cursor.setMonth(cursor.getMonth() + 1);
+  }
+  return months;
+}
+
+function toDateAtMidday(value) {
+  if (!value) return null;
+  let date = null;
+  if (value instanceof Date) {
+    date = value;
+  } else if (typeof value?.toDate === 'function') {
+    date = value.toDate();
+  } else if (typeof value === 'number') {
+    date = new Date(value);
+  } else if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return null;
+    }
+    date = new Date(trimmed);
+  } else if (value?.seconds != null && value?.nanoseconds != null) {
+    date = new Date(value.seconds * 1000 + Math.floor(value.nanoseconds / 1e6));
+  }
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+    return null;
+  }
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0, 0);
+}
+
 function isFirestoreIndexError(error) {
   if (!error) return false;
   const code = error.code || error?.error?.code;
@@ -10766,6 +10844,119 @@ function mergeDocsWithFallback(primaryDocs, fallbackDocs, tipo) {
     .map((entry) => entry.doc);
 }
 
+function collectRelatorioParcelados(range, workspaceId) {
+  if (!range?.start || !range?.end) {
+    return { total: 0, count: 0, categorias: new Map() };
+  }
+  const startTime = range.start.getTime();
+  const endTime = range.end.getTime();
+  if (!Array.isArray(allParceladosDocs) || !allParceladosDocs.length) {
+    return { total: 0, count: 0, categorias: new Map() };
+  }
+
+  let total = 0;
+  let count = 0;
+  const categorias = new Map();
+
+  allParceladosDocs.forEach((doc) => {
+    const data = typeof doc?.data === 'function' ? doc.data() : doc;
+    if (!data) return;
+    if (workspaceId && data.workspaceId && data.workspaceId !== workspaceId) {
+      return;
+    }
+    const inicio = toDateAtMidday(data.dataInicio || data.createdAt || data.criadoEm);
+    if (!inicio) {
+      return;
+    }
+    const parcelas = Number(data.numParcelas) || 0;
+    if (!Number.isFinite(parcelas) || parcelas <= 0) {
+      return;
+    }
+    const valorParcela = parseValorGasto(data.valorParcela ?? data.valor);
+    if (!Number.isFinite(valorParcela) || valorParcela <= 0) {
+      return;
+    }
+
+    for (let index = 0; index < parcelas; index += 1) {
+      const vencimento = new Date(inicio.getFullYear(), inicio.getMonth() + index, inicio.getDate(), 12, 0, 0, 0);
+      const time = vencimento.getTime();
+      if (time < startTime || time > endTime) {
+        continue;
+      }
+      total += valorParcela;
+      count += 1;
+      const categoriaKey = registrarCategoriaLabel(data.categoria || 'Parcelados');
+      if (categoriaKey) {
+        categorias.set(categoriaKey, (categorias.get(categoriaKey) || 0) + valorParcela);
+      }
+    }
+  });
+
+  return {
+    total: roundCurrency(total),
+    count,
+    categorias,
+  };
+}
+
+function collectRelatorioFixos(range, workspaceId) {
+  if (!range?.start || !range?.end) {
+    return { total: 0, count: 0, categorias: new Map() };
+  }
+  if (!Array.isArray(allFixosDocs) || !allFixosDocs.length) {
+    return { total: 0, count: 0, categorias: new Map() };
+  }
+
+  const months = enumerateMonthsIntersectingRange(range);
+  if (!months.length) {
+    return { total: 0, count: 0, categorias: new Map() };
+  }
+
+  let total = 0;
+  let count = 0;
+  const categorias = new Map();
+
+  allFixosDocs.forEach((doc) => {
+    const data = typeof doc?.data === 'function' ? doc.data() : null;
+    if (!data) return;
+    if (data.ativo === false) return;
+    if (workspaceId && data.workspaceId && data.workspaceId !== workspaceId) {
+      return;
+    }
+    const valor = parseValorGasto(data.valor);
+    if (!Number.isFinite(valor) || valor <= 0) {
+      return;
+    }
+    const criado = toDateAtMidday(data.createdAt || data.dataInicio || data.criadoEm);
+    const createdMonthTime = criado
+      ? new Date(criado.getFullYear(), criado.getMonth(), 1, 0, 0, 0, 0).getTime()
+      : null;
+    let mesesConsiderados = 0;
+    months.forEach(({ end }) => {
+      if (createdMonthTime && end.getTime() < createdMonthTime) {
+        return;
+      }
+      mesesConsiderados += 1;
+    });
+    if (!mesesConsiderados) {
+      return;
+    }
+    const contribuicao = valor * mesesConsiderados;
+    total += contribuicao;
+    count += mesesConsiderados;
+    const categoriaKey = registrarCategoriaLabel(data.categoria || 'Fixos');
+    if (categoriaKey) {
+      categorias.set(categoriaKey, (categorias.get(categoriaKey) || 0) + contribuicao);
+    }
+  });
+
+  return {
+    total: roundCurrency(total),
+    count,
+    categorias,
+  };
+}
+
 async function fetchGastosPorMesFatura(range, workspaceId, existingDocs = []) {
   const meses = enumerateFullMonthsInRange(range);
   if (!meses.length) {
@@ -10809,6 +11000,7 @@ function buildRelatorioDataset(range, gastosDocs, entradasDocs) {
   let totalSaidas = 0;
   let totalEntradas = 0;
   const categorias = new Map();
+  const workspaceId = getActiveWorkspaceId();
 
   (Array.isArray(gastosDocs) ? gastosDocs : []).forEach((doc) => {
     if (!doc || typeof doc.data !== 'function') return;
@@ -10821,6 +11013,28 @@ function buildRelatorioDataset(range, gastosDocs, entradasDocs) {
       categorias.set(categoriaKey, (categorias.get(categoriaKey) || 0) + valor);
     }
   });
+
+  const parceladosResumo = collectRelatorioParcelados(range, workspaceId);
+  const fixosResumo = collectRelatorioFixos(range, workspaceId);
+
+  const mergeCategoriaResumo = (mapa) => {
+    if (!mapa || typeof mapa.forEach !== 'function') {
+      return;
+    }
+    mapa.forEach((valor, key) => {
+      if (!Number.isFinite(valor) || valor === 0) return;
+      categorias.set(key, (categorias.get(key) || 0) + valor);
+    });
+  };
+
+  if (parceladosResumo.total) {
+    totalSaidas += parceladosResumo.total;
+    mergeCategoriaResumo(parceladosResumo.categorias);
+  }
+  if (fixosResumo.total) {
+    totalSaidas += fixosResumo.total;
+    mergeCategoriaResumo(fixosResumo.categorias);
+  }
 
   (Array.isArray(entradasDocs) ? entradasDocs : []).forEach((doc) => {
     if (!doc || typeof doc.data !== 'function') return;
@@ -10856,11 +11070,26 @@ function buildRelatorioDataset(range, gastosDocs, entradasDocs) {
     totalSaidas: totalSaidasRounded,
     saldo: roundCurrency(totalEntradas - totalSaidas),
     categorias: categoriasOrdenadas,
-    totalTransacoes: (Array.isArray(gastosDocs) ? gastosDocs.length : 0) + (Array.isArray(entradasDocs) ? entradasDocs.length : 0),
-    gastosCount: Array.isArray(gastosDocs) ? gastosDocs.length : 0,
+    totalTransacoes: (Array.isArray(gastosDocs) ? gastosDocs.length : 0)
+      + parceladosResumo.count
+      + fixosResumo.count
+      + (Array.isArray(entradasDocs) ? entradasDocs.length : 0),
+    gastosCount: (Array.isArray(gastosDocs) ? gastosDocs.length : 0)
+      + parceladosResumo.count
+      + fixosResumo.count,
     entradasCount: Array.isArray(entradasDocs) ? entradasDocs.length : 0,
     workspaceName: getActiveWorkspaceDisplayName() || 'Workspace atual',
     generatedAt: new Date(),
+    extras: {
+      parcelados: {
+        total: parceladosResumo.total,
+        count: parceladosResumo.count,
+      },
+      fixos: {
+        total: fixosResumo.total,
+        count: fixosResumo.count,
+      },
+    },
   };
 }
 
@@ -10901,6 +11130,43 @@ function renderRelatorioPreview(dataset) {
     } else {
       relatorioTotalSaldo.textContent = `- ${saldoLabel}`;
       relatorioTotalSaldo.classList.add('text-rose-600', 'dark:text-rose-300');
+    }
+  }
+  if (relatorioExtrasContainer) {
+    const extras = dataset.extras || {};
+    const fixosTotal = Number(extras.fixos?.total || 0);
+    const parceladosTotal = Number(extras.parcelados?.total || 0);
+    const fixosCount = Number(extras.fixos?.count || 0);
+    const parceladosCount = Number(extras.parcelados?.count || 0);
+    const hasExtras = (fixosTotal > 0.005) || (parceladosTotal > 0.005);
+    if (hasExtras) {
+      relatorioExtrasContainer.classList.remove('hidden');
+      if (relatorioExtrasFixos) {
+        relatorioExtrasFixos.textContent = moeda(fixosTotal);
+      }
+      if (relatorioExtrasParcelados) {
+        relatorioExtrasParcelados.textContent = moeda(parceladosTotal);
+      }
+      if (relatorioExtrasFixosCount) {
+        relatorioExtrasFixosCount.textContent = String(fixosCount);
+      }
+      if (relatorioExtrasParceladosCount) {
+        relatorioExtrasParceladosCount.textContent = String(parceladosCount);
+      }
+    } else {
+      relatorioExtrasContainer.classList.add('hidden');
+      if (relatorioExtrasFixos) {
+        relatorioExtrasFixos.textContent = '0,00';
+      }
+      if (relatorioExtrasParcelados) {
+        relatorioExtrasParcelados.textContent = '0,00';
+      }
+      if (relatorioExtrasFixosCount) {
+        relatorioExtrasFixosCount.textContent = '0';
+      }
+      if (relatorioExtrasParceladosCount) {
+        relatorioExtrasParceladosCount.textContent = '0';
+      }
     }
   }
   if (relatorioLastGenerated) {
@@ -11116,6 +11382,31 @@ function createRelatorioPdf(dataset, chartImage) {
   doc.text(`Saldo: ${dataset.saldo >= 0 ? saldoLabel : `- ${saldoLabel}`}`, margin, cursorY);
   cursorY += 18;
   doc.text(`Gerado em: ${formatDateTime(dataset.generatedAt)}`, margin, cursorY);
+
+  const extras = dataset.extras || {};
+  const fixosExtra = Number(extras.fixos?.total || 0);
+  const parceladosExtra = Number(extras.parcelados?.total || 0);
+  if (fixosExtra > 0.005 || parceladosExtra > 0.005) {
+    cursorY += 22;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(13);
+    doc.text('Componentes adicionais', margin, cursorY);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(11);
+    cursorY += 16;
+    if (fixosExtra > 0.005) {
+      const fixosCount = Number(extras.fixos?.count || 0);
+      const fixosLabel = `Fixos estimados: R$ ${moeda(fixosExtra)}${fixosCount ? ` • ${fixosCount} competência${fixosCount === 1 ? '' : 's'}` : ''}`;
+      doc.text(fixosLabel, margin, cursorY, { maxWidth: 500 });
+      cursorY += 14;
+    }
+    if (parceladosExtra > 0.005) {
+      const parceladosCount = Number(extras.parcelados?.count || 0);
+      const parcLabel = `Parcelados: R$ ${moeda(parceladosExtra)}${parceladosCount ? ` • ${parceladosCount} parcela${parceladosCount === 1 ? '' : 's'}` : ''}`;
+      doc.text(parcLabel, margin, cursorY, { maxWidth: 500 });
+      cursorY += 14;
+    }
+  }
 
   cursorY += 28;
   doc.setFont('helvetica', 'bold');
