@@ -477,20 +477,26 @@
       <div class="border-t border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/40 px-6 py-4 sm:px-8">
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div id="relatorio-pdf-last-generated" class="text-xs text-slate-400 dark:text-slate-500"></div>
-          <div class="relatorio-actions flex flex-wrap gap-2 justify-end">
-            <button type="button" id="relatorio-gerar-previa" class="relatorio-action inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
-              <i class="fa-solid fa-arrows-rotate"></i>
-              <span>Atualizar prévia</span>
+          <div class="w-full sm:w-auto">
+            <button type="button" id="relatorio-actions-toggle" class="inline-flex w-full items-center justify-between gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700 sm:hidden" aria-controls="relatorio-actions-panel" aria-expanded="false">
+              <span>Ações do relatório</span>
+              <i id="relatorio-actions-toggle-icon" class="fa-solid fa-chevron-down transform transition-transform"></i>
             </button>
-            <button type="button" id="relatorio-capturar-imagem" class="relatorio-action inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 transition">
-              <i class="fa-solid fa-image"></i>
-              <span>Salvar imagem</span>
-            </button>
-            <button type="button" id="relatorio-gerar-pdf" class="relatorio-action inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold transition">
-              <i class="fa-solid fa-file-arrow-down"></i>
-              <span>Exportar PDF</span>
-            </button>
-            <button type="button" id="relatorio-cancelar" class="relatorio-action inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition">Cancelar</button>
+            <div id="relatorio-actions-panel" class="relatorio-actions mt-3 flex flex-col gap-2 sm:mt-0 sm:flex-row sm:flex-wrap sm:gap-2 sm:justify-end" data-open="false">
+              <button type="button" id="relatorio-gerar-previa" class="relatorio-action inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                <i class="fa-solid fa-arrows-rotate"></i>
+                <span>Atualizar prévia</span>
+              </button>
+              <button type="button" id="relatorio-capturar-imagem" class="relatorio-action inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 transition">
+                <i class="fa-solid fa-image"></i>
+                <span>Compartilhar imagem</span>
+              </button>
+              <button type="button" id="relatorio-gerar-pdf" class="relatorio-action inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold transition">
+                <i class="fa-solid fa-file-arrow-down"></i>
+                <span>Exportar PDF</span>
+              </button>
+              <button type="button" id="relatorio-cancelar" class="relatorio-action inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition">Cancelar</button>
+            </div>
           </div>
         </div>
       </div>
@@ -518,11 +524,18 @@
   .resumo-slider-dot.is-active{background:#2563eb;color:white;box-shadow:0 8px 16px rgba(37,99,235,.25)}
   .dark .resumo-slider-dot{background:rgba(148,163,184,0.18);color:#e2e8f0;border:1px solid rgba(148,163,184,0.2)}
   .dark .resumo-slider-dot.is-active{background:linear-gradient(135deg,#2563eb,#7c3aed);color:#ffffff;box-shadow:0 12px 32px rgba(124,58,237,0.35);border-color:transparent}
-  .relatorio-actions{justify-content:flex-end}
-  .relatorio-action{flex:1 1 calc(50% - 0.5rem);min-width:140px}
+  #relatorio-actions-panel{display:none}
+  #relatorio-actions-panel[data-open="true"]{display:flex}
   @media (min-width:640px){
-    .relatorio-action{flex:0 0 auto;min-width:0}
+    #relatorio-actions-panel{display:flex}
   }
+  .relatorio-actions{justify-content:flex-start}
+  .relatorio-action{width:100%}
+  @media (min-width:640px){
+    .relatorio-actions{justify-content:flex-end}
+    .relatorio-action{width:auto;min-width:0}
+  }
+  #relatorio-actions-toggle[aria-expanded="true"] #relatorio-actions-toggle-icon{transform:rotate(180deg)}
   .resumo-slide-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1rem}
   .resumo-slide-grid .resumo-item{padding:.75rem;border-radius:.75rem;background:#f9fafb;display:flex;flex-direction:column;gap:.35rem}
   .resumo-item .label{font-size:.8rem;color:#6b7280;text-transform:uppercase;letter-spacing:.05em}
@@ -10341,6 +10354,12 @@ relatorioCancelButton = document.getElementById('relatorio-cancelar');
 relatorioGerarButton = document.getElementById('relatorio-gerar-pdf');
 relatorioPreviewButton = document.getElementById('relatorio-gerar-previa');
 const relatorioCapturarButton = document.getElementById('relatorio-capturar-imagem');
+const relatorioActionsToggle = document.getElementById('relatorio-actions-toggle');
+const relatorioActionsToggleIcon = document.getElementById('relatorio-actions-toggle-icon');
+const relatorioActionsPanel = document.getElementById('relatorio-actions-panel');
+const relatorioActionsMediaQuery = (typeof window !== 'undefined' && typeof window.matchMedia === 'function')
+  ? window.matchMedia('(min-width: 640px)')
+  : null;
 relatorioStatus = document.getElementById('relatorio-pdf-status');
 relatorioPreview = document.getElementById('relatorio-pdf-preview');
 relatorioPreviewPlaceholder = document.getElementById('relatorio-pdf-preview-placeholder');
@@ -10373,6 +10392,7 @@ function openRelatorioModal() {
   setRelatorioExportEnabled(false);
   applyRelatorioRangePreset('current_month', { silent: true });
   updateRelatorioStatus('Selecione o período e clique em Atualizar prévia para visualizar antes de exportar.', 'info');
+  syncRelatorioActionsPanel(relatorioActionsMediaQuery ? relatorioActionsMediaQuery.matches : false);
   relatorioModal.classList.remove('hidden');
   relatorioModal.setAttribute('aria-hidden', 'false');
   lockBodyScroll();
@@ -10386,6 +10406,7 @@ function closeRelatorioModal() {
   relatorioModal.setAttribute('aria-hidden', 'true');
   deactivateDialog(relatorioModal);
   unlockBodyScrollIfAllowed();
+  syncRelatorioActionsPanel(false);
   updateFloatingMenuVisibility();
 }
 
@@ -10427,6 +10448,23 @@ function setRelatorioCaptureEnabled(isEnabled) {
     relatorioCapturarButton.classList.remove('opacity-60', 'cursor-not-allowed', 'pointer-events-none');
   } else {
     relatorioCapturarButton.classList.add('opacity-60', 'cursor-not-allowed', 'pointer-events-none');
+  }
+}
+
+function syncRelatorioActionsPanel(forceState) {
+  if (!relatorioActionsPanel) return;
+  const isDesktop = Boolean(relatorioActionsMediaQuery && relatorioActionsMediaQuery.matches);
+  const shouldOpen = typeof forceState === 'boolean' ? forceState : isDesktop;
+  relatorioActionsPanel.setAttribute('data-open', shouldOpen ? 'true' : 'false');
+  if (relatorioActionsToggle) {
+    relatorioActionsToggle.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
+  }
+  if (relatorioActionsToggleIcon) {
+    if (!isDesktop) {
+      relatorioActionsToggleIcon.classList.toggle('rotate-180', shouldOpen);
+    } else {
+      relatorioActionsToggleIcon.classList.remove('rotate-180');
+    }
   }
 }
 
@@ -11556,8 +11594,8 @@ async function handleRelatorioCapturar() {
   } catch (error) {
     range = null;
   }
-  setButtonLoading(relatorioCapturarButton, true, 'Capturando...');
-  updateRelatorioStatus('Gerando imagem do relatório para compartilhar...', 'info');
+  setButtonLoading(relatorioCapturarButton, true, 'Preparando...');
+  updateRelatorioStatus('Preparando imagem do relatório para compartilhar...', 'info');
   try {
     await new Promise((resolve) => requestAnimationFrame(resolve));
     const scale = Math.min(2, Math.max(1.2, window.devicePixelRatio || 1));
@@ -11618,8 +11656,8 @@ async function handleRelatorioCapturar() {
       document.body.removeChild(link);
       setTimeout(() => URL.revokeObjectURL(url), 1500);
     }
-    updateRelatorioStatus(shared ? 'Imagem compartilhada com sucesso.' : 'Imagem gerada e salva com sucesso.', 'success');
-    showToast(shared ? 'Imagem compartilhada com sucesso!' : 'Imagem salva na galeria.', 'success');
+    updateRelatorioStatus(shared ? 'Imagem compartilhada com sucesso.' : 'Imagem salva no dispositivo.', 'success');
+    showToast(shared ? 'Imagem compartilhada com sucesso!' : 'Imagem baixada no dispositivo.', 'success');
   } catch (error) {
     console.error('Erro ao capturar imagem do relatório:', error);
     const message = error?.message || 'Não foi possível gerar a imagem agora.';
@@ -11741,6 +11779,33 @@ if (relatorioRangeButtons.length) {
       applyRelatorioRangePreset(preset);
     });
   });
+}
+
+syncRelatorioActionsPanel(relatorioActionsMediaQuery ? relatorioActionsMediaQuery.matches : false);
+
+if (relatorioActionsToggle && relatorioActionsPanel) {
+  relatorioActionsToggle.addEventListener('click', () => {
+    if (relatorioActionsMediaQuery && relatorioActionsMediaQuery.matches) {
+      return;
+    }
+    const isOpen = relatorioActionsPanel.getAttribute('data-open') === 'true';
+    relatorioActionsPanel.setAttribute('data-open', isOpen ? 'false' : 'true');
+    relatorioActionsToggle.setAttribute('aria-expanded', isOpen ? 'false' : 'true');
+    if (relatorioActionsToggleIcon) {
+      relatorioActionsToggleIcon.classList.toggle('rotate-180', !isOpen);
+    }
+  });
+}
+
+if (relatorioActionsMediaQuery) {
+  const handleRelatorioActionsMediaChange = (event) => {
+    syncRelatorioActionsPanel(event.matches);
+  };
+  if (typeof relatorioActionsMediaQuery.addEventListener === 'function') {
+    relatorioActionsMediaQuery.addEventListener('change', handleRelatorioActionsMediaChange);
+  } else if (typeof relatorioActionsMediaQuery.addListener === 'function') {
+    relatorioActionsMediaQuery.addListener(handleRelatorioActionsMediaChange);
+  }
 }
 
 /* ===========================
