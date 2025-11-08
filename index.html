@@ -1395,7 +1395,6 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
               <code id="workspace-share-code" class="flex-1 text-lg sm:text-xl font-semibold text-emerald-700 dark:text-emerald-300 break-all bg-white dark:bg-gray-900 px-3 py-1.5 rounded-lg border border-emerald-200/60 dark:border-emerald-500/40 shadow-inner">—</code>
               <div class="flex items-center gap-2 self-start sm:self-auto">
                 <button id="workspace-copy-code" type="button" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white transition-colors">Copiar</button>
-                <button id="workspace-share-invite" type="button" class="px-3 py-1.5 text-xs font-semibold rounded-lg border border-emerald-400/70 dark:border-emerald-500/40 text-emerald-700 dark:text-emerald-200 hover:bg-emerald-100/60 dark:hover:bg-emerald-500/10 transition-colors">Enviar convite</button>
               </div>
             </div>
             <p class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">Compartilhe este código com quem também precisa enxergar e editar esses dados. Após inserir o código, a outra conta passará a usar o mesmo ambiente financeiro.</p>
@@ -4351,7 +4350,6 @@ const workspaceShareModal = document.getElementById('modal-workspace-share');
 const workspaceShareClose = document.getElementById('workspace-share-close');
 const workspaceShareCode = document.getElementById('workspace-share-code');
 const workspaceCopyCode = document.getElementById('workspace-copy-code');
-const workspaceShareInvite = document.getElementById('workspace-share-invite');
 const workspaceNameForm = document.getElementById('workspace-name-form');
 const workspaceNameInput = document.getElementById('workspace-name-input');
 const workspaceNameSubmit = document.getElementById('workspace-name-submit');
@@ -7248,54 +7246,6 @@ function initAuthFlow() {
       } catch (error) {
         console.error('Erro ao copiar código do workspace:', error);
         showWorkspaceFeedback('Não foi possível copiar automaticamente. Copie manualmente.', false);
-      }
-    });
-  }
-
-  if (workspaceShareInvite) {
-    workspaceShareInvite.addEventListener('click', async () => {
-      if (!currentUser) {
-        showAuthOverlay();
-        return;
-      }
-      if (!workspaceShareCode) return;
-      resetWorkspaceFeedback();
-      const code = (workspaceShareCode.textContent || '').trim();
-      if (!code || code === '—') {
-        showWorkspaceFeedback('Compartilhe o espaço após carregar o código acima.', false);
-        return;
-      }
-
-      const appUrl = window.location?.origin || window.location?.href || '';
-      const inviteMessage = `Olá! Estou compartilhando o Organizador Financeiro com você. Use o código ${code} e acesse ${appUrl} para entrar no mesmo espaço em Família > Usar esse espaço.`;
-
-      try {
-        if (navigator.share) {
-          try {
-            await navigator.share({
-              title: 'Convite — Economeo Organizador Financeiro',
-              text: inviteMessage,
-              url: appUrl || undefined,
-            });
-            showWorkspaceFeedback('Convite enviado! Compartilhe novamente quando quiser.', true);
-            return;
-          } catch (shareError) {
-            if (shareError?.name === 'AbortError') {
-              return;
-            }
-            console.warn('Compartilhamento nativo indisponível:', shareError);
-          }
-        }
-
-        if (navigator.clipboard?.writeText) {
-          await navigator.clipboard.writeText(inviteMessage);
-          showWorkspaceFeedback('Convite copiado! Cole a mensagem no app que preferir.', true);
-        } else {
-          showWorkspaceFeedback(`Copie e compartilhe manualmente: ${inviteMessage}`, true);
-        }
-      } catch (error) {
-        console.error('Erro ao preparar convite do workspace:', error);
-        showWorkspaceFeedback('Não foi possível gerar o convite agora. Compartilhe o código manualmente.', false);
       }
     });
   }
