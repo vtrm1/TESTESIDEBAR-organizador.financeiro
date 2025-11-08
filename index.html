@@ -442,7 +442,7 @@
               <div id="relatorio-total-saldo" class="mt-1 text-lg font-semibold text-slate-700 dark:text-slate-100">R$ 0,00</div>
             </div>
           </div>
-          <div id="relatorio-preview-extras" class="hidden grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+          <div id="relatorio-preview-extras" class="hidden grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
             <div class="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/50 p-3 space-y-1">
               <div class="uppercase tracking-wide text-[0.7rem] font-semibold text-slate-500 dark:text-slate-300">Fixos incluídos</div>
               <div class="text-sm font-semibold text-slate-700 dark:text-slate-100">R$ <span id="relatorio-extras-fixos">0,00</span></div>
@@ -452,6 +452,11 @@
               <div class="uppercase tracking-wide text-[0.7rem] font-semibold text-slate-500 dark:text-slate-300">Parcelados incluídos</div>
               <div class="text-sm font-semibold text-slate-700 dark:text-slate-100">R$ <span id="relatorio-extras-parcelados">0,00</span></div>
               <p class="text-[0.7rem] text-slate-500 dark:text-slate-400">Somatório de <span id="relatorio-extras-parcelados-count">0</span> parcela(s) no intervalo selecionado.</p>
+            </div>
+            <div class="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/50 p-3 space-y-1">
+              <div class="uppercase tracking-wide text-[0.7rem] font-semibold text-slate-500 dark:text-slate-300">Variáveis no período</div>
+              <div class="text-sm font-semibold text-slate-700 dark:text-slate-100">R$ <span id="relatorio-extras-variaveis">0,00</span></div>
+              <p class="text-[0.7rem] text-slate-500 dark:text-slate-400">Total de <span id="relatorio-extras-variaveis-count">0</span> lançamento(s) variáveis.</p>
             </div>
           </div>
           <div class="space-y-3">
@@ -10398,6 +10403,8 @@ const relatorioExtrasFixos = document.getElementById('relatorio-extras-fixos');
 const relatorioExtrasParcelados = document.getElementById('relatorio-extras-parcelados');
 const relatorioExtrasFixosCount = document.getElementById('relatorio-extras-fixos-count');
 const relatorioExtrasParceladosCount = document.getElementById('relatorio-extras-parcelados-count');
+const relatorioExtrasVariaveis = document.getElementById('relatorio-extras-variaveis');
+const relatorioExtrasVariaveisCount = document.getElementById('relatorio-extras-variaveis-count');
 relatorioRangeButtons = Array.from(document.querySelectorAll('[data-relatorio-range]'));
 let relatorioCategoriaChart = null;
 let relatorioPreviewCache = null;
@@ -11053,6 +11060,8 @@ async function fetchGastosPorMesFatura(range, workspaceId, existingDocs = []) {
 
 function buildRelatorioDataset(range, gastosDocs, entradasDocs) {
   let totalSaidas = 0;
+  let totalVariaveis = 0;
+  let variavelCount = 0;
   let totalEntradas = 0;
   const categorias = new Map();
   const workspaceId = getActiveWorkspaceId();
@@ -11063,6 +11072,8 @@ function buildRelatorioDataset(range, gastosDocs, entradasDocs) {
     const valor = parseValorGasto(data.valor);
     if (!Number.isFinite(valor) || valor === 0) return;
     totalSaidas += valor;
+    totalVariaveis += valor;
+    variavelCount += 1;
     const categoriaKey = registrarCategoriaLabel(data.categoria || 'Outros');
     if (categoriaKey) {
       categorias.set(categoriaKey, (categorias.get(categoriaKey) || 0) + valor);
@@ -11136,6 +11147,10 @@ function buildRelatorioDataset(range, gastosDocs, entradasDocs) {
     workspaceName: getActiveWorkspaceDisplayName() || 'Workspace atual',
     generatedAt: new Date(),
     extras: {
+      variavel: {
+        total: roundCurrency(totalVariaveis),
+        count: variavelCount,
+      },
       parcelados: {
         total: parceladosResumo.total,
         count: parceladosResumo.count,
@@ -11191,9 +11206,11 @@ function renderRelatorioPreview(dataset) {
     const extras = dataset.extras || {};
     const fixosTotal = Number(extras.fixos?.total || 0);
     const parceladosTotal = Number(extras.parcelados?.total || 0);
+    const variaveisTotal = Number(extras.variavel?.total || 0);
     const fixosCount = Number(extras.fixos?.count || 0);
     const parceladosCount = Number(extras.parcelados?.count || 0);
-    const hasExtras = (fixosTotal > 0.005) || (parceladosTotal > 0.005);
+    const variaveisCount = Number(extras.variavel?.count || 0);
+    const hasExtras = (fixosTotal > 0.005) || (parceladosTotal > 0.005) || (variaveisTotal > 0.005);
     if (hasExtras) {
       relatorioExtrasContainer.classList.remove('hidden');
       if (relatorioExtrasFixos) {
@@ -11202,11 +11219,17 @@ function renderRelatorioPreview(dataset) {
       if (relatorioExtrasParcelados) {
         relatorioExtrasParcelados.textContent = moeda(parceladosTotal);
       }
+      if (relatorioExtrasVariaveis) {
+        relatorioExtrasVariaveis.textContent = moeda(variaveisTotal);
+      }
       if (relatorioExtrasFixosCount) {
         relatorioExtrasFixosCount.textContent = String(fixosCount);
       }
       if (relatorioExtrasParceladosCount) {
         relatorioExtrasParceladosCount.textContent = String(parceladosCount);
+      }
+      if (relatorioExtrasVariaveisCount) {
+        relatorioExtrasVariaveisCount.textContent = String(variaveisCount);
       }
     } else {
       relatorioExtrasContainer.classList.add('hidden');
@@ -11216,11 +11239,17 @@ function renderRelatorioPreview(dataset) {
       if (relatorioExtrasParcelados) {
         relatorioExtrasParcelados.textContent = '0,00';
       }
+      if (relatorioExtrasVariaveis) {
+        relatorioExtrasVariaveis.textContent = '0,00';
+      }
       if (relatorioExtrasFixosCount) {
         relatorioExtrasFixosCount.textContent = '0';
       }
       if (relatorioExtrasParceladosCount) {
         relatorioExtrasParceladosCount.textContent = '0';
+      }
+      if (relatorioExtrasVariaveisCount) {
+        relatorioExtrasVariaveisCount.textContent = '0';
       }
     }
   }
@@ -11442,7 +11471,8 @@ function createRelatorioPdf(dataset) {
   const extras = dataset.extras || {};
   const fixosExtra = Number(extras.fixos?.total || 0);
   const parceladosExtra = Number(extras.parcelados?.total || 0);
-  if (fixosExtra > 0.005 || parceladosExtra > 0.005) {
+  const variavelExtra = Number(extras.variavel?.total || 0);
+  if (fixosExtra > 0.005 || parceladosExtra > 0.005 || variavelExtra > 0.005) {
     cursorY += 22;
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(13);
@@ -11450,6 +11480,12 @@ function createRelatorioPdf(dataset) {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(11);
     cursorY += 16;
+    if (variavelExtra > 0.005) {
+      const variavelCount = Number(extras.variavel?.count || 0);
+      const variavelLabel = `Variáveis: R$ ${moeda(variavelExtra)}${variavelCount ? ` • ${variavelCount} lançamento${variavelCount === 1 ? '' : 's'}` : ''}`;
+      doc.text(variavelLabel, margin, cursorY, { maxWidth: 500 });
+      cursorY += 14;
+    }
     if (fixosExtra > 0.005) {
       const fixosCount = Number(extras.fixos?.count || 0);
       const fixosLabel = `Fixos estimados: R$ ${moeda(fixosExtra)}${fixosCount ? ` • ${fixosCount} competência${fixosCount === 1 ? '' : 's'}` : ''}`;
