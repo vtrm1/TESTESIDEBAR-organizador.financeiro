@@ -12699,12 +12699,7 @@ async function updateWalletSummaryUI() {
       saldoInicialDistribuidoEl.textContent = 'Nada distribuído ainda.';
     }
   }
-  if (walletOpeningButton) {
-    const disabled = walletState.openingRemaining <= 0.005;
-    walletOpeningButton.disabled = disabled;
-    walletOpeningButton.classList.toggle('opacity-60', disabled);
-    walletOpeningButton.classList.toggle('cursor-not-allowed', disabled);
-  }
+  updateWalletOpeningButtonState();
   updateWalletOpeningAvailableText();
   const fluxoEl = document.getElementById('wallet-fluxo-liquido');
   if (fluxoEl) {
@@ -13313,24 +13308,52 @@ function showWalletInvestFeedback(message, isSuccess) {
   walletInvestFeedback.classList.toggle('dark:text-rose-300', isSuccess === false);
 }
 
+function hasWalletOpeningHistory() {
+  return Array.isArray(walletOpeningDistributionsDocs) && walletOpeningDistributionsDocs.length > 0;
+}
+
+function getWalletOpeningRemaining() {
+  const explicit = Number(walletState.openingRemaining);
+  if (Number.isFinite(explicit)) {
+    return roundCurrency(Math.max(explicit, 0));
+  }
+  const balance = Number(walletState.openingBalance || 0);
+  const allocated = Number(walletState.openingAllocatedTotal || 0);
+  return roundCurrency(Math.max(balance - allocated, 0));
+}
+
+function updateWalletOpeningButtonState() {
+  if (!walletOpeningButton) return;
+  const remaining = getWalletOpeningRemaining();
+  const disabled = remaining <= 0.005 && !hasWalletOpeningHistory();
+  walletOpeningButton.disabled = disabled;
+  walletOpeningButton.classList.toggle('opacity-60', disabled);
+  walletOpeningButton.classList.toggle('cursor-not-allowed', disabled);
+  walletOpeningButton.setAttribute('aria-disabled', disabled ? 'true' : 'false');
+}
+
 function updateWalletOpeningAvailableText() {
   if (!walletOpeningAvailable) return;
-  const available = walletState.openingRemaining || Math.max(walletState.openingBalance - walletState.openingAllocatedTotal, 0);
+  const available = getWalletOpeningRemaining();
   walletOpeningAvailable.textContent = `R$ ${moeda(available)}`;
   if (walletOpeningAvailableHelper) {
     walletOpeningAvailableHelper.textContent = available > 0.005
-      ? 'Defina quanto será distribuído agora. O restante continuará livre para futuras decisões.'
-      : 'Você já distribuiu todo o saldo inicial deste mês. Ajuste as preferências se quiser redefinir o valor.';
+      ? 'Distribua este saldo entre contas, investimentos ou fluxo livre.'
+      : 'Tudo foi distribuído. Use o desfazer para ajustar.';
   }
+  updateWalletOpeningButtonState();
 }
 
 function updateWalletOpeningUndoState() {
-  if (!walletOpeningUndoButton) return;
-  const hasHistory = Array.isArray(walletOpeningDistributionsDocs) && walletOpeningDistributionsDocs.length > 0;
-  walletOpeningUndoButton.disabled = !hasHistory || walletOpeningUndoInFlight;
-  walletOpeningUndoButton.classList.toggle('opacity-50', !hasHistory || walletOpeningUndoInFlight);
-  walletOpeningUndoButton.classList.toggle('cursor-not-allowed', !hasHistory || walletOpeningUndoInFlight);
-  walletOpeningUndoButton.setAttribute('aria-disabled', (!hasHistory || walletOpeningUndoInFlight) ? 'true' : 'false');
+  const hasHistory = hasWalletOpeningHistory();
+  if (walletOpeningUndoButton) {
+    const disabled = !hasHistory || walletOpeningUndoInFlight;
+    walletOpeningUndoButton.disabled = disabled;
+    walletOpeningUndoButton.classList.toggle('opacity-50', disabled);
+    walletOpeningUndoButton.classList.toggle('cursor-not-allowed', disabled);
+    walletOpeningUndoButton.setAttribute('aria-disabled', disabled ? 'true' : 'false');
+  }
+  updateWalletOpeningButtonState();
 }
 
 function resetWalletOpeningForm() {
@@ -13413,8 +13436,8 @@ function showWalletOpeningFeedback(message, isSuccess) {
 
 function openWalletOpeningModal() {
   if (!walletOpeningModal) return;
-  const available = walletState.openingRemaining || Math.max(walletState.openingBalance - walletState.openingAllocatedTotal, 0);
-  if (available <= 0.005) {
+  const available = getWalletOpeningRemaining();
+  if (available <= 0.005 && !hasWalletOpeningHistory()) {
     showToast('Não há saldo inicial disponível para distribuir no momento.', 'info');
     return;
   }
