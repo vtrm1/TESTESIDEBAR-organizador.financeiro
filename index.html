@@ -286,6 +286,16 @@
         </button>
       </div>
     </form>
+    <div id="wallet-opening-history" class="mt-6 rounded-2xl border border-slate-200/80 bg-slate-50/70 p-4 dark:border-slate-700/60 dark:bg-slate-900/40">
+      <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-100">Histórico de distribuições</h3>
+          <p class="text-xs text-slate-500 dark:text-slate-400">Revise para onde o saldo foi enviado e desfaça qualquer movimentação se precisar ajustar.</p>
+        </div>
+      </div>
+      <p id="wallet-opening-history-empty" class="mt-4 text-sm text-slate-500 dark:text-slate-400">Nenhuma distribuição registrada neste mês.</p>
+      <ul id="wallet-opening-history-list" class="mt-4 space-y-3"></ul>
+    </div>
   </div>
 </div>
 
@@ -4472,6 +4482,8 @@ const walletOpeningInvestAmount = document.getElementById('wallet-opening-invest
 const walletOpeningFeedback = document.getElementById('wallet-opening-feedback');
 const walletOpeningSubmit = document.getElementById('wallet-opening-submit');
 const walletOpeningUndoButton = document.getElementById('wallet-opening-undo');
+const walletOpeningHistoryList = document.getElementById('wallet-opening-history-list');
+const walletOpeningHistoryEmpty = document.getElementById('wallet-opening-history-empty');
 const walletTimelineToggle = document.getElementById('wallet-timeline-toggle');
 const walletTimelinePanel = document.getElementById('wallet-timeline-panel');
 const walletTimelineChevron = document.querySelector('[data-wallet-timeline-chevron]');
@@ -7598,6 +7610,10 @@ if (walletOpeningForm) {
 
 if (walletOpeningUndoButton) {
   walletOpeningUndoButton.addEventListener('click', handleWalletOpeningUndoClick);
+}
+
+if (walletOpeningHistoryList) {
+  walletOpeningHistoryList.addEventListener('click', handleWalletOpeningHistoryClick);
 }
 
 if (walletInvestOriginSelect) {
@@ -13325,11 +13341,21 @@ function getWalletOpeningRemaining() {
 function updateWalletOpeningButtonState() {
   if (!walletOpeningButton) return;
   const remaining = getWalletOpeningRemaining();
-  const disabled = remaining <= 0.005 && !hasWalletOpeningHistory();
-  walletOpeningButton.disabled = disabled;
-  walletOpeningButton.classList.toggle('opacity-60', disabled);
-  walletOpeningButton.classList.toggle('cursor-not-allowed', disabled);
-  walletOpeningButton.setAttribute('aria-disabled', disabled ? 'true' : 'false');
+  const hasHistory = hasWalletOpeningHistory();
+  const empty = remaining <= 0.005;
+  walletOpeningButton.disabled = false;
+  walletOpeningButton.classList.toggle('opacity-60', empty);
+  walletOpeningButton.classList.remove('cursor-not-allowed');
+  walletOpeningButton.setAttribute('aria-disabled', 'false');
+  if (empty) {
+    walletOpeningButton.title = hasHistory
+      ? 'Revisar distribuições anteriores do saldo inicial.'
+      : 'Ver histórico e registrar ajustes no saldo inicial.';
+    walletOpeningButton.dataset.walletOpeningEmpty = 'true';
+  } else {
+    walletOpeningButton.title = 'Distribuir o saldo inicial disponível.';
+    walletOpeningButton.dataset.walletOpeningEmpty = 'false';
+  }
 }
 
 function updateWalletOpeningAvailableText() {
@@ -13344,6 +13370,211 @@ function updateWalletOpeningAvailableText() {
   updateWalletOpeningButtonState();
 }
 
+function normalizeWalletOpeningDistribution(docSnap) {
+  if (!docSnap) return null;
+  const data = typeof docSnap.data === 'function' ? docSnap.data() || {} : docSnap;
+  const rawDate = data.occurredAt || data.dataTimestamp || data.data || null;
+  const occurredAt = rawDate && typeof rawDate.toDate === 'function'
+    ? rawDate.toDate()
+    : (rawDate instanceof Date ? rawDate : null);
+  const toRoundedNumber = (value, allowNull = false) => {
+    const numeric = Number(value);
+    if (!Number.isFinite(numeric)) {
+      return allowNull ? null : 0;
+    }
+    return roundCurrency(numeric);
+  };
+  const descricao = (data.descricao || '').trim();
+  return {
+    id: docSnap.id || data.id || null,
+    doc: docSnap,
+    occurredAt,
+    contaDestino: data.contaDestino || null,
+    valorConta: toRoundedNumber(data.valorConta),
+    valorInvest: toRoundedNumber(data.valorInvest),
+    leftoverValor: toRoundedNumber(data.leftoverValor),
+    descricao,
+    availableBefore: toRoundedNumber(data.openingAvailableBefore, true),
+    availableAfter: toRoundedNumber(data.openingAvailableAfter, true),
+  };
+}
+
+function renderWalletOpeningHistory() {
+  if (!walletOpeningHistoryList || !walletOpeningHistoryEmpty) return;
+  const docs = Array.isArray(walletOpeningDistributionsDocs) ? walletOpeningDistributionsDocs : [];
+  walletOpeningHistoryList.innerHTML = '';
+  if (!docs.length) {
+    walletOpeningHistoryEmpty.classList.remove('hidden');
+    return;
+  }
+  walletOpeningHistoryEmpty.classList.add('hidden');
+  const fragment = document.createDocumentFragment();
+  docs.forEach((docSnap) => {
+    if (!docSnap) return;
+    const normalized = normalizeWalletOpeningDistribution(docSnap);
+    if (!normalized || !normalized.id) return;
+    const {
+      occurredAt,
+      contaDestino,
+      valorConta,
+      valorInvest,
+      leftoverValor,
+      descricao,
+      availableBefore,
+      availableAfter,
+      id,
+    } = normalized;
+    const item = document.createElement('li');
+    item.className = 'flex flex-col gap-3 rounded-xl border border-slate-200/80 bg-white/80 p-4 dark:border-slate-700/60 dark:bg-slate-900/40 sm:flex-row sm:items-center sm:justify-between';
+
+    const info = document.createElement('div');
+    info.className = 'flex-1 min-w-0 space-y-1';
+    const title = document.createElement('div');
+    title.className = 'text-sm font-semibold text-slate-800 dark:text-slate-100';
+    title.textContent = occurredAt ? `Distribuição em ${formatDate(occurredAt)}` : 'Distribuição registrada';
+    info.appendChild(title);
+
+    const parts = [];
+    if (valorConta > 0.005) {
+      const accountLabel = contaDestino ? (getWalletAccountLabel(contaDestino) || 'Conta da carteira') : 'Conta da carteira';
+      parts.push(`${accountLabel}: R$ ${moeda(valorConta)}`);
+    }
+    if (valorInvest > 0.005) {
+      parts.push(`Investimentos: R$ ${moeda(valorInvest)}`);
+    }
+    if (leftoverValor > 0.005) {
+      parts.push(`Fluxo livre: R$ ${moeda(leftoverValor)}`);
+    }
+    const details = document.createElement('div');
+    details.className = 'text-xs text-slate-600 dark:text-slate-300';
+    details.textContent = parts.length
+      ? parts.join(' • ')
+      : 'Nenhum valor distribuído foi registrado.';
+    info.appendChild(details);
+
+    if (descricao) {
+      const note = document.createElement('div');
+      note.className = 'text-[0.7rem] text-slate-500 dark:text-slate-400';
+      note.textContent = `Observação: ${descricao}`;
+      info.appendChild(note);
+    }
+
+    if (Number.isFinite(availableBefore) || Number.isFinite(availableAfter)) {
+      const saldoLine = document.createElement('div');
+      saldoLine.className = 'text-[0.7rem] text-slate-500 dark:text-slate-400';
+      if (Number.isFinite(availableBefore) && Number.isFinite(availableAfter)) {
+        saldoLine.textContent = `Saldo disponível: R$ ${moeda(availableBefore)} → R$ ${moeda(availableAfter)}`;
+      } else if (Number.isFinite(availableBefore)) {
+        saldoLine.textContent = `Saldo disponível antes: R$ ${moeda(availableBefore)}`;
+      } else if (Number.isFinite(availableAfter)) {
+        saldoLine.textContent = `Saldo disponível após: R$ ${moeda(availableAfter)}`;
+      }
+      info.appendChild(saldoLine);
+    }
+
+    item.appendChild(info);
+
+    const actions = document.createElement('div');
+    actions.className = 'flex flex-shrink-0 items-center justify-end sm:justify-start';
+    const undoButton = document.createElement('button');
+    undoButton.type = 'button';
+    undoButton.dataset.walletOpeningId = id;
+    undoButton.className = 'inline-flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-slate-400 hover:text-slate-900 dark:border-slate-600 dark:text-slate-300 dark:hover:border-slate-500 dark:hover:text-white';
+    undoButton.innerHTML = '<i class="fa-solid fa-rotate-left"></i><span>Desfazer</span>';
+    if (occurredAt) {
+      const labelDate = formatDate(occurredAt);
+      undoButton.setAttribute('aria-label', `Desfazer distribuição de ${labelDate}`);
+      undoButton.title = `Desfazer distribuição de ${labelDate}`;
+    } else {
+      undoButton.setAttribute('aria-label', 'Desfazer distribuição');
+      undoButton.title = 'Desfazer distribuição';
+    }
+    if (walletOpeningUndoInFlight) {
+      undoButton.disabled = true;
+      undoButton.classList.add('opacity-50', 'cursor-not-allowed');
+      undoButton.setAttribute('aria-disabled', 'true');
+    } else {
+      undoButton.setAttribute('aria-disabled', 'false');
+    }
+    actions.appendChild(undoButton);
+    item.appendChild(actions);
+
+    fragment.appendChild(item);
+  });
+  walletOpeningHistoryList.appendChild(fragment);
+}
+
+function handleWalletOpeningHistoryClick(event) {
+  if (walletOpeningUndoInFlight) return;
+  const trigger = event.target.closest('button[data-wallet-opening-id]');
+  if (!trigger) return;
+  event.preventDefault();
+  const { walletOpeningId } = trigger.dataset;
+  if (!walletOpeningId) return;
+  const docs = Array.isArray(walletOpeningDistributionsDocs) ? walletOpeningDistributionsDocs : [];
+  const docSnap = docs.find((doc) => {
+    const normalized = normalizeWalletOpeningDistribution(doc);
+    return normalized && normalized.id === walletOpeningId;
+  });
+  if (!docSnap) {
+    showToast('Não foi possível localizar esta distribuição.', 'error');
+    return;
+  }
+  confirmUndoWalletOpeningDistribution(docSnap);
+}
+
+function confirmUndoWalletOpeningDistribution(docSnap) {
+  if (!docSnap) {
+    showToast('Distribuição não encontrada.', 'info');
+    return;
+  }
+  const normalized = normalizeWalletOpeningDistribution(docSnap);
+  if (!normalized) {
+    showToast('Distribuição não encontrada.', 'info');
+    return;
+  }
+  const {
+    occurredAt,
+    valorConta,
+    valorInvest,
+    leftoverValor,
+    contaDestino,
+    descricao,
+  } = normalized;
+  const partes = [];
+  if (valorConta > 0.005) {
+    const accountLabel = contaDestino ? (getWalletAccountLabel(contaDestino) || 'Conta da carteira') : 'Conta da carteira';
+    partes.push(`${accountLabel}: R$ ${moeda(valorConta)}`);
+  }
+  if (valorInvest > 0.005) {
+    partes.push(`Investimentos: R$ ${moeda(valorInvest)}`);
+  }
+  if (leftoverValor > 0.005) {
+    partes.push(`Fluxo livre: R$ ${moeda(leftoverValor)}`);
+  }
+  const resumo = partes.length ? ` (${partes.join(' • ')})` : '';
+  const dataLabel = occurredAt ? ` registrada em ${formatDate(occurredAt)}` : '';
+  const descricaoTexto = descricao ? ` Observação registrada: ${descricao}.` : '';
+  abrirModalConfirmacao(
+    'Desfazer distribuição',
+    `Esta ação irá reverter a distribuição${dataLabel}${resumo}.${descricaoTexto}`.trim(),
+    async () => {
+      walletOpeningUndoInFlight = true;
+      updateWalletOpeningUndoState();
+      try {
+        await desfazerDistribuicaoSaldoInicial(docSnap);
+      } catch (error) {
+        console.error('Erro ao desfazer distribuição do saldo inicial:', error);
+        showToast('Não foi possível desfazer esta distribuição agora.', 'error');
+      } finally {
+        walletOpeningUndoInFlight = false;
+        updateWalletOpeningUndoState();
+      }
+    },
+    'modal-wallet-opening',
+  );
+}
+
 function updateWalletOpeningUndoState() {
   const hasHistory = hasWalletOpeningHistory();
   if (walletOpeningUndoButton) {
@@ -13353,6 +13584,7 @@ function updateWalletOpeningUndoState() {
     walletOpeningUndoButton.classList.toggle('cursor-not-allowed', disabled);
     walletOpeningUndoButton.setAttribute('aria-disabled', disabled ? 'true' : 'false');
   }
+  renderWalletOpeningHistory();
   updateWalletOpeningButtonState();
 }
 
@@ -13438,11 +13670,11 @@ function openWalletOpeningModal() {
   if (!walletOpeningModal) return;
   const available = getWalletOpeningRemaining();
   if (available <= 0.005 && !hasWalletOpeningHistory()) {
-    showToast('Não há saldo inicial disponível para distribuir no momento.', 'info');
-    return;
+    showToast('Tudo foi distribuído por enquanto. Revise o histórico abaixo para ajustar se necessário.', 'info');
   }
   renderWalletAccountOptions();
   resetWalletOpeningForm();
+  renderWalletOpeningHistory();
   walletOpeningModal.classList.remove('hidden');
   lockBodyScroll();
   const initialFocus = walletOpeningAccountToggle && !walletOpeningAccountToggle.disabled
@@ -13693,39 +13925,7 @@ function handleWalletOpeningUndoClick() {
     showToast('Nenhuma distribuição recente para desfazer.', 'info');
     return;
   }
-  const data = typeof latestDoc.data === 'function' ? latestDoc.data() || {} : latestDoc;
-  const partes = [];
-  const valorConta = Number(data.valorConta) || 0;
-  const valorInvest = Number(data.valorInvest) || 0;
-  const leftoverValor = Number(data.leftoverValor) || 0;
-  if (valorConta > 0.005) {
-    partes.push(`conta: R$ ${moeda(valorConta)}`);
-  }
-  if (valorInvest > 0.005) {
-    partes.push(`investimentos: R$ ${moeda(valorInvest)}`);
-  }
-  if (leftoverValor > 0.005) {
-    partes.push(`fluxo livre: R$ ${moeda(leftoverValor)}`);
-  }
-  const resumo = partes.length ? ` (${partes.join(' • ')})` : '';
-  abrirModalConfirmacao(
-    'Desfazer distribuição',
-    `Esta ação irá reverter a distribuição registrada mais recentemente${resumo}.`,
-    async () => {
-      walletOpeningUndoInFlight = true;
-      updateWalletOpeningUndoState();
-      try {
-        await desfazerDistribuicaoSaldoInicial(latestDoc);
-      } catch (error) {
-        console.error('Erro ao desfazer distribuição do saldo inicial:', error);
-        showToast('Não foi possível desfazer a distribuição agora.', 'error');
-      } finally {
-        walletOpeningUndoInFlight = false;
-        updateWalletOpeningUndoState();
-      }
-    },
-    'modal-wallet-opening',
-  );
+  confirmUndoWalletOpeningDistribution(latestDoc);
 }
 
 async function ajustarDistribuicaoSaldoInicialSnapshot({ valorConta = 0, valorInvest = 0, fator = 1 }) {
@@ -14611,8 +14811,7 @@ async function startObservers(force = false){
 
   const walletOpeningDistributionsRef = userCollectionRef('walletOpeningDistributions')
     .where('month', '==', walletMonthKey)
-    .orderBy('occurredAt', 'desc')
-    .limit(10);
+    .orderBy('occurredAt', 'desc');
   unsubWalletOpeningDistributions = walletOpeningDistributionsRef.onSnapshot((snap) => {
     walletOpeningDistributionsDocs = snap.docs;
     walletOpeningUndoInFlight = false;
