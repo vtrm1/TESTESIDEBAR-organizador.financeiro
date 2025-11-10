@@ -3265,6 +3265,8 @@ let investmentTotalsWorkspaceId = null;
 
 let walletAccountsRealtimeHydrated = false;
 let investimentosRealtimeHydrated = false;
+let walletOpeningDistributionsDocs = [];
+let walletOpeningUndoInFlight = false;
 
 function getInvestmentSummaryTotalForMonth(monthKey) {
   if (!monthKey || monthKey === 'all') {
@@ -8435,9 +8437,6 @@ let resumoFinanceiroAtual = {
   saldoProjetado: 0,
   patrimonioTotal: 0,
 };
-let walletOpeningDistributionsDocs = [];
-let walletOpeningUndoInFlight = false;
-
 const walletOpeningCache = new Map();
 const walletClosingCache = new Map();
 const WALLET_OPENING_CACHE_TTL = 1000 * 60 * 60 * 6; // 6 horas
