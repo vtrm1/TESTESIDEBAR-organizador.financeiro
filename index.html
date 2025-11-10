@@ -7598,7 +7598,6 @@ if (walletOpeningForm) {
 
 if (walletOpeningUndoButton) {
   walletOpeningUndoButton.addEventListener('click', handleWalletOpeningUndoClick);
-  updateWalletOpeningUndoState();
 }
 
 if (walletInvestOriginSelect) {
@@ -8431,6 +8430,7 @@ const createDefaultWalletState = () => ({
   pendingSnapshotPayload: null,
 });
 let walletState = createDefaultWalletState();
+updateWalletOpeningUndoState();
 let resumoFinanceiroAtual = {
   entradasMes: 0,
   totalGastosMes: 0,
