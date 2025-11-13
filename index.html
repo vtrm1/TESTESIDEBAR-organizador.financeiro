@@ -220,66 +220,87 @@
         <p id="wallet-opening-available-helper" class="text-xs text-emerald-700/80 dark:text-emerald-200/80 mt-1">Defina quanto será distribuído agora. O restante continuará livre para futuras decisões.</p>
       </div>
 
-      <div class="grid gap-4 sm:grid-cols-2">
-        <label class="flex flex-col gap-1 text-sm font-medium text-slate-700 dark:text-slate-200">
-          Data da movimentação
-          <input id="wallet-opening-date" type="date" class="px-3 py-2 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" required />
-        </label>
-        <label class="flex flex-col gap-1 text-sm font-medium text-slate-700 dark:text-slate-200">
-          Observação (opcional)
-          <input id="wallet-opening-description" type="text" maxlength="140" class="px-3 py-2 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" placeholder="Ex.: reservar para emergência" />
-        </label>
-      </div>
-
-      <div class="space-y-3 rounded-xl border border-slate-200/80 dark:border-slate-700/60 bg-white/80 dark:bg-slate-900/30 p-4">
-        <label class="inline-flex items-center gap-3 text-sm font-semibold text-slate-700 dark:text-slate-200">
-          <input id="wallet-opening-account-toggle" type="checkbox" class="h-4 w-4 rounded border-emerald-300 dark:border-emerald-600 text-emerald-600 focus:ring-emerald-500" />
-          Reforçar uma conta da carteira
-        </label>
-        <div id="wallet-opening-account-fields" class="grid gap-3 sm:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] hidden">
-          <label class="flex flex-col gap-1 text-xs font-semibold uppercase tracking-wide text-emerald-800 dark:text-emerald-200">
-            Conta de destino
-            <select id="wallet-opening-account" class="px-3 py-2 rounded border border-emerald-200 dark:border-emerald-700 bg-white dark:bg-slate-900 text-sm text-emerald-700 dark:text-emerald-200">
-              <option value="">Selecione uma conta</option>
-            </select>
-          </label>
-          <label class="flex flex-col gap-1 text-xs font-semibold uppercase tracking-wide text-emerald-800 dark:text-emerald-200">
-            Valor (R$)
-            <input id="wallet-opening-account-amount" type="number" min="0" step="0.01" class="px-3 py-2 rounded border border-emerald-200 dark:border-emerald-700 bg-white dark:bg-slate-900 text-right text-emerald-700 dark:text-emerald-200" />
-          </label>
+      <div id="wallet-opening-zero-state" class="hidden rounded-xl border border-amber-200/70 dark:border-amber-800/60 bg-amber-50/60 dark:bg-amber-900/20 p-4 text-sm text-amber-800 dark:text-amber-100">
+        <div class="space-y-2">
+          <p>Você já distribuiu todo o saldo inicial deste mês. Revise o histórico abaixo ou desfaça a última operação para liberar o saldo novamente.</p>
+          <button id="wallet-opening-undo-all" type="button" class="inline-flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2 font-semibold text-white transition hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-amber-500 disabled:opacity-50 disabled:cursor-not-allowed">
+            <i class="fa-solid fa-rotate-left"></i>
+            Desfazer distribuição
+          </button>
         </div>
       </div>
 
-      <div class="space-y-3 rounded-xl border border-indigo-200/80 dark:border-indigo-800/60 bg-indigo-50/60 dark:bg-indigo-900/20 p-4">
-        <label class="inline-flex items-center gap-3 text-sm font-semibold text-indigo-700 dark:text-indigo-200">
-          <input id="wallet-opening-invest-toggle" type="checkbox" class="h-4 w-4 rounded border-indigo-300 dark:border-indigo-600 text-indigo-600 focus:ring-indigo-500" />
-          Enviar para investimentos
-        </label>
-        <div id="wallet-opening-invest-fields" class="grid gap-3 sm:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] hidden">
-          <label class="flex flex-col gap-1 text-xs font-semibold uppercase tracking-wide text-indigo-800 dark:text-indigo-200">
-            Tipo de investimento
-            <select id="wallet-opening-invest-type" class="px-3 py-2 rounded border border-indigo-200 dark:border-indigo-700 bg-white dark:bg-slate-900 text-sm text-indigo-700 dark:text-indigo-200">
-              <option value="renda_fixa">Renda fixa</option>
-              <option value="acoes">Ações</option>
-              <option value="fundo_imobiliario">Fundos imobiliários</option>
-              <option value="cripto">Cripto</option>
-              <option value="outros">Outros investimentos</option>
-            </select>
+      <div id="wallet-opening-controls" class="space-y-5">
+        <div class="grid gap-4 sm:grid-cols-2">
+          <label class="flex flex-col gap-1 text-sm font-medium text-slate-700 dark:text-slate-200">
+            Data da movimentação
+            <input id="wallet-opening-date" type="date" class="px-3 py-2 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" required />
           </label>
-          <label class="flex flex-col gap-1 text-xs font-semibold uppercase tracking-wide text-indigo-800 dark:text-indigo-200">
-            Valor (R$)
-            <input id="wallet-opening-invest-amount" type="number" min="0" step="0.01" class="px-3 py-2 rounded border border-indigo-200 dark:border-indigo-700 bg-white dark:bg-slate-900 text-right text-indigo-700 dark:text-indigo-200" />
+          <label class="flex flex-col gap-1 text-sm font-medium text-slate-700 dark:text-slate-200">
+            Observação (opcional)
+            <input id="wallet-opening-description" type="text" maxlength="140" class="px-3 py-2 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100" placeholder="Ex.: reservar para emergência" />
           </label>
+        </div>
+
+        <div class="space-y-3 rounded-xl border border-slate-200/80 dark:border-slate-700/60 bg-white/80 dark:bg-slate-900/30 p-4">
+          <label class="inline-flex items-center gap-3 text-sm font-semibold text-slate-700 dark:text-slate-200">
+            <input id="wallet-opening-account-toggle" type="checkbox" class="h-4 w-4 rounded border-emerald-300 dark:border-emerald-600 text-emerald-600 focus:ring-emerald-500" />
+            Reforçar uma conta da carteira
+          </label>
+          <div id="wallet-opening-account-fields" class="grid gap-3 sm:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] hidden">
+            <label class="flex flex-col gap-1 text-xs font-semibold uppercase tracking-wide text-emerald-800 dark:text-emerald-200">
+              Conta de destino
+              <select id="wallet-opening-account" class="px-3 py-2 rounded border border-emerald-200 dark:border-emerald-700 bg-white dark:bg-slate-900 text-sm text-emerald-700 dark:text-emerald-200">
+                <option value="">Selecione uma conta</option>
+              </select>
+            </label>
+            <label class="flex flex-col gap-1 text-xs font-semibold uppercase tracking-wide text-emerald-800 dark:text-emerald-200">
+              Valor (R$)
+              <input id="wallet-opening-account-amount" type="number" min="0" step="0.01" class="px-3 py-2 rounded border border-emerald-200 dark:border-emerald-700 bg-white dark:bg-slate-900 text-right text-emerald-700 dark:text-emerald-200" />
+            </label>
+          </div>
+        </div>
+
+        <div class="space-y-3 rounded-xl border border-indigo-200/80 dark:border-indigo-800/60 bg-indigo-50/60 dark:bg-indigo-900/20 p-4">
+          <label class="inline-flex items-center gap-3 text-sm font-semibold text-indigo-700 dark:text-indigo-200">
+            <input id="wallet-opening-invest-toggle" type="checkbox" class="h-4 w-4 rounded border-indigo-300 dark:border-indigo-600 text-indigo-600 focus:ring-indigo-500" />
+            Enviar para investimentos
+          </label>
+          <div id="wallet-opening-invest-fields" class="grid gap-3 sm:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] hidden">
+            <label class="flex flex-col gap-1 text-xs font-semibold uppercase tracking-wide text-indigo-800 dark:text-indigo-200">
+              Tipo de investimento
+              <select id="wallet-opening-invest-type" class="px-3 py-2 rounded border border-indigo-200 dark:border-indigo-700 bg-white dark:bg-slate-900 text-sm text-indigo-700 dark:text-indigo-200">
+                <option value="renda_fixa">Renda fixa</option>
+                <option value="acoes">Ações</option>
+                <option value="fundo_imobiliario">Fundos imobiliários</option>
+                <option value="cripto">Cripto</option>
+                <option value="outros">Outros investimentos</option>
+              </select>
+            </label>
+            <label class="flex flex-col gap-1 text-xs font-semibold uppercase tracking-wide text-indigo-800 dark:text-indigo-200">
+              Valor (R$)
+              <input id="wallet-opening-invest-amount" type="number" min="0" step="0.01" class="px-3 py-2 rounded border border-indigo-200 dark:border-indigo-700 bg-white dark:bg-slate-900 text-right text-indigo-700 dark:text-indigo-200" />
+            </label>
+          </div>
+        </div>
+
+        <div id="wallet-opening-feedback" class="hidden text-sm"></div>
+
+        <div class="flex justify-end gap-3">
+          <button id="wallet-opening-submit" type="submit" class="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 font-semibold text-white transition hover:bg-emerald-700">
+            <i class="fa-solid fa-paper-plane"></i>
+            Distribuir agora
+          </button>
         </div>
       </div>
 
-      <div id="wallet-opening-feedback" class="hidden text-sm"></div>
-
-      <div class="flex justify-end gap-3">
-        <button id="wallet-opening-submit" type="submit" class="inline-flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 font-semibold text-white transition hover:bg-emerald-700">
-          <i class="fa-solid fa-paper-plane"></i>
-          Distribuir agora
-        </button>
+      <div id="wallet-opening-history-section" class="rounded-xl border border-slate-200/80 dark:border-slate-700/60 bg-white/70 dark:bg-slate-900/20 p-4 space-y-4">
+        <div>
+          <h3 class="text-base font-semibold text-slate-900 dark:text-slate-100">Histórico das distribuições</h3>
+          <p class="text-sm text-slate-600 dark:text-slate-400">Acompanhe o que já foi distribuído neste mês e reverta o que for necessário.</p>
+        </div>
+        <div id="wallet-opening-history-empty" class="text-sm text-slate-500 dark:text-slate-400">Nenhuma distribuição registrada neste mês.</div>
+        <ul id="wallet-opening-history-list" class="space-y-3"></ul>
       </div>
     </form>
   </div>
@@ -4465,6 +4486,12 @@ const walletOpeningInvestType = document.getElementById('wallet-opening-invest-t
 const walletOpeningInvestAmount = document.getElementById('wallet-opening-invest-amount');
 const walletOpeningFeedback = document.getElementById('wallet-opening-feedback');
 const walletOpeningSubmit = document.getElementById('wallet-opening-submit');
+const walletOpeningControlsWrapper = document.getElementById('wallet-opening-controls');
+const walletOpeningZeroStateBlock = document.getElementById('wallet-opening-zero-state');
+const walletOpeningUndoAllButton = document.getElementById('wallet-opening-undo-all');
+const walletOpeningHistorySection = document.getElementById('wallet-opening-history-section');
+const walletOpeningHistoryList = document.getElementById('wallet-opening-history-list');
+const walletOpeningHistoryEmpty = document.getElementById('wallet-opening-history-empty');
 const walletTimelineToggle = document.getElementById('wallet-timeline-toggle');
 const walletTimelinePanel = document.getElementById('wallet-timeline-panel');
 const walletTimelineChevron = document.querySelector('[data-wallet-timeline-chevron]');
@@ -7482,6 +7509,23 @@ if (walletOpeningButton && walletOpeningModal) {
   });
 }
 
+if (walletOpeningUndoAllButton) {
+  walletOpeningUndoAllButton.addEventListener('click', () => {
+    handleWalletOpeningUndoLast();
+  });
+}
+
+if (walletOpeningHistoryList) {
+  walletOpeningHistoryList.addEventListener('click', (event) => {
+    const trigger = event.target.closest('[data-wallet-opening-undo]');
+    if (!trigger) return;
+    const distributionId = trigger.dataset.walletOpeningUndo;
+    if (distributionId) {
+      handleWalletOpeningUndo(distributionId, trigger);
+    }
+  });
+}
+
 if (walletAccountsClose) {
   walletAccountsClose.addEventListener('click', () => {
     closeWalletAccountsModal();
@@ -7655,6 +7699,25 @@ const pct = (a,b)=> b? Math.max(0,Math.min(100,(a/b)*100)) : 0;
 const yyyymm = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
 const mmYYYY = key => { const [y,m]=key.split('-'); return `${m}/${y}`; };
 const roundCurrency = (value) => Math.round((Number(value) || 0) * 100) / 100;
+const entradaTipoLabels = {
+  salario: 'Salário',
+  venda: 'Venda',
+  extra: 'Renda extra',
+  renda_extra: 'Renda extra',
+  outros: 'Outros',
+};
+
+const investimentoTipoLabels = {
+  reserva: 'Reserva de emergência',
+  renda_fixa: 'Renda fixa',
+  acoes: 'Ações',
+  fundos: 'Fundos de investimento',
+  fundo_imobiliario: 'Fundos imobiliários',
+  tesouro: 'Tesouro direto',
+  previdencia: 'Previdência complementar',
+  cripto: 'Cripto',
+  outros: 'Outros',
+};
 const clampPercent = (value) => {
   if (value === '' || value === null || value === undefined) return 0;
   const num = Number(value);
@@ -8395,12 +8458,15 @@ const painelFinanceiroState = {
 const createDefaultWalletState = () => ({
   settings: null,
   monthKey: getCurrentWalletMonthKey(),
+  summaryMonth: null,
   openingBalance: 0,
   openingSource: { type: 'default', month: null },
+  openingAllocatedMonth: null,
   openingAllocatedAccounts: 0,
   openingAllocatedInvestments: 0,
   openingAllocatedTotal: 0,
   openingRemaining: 0,
+  openingEffective: 0,
   closingBalance: 0,
   netFlow: 0,
   entriesMonth: 0,
@@ -8427,6 +8493,8 @@ let resumoFinanceiroAtual = {
 
 const walletOpeningCache = new Map();
 const walletClosingCache = new Map();
+let walletOpeningHistoryDocs = [];
+let walletOpeningUndoInFlight = false;
 const WALLET_OPENING_CACHE_TTL = 1000 * 60 * 60 * 6; // 6 horas
 const WALLET_CLOSING_CACHE_TTL = WALLET_OPENING_CACHE_TTL;
 
@@ -11813,7 +11881,7 @@ if (relatorioActionsMediaQuery) {
    =========================== */
 
 let unsubLimits, unsubFixos, unsubGastos, unsubParcelados, unsubConfig, unsubEntradas, unsubInvestimentos, unsubEntradasRecorrentes;
-let unsubWalletSettings, unsubWalletAccounts, unsubWalletSnapshot, unsubWalletTimeline;
+let unsubWalletSettings, unsubWalletAccounts, unsubWalletSnapshot, unsubWalletTimeline, unsubWalletOpeningHistory;
 let allParceladosDocs = [];
 let allGastosDocs = [];
 let walletAccountsDocs = [];
@@ -11846,10 +11914,14 @@ function resetWalletState({ resetUI = true } = {}) {
   if (typeof unsubWalletTimeline === 'function') {
     unsubWalletTimeline();
   }
+  if (typeof unsubWalletOpeningHistory === 'function') {
+    unsubWalletOpeningHistory();
+  }
   unsubWalletSettings = null;
   unsubWalletAccounts = null;
   unsubWalletSnapshot = null;
   unsubWalletTimeline = null;
+  unsubWalletOpeningHistory = null;
   if (walletSnapshotSyncTimeout) {
     clearTimeout(walletSnapshotSyncTimeout);
     walletSnapshotSyncTimeout = null;
@@ -11857,6 +11929,7 @@ function resetWalletState({ resetUI = true } = {}) {
   walletAccountsDocs = [];
   walletAccountsRealtimeHydrated = false;
   walletTimelineDocs = [];
+  walletOpeningHistoryDocs = [];
   walletState = createDefaultWalletState();
   walletSettingsEnsureCache.clear();
   walletSnapshotEnsureCache.clear();
@@ -11864,6 +11937,7 @@ function resetWalletState({ resetUI = true } = {}) {
     updateWalletSummaryUI();
     renderWalletAccountsList();
     renderWalletTimeline();
+    renderWalletOpeningHistory();
   }
 }
 function renderWalletAccountsList() {
@@ -12540,7 +12614,10 @@ function resolveWalletOpeningBalanceLocal(monthKey) {
 
 async function updateWalletSummaryUI() {
   const monthKey = getCurrentWalletMonthKey();
+  const previousSummaryMonth = walletState.summaryMonth;
+  const monthChanged = previousSummaryMonth && previousSummaryMonth !== monthKey;
   walletState.monthKey = monthKey;
+  walletState.summaryMonth = monthKey;
   const monthLabel = monthKey ? mmYYYY(monthKey) : '';
   let opening = resolveWalletOpeningBalanceLocal(monthKey);
   const openingSource = walletState.openingSource?.type || null;
@@ -12567,20 +12644,29 @@ async function updateWalletSummaryUI() {
   walletState.openingBalance = roundCurrency(opening);
   cacheWalletOpeningBalance(monthKey, walletState.openingBalance);
 
-  const snapshotNormalized = walletState.currentSnapshotNormalized || null;
+  const snapshotNormalizedRaw = walletState.currentSnapshotNormalized;
+  const snapshotNormalized = snapshotNormalizedRaw && snapshotNormalizedRaw.month === monthKey
+    ? snapshotNormalizedRaw
+    : null;
+  const hasLocalAllocationsForMonth = walletState.openingAllocatedMonth === monthKey && !monthChanged;
+  const fallbackAllocatedAccounts = hasLocalAllocationsForMonth ? roundCurrency(walletState.openingAllocatedAccounts || 0) : 0;
+  const fallbackAllocatedInvestments = hasLocalAllocationsForMonth ? roundCurrency(walletState.openingAllocatedInvestments || 0) : 0;
   const allocatedAccounts = snapshotNormalized && typeof snapshotNormalized.openingAllocatedAccounts === 'number'
     ? roundCurrency(snapshotNormalized.openingAllocatedAccounts)
-    : roundCurrency(walletState.openingAllocatedAccounts || 0);
+    : fallbackAllocatedAccounts;
   const allocatedInvestments = snapshotNormalized && typeof snapshotNormalized.openingAllocatedInvestments === 'number'
     ? roundCurrency(snapshotNormalized.openingAllocatedInvestments)
-    : roundCurrency(walletState.openingAllocatedInvestments || 0);
+    : fallbackAllocatedInvestments;
   const allocatedTotal = snapshotNormalized && typeof snapshotNormalized.openingAllocatedTotal === 'number'
     ? roundCurrency(snapshotNormalized.openingAllocatedTotal)
     : roundCurrency(allocatedAccounts + allocatedInvestments);
   walletState.openingAllocatedAccounts = allocatedAccounts;
   walletState.openingAllocatedInvestments = allocatedInvestments;
   walletState.openingAllocatedTotal = allocatedTotal;
-  walletState.openingRemaining = roundCurrency(Math.max(walletState.openingBalance - walletState.openingAllocatedTotal, 0));
+  walletState.openingAllocatedMonth = monthKey;
+  const openingEffective = roundCurrency(Math.max(walletState.openingBalance - walletState.openingAllocatedTotal, 0));
+  walletState.openingRemaining = openingEffective;
+  walletState.openingEffective = openingEffective;
 
   let entries = Number(painelFinanceiroState?.entradasMes);
   if (!Number.isFinite(entries)) {
@@ -12598,7 +12684,7 @@ async function updateWalletSummaryUI() {
 
   const net = roundCurrency(entries - expenses);
   walletState.netFlow = net;
-  const closing = roundCurrency(walletState.openingBalance + net);
+  const closing = roundCurrency(openingEffective + net);
   walletState.closingBalance = closing;
   cacheWalletClosingBalance(monthKey, closing);
   const nextMonth = nextMonthKey(monthKey);
@@ -12630,7 +12716,7 @@ async function updateWalletSummaryUI() {
   }
   const saldoInicialEl = document.getElementById('wallet-saldo-inicial');
   if (saldoInicialEl) {
-    saldoInicialEl.textContent = `R$ ${moeda(walletState.openingBalance)}`;
+    saldoInicialEl.textContent = `R$ ${moeda(openingEffective)}`;
   }
   const saldoInicialLabel = document.getElementById('wallet-saldo-inicial-label');
   if (saldoInicialLabel) {
@@ -12660,10 +12746,10 @@ async function updateWalletSummaryUI() {
     }
   }
   if (walletOpeningButton) {
-    const disabled = walletState.openingRemaining <= 0.005;
-    walletOpeningButton.disabled = disabled;
-    walletOpeningButton.classList.toggle('opacity-60', disabled);
-    walletOpeningButton.classList.toggle('cursor-not-allowed', disabled);
+    const depleted = walletState.openingRemaining <= 0.005;
+    walletOpeningButton.disabled = false;
+    walletOpeningButton.classList.toggle('opacity-60', depleted);
+    walletOpeningButton.classList.remove('cursor-not-allowed');
   }
   updateWalletOpeningAvailableText();
   const fluxoEl = document.getElementById('wallet-fluxo-liquido');
@@ -13269,15 +13355,50 @@ function showWalletInvestFeedback(message, isSuccess) {
   walletInvestFeedback.classList.toggle('dark:text-rose-300', isSuccess === false);
 }
 
-function updateWalletOpeningAvailableText() {
-  if (!walletOpeningAvailable) return;
-  const available = walletState.openingRemaining || Math.max(walletState.openingBalance - walletState.openingAllocatedTotal, 0);
-  walletOpeningAvailable.textContent = `R$ ${moeda(available)}`;
-  if (walletOpeningAvailableHelper) {
-    walletOpeningAvailableHelper.textContent = available > 0.005
-      ? 'Defina quanto será distribuído agora. O restante continuará livre para futuras decisões.'
-      : 'Você já distribuiu todo o saldo inicial deste mês. Ajuste as preferências se quiser redefinir o valor.';
+function getWalletOpeningAvailableValue() {
+  const available = walletState.openingEffective ?? walletState.openingRemaining
+    ?? Math.max(walletState.openingBalance - walletState.openingAllocatedTotal, 0);
+  return roundCurrency(Math.max(available, 0));
+}
+
+function updateWalletOpeningZeroState() {
+  const available = getWalletOpeningAvailableValue();
+  const depleted = available <= 0.005;
+  const hasHistory = Array.isArray(walletOpeningHistoryDocs) && walletOpeningHistoryDocs.length > 0;
+  if (walletOpeningControlsWrapper) {
+    walletOpeningControlsWrapper.classList.toggle('hidden', depleted);
   }
+  if (walletOpeningZeroStateBlock) {
+    walletOpeningZeroStateBlock.classList.toggle('hidden', !depleted);
+  }
+  if (walletOpeningUndoAllButton) {
+    walletOpeningUndoAllButton.disabled = !hasHistory;
+    walletOpeningUndoAllButton.classList.toggle('opacity-60', !hasHistory);
+    walletOpeningUndoAllButton.classList.toggle('cursor-not-allowed', !hasHistory);
+  }
+}
+
+function updateWalletOpeningAvailableText() {
+  if (walletOpeningAvailable) {
+    const available = getWalletOpeningAvailableValue();
+    walletOpeningAvailable.textContent = `R$ ${moeda(available)}`;
+    if (walletOpeningAvailableHelper) {
+      walletOpeningAvailableHelper.textContent = available > 0.005
+        ? 'Defina quanto será distribuído agora. O restante continuará livre para futuras decisões.'
+        : 'Você já distribuiu todo o saldo inicial deste mês. Ajuste as preferências se quiser redefinir o valor.';
+    }
+  }
+  updateWalletOpeningZeroState();
+}
+
+function applyWalletOpeningDistributionDelta({ valorConta = 0, valorInvest = 0 }) {
+  walletState.openingAllocatedAccounts = roundCurrency(walletState.openingAllocatedAccounts + valorConta);
+  walletState.openingAllocatedInvestments = roundCurrency(walletState.openingAllocatedInvestments + valorInvest);
+  walletState.openingAllocatedTotal = roundCurrency(walletState.openingAllocatedAccounts + walletState.openingAllocatedInvestments);
+  const openingEffectiveLocal = roundCurrency(Math.max(walletState.openingBalance - walletState.openingAllocatedTotal, 0));
+  walletState.openingRemaining = openingEffectiveLocal;
+  walletState.openingEffective = openingEffectiveLocal;
+  updateWalletOpeningAvailableText();
 }
 
 function resetWalletOpeningForm() {
@@ -13359,21 +13480,28 @@ function showWalletOpeningFeedback(message, isSuccess) {
 }
 
 function openWalletOpeningModal() {
+
   if (!walletOpeningModal) return;
-  const available = walletState.openingRemaining || Math.max(walletState.openingBalance - walletState.openingAllocatedTotal, 0);
-  if (available <= 0.005) {
-    showToast('Não há saldo inicial disponível para distribuir no momento.', 'info');
-    return;
-  }
+
   renderWalletAccountOptions();
+
   resetWalletOpeningForm();
+
   walletOpeningModal.classList.remove('hidden');
+
   lockBodyScroll();
+
   const initialFocus = walletOpeningAccountToggle && !walletOpeningAccountToggle.disabled
+
     ? walletOpeningAccountToggle
+
     : (walletOpeningInvestToggle || walletOpeningDateInput || walletOpeningForm);
+
   activateDialog(walletOpeningModal, { initialFocus });
+
 }
+
+
 
 function closeWalletOpeningModal() {
   if (!walletOpeningModal) return;
@@ -13381,6 +13509,286 @@ function closeWalletOpeningModal() {
   walletOpeningModal.classList.add('hidden');
   unlockBodyScrollIfAllowed();
   resetWalletOpeningForm();
+}
+
+function renderWalletOpeningHistory() {
+  if (!walletOpeningHistoryList || !walletOpeningHistoryEmpty) return;
+  walletOpeningHistoryList.innerHTML = '';
+  const docs = Array.isArray(walletOpeningHistoryDocs) ? walletOpeningHistoryDocs : [];
+  if (!docs.length) {
+    walletOpeningHistoryEmpty.classList.remove('hidden');
+  } else {
+    walletOpeningHistoryEmpty.classList.add('hidden');
+  }
+  docs.forEach((entry) => {
+    if (!entry) return;
+    const li = document.createElement('li');
+    li.className = 'rounded-xl border border-slate-200/70 dark:border-slate-700/60 bg-white/80 dark:bg-slate-900/40 p-3';
+    const entryDate = entry.occurredAt || entry.createdAt;
+    const breakdown = [];
+    if (entry.accountAmount > 0.005) {
+      breakdown.push(`Conta: ${entry.accountLabel || 'Conta da carteira'} • R$ ${moeda(entry.accountAmount)}`);
+    }
+    if (entry.investmentAmount > 0.005) {
+      const investLabel = investimentoTipoLabels?.[entry.investmentType] || 'Investimento';
+      breakdown.push(`Investimentos: ${investLabel} • R$ ${moeda(entry.investmentAmount)}`);
+    }
+    if (entry.description) {
+      breakdown.push(`Obs.: ${entry.description}`);
+    }
+    const wrapper = document.createElement('div');
+    wrapper.className = 'flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between';
+
+    const left = document.createElement('div');
+    left.className = 'space-y-1';
+    const dateEl = document.createElement('div');
+    dateEl.className = 'text-sm font-semibold text-slate-900 dark:text-slate-100';
+    dateEl.textContent = entryDate ? formatDate(entryDate) : 'Data não informada';
+    left.appendChild(dateEl);
+    const hintEl = document.createElement('div');
+    hintEl.className = 'text-xs text-slate-500 dark:text-slate-400';
+    hintEl.textContent = `Total distribuído: R$ ${moeda(entry.total || 0)}`;
+    left.appendChild(hintEl);
+    if (breakdown.length) {
+      const breakdownList = document.createElement('ul');
+      breakdownList.className = 'text-[0.75rem] text-slate-600 dark:text-slate-300 list-disc pl-4 space-y-0.5';
+      breakdown.forEach((line) => {
+        const item = document.createElement('li');
+        item.textContent = line;
+        breakdownList.appendChild(item);
+      });
+      left.appendChild(breakdownList);
+    }
+
+    const right = document.createElement('div');
+    right.className = 'flex flex-col items-start sm:items-end gap-2';
+    const totalStrong = document.createElement('div');
+    totalStrong.className = 'text-lg font-bold text-slate-900 dark:text-slate-100';
+    totalStrong.textContent = `R$ ${moeda(entry.total || 0)}`;
+    right.appendChild(totalStrong);
+    const undoButton = document.createElement('button');
+    undoButton.type = 'button';
+    undoButton.className = 'inline-flex items-center gap-2 rounded-full border border-slate-300/70 dark:border-slate-600 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition disabled:opacity-50 disabled:cursor-not-allowed';
+    undoButton.dataset.walletOpeningUndo = entry.id || '';
+    const icon = document.createElement('i');
+    icon.className = 'fa-solid fa-rotate-left';
+    undoButton.appendChild(icon);
+    undoButton.appendChild(document.createTextNode(' Desfazer'));
+    right.appendChild(undoButton);
+
+    wrapper.appendChild(left);
+    wrapper.appendChild(right);
+    li.appendChild(wrapper);
+    walletOpeningHistoryList.appendChild(li);
+  });
+  updateWalletOpeningZeroState();
+}
+
+function normalizeWalletOpeningHistoryDoc(doc, fallbackMonth = walletState.monthKey) {
+  if (!doc) return null;
+  const raw = typeof doc.data === 'function' ? doc.data() || {} : doc;
+  const toDateSafe = (value) => {
+    if (!value) return null;
+    if (value instanceof Date) return value;
+    if (typeof value?.toDate === 'function') {
+      try {
+        return value.toDate();
+      } catch (_) {
+        return null;
+      }
+    }
+    const parsed = new Date(value);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  };
+  const normalizeAmount = (value) => roundCurrency(Number(value) || 0);
+  const account = raw.account || {};
+  const investment = raw.investment || {};
+  return {
+    id: doc.id || raw.id || null,
+    month: raw.month || fallbackMonth || null,
+    total: normalizeAmount(raw.total),
+    description: raw.description || '',
+    occurredAt: toDateSafe(raw.occurredAt),
+    createdAt: toDateSafe(raw.createdAt),
+    accountAmount: normalizeAmount(account.amount),
+    accountId: account.id || null,
+    accountLabel: account.label || null,
+    accountMovementId: account.movementId || null,
+    investmentAmount: normalizeAmount(investment.amount),
+    investmentId: investment.id || null,
+    investmentType: investment.type || null,
+    investmentMovementId: investment.movementId || null,
+  };
+}
+
+function subscribeWalletOpeningHistory(monthKey) {
+  if (typeof unsubWalletOpeningHistory === 'function') {
+    unsubWalletOpeningHistory();
+  }
+  walletOpeningHistoryDocs = [];
+  renderWalletOpeningHistory();
+  if (!monthKey) {
+    unsubWalletOpeningHistory = null;
+    return;
+  }
+  unsubWalletOpeningHistory = userCollectionRef('walletOpeningDistributions')
+    .where('month', '==', monthKey)
+    .onSnapshot((snap) => {
+      const normalized = snap.docs.map((doc) => normalizeWalletOpeningHistoryDoc(doc, monthKey)).filter(Boolean);
+      normalized.sort((a, b) => {
+        const aTime = (a.occurredAt?.getTime?.() || a.createdAt?.getTime?.() || 0);
+        const bTime = (b.occurredAt?.getTime?.() || b.createdAt?.getTime?.() || 0);
+        return bTime - aTime;
+      });
+      walletOpeningHistoryDocs = normalized;
+      renderWalletOpeningHistory();
+    }, (error) => {
+      console.error('Erro ao carregar histórico das distribuições do saldo inicial:', error);
+    });
+}
+
+async function registrarHistoricoDistribuicaoSaldoInicial({
+  dataTimestamp,
+  descricao,
+  valorConta = 0,
+  contaDestino = '',
+  contaLabel = '',
+  accountMovementId = null,
+  valorInvest = 0,
+  tipoInvest = null,
+  investmentId = null,
+  investmentMovementId = null,
+}) {
+  const total = roundCurrency((Number(valorConta) || 0) + (Number(valorInvest) || 0));
+  if (total <= 0) return null;
+  const historyRef = userCollectionRef('walletOpeningDistributions').doc();
+  const payload = stampWorkspaceCreation({
+    month: walletState.monthKey || getCurrentWalletMonthKey(),
+    total,
+    occurredAt: dataTimestamp,
+    description: descricao || null,
+    snapshotId: walletState.currentSnapshotRef?.id || null,
+    account: valorConta > 0 ? {
+      id: contaDestino || null,
+      label: contaLabel || null,
+      amount: roundCurrency(valorConta),
+      movementId: accountMovementId || null,
+    } : null,
+    investment: valorInvest > 0 ? {
+      id: investmentId || null,
+      type: tipoInvest || null,
+      amount: roundCurrency(valorInvest),
+      movementId: investmentMovementId || null,
+    } : null,
+  });
+  await historyRef.set(payload);
+  return historyRef.id;
+}
+
+async function revertWalletOpeningAccountAllocation(entry) {
+  if (!entry?.accountId || !(entry.accountAmount > 0.005)) {
+    return;
+  }
+  const contaRef = userCollectionRef('wallets').doc(entry.accountId);
+  const movimentoRef = entry.accountMovementId
+    ? userCollectionRef('walletMovements').doc(entry.accountMovementId)
+    : null;
+  await firebase.firestore().runTransaction(async (transaction) => {
+    const contaSnap = await transaction.get(contaRef);
+    if (!contaSnap.exists) {
+      throw new Error('Conta não encontrada ao desfazer a distribuição.');
+    }
+    const contaData = contaSnap.data() || {};
+    const saldoAtual = Number(contaData.saldoAtual ?? contaData.currentBalance ?? 0) || 0;
+    const saldoAtualizado = roundCurrency(saldoAtual - entry.accountAmount);
+    const agora = firebase.firestore.Timestamp.now();
+    transaction.set(contaRef, stampWorkspaceUpdate({
+      saldoAtual: saldoAtualizado,
+      currentBalance: saldoAtualizado,
+      ultimaAtualizacao: agora,
+      updatedAt: agora,
+    }), { merge: true });
+    if (movimentoRef) {
+      transaction.delete(movimentoRef);
+    }
+  });
+}
+
+async function revertWalletOpeningInvestmentAllocation(entry) {
+  const batch = firebase.firestore().batch();
+  let hasChanges = false;
+  if (entry?.investmentId) {
+    const investRef = userCollectionRef('investimentos').doc(entry.investmentId);
+    batch.delete(investRef);
+    hasChanges = true;
+  }
+  if (entry?.investmentMovementId) {
+    const movimentoRef = userCollectionRef('walletMovements').doc(entry.investmentMovementId);
+    batch.delete(movimentoRef);
+    hasChanges = true;
+  }
+  if (hasChanges) {
+    await batch.commit();
+  }
+}
+
+async function processWalletOpeningUndo(entry) {
+  if (!entry?.id) return;
+  await revertWalletOpeningAccountAllocation(entry);
+  await revertWalletOpeningInvestmentAllocation(entry);
+  await ajustarDistribuicaoSaldoInicialSnapshot({
+    valorConta: entry.accountAmount ? -entry.accountAmount : 0,
+    valorInvest: entry.investmentAmount ? -entry.investmentAmount : 0,
+  });
+  applyWalletOpeningDistributionDelta({
+    valorConta: entry.accountAmount ? -entry.accountAmount : 0,
+    valorInvest: entry.investmentAmount ? -entry.investmentAmount : 0,
+  });
+  walletOpeningHistoryDocs = walletOpeningHistoryDocs.filter((item) => item.id !== entry.id);
+  renderWalletOpeningHistory();
+  await userCollectionRef('walletOpeningDistributions').doc(entry.id).delete();
+  updateWalletSummaryUI();
+}
+
+async function handleWalletOpeningUndo(distributionId, triggerButton) {
+  if (!distributionId || walletOpeningUndoInFlight) return;
+  walletOpeningUndoInFlight = distributionId;
+  if (triggerButton) {
+    triggerButton.disabled = true;
+    triggerButton.classList.add('opacity-60', 'pointer-events-none');
+  }
+  try {
+    let entry = walletOpeningHistoryDocs.find((item) => item.id === distributionId);
+    if (!entry) {
+      const snap = await userCollectionRef('walletOpeningDistributions').doc(distributionId).get();
+      if (snap.exists) {
+        entry = normalizeWalletOpeningHistoryDoc({ ...snap.data(), id: snap.id }, walletState.monthKey);
+      }
+    }
+    if (!entry) {
+      showToast('Distribuição não encontrada ou já desfeita.', 'info');
+      return;
+    }
+    await processWalletOpeningUndo(entry);
+    showToast('Distribuição desfeita com sucesso.', 'success');
+  } catch (error) {
+    console.error('Erro ao desfazer distribuição do saldo inicial:', error);
+    showToast('Não foi possível desfazer esta distribuição agora.', 'error');
+  } finally {
+    walletOpeningUndoInFlight = false;
+    if (triggerButton) {
+      triggerButton.disabled = false;
+      triggerButton.classList.remove('opacity-60', 'pointer-events-none');
+    }
+  }
+}
+
+async function handleWalletOpeningUndoLast() {
+  if (!Array.isArray(walletOpeningHistoryDocs) || !walletOpeningHistoryDocs.length) {
+    showToast('Nenhuma distribuição para desfazer.', 'info');
+    return;
+  }
+  await handleWalletOpeningUndo(walletOpeningHistoryDocs[0].id, walletOpeningUndoAllButton);
 }
 
 async function aplicarSaldoInicialConta({ contaDestino, valor, dataTimestamp, descricao }) {
@@ -13413,6 +13821,11 @@ async function aplicarSaldoInicialConta({ contaDestino, valor, dataTimestamp, de
       balanceAfter: saldoAtualizado,
     }));
   });
+  return {
+    accountId: contaDestino,
+    amount: roundCurrency(valor),
+    movementId: movimentoRef.id,
+  };
 }
 
 async function registrarInvestimentoSaldoInicial({ tipo, valor, dataTimestamp, descricao, contaDestino }) {
@@ -13439,24 +13852,31 @@ async function registrarInvestimentoSaldoInicial({ tipo, valor, dataTimestamp, d
     description: descricao ? `Investimento: ${descricao}` : 'Distribuição do saldo inicial para investimentos',
     occurredAt: dataTimestamp,
   }));
-  return investRef.id;
+  return {
+    investmentId: investRef.id,
+    movementId: movimentoRef.id,
+  };
 }
 
-async function registrarDistribuicaoSaldoInicialSnapshot({ valorConta = 0, valorInvest = 0 }) {
+async function ajustarDistribuicaoSaldoInicialSnapshot({ valorConta = 0, valorInvest = 0 }) {
   if (!walletState.currentSnapshotRef) {
     await ensureWalletSnapshotDoc(walletState.monthKey || getCurrentWalletMonthKey());
   }
   if (!walletState.currentSnapshotRef) return;
-  const total = roundCurrency((Number(valorConta) || 0) + (Number(valorInvest) || 0));
-  if (total <= 0) return;
+  const contaIncrement = roundCurrency(Number(valorConta) || 0);
+  const investIncrement = roundCurrency(Number(valorInvest) || 0);
+  const total = roundCurrency(contaIncrement + investIncrement);
+  if (Math.abs(total) <= 0.0005 && Math.abs(contaIncrement) <= 0.0005 && Math.abs(investIncrement) <= 0.0005) {
+    return;
+  }
   const increments = {
     openingAllocatedTotal: firebase.firestore.FieldValue.increment(total),
   };
-  if (valorConta > 0) {
-    increments.openingAllocatedAccounts = firebase.firestore.FieldValue.increment(roundCurrency(valorConta));
+  if (Math.abs(contaIncrement) > 0.0005) {
+    increments.openingAllocatedAccounts = firebase.firestore.FieldValue.increment(contaIncrement);
   }
-  if (valorInvest > 0) {
-    increments.openingAllocatedInvestments = firebase.firestore.FieldValue.increment(roundCurrency(valorInvest));
+  if (Math.abs(investIncrement) > 0.0005) {
+    increments.openingAllocatedInvestments = firebase.firestore.FieldValue.increment(investIncrement);
   }
   increments.openingAllocationUpdatedAt = firebase.firestore.Timestamp.now();
   await walletState.currentSnapshotRef.set(stampWorkspaceUpdate(increments), { merge: true });
@@ -13468,7 +13888,8 @@ async function handleWalletOpeningSubmit(event) {
   }
   if (!walletOpeningForm) return;
   showWalletOpeningFeedback('', null);
-  const available = walletState.openingRemaining || Math.max(walletState.openingBalance - walletState.openingAllocatedTotal, 0);
+  const available = walletState.openingEffective ?? walletState.openingRemaining
+    ?? Math.max(walletState.openingBalance - walletState.openingAllocatedTotal, 0);
   if (available <= 0.005) {
     showWalletOpeningFeedback('Não há saldo inicial disponível para distribuir.', false);
     return;
@@ -13479,7 +13900,7 @@ async function handleWalletOpeningSubmit(event) {
     if (walletOpeningDateInput) walletOpeningDateInput.focus();
     return;
   }
-  const data = new Date(dataValor);
+  const data = new Date(`${dataValor}T12:00:00`);
   if (Number.isNaN(data.getTime())) {
     showWalletOpeningFeedback('Data inválida. Ajuste e tente novamente.', false);
     if (walletOpeningDateInput) walletOpeningDateInput.focus();
@@ -13491,6 +13912,11 @@ async function handleWalletOpeningSubmit(event) {
   const useInvest = walletOpeningInvestToggle && walletOpeningInvestToggle.checked;
   const valorConta = useAccount ? roundCurrency(Number(walletOpeningAccountAmount?.value || 0)) : 0;
   const contaDestino = useAccount ? walletOpeningAccountSelect?.value || '' : '';
+  const contaLabel = contaDestino
+    ? (getWalletAccountLabel(contaDestino)
+      || walletOpeningAccountSelect?.options?.[walletOpeningAccountSelect.selectedIndex]?.textContent?.trim()
+      || 'Conta da carteira')
+    : '';
   if (useAccount) {
     if (!contaDestino) {
       showWalletOpeningFeedback('Selecione a conta que receberá o saldo.', false);
@@ -13522,18 +13948,28 @@ async function handleWalletOpeningSubmit(event) {
   walletOpeningSubmit?.classList.add('opacity-60', 'pointer-events-none');
   walletOpeningSubmit?.setAttribute('aria-disabled', 'true');
   try {
+    let accountResult = null;
     if (valorConta > 0) {
-      await aplicarSaldoInicialConta({ contaDestino, valor: valorConta, dataTimestamp, descricao });
+      accountResult = await aplicarSaldoInicialConta({ contaDestino, valor: valorConta, dataTimestamp, descricao });
     }
+    let investResult = null;
     if (valorInvest > 0) {
-      await registrarInvestimentoSaldoInicial({ tipo: tipoInvest, valor: valorInvest, dataTimestamp, descricao, contaDestino });
+      investResult = await registrarInvestimentoSaldoInicial({ tipo: tipoInvest, valor: valorInvest, dataTimestamp, descricao, contaDestino });
     }
-    await registrarDistribuicaoSaldoInicialSnapshot({ valorConta, valorInvest });
-    walletState.openingAllocatedAccounts = roundCurrency(walletState.openingAllocatedAccounts + valorConta);
-    walletState.openingAllocatedInvestments = roundCurrency(walletState.openingAllocatedInvestments + valorInvest);
-    walletState.openingAllocatedTotal = roundCurrency(walletState.openingAllocatedAccounts + walletState.openingAllocatedInvestments);
-    walletState.openingRemaining = roundCurrency(Math.max(walletState.openingBalance - walletState.openingAllocatedTotal, 0));
-    updateWalletOpeningAvailableText();
+    await ajustarDistribuicaoSaldoInicialSnapshot({ valorConta, valorInvest });
+    applyWalletOpeningDistributionDelta({ valorConta, valorInvest });
+    await registrarHistoricoDistribuicaoSaldoInicial({
+      dataTimestamp,
+      descricao,
+      valorConta,
+      contaDestino,
+      contaLabel,
+      accountMovementId: accountResult?.movementId || null,
+      valorInvest,
+      tipoInvest,
+      investmentId: investResult?.investmentId || null,
+      investmentMovementId: investResult?.movementId || null,
+    });
     showWalletOpeningFeedback('Distribuição registrada com sucesso!', true);
     showToast('Saldo inicial distribuído com sucesso.', 'success');
     if (valorConta > 0 || valorInvest > 0) {
@@ -13558,10 +13994,12 @@ function renderRecursosOverview() {
   const entradasMes = roundCurrency(painelFinanceiroState.entradasMes || 0);
   const gastosMes = roundCurrency(painelFinanceiroState.totalGastosMes || 0);
   const fluxoLiquido = roundCurrency(entradasMes - gastosMes);
-  const saldoInicial = roundCurrency(walletState.openingBalance || 0);
+  const saldoInicialDisponivel = walletState.openingEffective ?? walletState.openingRemaining
+    ?? Math.max(walletState.openingBalance - walletState.openingAllocatedTotal, 0);
+  const saldoInicial = roundCurrency(saldoInicialDisponivel);
   const saldoDistribuido = roundCurrency(walletState.openingAllocatedTotal || 0);
-  const saldoRestante = roundCurrency(walletState.openingRemaining || Math.max(walletState.openingBalance - walletState.openingAllocatedTotal, 0));
-  const saldoProjetado = roundCurrency(walletState.closingBalance || (walletState.openingBalance + fluxoLiquido));
+  const saldoRestante = roundCurrency(walletState.openingRemaining || saldoInicialDisponivel);
+  const saldoProjetado = roundCurrency(walletState.closingBalance || (saldoInicial + fluxoLiquido));
   const contasTotal = roundCurrency(walletState.accountsTotal || 0);
   const investimentosTotal = roundCurrency(walletState.investmentsTotal || Number(painelFinanceiroState.investimentosTotais || 0));
   const patrimonio = roundCurrency(walletState.patrimonioTotal || (contasTotal + investimentosTotal));
@@ -14215,6 +14653,7 @@ async function startObservers(force = false){
     unsubLimits || unsubConfig || unsubFixos || unsubGastos || unsubParcelados
     || unsubEntradas || unsubEntradasRecorrentes || unsubInvestimentos
     || unsubWalletSettings || unsubWalletAccounts || unsubWalletSnapshot || unsubWalletTimeline
+    || unsubWalletOpeningHistory
   );
 
   if (!force && contextMatches && hasActiveObservers) {
@@ -14243,9 +14682,26 @@ async function startObservers(force = false){
   if (unsubWalletAccounts) unsubWalletAccounts();
   if (unsubWalletSnapshot) unsubWalletSnapshot();
   if (unsubWalletTimeline) unsubWalletTimeline();
+  if (unsubWalletOpeningHistory) unsubWalletOpeningHistory();
 
   walletAccountsRealtimeHydrated = false;
   investimentosRealtimeHydrated = false;
+  walletState.currentSnapshot = null;
+  walletState.currentSnapshotNormalized = null;
+  walletState.pendingSnapshotNormalized = null;
+  walletState.pendingSnapshotPayload = null;
+  const monthChanged = walletState.monthKey && walletState.monthKey !== normalizedMonth;
+  if (monthChanged) {
+    walletState.openingAllocatedMonth = null;
+    walletState.openingAllocatedAccounts = 0;
+    walletState.openingAllocatedInvestments = 0;
+    walletState.openingAllocatedTotal = 0;
+    walletState.openingRemaining = 0;
+    walletState.openingEffective = 0;
+  }
+  walletOpeningHistoryDocs = [];
+  renderWalletOpeningHistory();
+  updateWalletSummaryUI();
 
   // Mostrar spinners antes de carregar os dados
   showSpinner('historico-loading-spinner');
@@ -14332,6 +14788,8 @@ async function startObservers(force = false){
   }, (error) => {
     console.error('Erro ao carregar histórico da carteira:', error);
   });
+
+  subscribeWalletOpeningHistory(walletMonthKey);
 
   unsubWalletAccounts = userCollectionRef('wallets').orderBy('nome', 'asc').onSnapshot((snap) => {
     walletAccountsDocs = snap.docs.map((doc) => {
@@ -14792,26 +15250,6 @@ function renderCategorias(totaisPorCategoria){
 }
 
 
-const entradaTipoLabels = {
-  salario: 'Salário',
-  venda: 'Venda',
-  extra: 'Renda extra',
-  renda_extra: 'Renda extra',
-  outros: 'Outros',
-};
-
-const investimentoTipoLabels = {
-  reserva: 'Reserva de emergência',
-  renda_fixa: 'Renda fixa',
-  acoes: 'Ações',
-  fundos: 'Fundos de investimento',
-  fundo_imobiliario: 'Fundos imobiliários',
-  tesouro: 'Tesouro direto',
-  previdencia: 'Previdência complementar',
-  cripto: 'Cripto',
-  outros: 'Outros',
-};
-
 function renderEntradasSidebar(docs = []) {
   const lista = document.getElementById('entradas-lista');
   const totalMesEl = document.getElementById('entradas-total-mes');
@@ -15134,7 +15572,9 @@ function updateRecursosPatrimonioChart() {
 
   const contasTotal = roundCurrency(walletState.accountsTotal || 0);
   const investimentosTotal = roundCurrency(walletState.investmentsTotal || Number(painelFinanceiroState?.investimentosTotais || 0));
-  const reservado = roundCurrency(Math.max(walletState.openingRemaining || Math.max(walletState.openingBalance - walletState.openingAllocatedTotal, 0), 0));
+  const reservadoBase = walletState.openingEffective ?? walletState.openingRemaining
+    ?? Math.max(walletState.openingBalance - walletState.openingAllocatedTotal, 0);
+  const reservado = roundCurrency(Math.max(reservadoBase, 0));
 
   const dataset = [
     { label: 'Contas', value: contasTotal, color: '#10b981' },
