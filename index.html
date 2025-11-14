@@ -1597,16 +1597,6 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
           <i class="fa-solid fa-user-check text-emerald-500"></i>
           <span>Controle de acesso</span>
         </button>
-        <div id="local-observer-monitor" class="hidden border-t border-amber-100 dark:border-amber-900/40 bg-amber-50/40 dark:bg-amber-500/10 px-4 py-3 text-[0.7rem] leading-relaxed text-amber-800 dark:text-amber-100 space-y-1">
-          <div class="flex items-center justify-between gap-2 uppercase tracking-wide">
-            <span class="font-semibold">Monitoramento local</span>
-            <span id="local-observer-monitor-count" class="text-xs font-semibold"></span>
-          </div>
-          <div class="flex flex-col gap-0.5 text-[0.65rem] text-amber-700/80 dark:text-amber-200/70">
-            <span id="local-observer-monitor-window"></span>
-            <span id="local-observer-monitor-last"></span>
-          </div>
-        </div>
         <button id="btn-open-abuse-monitor" type="button" aria-expanded="false" class="hidden w-full flex items-center gap-2 px-4 py-2 text-left text-sm text-amber-700 dark:text-amber-200 hover:bg-amber-50 dark:hover:bg-amber-500/10 transition-colors">
           <i class="fa-solid fa-triangle-exclamation text-amber-500"></i>
           <span>Abusos detectados</span>
@@ -8253,8 +8243,20 @@ async function loadAbuseMonitorReports(force = false) {
     logAnalyticsEvent('abuse_monitor_viewed', { count: entries.length, uid: currentUser?.uid || null });
   } catch (error) {
     console.error('Falha ao carregar registros de abuso:', error);
+    if (abuseMonitorSummary) {
+      abuseMonitorSummary.textContent = '';
+    }
     if (abuseMonitorError) {
-      abuseMonitorError.textContent = 'Não foi possível carregar os alertas agora. Tente novamente mais tarde.';
+      let message = 'Não foi possível carregar os alertas agora. Tente novamente mais tarde.';
+      if (error && typeof error === 'object') {
+        const code = error.code;
+        if (code === 'permission-denied') {
+          message = 'Sem permissão para listar alertas. Verifique se as regras do Firestore liberam leitura para administradores.';
+        } else if (code === 'unavailable' || code === 'network-request-failed') {
+          message = 'Conexão indisponível para carregar alertas. Tente novamente quando estiver online.';
+        }
+      }
+      abuseMonitorError.textContent = message;
       abuseMonitorError.classList.remove('hidden');
     }
     if (abuseMonitorEmpty) {
