@@ -1597,6 +1597,29 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
           <i class="fa-solid fa-user-check text-emerald-500"></i>
           <span>Controle de acesso</span>
         </button>
+        <div id="local-observer-monitor" class="hidden border-t border-amber-100 dark:border-amber-900/40 bg-amber-50/40 dark:bg-amber-500/10 px-4 py-3 text-[0.7rem] leading-relaxed text-amber-800 dark:text-amber-100 space-y-1">
+          <div class="flex items-center justify-between gap-2 uppercase tracking-wide">
+            <span class="font-semibold">Monitoramento local</span>
+            <span id="local-observer-monitor-count" class="text-xs font-semibold"></span>
+          </div>
+          <div class="flex flex-col gap-0.5 text-[0.65rem] text-amber-700/80 dark:text-amber-200/70">
+            <span id="local-observer-monitor-window"></span>
+            <span id="local-observer-monitor-last"></span>
+          </div>
+        </div>
+        <button id="btn-open-abuse-monitor" type="button" aria-expanded="false" class="hidden w-full flex items-center gap-2 px-4 py-2 text-left text-sm text-amber-700 dark:text-amber-200 hover:bg-amber-50 dark:hover:bg-amber-500/10 transition-colors">
+          <i class="fa-solid fa-triangle-exclamation text-amber-500"></i>
+          <span>Abusos detectados</span>
+          <span id="abuse-monitor-summary" class="ml-auto text-[0.65rem] uppercase tracking-wide text-amber-600/80 dark:text-amber-200/70"></span>
+        </button>
+        <div id="abuse-monitor-panel" class="hidden border-t border-amber-100 dark:border-amber-900/40 bg-white dark:bg-gray-800">
+          <div class="px-4 py-3 space-y-2 text-[0.7rem] text-amber-800 dark:text-amber-100">
+            <p id="abuse-monitor-loading" class="hidden text-xs text-amber-700 dark:text-amber-200">Carregando registros…</p>
+            <p id="abuse-monitor-empty" class="hidden text-xs text-amber-700/80 dark:text-amber-200/70">Nenhum abuso registrado nas últimas verificações.</p>
+            <p id="abuse-monitor-error" class="hidden text-xs text-red-600 dark:text-red-300"></p>
+            <ul id="abuse-monitor-list" class="space-y-2 max-h-56 overflow-y-auto pr-1"></ul>
+          </div>
+        </div>
         <button id="btn-open-workspace-sharing" type="button" class="w-full flex items-center gap-2 px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
           <i class="fa fa-people-group text-emerald-500"></i>
           <span>Família</span>
@@ -3302,8 +3325,14 @@ let monthFallbackLastWorkspaceId = null;
 const OBSERVER_MONITOR_STORAGE_KEY = 'of-observer-monitor';
 const OBSERVER_MONITOR_SYNC_THRESHOLD = 15;
 const OBSERVER_MONITOR_SYNC_INTERVAL = 1000 * 60 * 5;
+const OBSERVER_ABUSE_LIMIT = 30;
+const OBSERVER_ABUSE_WINDOW = 1000 * 60 * 60;
+const OBSERVER_ABUSE_REPORT_COOLDOWN = 1000 * 60 * 60;
 let observerMonitorStateCache = null;
 let observerMonitorSyncTimeout = null;
+const observerAbuseReportPromises = new Map();
+let abuseMonitorLoadedAt = 0;
+let abuseMonitorLoading = false;
 
 const investmentSnapshotTotals = new Map();
 const investmentSummaryTotals = new Map();
@@ -4450,6 +4479,17 @@ const observerMonitorPanel = document.getElementById('observer-monitor-panel');
 const observerMonitorList = document.getElementById('observer-monitor-list');
 const observerMonitorEmpty = document.getElementById('observer-monitor-empty');
 const observerMonitorSummary = document.getElementById('observer-monitor-summary');
+const localObserverMonitorContainer = document.getElementById('local-observer-monitor');
+const localObserverMonitorCount = document.getElementById('local-observer-monitor-count');
+const localObserverMonitorWindow = document.getElementById('local-observer-monitor-window');
+const localObserverMonitorLast = document.getElementById('local-observer-monitor-last');
+const abuseMonitorButton = document.getElementById('btn-open-abuse-monitor');
+const abuseMonitorPanel = document.getElementById('abuse-monitor-panel');
+const abuseMonitorList = document.getElementById('abuse-monitor-list');
+const abuseMonitorEmpty = document.getElementById('abuse-monitor-empty');
+const abuseMonitorError = document.getElementById('abuse-monitor-error');
+const abuseMonitorLoadingIndicator = document.getElementById('abuse-monitor-loading');
+const abuseMonitorSummary = document.getElementById('abuse-monitor-summary');
 const accessManagerSectionToggles = Array.from(document.querySelectorAll('[data-access-section-toggle]'));
 const accessManagerSectionBodies = {};
 const accessManagerSectionCarets = {};
@@ -6070,6 +6110,9 @@ function setUserMenuState(open) {
   if (userMenuCaret) {
     userMenuCaret.classList.toggle('rotate-180', isUserMenuOpen);
   }
+  if (!isUserMenuOpen) {
+    hideAbuseMonitorPanel();
+  }
 }
 
 function toggleUserMenu(force) {
@@ -6297,9 +6340,19 @@ function isCurrentUserAdmin() {
 }
 
 function updateAdminControlsVisibility() {
-  if (!accessManagerButton) return;
   const visible = isCurrentUserAdmin();
-  accessManagerButton.classList.toggle('hidden', !visible);
+  if (accessManagerButton) {
+    accessManagerButton.classList.toggle('hidden', !visible);
+  }
+  if (abuseMonitorButton) {
+    abuseMonitorButton.classList.toggle('hidden', !visible);
+    if (!visible) {
+      hideAbuseMonitorPanel();
+      if (abuseMonitorSummary) {
+        abuseMonitorSummary.textContent = '';
+      }
+    }
+  }
 }
 
 async function startAppForCurrentUser(forceReload = false) {
@@ -6311,6 +6364,11 @@ async function startAppForCurrentUser(forceReload = false) {
   appStartInProgress = true;
   try {
     await ensureUserWorkspace(currentUser);
+    const state = loadObserverMonitorState();
+    const monitorEntry = state?.entries?.[currentUser.uid];
+    if (monitorEntry) {
+      updateLocalObserverMonitorUI(monitorEntry);
+    }
     if (!appBootstrapped) {
       boot();
       appBootstrapped = true;
@@ -7175,6 +7233,10 @@ function handleUserSignedOut() {
   currentUserProfile = null;
   appReadyForCurrentUser = false;
   appStartInProgress = false;
+  observerAbuseReportPromises.clear();
+  abuseMonitorLoadedAt = 0;
+  hideAbuseMonitorPanel();
+  clearLocalObserverMonitorUI();
   resetWalletState({ resetUI: true });
   walletOpeningCache.clear();
   walletClosingCache.clear();
@@ -7599,6 +7661,21 @@ if (workspaceJoinForm) {
     });
   }
 
+  if (abuseMonitorButton) {
+    abuseMonitorButton.addEventListener('click', () => {
+      if (!isCurrentUserAdmin()) {
+        showToast('Somente administradores podem acessar este painel.', 'error');
+        return;
+      }
+      const isOpen = abuseMonitorPanel && !abuseMonitorPanel.classList.contains('hidden');
+      if (isOpen) {
+        hideAbuseMonitorPanel();
+      } else {
+        toggleAbuseMonitorPanel(true);
+      }
+    });
+  }
+
   if (accessManagerClose) {
     accessManagerClose.addEventListener('click', closeAccessManagerModal);
   }
@@ -7989,6 +8066,232 @@ function persistObserverMonitorState(state) {
   }
 }
 
+function clearLocalObserverMonitorUI() {
+  if (!localObserverMonitorContainer) return;
+  localObserverMonitorContainer.classList.add('hidden');
+  if (localObserverMonitorCount) localObserverMonitorCount.textContent = '';
+  if (localObserverMonitorWindow) localObserverMonitorWindow.textContent = '';
+  if (localObserverMonitorLast) localObserverMonitorLast.textContent = '';
+}
+
+function updateLocalObserverMonitorUI(entry) {
+  if (!localObserverMonitorContainer) {
+    return;
+  }
+  if (!entry || typeof entry.count !== 'number' || entry.count <= 0) {
+    clearLocalObserverMonitorUI();
+    return;
+  }
+
+  localObserverMonitorContainer.classList.remove('hidden');
+  if (localObserverMonitorCount) {
+    localObserverMonitorCount.textContent = `×${entry.count}`;
+  }
+
+  const now = Date.now();
+  const windowBoots = Array.isArray(entry.recentBoots)
+    ? entry.recentBoots.filter((ts) => typeof ts === 'number' && (now - ts) <= OBSERVER_ABUSE_WINDOW)
+    : [];
+  const windowCount = windowBoots.length;
+  if (localObserverMonitorWindow) {
+    localObserverMonitorWindow.textContent = windowCount > 0
+      ? `Última hora: ×${windowCount}`
+      : 'Última hora: nenhuma reinicialização';
+  }
+
+  if (localObserverMonitorLast) {
+    const lastBootRaw = entry.lastBootAt;
+    let lastBootDate = null;
+    if (lastBootRaw instanceof Date) {
+      lastBootDate = lastBootRaw;
+    } else if (typeof lastBootRaw?.toDate === 'function') {
+      lastBootDate = lastBootRaw.toDate();
+    } else if (typeof lastBootRaw === 'number') {
+      const parsed = new Date(lastBootRaw);
+      lastBootDate = Number.isNaN(parsed.getTime()) ? null : parsed;
+    }
+    localObserverMonitorLast.textContent = lastBootDate
+      ? `Último registro em ${lastBootDate.toLocaleString('pt-BR')}`
+      : 'Nenhum registro recente.';
+  }
+}
+
+function hideAbuseMonitorPanel() {
+  if (!abuseMonitorPanel) return;
+  abuseMonitorPanel.classList.add('hidden');
+  if (abuseMonitorButton) {
+    abuseMonitorButton.setAttribute('aria-expanded', 'false');
+  }
+}
+
+function renderAbuseMonitorEntries(entries) {
+  if (!abuseMonitorList || !abuseMonitorEmpty) {
+    return;
+  }
+
+  abuseMonitorList.innerHTML = '';
+  const total = Array.isArray(entries) ? entries.length : 0;
+
+  if (abuseMonitorSummary) {
+    abuseMonitorSummary.textContent = total > 0
+      ? `${total} alerta${total > 1 ? 's' : ''}`
+      : '';
+  }
+
+  if (!total) {
+    abuseMonitorList.classList.add('hidden');
+    abuseMonitorEmpty.classList.remove('hidden');
+    return;
+  }
+
+  abuseMonitorEmpty.classList.add('hidden');
+  abuseMonitorList.classList.remove('hidden');
+
+  entries.forEach((entry) => {
+    const li = document.createElement('li');
+    li.className = 'rounded-lg border border-amber-100 dark:border-amber-900/40 bg-amber-50/60 dark:bg-amber-500/15 px-3 py-2 text-[0.68rem] text-amber-800 dark:text-amber-100 flex flex-col gap-1';
+
+    const header = document.createElement('div');
+    header.className = 'flex items-center justify-between gap-2';
+
+    const uidLabel = document.createElement('span');
+    uidLabel.className = 'font-semibold truncate';
+    uidLabel.textContent = entry.uid || '(desconhecido)';
+
+    const countBadge = document.createElement('span');
+    countBadge.className = 'text-xs font-semibold text-amber-800 dark:text-amber-100';
+    countBadge.textContent = `×${entry.qtdReinicios || 0}`;
+
+    header.appendChild(uidLabel);
+    header.appendChild(countBadge);
+    li.appendChild(header);
+
+    if (entry.email) {
+      const emailLabel = document.createElement('span');
+      emailLabel.className = 'text-[0.62rem] text-amber-700/80 dark:text-amber-200/70 break-words';
+      emailLabel.textContent = entry.email;
+      li.appendChild(emailLabel);
+    }
+
+    if (entry.workspace) {
+      const workspaceLabel = document.createElement('span');
+      workspaceLabel.className = 'text-[0.6rem] text-amber-700/70 dark:text-amber-200/60';
+      workspaceLabel.textContent = `Workspace: ${entry.workspace}`;
+      li.appendChild(workspaceLabel);
+    }
+
+    if (entry.timestampLabel) {
+      const tsLabel = document.createElement('span');
+      tsLabel.className = 'text-[0.6rem] text-amber-700/60 dark:text-amber-200/50';
+      tsLabel.textContent = entry.timestampLabel;
+      li.appendChild(tsLabel);
+    }
+
+    abuseMonitorList.appendChild(li);
+  });
+}
+
+async function loadAbuseMonitorReports(force = false) {
+  if (!isCurrentUserAdmin()) {
+    return;
+  }
+  if (!db || !abuseMonitorPanel || !abuseMonitorList) {
+    return;
+  }
+  if (abuseMonitorLoading) {
+    return;
+  }
+  const now = Date.now();
+  if (!force && abuseMonitorLoadedAt && (now - abuseMonitorLoadedAt) < 60000) {
+    return;
+  }
+
+  abuseMonitorLoading = true;
+  if (abuseMonitorError) {
+    abuseMonitorError.classList.add('hidden');
+    abuseMonitorError.textContent = '';
+  }
+  if (abuseMonitorLoadingIndicator) {
+    abuseMonitorLoadingIndicator.classList.remove('hidden');
+  }
+
+  try {
+    const snapshot = await db.collection('admin-abuse-monitor')
+      .orderBy('timestamp', 'desc')
+      .limit(50)
+      .get();
+
+    const entries = snapshot.docs.map((doc) => {
+      const data = doc.data() || {};
+      const rawTimestamp = data.timestamp;
+      let timestampLabel = '';
+      if (rawTimestamp) {
+        let date;
+        if (typeof rawTimestamp?.toDate === 'function') {
+          date = rawTimestamp.toDate();
+        } else if (rawTimestamp instanceof Date) {
+          date = rawTimestamp;
+        } else if (typeof rawTimestamp === 'number') {
+          const parsed = new Date(rawTimestamp);
+          date = Number.isNaN(parsed.getTime()) ? null : parsed;
+        }
+        if (date && !Number.isNaN(date.getTime())) {
+          timestampLabel = `Registrado em ${formatDateTime(date)}`;
+        }
+      }
+      return {
+        uid: data.uid || doc.id,
+        email: data.email || '',
+        workspace: data.workspace || '',
+        qtdReinicios: Number(data.qtdReinicios || 0),
+        timestampLabel,
+      };
+    });
+
+    renderAbuseMonitorEntries(entries);
+    abuseMonitorLoadedAt = Date.now();
+    logAnalyticsEvent('abuse_monitor_viewed', { count: entries.length, uid: currentUser?.uid || null });
+  } catch (error) {
+    console.error('Falha ao carregar registros de abuso:', error);
+    if (abuseMonitorError) {
+      abuseMonitorError.textContent = 'Não foi possível carregar os alertas agora. Tente novamente mais tarde.';
+      abuseMonitorError.classList.remove('hidden');
+    }
+    if (abuseMonitorEmpty) {
+      abuseMonitorEmpty.classList.add('hidden');
+    }
+    if (abuseMonitorList) {
+      abuseMonitorList.classList.add('hidden');
+    }
+  } finally {
+    abuseMonitorLoading = false;
+    if (abuseMonitorLoadingIndicator) {
+      abuseMonitorLoadingIndicator.classList.add('hidden');
+    }
+  }
+}
+
+function toggleAbuseMonitorPanel(forceOpen) {
+  if (!abuseMonitorButton || !abuseMonitorPanel) {
+    return;
+  }
+  const isOpen = !abuseMonitorPanel.classList.contains('hidden');
+  const shouldOpen = typeof forceOpen === 'boolean' ? forceOpen : !isOpen;
+  if (!shouldOpen) {
+    hideAbuseMonitorPanel();
+    return;
+  }
+  if (!isCurrentUserAdmin()) {
+    showToast('Somente administradores podem acessar este painel.', 'error');
+    return;
+  }
+  abuseMonitorPanel.classList.remove('hidden');
+  abuseMonitorButton.setAttribute('aria-expanded', 'true');
+  loadAbuseMonitorReports(true).catch((error) => {
+    console.error('Falha ao atualizar painel de abusos:', error);
+  });
+}
+
 function incrementObserverMonitor(uid, workspaceId) {
   if (!uid) {
     return null;
@@ -8002,14 +8305,52 @@ function incrementObserverMonitor(uid, workspaceId) {
     lastWorkspace: null,
     lastSyncedCount: 0,
     lastSyncedAt: 0,
+    recentBoots: [],
+    lastAbuseReportedAt: 0,
+    lastAbuseReportedCount: 0,
   };
   entry.count += 1;
   entry.lastBootAt = now;
   entry.lastWorkspace = workspaceId || entry.lastWorkspace || null;
+
+  const existingBoots = Array.isArray(entry.recentBoots)
+    ? entry.recentBoots.filter((ts) => typeof ts === 'number' && (now - ts) <= OBSERVER_ABUSE_WINDOW)
+    : [];
+  existingBoots.push(now);
+  if (existingBoots.length > (OBSERVER_ABUSE_LIMIT * 3)) {
+    existingBoots.splice(0, existingBoots.length - (OBSERVER_ABUSE_LIMIT * 3));
+  }
+  entry.recentBoots = existingBoots;
+
+  updateLocalObserverMonitorUI(entry);
+
+  const abuseThresholdReached = existingBoots.length >= OBSERVER_ABUSE_LIMIT;
+  const lastReportAt = Number(entry.lastAbuseReportedAt || 0);
+  const canReportAbuse = abuseThresholdReached
+    && (now - lastReportAt) >= OBSERVER_ABUSE_REPORT_COOLDOWN
+    && !observerAbuseReportPromises.has(uid);
+
+  if (canReportAbuse) {
+    entry.lastAbuseReportedAt = now;
+    entry.lastAbuseReportedCount = existingBoots.length;
+  }
+
   entries[uid] = entry;
   state.entries = entries;
   state.updatedAt = now;
   persistObserverMonitorState(state);
+
+  if (canReportAbuse) {
+    const reportPromise = reportObserverAbuse(uid, workspaceId, entry)
+      .catch((error) => {
+        console.warn('Falha ao enviar alerta de abuso:', error);
+      })
+      .finally(() => {
+        observerAbuseReportPromises.delete(uid);
+      });
+    observerAbuseReportPromises.set(uid, reportPromise);
+  }
+
   scheduleObserverMonitorSync(uid);
   return entry;
 }
@@ -8067,6 +8408,31 @@ async function syncObserverMonitor(uid) {
     persistObserverMonitorState(state);
   } catch (error) {
     console.warn('Erro ao atualizar monitoramento no perfil:', error);
+  }
+}
+
+async function reportObserverAbuse(uid, workspaceId, entry) {
+  if (!uid || !db) {
+    return;
+  }
+  try {
+    const payload = {
+      uid,
+      email: currentUser?.email || null,
+      workspace: workspaceId || entry?.lastWorkspace || null,
+      qtdReinicios: Number(entry?.recentBoots?.length || entry?.count || 0) || 0,
+      timestamp: firebase?.firestore?.FieldValue?.serverTimestamp
+        ? firebase.firestore.FieldValue.serverTimestamp()
+        : new Date(),
+    };
+    await db.collection('admin-abuse-monitor').doc(uid).set(payload, { merge: true });
+    logAnalyticsEvent('observer_abuse_reported', {
+      uid,
+      workspaceId: payload.workspace || null,
+      qtdReinicios: payload.qtdReinicios,
+    });
+  } catch (error) {
+    console.warn('Falha ao registrar abuso de observers:', error);
   }
 }
 const pruneMonthTotals = (map, limit = 48) => {
@@ -14901,6 +15267,11 @@ async function preloadMonthCaches(force = false) {
           requestedMonthKey,
           cooldownMs: Math.max(0, remaining),
         });
+        logAnalyticsEvent('month_preload_cooldown_skip', {
+          workspaceId: workspaceId || null,
+          month: requestedMonthKey || null,
+          cooldownMs: Math.max(0, remaining),
+        });
       } else {
         const [gastosSnap, entradasSnap, investimentosSnap] = await Promise.all([
           userCollectionRef('gastos').orderBy('mesFatura', 'desc').limit(limit).get().catch(() => null),
@@ -14916,6 +15287,13 @@ async function preloadMonthCaches(force = false) {
           investimentosDocs: investimentosSnap?.size || 0,
         };
         console.info('Preload fallback executado.', fallbackStats);
+        logAnalyticsEvent('month_preload_fallback', {
+          workspaceId: workspaceId || null,
+          month: requestedMonthKey || null,
+          gastosDocs: fallbackStats.gastosDocs,
+          entradasDocs: fallbackStats.entradasDocs,
+          investimentosDocs: fallbackStats.investimentosDocs,
+        });
 
         monthFallbackLastRunAt = now;
         monthFallbackLastWorkspaceId = workspaceId;
