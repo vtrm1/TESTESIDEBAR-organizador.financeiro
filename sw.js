@@ -1,4 +1,4 @@
-const APP_VERSION = 'of-pwa-v2025.11.10.6';
+const APP_VERSION = 'of-pwa-v2025.11.10.7';
 const CACHE_PREFIX = 'of-cache-';
 const STATIC_CACHE = `${CACHE_PREFIX}static-${APP_VERSION}`;
 const RUNTIME_CACHE = `${CACHE_PREFIX}runtime-${APP_VERSION}`;
@@ -17,6 +17,7 @@ const OPTIONAL_ASSETS = [
   '/icons/icon-96.png',
   '/icons/icon-48.png',
   '/icons/icon-maskable.png',
+  '/app-config.js',
 ];
 
 const FONT_HOSTS = new Set([
@@ -109,6 +110,10 @@ self.addEventListener('fetch', (event) => {
   }
 
   if (url.origin === self.location.origin) {
+    if (url.pathname === '/app-config.js' || url.pathname.startsWith('/app-config.js/')) {
+      event.respondWith(networkFirst(request, RUNTIME_CACHE));
+      return;
+    }
     event.respondWith(cacheFirst(request, STATIC_CACHE));
     return;
   }
