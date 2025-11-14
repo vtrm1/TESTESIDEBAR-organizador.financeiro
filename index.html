@@ -3083,16 +3083,6 @@ if ("serviceWorker" in navigator) {
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 
 <script>
-  const FALLBACK_FIREBASE_CONFIG = Object.freeze({
-    apiKey: 'AIzaSyCpBfq801WlkxgHhWwORDvnKWpXGXz3k4c',
-    authDomain: 'organizacao-financeira1.firebaseapp.com',
-    projectId: 'organizacao-financeira1',
-    storageBucket: 'organizacao-financeira1.firebasestorage.app',
-    messagingSenderId: '896359450111',
-    appId: '1:896359450111:web:bd8d7c2f2e35d4f27a93ca',
-    measurementId: 'G-58ZVECNK3B',
-  });
-
   (function setupFirebaseConfigLoader() {
     const ensureConfig = (candidate) => {
       if (candidate && typeof candidate === 'object' && Object.keys(candidate).length) {
@@ -3175,16 +3165,7 @@ if ("serviceWorker" in navigator) {
       if (scriptConfig) {
         return scriptConfig;
       }
-      const existing = ensureConfig(window.__FIREBASE_CONFIG__);
-      if (existing) {
-        return existing;
-      }
-      const fallback = ensureConfig(FALLBACK_FIREBASE_CONFIG);
-      if (fallback) {
-        console.warn('[App] Usando configuração Firebase embutida como fallback.');
-        return fallback;
-      }
-      return null;
+      return ensureConfig(window.__FIREBASE_CONFIG__);
     }
 
     window.__firebaseConfigPromise = loadFirebaseConfig().finally(hideLoader);
@@ -3196,15 +3177,8 @@ if ("serviceWorker" in navigator) {
    CONFIG FIREBASE (externa)
    =========================== */
 const resolveFirebaseConfig = (loadedConfig) => {
-  const config =
-    loadedConfig
-    || window.__FIREBASE_CONFIG__
-    || (window.__APP_CONFIG__ && window.__APP_CONFIG__.firebase && window.__APP_CONFIG__.firebase.client)
-    || FALLBACK_FIREBASE_CONFIG;
+  const config = loadedConfig || window.__FIREBASE_CONFIG__ || (window.__APP_CONFIG__ && window.__APP_CONFIG__.firebase && window.__APP_CONFIG__.firebase.client);
   if (config && typeof config === 'object' && Object.keys(config).length) {
-    if (!window.__FIREBASE_CONFIG__) {
-      window.__FIREBASE_CONFIG__ = config;
-    }
     return config;
   }
 
