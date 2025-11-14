@@ -3300,6 +3300,7 @@ let cachedMesesEntradas = new Set();
 let cachedMesesInvestimentos = new Set();
 let monthCacheWorkspaceId = null;
 let monthCacheLoadedAt = 0;
+let observersLastBootAt = 0;
 const MONTH_CACHE_TTL = 1000 * 60 * 15;
 const SNAPSHOT_LIMITS = {
   gastos: 240,
@@ -3309,6 +3310,7 @@ const SNAPSHOT_LIMITS = {
 };
 
 const MONTH_FALLBACK_COOLDOWN = 1000 * 60 * 60 * 2;
+const OBSERVER_RESTART_COOLDOWN = 1000 * 30;
 let monthFallbackLastRunAt = 0;
 let monthFallbackLastWorkspaceId = null;
 
@@ -7247,6 +7249,8 @@ function handleUserSignedOut() {
     });
   }
   monthlySummaryPending.clear();
+  observersContext = { workspaceId: null, monthKey: null };
+  observersLastBootAt = 0;
   if (accessProfileUnsubscribe) {
     accessProfileUnsubscribe();
     accessProfileUnsubscribe = null;
@@ -15218,14 +15222,34 @@ async function preloadMonthCaches(force = false) {
     return getCurrentWalletMonthKey();
   })();
 
+  const now = Date.now();
   if (!force && requestedMonthKey && monthlySummariesCache.has(requestedMonthKey)) {
     const sameWorkspace = monthCacheWorkspaceId === workspaceId;
-    if (sameWorkspace && cachedMesesGastos && cachedMesesGastos.size > 0) {
+    if (sameWorkspace) {
+      const monthsFromSummaries = new Set();
+      monthlySummariesCache.forEach((summary, key) => {
+        if (!key) return;
+        monthsFromSummaries.add(key);
+      });
+      if (monthsFromSummaries.size > 0) {
+        cachedMesesGastos = mergeMonthSets(monthsFromSummaries, cachedMesesGastos);
+        cachedMesesEntradas = mergeMonthSets(monthsFromSummaries, cachedMesesEntradas);
+        cachedMesesInvestimentos = mergeMonthSets(monthsFromSummaries, cachedMesesInvestimentos);
+      } else {
+        cachedMesesGastos.add(requestedMonthKey);
+        cachedMesesEntradas.add(requestedMonthKey);
+        cachedMesesInvestimentos.add(requestedMonthKey);
+      }
+      monthCacheWorkspaceId = workspaceId;
+      monthCacheLoadedAt = now;
+      mesesDisponiveis = mergeMonthSets(new Set(monthTotals.gastos.keys()), cachedMesesGastos);
+      mesesEntradasDisponiveis = mergeMonthSets(new Set(monthTotals.entradas.keys()), cachedMesesEntradas);
+      mesesInvestimentosDisponiveis = mergeMonthSets(new Set(monthTotals.investimentos.keys()), cachedMesesInvestimentos);
+      atualizarFiltroMeses();
       return;
     }
   }
 
-  const now = Date.now();
   if (!force && monthCacheWorkspaceId === workspaceId && (now - monthCacheLoadedAt) < MONTH_CACHE_TTL) {
     return;
   }
@@ -15258,8 +15282,7 @@ async function preloadMonthCaches(force = false) {
     }
 
     if (!usedSummaries) {
-      const cooldownActive = !force
-        && monthFallbackLastWorkspaceId === workspaceId
+      const cooldownActive = monthFallbackLastWorkspaceId === workspaceId
         && (now - monthFallbackLastRunAt) < MONTH_FALLBACK_COOLDOWN;
 
       if (cooldownActive) {
@@ -15367,6 +15390,22 @@ async function startObservers(force = false){
     || unsubWalletSettings || unsubWalletAccounts || unsubWalletSnapshot || unsubWalletTimeline
     || unsubWalletOpeningHistory
   );
+  const now = Date.now();
+  const sameTarget = observersContext.workspaceId === workspaceId && observersContext.monthKey === normalizedMonth;
+  if (!force && sameTarget && observersLastBootAt && (now - observersLastBootAt) < OBSERVER_RESTART_COOLDOWN) {
+    const elapsed = now - observersLastBootAt;
+    console.info('startObservers ignorado devido a cooldown ativo.', {
+      workspaceId,
+      month: normalizedMonth,
+      elapsedMs: elapsed,
+    });
+    logAnalyticsEvent('observer_restart_cooldown_skip', {
+      workspaceId: workspaceId || null,
+      month: normalizedMonth || null,
+      elapsedMs: elapsed,
+    });
+    return;
+  }
 
   if (!force && contextMatches && hasActiveObservers) {
     return;
@@ -15385,6 +15424,7 @@ async function startObservers(force = false){
     incrementObserverMonitor(currentUser.uid, workspaceId);
   }
 
+  observersLastBootAt = now;
   observersContext = { workspaceId, monthKey: normalizedMonth };
   attachTagsMetadataListener();
   attachMonthlySummaryListener(normalizedMonth);
