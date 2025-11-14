@@ -1,0 +1,84 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() &&
+        exists(/databases/$(database)/documents/profiles/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    function workspaceReadAllowed(workspaceId) {
+      return isSignedIn() && (
+        workspaceId == request.auth.uid ||
+        (
+          exists(/databases/$(database)/documents/sharedWorkspaces/$(workspaceId)) &&
+          request.auth.uid in get(/databases/$(database)/documents/sharedWorkspaces/$(workspaceId)).data.memberUids
+        )
+      );
+    }
+
+    function workspaceSelfEnrollment(workspaceId) {
+      return isSignedIn() &&
+        request.method == 'update' &&
+        exists(/databases/$(database)/documents/sharedWorkspaces/$(workspaceId)) &&
+        resource.data.memberUids is list &&
+        request.resource.data.memberUids is list &&
+        !resource.data.memberUids.hasAny([request.auth.uid]) &&
+        request.resource.data.memberUids.hasAll(resource.data.memberUids) &&
+        request.resource.data.memberUids.hasOnly(resource.data.memberUids.concat([request.auth.uid])) &&
+        (!('ownerUid' in request.resource.data) || request.resource.data.ownerUid == resource.data.ownerUid) &&
+        (!('workspaceId' in request.resource.data) || request.resource.data.workspaceId == resource.data.workspaceId);
+    }
+
+    function workspaceWriteAllowed(workspaceId) {
+      return isSignedIn() && (
+        workspaceId == request.auth.uid ||
+        workspaceReadAllowed(workspaceId) ||
+        workspaceSelfEnrollment(workspaceId)
+      );
+    }
+
+    match /profiles/{uid} {
+      allow create: if isSignedIn() && uid == request.auth.uid;
+
+      allow read: if isSignedIn() && (uid == request.auth.uid || isAdmin());
+
+      allow update: if isSignedIn() && (
+        isAdmin() ||
+        (uid == request.auth.uid &&
+         (resource.data.status == 'pending' || (
+           request.resource.data.role == resource.data.role &&
+           request.resource.data.status == resource.data.status &&
+           request.resource.data.approvedAt == resource.data.approvedAt &&
+           request.resource.data.approvedBy == resource.data.approvedBy &&
+           request.resource.data.blockedAt == resource.data.blockedAt &&
+           request.resource.data.blockedBy == resource.data.blockedBy &&
+           request.resource.data.blockedReason == resource.data.blockedReason
+         )))
+      );
+
+      allow delete: if false;
+    }
+
+    match /sharedWorkspaces/{workspaceId} {
+      allow create: if isSignedIn() && workspaceId == request.auth.uid;
+      allow read: if workspaceReadAllowed(workspaceId);
+      allow update: if workspaceWriteAllowed(workspaceId);
+      allow delete: if false;
+    }
+
+    match /users/{ownerUid}/{collection}/{docId} {
+      allow read: if workspaceReadAllowed(ownerUid);
+      allow write: if workspaceWriteAllowed(ownerUid);
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

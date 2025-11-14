@@ -1532,6 +1532,22 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
             <p id="access-manager-blocked-empty" class="hidden text-xs text-gray-500 dark:text-gray-400 leading-relaxed">Nenhuma conta bloqueada.</p>
           </div>
         </section>
+        <section id="observer-monitor-panel" class="hidden rounded-2xl border border-amber-100 dark:border-amber-900/40 bg-amber-50/40 dark:bg-amber-500/10 overflow-hidden">
+          <div class="px-4 py-3 space-y-2">
+            <div class="flex items-center justify-between gap-3">
+              <span class="flex items-center gap-2 text-sm font-semibold text-amber-700 dark:text-amber-200 uppercase tracking-wide">
+                <i class="fa-solid fa-chart-line"></i>
+                Monitoramento de sincronia
+              </span>
+              <span id="observer-monitor-summary" class="text-xs text-amber-700 dark:text-amber-200"></span>
+            </div>
+            <p class="text-xs text-amber-800/80 dark:text-amber-200/80 leading-relaxed">Acompanhe reinicializações recentes do painel para detectar consumo excessivo.</p>
+          </div>
+          <div class="border-t border-amber-100 dark:border-amber-900/40 px-4 pb-4 pt-3 space-y-2">
+            <ul id="observer-monitor-list" class="space-y-2 text-xs"></ul>
+            <p id="observer-monitor-empty" class="hidden text-xs text-amber-800/70 dark:text-amber-200/70 leading-relaxed">Nenhuma atividade de sincronização acima do normal.</p>
+          </div>
+        </section>
       </div>
       <footer class="rounded-xl bg-emerald-50/70 dark:bg-emerald-500/10 border border-emerald-200/60 dark:border-emerald-500/30 px-4 py-3 text-xs text-gray-600 dark:text-gray-300 leading-relaxed">
         <p>💡 Contas aprovadas passam a acessar o mesmo espaço financeiro definido no compartilhamento familiar. Use o bloqueio para suspender o acesso sem excluir dados.</p>
@@ -3253,6 +3269,8 @@ const NOTIFICATION_PROMPT_KEY = 'of-notification-prompted';
 let notificationPrompted = false;
 
 let observersContext = { workspaceId: null, monthKey: null };
+let filtroMesChangeTimeout = null;
+let lastMonthChangeValue = null;
 const monthTotals = {
   gastos: new Map(),
   entradas: new Map(),
@@ -3274,7 +3292,18 @@ const SNAPSHOT_LIMITS = {
   gastos: 240,
   entradas: 240,
   investimentos: 240,
+  parcelados: 400,
 };
+
+const MONTH_FALLBACK_COOLDOWN = 1000 * 60 * 60 * 2;
+let monthFallbackLastRunAt = 0;
+let monthFallbackLastWorkspaceId = null;
+
+const OBSERVER_MONITOR_STORAGE_KEY = 'of-observer-monitor';
+const OBSERVER_MONITOR_SYNC_THRESHOLD = 15;
+const OBSERVER_MONITOR_SYNC_INTERVAL = 1000 * 60 * 5;
+let observerMonitorStateCache = null;
+let observerMonitorSyncTimeout = null;
 
 const investmentSnapshotTotals = new Map();
 const investmentSummaryTotals = new Map();
@@ -4417,6 +4446,10 @@ const accessManagerBlockedEmpty = document.getElementById('access-manager-blocke
 const accessManagerPendingCount = document.getElementById('access-manager-pending-count');
 const accessManagerApprovedCount = document.getElementById('access-manager-approved-count');
 const accessManagerBlockedCount = document.getElementById('access-manager-blocked-count');
+const observerMonitorPanel = document.getElementById('observer-monitor-panel');
+const observerMonitorList = document.getElementById('observer-monitor-list');
+const observerMonitorEmpty = document.getElementById('observer-monitor-empty');
+const observerMonitorSummary = document.getElementById('observer-monitor-summary');
 const accessManagerSectionToggles = Array.from(document.querySelectorAll('[data-access-section-toggle]'));
 const accessManagerSectionBodies = {};
 const accessManagerSectionCarets = {};
@@ -6743,6 +6776,106 @@ function renderAccessManagerList(targetList, entries, emptyLabel, type) {
     });
 }
 
+function renderObserverMonitorPanel(entries) {
+  if (!observerMonitorPanel || !observerMonitorList || !observerMonitorEmpty) {
+    return;
+  }
+  if (!isCurrentUserAdmin()) {
+    observerMonitorPanel.classList.add('hidden');
+    observerMonitorList.innerHTML = '';
+    if (observerMonitorSummary) observerMonitorSummary.textContent = '';
+    return;
+  }
+
+  observerMonitorList.innerHTML = '';
+
+  const mapped = (entries || [])
+    .map((entry) => {
+      const monitor = entry?.observerMonitor || null;
+      if (!monitor || typeof monitor.count !== 'number' || monitor.count <= 0) {
+        return null;
+      }
+      const lastBootAt = (() => {
+        if (!monitor.lastBootAt) return null;
+        if (monitor.lastBootAt instanceof Date) return monitor.lastBootAt;
+        if (typeof monitor.lastBootAt?.toDate === 'function') return monitor.lastBootAt.toDate();
+        if (typeof monitor.lastBootAt === 'number') {
+          const date = new Date(monitor.lastBootAt);
+          return Number.isNaN(date.getTime()) ? null : date;
+        }
+        return null;
+      })();
+      const email = entry.email || entry.userEmail || entry.contactEmail || entry.loginEmail || '';
+      return {
+        uid: entry.uid,
+        email,
+        count: monitor.count,
+        lastBootAt,
+        lastWorkspace: monitor.lastWorkspace || null,
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 20);
+
+  if (!mapped.length) {
+    observerMonitorPanel.classList.add('hidden');
+    observerMonitorEmpty.classList.remove('hidden');
+    if (observerMonitorSummary) observerMonitorSummary.textContent = '';
+    return;
+  }
+
+  observerMonitorPanel.classList.remove('hidden');
+  observerMonitorEmpty.classList.toggle('hidden', mapped.length > 0);
+
+  const total = mapped.reduce((acc, item) => acc + (item.count || 0), 0);
+  if (observerMonitorSummary) {
+    observerMonitorSummary.textContent = `Top ${mapped.length} • ${total} reinicializações`;
+  }
+
+  mapped.forEach((item) => {
+    const li = document.createElement('li');
+    li.className = 'flex items-center justify-between gap-3 rounded-lg border border-amber-100 dark:border-amber-900/40 bg-amber-50/70 dark:bg-amber-500/15 px-3 py-2';
+
+    const labelContainer = document.createElement('span');
+    labelContainer.className = 'flex flex-col text-left gap-0.5';
+
+    const uidLabel = document.createElement('span');
+    uidLabel.className = 'text-[0.7rem] font-semibold text-amber-800 dark:text-amber-100 tracking-wide';
+    uidLabel.textContent = item.uid;
+    labelContainer.appendChild(uidLabel);
+
+    if (item.email) {
+      const emailLabel = document.createElement('span');
+      emailLabel.className = 'text-[0.65rem] text-amber-700/80 dark:text-amber-200/70 truncate';
+      emailLabel.textContent = item.email;
+      labelContainer.appendChild(emailLabel);
+    }
+
+    if (item.lastWorkspace) {
+      const workspaceLabel = document.createElement('span');
+      workspaceLabel.className = 'text-[0.6rem] text-amber-700/70 dark:text-amber-200/60';
+      workspaceLabel.textContent = `Último workspace: ${item.lastWorkspace}`;
+      labelContainer.appendChild(workspaceLabel);
+    }
+
+    if (item.lastBootAt) {
+      const lastBootLabel = document.createElement('span');
+      lastBootLabel.className = 'text-[0.6rem] text-amber-700/60 dark:text-amber-200/50';
+      lastBootLabel.textContent = `Último em ${item.lastBootAt.toLocaleString()}`;
+      labelContainer.appendChild(lastBootLabel);
+    }
+
+    const countBadge = document.createElement('span');
+    countBadge.className = 'text-xs font-semibold text-amber-800 dark:text-amber-100';
+    countBadge.textContent = `×${item.count}`;
+
+    li.appendChild(labelContainer);
+    li.appendChild(countBadge);
+    observerMonitorList.appendChild(li);
+  });
+}
+
 async function loadAccessManagerLists() {
   if (!isCurrentUserAdmin()) {
     showToast('Somente administradores podem gerenciar acessos.', 'error');
@@ -6787,6 +6920,8 @@ async function loadAccessManagerLists() {
     if (accessManagerBlockedCount) {
       accessManagerBlockedCount.textContent = blocked.length ? `${blocked.length}` : '';
     }
+
+    renderObserverMonitorPanel([...pending, ...approved, ...blocked]);
   } catch (error) {
     console.error('Erro ao carregar a fila de aprovação:', error);
     if (error?.code === 'permission-denied') {
@@ -7778,6 +7913,162 @@ const mergeMonthSets = (...sets) => {
   });
   return merged;
 };
+
+let appAnalyticsInstance;
+function getAppAnalytics() {
+  if (appAnalyticsInstance !== undefined) {
+    return appAnalyticsInstance;
+  }
+  appAnalyticsInstance = null;
+  try {
+    if (window.appAnalytics) {
+      appAnalyticsInstance = window.appAnalytics;
+    } else if (firebase?.analytics) {
+      const analyticsCandidate = firebase.analytics();
+      if (analyticsCandidate && typeof analyticsCandidate.logEvent === 'function') {
+        appAnalyticsInstance = analyticsCandidate;
+        window.appAnalytics = analyticsCandidate;
+      }
+    }
+  } catch (error) {
+    console.warn('Analytics indisponível:', error);
+    appAnalyticsInstance = null;
+  }
+  return appAnalyticsInstance;
+}
+
+function logAnalyticsEvent(name, params = {}) {
+  if (!name) return;
+  try {
+    const analytics = getAppAnalytics();
+    if (analytics && typeof analytics.logEvent === 'function') {
+      analytics.logEvent(name, params);
+      return;
+    }
+  } catch (error) {
+    console.warn('Falha ao registrar evento analítico:', error);
+    return;
+  }
+  if (typeof console !== 'undefined' && console.info) {
+    console.info('[analytics]', name, params);
+  }
+}
+
+function loadObserverMonitorState() {
+  if (observerMonitorStateCache) {
+    return observerMonitorStateCache;
+  }
+  let parsed = { entries: {}, updatedAt: 0 };
+  try {
+    const raw = localStorage.getItem(OBSERVER_MONITOR_STORAGE_KEY);
+    if (raw) {
+      const data = JSON.parse(raw);
+      if (data && typeof data === 'object') {
+        parsed = {
+          entries: data.entries && typeof data.entries === 'object' ? data.entries : {},
+          updatedAt: typeof data.updatedAt === 'number' ? data.updatedAt : 0,
+        };
+      }
+    }
+  } catch (error) {
+    console.warn('Falha ao carregar monitoramento de observers:', error);
+  }
+  observerMonitorStateCache = parsed;
+  return observerMonitorStateCache;
+}
+
+function persistObserverMonitorState(state) {
+  if (!state || typeof state !== 'object') {
+    return;
+  }
+  observerMonitorStateCache = state;
+  try {
+    localStorage.setItem(OBSERVER_MONITOR_STORAGE_KEY, JSON.stringify(state));
+  } catch (error) {
+    console.warn('Falha ao salvar monitoramento de observers:', error);
+  }
+}
+
+function incrementObserverMonitor(uid, workspaceId) {
+  if (!uid) {
+    return null;
+  }
+  const state = loadObserverMonitorState();
+  const now = Date.now();
+  const entries = state.entries || {};
+  const entry = entries[uid] || {
+    count: 0,
+    lastBootAt: 0,
+    lastWorkspace: null,
+    lastSyncedCount: 0,
+    lastSyncedAt: 0,
+  };
+  entry.count += 1;
+  entry.lastBootAt = now;
+  entry.lastWorkspace = workspaceId || entry.lastWorkspace || null;
+  entries[uid] = entry;
+  state.entries = entries;
+  state.updatedAt = now;
+  persistObserverMonitorState(state);
+  scheduleObserverMonitorSync(uid);
+  return entry;
+}
+
+function scheduleObserverMonitorSync(uid) {
+  if (!uid) {
+    return;
+  }
+  const state = loadObserverMonitorState();
+  const entry = state.entries?.[uid];
+  if (!entry) {
+    return;
+  }
+  const now = Date.now();
+  const lastSyncedAt = entry.lastSyncedAt || 0;
+  const lastSyncedCount = entry.lastSyncedCount || 0;
+  const shouldSync = (entry.count - lastSyncedCount) >= OBSERVER_MONITOR_SYNC_THRESHOLD
+    || (now - lastSyncedAt) >= OBSERVER_MONITOR_SYNC_INTERVAL;
+  if (!shouldSync) {
+    return;
+  }
+  if (observerMonitorSyncTimeout) {
+    clearTimeout(observerMonitorSyncTimeout);
+  }
+  observerMonitorSyncTimeout = setTimeout(() => {
+    syncObserverMonitor(uid).catch((error) => {
+      console.warn('Falha ao sincronizar monitoramento de observers:', error);
+    });
+  }, 300);
+}
+
+async function syncObserverMonitor(uid) {
+  if (!uid || !db) {
+    return;
+  }
+  const state = loadObserverMonitorState();
+  const entry = state.entries?.[uid];
+  if (!entry) {
+    return;
+  }
+  try {
+    const payload = {
+      count: entry.count,
+      lastBootAt: entry.lastBootAt || null,
+      lastWorkspace: entry.lastWorkspace || null,
+      updatedAt: firebase?.firestore?.FieldValue?.serverTimestamp
+        ? firebase.firestore.FieldValue.serverTimestamp()
+        : null,
+    };
+    await db.collection('profiles').doc(uid).set({ observerMonitor: payload }, { merge: true });
+    entry.lastSyncedCount = entry.count;
+    entry.lastSyncedAt = Date.now();
+    state.entries[uid] = entry;
+    state.updatedAt = entry.lastSyncedAt;
+    persistObserverMonitorState(state);
+  } catch (error) {
+    console.warn('Erro ao atualizar monitoramento no perfil:', error);
+  }
+}
 const pruneMonthTotals = (map, limit = 48) => {
   if (!map || typeof map.size !== 'number') {
     return;
@@ -14550,6 +14841,22 @@ async function preloadMonthCaches(force = false) {
   if (!workspaceId) {
     return;
   }
+  const filtroMesEl = document.getElementById('filtro-mes');
+  const selectedCandidate = filtroMesEl ? filtroMesEl.value : null;
+  const requestedMonthKey = (() => {
+    if (selectedCandidate && selectedCandidate !== 'all') {
+      return selectedCandidate;
+    }
+    return getCurrentWalletMonthKey();
+  })();
+
+  if (!force && requestedMonthKey && monthlySummariesCache.has(requestedMonthKey)) {
+    const sameWorkspace = monthCacheWorkspaceId === workspaceId;
+    if (sameWorkspace && cachedMesesGastos && cachedMesesGastos.size > 0) {
+      return;
+    }
+  }
+
   const now = Date.now();
   if (!force && monthCacheWorkspaceId === workspaceId && (now - monthCacheLoadedAt) < MONTH_CACHE_TTL) {
     return;
@@ -14564,9 +14871,9 @@ async function preloadMonthCaches(force = false) {
       .catch(() => null);
 
     let usedSummaries = false;
-    const nextCachedMesesGastos = new Set();
-    const nextCachedMesesEntradas = new Set();
-    const nextCachedMesesInvestimentos = new Set();
+    const nextCachedMesesGastos = new Set(cachedMesesGastos || []);
+    const nextCachedMesesEntradas = new Set(cachedMesesEntradas || []);
+    const nextCachedMesesInvestimentos = new Set(cachedMesesInvestimentos || []);
 
     if (summariesSnap && !summariesSnap.empty) {
       summariesSnap.docs.forEach((doc) => {
@@ -14583,43 +14890,68 @@ async function preloadMonthCaches(force = false) {
     }
 
     if (!usedSummaries) {
-      const [gastosSnap, entradasSnap, investimentosSnap] = await Promise.all([
-        userCollectionRef('gastos').orderBy('mesFatura', 'desc').limit(limit).get().catch(() => null),
-        userCollectionRef('entradas').orderBy('data', 'desc').limit(limit).get().catch(() => null),
-        userCollectionRef('investimentos').orderBy('data', 'desc').limit(limit).get().catch(() => null),
-      ]);
+      const cooldownActive = !force
+        && monthFallbackLastWorkspaceId === workspaceId
+        && (now - monthFallbackLastRunAt) < MONTH_FALLBACK_COOLDOWN;
 
-      if (gastosSnap && !gastosSnap.empty) {
-        gastosSnap.docs.forEach((doc) => {
-          const data = typeof doc.data === 'function' ? doc.data() : doc.data;
-          if (!data) return;
-          const key = data.mesFatura || (data.data ? yyyymm(data.data.toDate ? data.data.toDate() : new Date(data.data)) : null);
-          if (key) {
-            nextCachedMesesGastos.add(key);
-          }
+      if (cooldownActive) {
+        const remaining = MONTH_FALLBACK_COOLDOWN - (now - monthFallbackLastRunAt);
+        console.info('Preload fallback em cooldown. Pulando consulta pesada.', {
+          workspaceId,
+          requestedMonthKey,
+          cooldownMs: Math.max(0, remaining),
         });
-      }
+      } else {
+        const [gastosSnap, entradasSnap, investimentosSnap] = await Promise.all([
+          userCollectionRef('gastos').orderBy('mesFatura', 'desc').limit(limit).get().catch(() => null),
+          userCollectionRef('entradas').orderBy('data', 'desc').limit(limit).get().catch(() => null),
+          userCollectionRef('investimentos').orderBy('data', 'desc').limit(limit).get().catch(() => null),
+        ]);
 
-      if (entradasSnap && !entradasSnap.empty) {
-        entradasSnap.docs.forEach((doc) => {
-          const data = typeof doc.data === 'function' ? doc.data() : doc.data;
-          if (!data?.data) return;
-          const dt = data.data.toDate ? data.data.toDate() : new Date(data.data);
-          if (!Number.isNaN(dt?.getTime?.())) {
-            nextCachedMesesEntradas.add(yyyymm(dt));
-          }
-        });
-      }
+        const fallbackStats = {
+          workspaceId,
+          requestedMonthKey,
+          gastosDocs: gastosSnap?.size || 0,
+          entradasDocs: entradasSnap?.size || 0,
+          investimentosDocs: investimentosSnap?.size || 0,
+        };
+        console.info('Preload fallback executado.', fallbackStats);
 
-      if (investimentosSnap && !investimentosSnap.empty) {
-        investimentosSnap.docs.forEach((doc) => {
-          const data = typeof doc.data === 'function' ? doc.data() : doc.data;
-          if (!data?.data) return;
-          const dt = data.data.toDate ? data.data.toDate() : new Date(data.data);
-          if (!Number.isNaN(dt?.getTime?.())) {
-            nextCachedMesesInvestimentos.add(yyyymm(dt));
-          }
-        });
+        monthFallbackLastRunAt = now;
+        monthFallbackLastWorkspaceId = workspaceId;
+
+        if (gastosSnap && !gastosSnap.empty) {
+          gastosSnap.docs.forEach((doc) => {
+            const data = typeof doc.data === 'function' ? doc.data() : doc.data;
+            if (!data) return;
+            const key = data.mesFatura || (data.data ? yyyymm(data.data.toDate ? data.data.toDate() : new Date(data.data)) : null);
+            if (key) {
+              nextCachedMesesGastos.add(key);
+            }
+          });
+        }
+
+        if (entradasSnap && !entradasSnap.empty) {
+          entradasSnap.docs.forEach((doc) => {
+            const data = typeof doc.data === 'function' ? doc.data() : doc.data;
+            if (!data?.data) return;
+            const dt = data.data.toDate ? data.data.toDate() : new Date(data.data);
+            if (!Number.isNaN(dt?.getTime?.())) {
+              nextCachedMesesEntradas.add(yyyymm(dt));
+            }
+          });
+        }
+
+        if (investimentosSnap && !investimentosSnap.empty) {
+          investimentosSnap.docs.forEach((doc) => {
+            const data = typeof doc.data === 'function' ? doc.data() : doc.data;
+            if (!data?.data) return;
+            const dt = data.data.toDate ? data.data.toDate() : new Date(data.data);
+            if (!Number.isNaN(dt?.getTime?.())) {
+              nextCachedMesesInvestimentos.add(yyyymm(dt));
+            }
+          });
+        }
       }
     }
 
@@ -14660,9 +14992,17 @@ async function startObservers(force = false){
     return;
   }
 
+  if (!force && observersContext.monthKey === normalizedMonth && observersContext.workspaceId === workspaceId && hasActiveObservers) {
+    return;
+  }
+
   if (observersContext.workspaceId && observersContext.workspaceId !== workspaceId) {
     walletOpeningCache.clear();
     walletClosingCache.clear();
+  }
+
+  if (currentUser?.uid) {
+    incrementObserverMonitor(currentUser.uid, workspaceId);
   }
 
   observersContext = { workspaceId, monthKey: normalizedMonth };
@@ -14842,7 +15182,8 @@ async function startObservers(force = false){
     entradasQuery = entradasQuery
       .where('data', '>=', monthStartTimestamp)
       .where('data', '<', monthEndTimestamp)
-      .orderBy('data', 'desc');
+      .orderBy('data', 'desc')
+      .limit(SNAPSHOT_LIMITS.entradas);
   } else {
     entradasQuery = entradasQuery.orderBy('data', 'desc').limit(SNAPSHOT_LIMITS.entradas);
   }
@@ -14872,7 +15213,8 @@ async function startObservers(force = false){
     investimentosQuery = investimentosQuery
       .where('data', '>=', monthStartTimestamp)
       .where('data', '<', monthEndTimestamp)
-      .orderBy('data', 'desc');
+      .orderBy('data', 'desc')
+      .limit(SNAPSHOT_LIMITS.investimentos);
   } else {
     investimentosQuery = investimentosQuery.orderBy('data', 'desc').limit(SNAPSHOT_LIMITS.investimentos);
   }
@@ -15027,7 +15369,7 @@ async function startObservers(force = false){
     showToast('Erro ao carregar histórico de gastos.', 'error');
   });
 
-  unsubParcelados = userCollectionRef('parcelados').orderBy('dataInicio','desc').onSnapshot(snap=>{
+  unsubParcelados = userCollectionRef('parcelados').orderBy('dataInicio','desc').limit(SNAPSHOT_LIMITS.parcelados).onSnapshot(snap=>{
     hideSpinner('parcelados-loading-spinner'); // Oculta spinner de parcelados
     allParceladosDocs = snap.docs;
 
@@ -17867,11 +18209,34 @@ document.getElementById('filtro-mes').addEventListener('change', () => {
   const filtroMesEl = document.getElementById('filtro-mes');
   if (!filtroMesEl) return;
   const valorSelecionado = filtroMesEl.value;
-  if (valorSelecionado && valorSelecionado !== 'all') {
+  const workspaceId = getActiveWorkspaceId();
+  const sameMonthAsContext = valorSelecionado === observersContext.monthKey
+    && observersContext.workspaceId === workspaceId;
+
+  if (valorSelecionado && valorSelecionado !== 'all' && valorSelecionado !== painelFinanceiroState.entradasUltimoMesSelecionado) {
     painelFinanceiroState.entradasUltimoMesSelecionado = valorSelecionado;
   }
-  // Ao mudar o filtro de mês, reinicia os observers para carregar os dados do novo mês
-  startObservers();
+
+  logAnalyticsEvent('month_change', {
+    month: valorSelecionado || 'all',
+    previous: lastMonthChangeValue || null,
+    workspaceId: workspaceId || null,
+    sameMonth: sameMonthAsContext,
+    timestamp: Date.now(),
+  });
+  lastMonthChangeValue = valorSelecionado;
+
+  if (sameMonthAsContext) {
+    return;
+  }
+
+  if (filtroMesChangeTimeout) {
+    clearTimeout(filtroMesChangeTimeout);
+  }
+  filtroMesChangeTimeout = setTimeout(() => {
+    filtroMesChangeTimeout = null;
+    startObservers();
+  }, 250);
 });
 
 /* ===========================
