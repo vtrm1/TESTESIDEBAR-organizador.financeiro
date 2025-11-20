@@ -1532,22 +1532,6 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
             <p id="access-manager-blocked-empty" class="hidden text-xs text-gray-500 dark:text-gray-400 leading-relaxed">Nenhuma conta bloqueada.</p>
           </div>
         </section>
-        <section id="observer-monitor-panel" class="hidden rounded-2xl border border-amber-100 dark:border-amber-900/40 bg-amber-50/40 dark:bg-amber-500/10 overflow-hidden">
-          <div class="px-4 py-3 space-y-2">
-            <div class="flex items-center justify-between gap-3">
-              <span class="flex items-center gap-2 text-sm font-semibold text-amber-700 dark:text-amber-200 uppercase tracking-wide">
-                <i class="fa-solid fa-chart-line"></i>
-                Monitoramento de sincronia
-              </span>
-              <span id="observer-monitor-summary" class="text-xs text-amber-700 dark:text-amber-200"></span>
-            </div>
-            <p class="text-xs text-amber-800/80 dark:text-amber-200/80 leading-relaxed">Acompanhe reinicializações recentes do painel para detectar consumo excessivo.</p>
-          </div>
-          <div class="border-t border-amber-100 dark:border-amber-900/40 px-4 pb-4 pt-3 space-y-2">
-            <ul id="observer-monitor-list" class="space-y-2 text-xs"></ul>
-            <p id="observer-monitor-empty" class="hidden text-xs text-amber-800/70 dark:text-amber-200/70 leading-relaxed">Nenhuma atividade de sincronização acima do normal.</p>
-          </div>
-        </section>
       </div>
       <footer class="rounded-xl bg-emerald-50/70 dark:bg-emerald-500/10 border border-emerald-200/60 dark:border-emerald-500/30 px-4 py-3 text-xs text-gray-600 dark:text-gray-300 leading-relaxed">
         <p>💡 Contas aprovadas passam a acessar o mesmo espaço financeiro definido no compartilhamento familiar. Use o bloqueio para suspender o acesso sem excluir dados.</p>
@@ -4467,10 +4451,6 @@ const accessManagerBlockedEmpty = document.getElementById('access-manager-blocke
 const accessManagerPendingCount = document.getElementById('access-manager-pending-count');
 const accessManagerApprovedCount = document.getElementById('access-manager-approved-count');
 const accessManagerBlockedCount = document.getElementById('access-manager-blocked-count');
-const observerMonitorPanel = document.getElementById('observer-monitor-panel');
-const observerMonitorList = document.getElementById('observer-monitor-list');
-const observerMonitorEmpty = document.getElementById('observer-monitor-empty');
-const observerMonitorSummary = document.getElementById('observer-monitor-summary');
 const localObserverMonitorContainer = document.getElementById('local-observer-monitor');
 const localObserverMonitorCount = document.getElementById('local-observer-monitor-count');
 const localObserverMonitorWindow = document.getElementById('local-observer-monitor-window');
@@ -6826,106 +6806,6 @@ function renderAccessManagerList(targetList, entries, emptyLabel, type) {
     });
 }
 
-function renderObserverMonitorPanel(entries) {
-  if (!observerMonitorPanel || !observerMonitorList || !observerMonitorEmpty) {
-    return;
-  }
-  if (!isCurrentUserAdmin()) {
-    observerMonitorPanel.classList.add('hidden');
-    observerMonitorList.innerHTML = '';
-    if (observerMonitorSummary) observerMonitorSummary.textContent = '';
-    return;
-  }
-
-  observerMonitorList.innerHTML = '';
-
-  const mapped = (entries || [])
-    .map((entry) => {
-      const monitor = entry?.observerMonitor || null;
-      if (!monitor || typeof monitor.count !== 'number' || monitor.count <= 0) {
-        return null;
-      }
-      const lastBootAt = (() => {
-        if (!monitor.lastBootAt) return null;
-        if (monitor.lastBootAt instanceof Date) return monitor.lastBootAt;
-        if (typeof monitor.lastBootAt?.toDate === 'function') return monitor.lastBootAt.toDate();
-        if (typeof monitor.lastBootAt === 'number') {
-          const date = new Date(monitor.lastBootAt);
-          return Number.isNaN(date.getTime()) ? null : date;
-        }
-        return null;
-      })();
-      const email = entry.email || entry.userEmail || entry.contactEmail || entry.loginEmail || '';
-      return {
-        uid: entry.uid,
-        email,
-        count: monitor.count,
-        lastBootAt,
-        lastWorkspace: monitor.lastWorkspace || null,
-      };
-    })
-    .filter(Boolean)
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 20);
-
-  if (!mapped.length) {
-    observerMonitorPanel.classList.add('hidden');
-    observerMonitorEmpty.classList.remove('hidden');
-    if (observerMonitorSummary) observerMonitorSummary.textContent = '';
-    return;
-  }
-
-  observerMonitorPanel.classList.remove('hidden');
-  observerMonitorEmpty.classList.toggle('hidden', mapped.length > 0);
-
-  const total = mapped.reduce((acc, item) => acc + (item.count || 0), 0);
-  if (observerMonitorSummary) {
-    observerMonitorSummary.textContent = `Top ${mapped.length} • ${total} reinicializações`;
-  }
-
-  mapped.forEach((item) => {
-    const li = document.createElement('li');
-    li.className = 'flex items-center justify-between gap-3 rounded-lg border border-amber-100 dark:border-amber-900/40 bg-amber-50/70 dark:bg-amber-500/15 px-3 py-2';
-
-    const labelContainer = document.createElement('span');
-    labelContainer.className = 'flex flex-col text-left gap-0.5';
-
-    const uidLabel = document.createElement('span');
-    uidLabel.className = 'text-[0.7rem] font-semibold text-amber-800 dark:text-amber-100 tracking-wide';
-    uidLabel.textContent = item.uid;
-    labelContainer.appendChild(uidLabel);
-
-    if (item.email) {
-      const emailLabel = document.createElement('span');
-      emailLabel.className = 'text-[0.65rem] text-amber-700/80 dark:text-amber-200/70 truncate';
-      emailLabel.textContent = item.email;
-      labelContainer.appendChild(emailLabel);
-    }
-
-    if (item.lastWorkspace) {
-      const workspaceLabel = document.createElement('span');
-      workspaceLabel.className = 'text-[0.6rem] text-amber-700/70 dark:text-amber-200/60';
-      workspaceLabel.textContent = `Último workspace: ${item.lastWorkspace}`;
-      labelContainer.appendChild(workspaceLabel);
-    }
-
-    if (item.lastBootAt) {
-      const lastBootLabel = document.createElement('span');
-      lastBootLabel.className = 'text-[0.6rem] text-amber-700/60 dark:text-amber-200/50';
-      lastBootLabel.textContent = `Último em ${item.lastBootAt.toLocaleString()}`;
-      labelContainer.appendChild(lastBootLabel);
-    }
-
-    const countBadge = document.createElement('span');
-    countBadge.className = 'text-xs font-semibold text-amber-800 dark:text-amber-100';
-    countBadge.textContent = `×${item.count}`;
-
-    li.appendChild(labelContainer);
-    li.appendChild(countBadge);
-    observerMonitorList.appendChild(li);
-  });
-}
-
 async function loadAccessManagerLists() {
   if (!isCurrentUserAdmin()) {
     showToast('Somente administradores podem gerenciar acessos.', 'error');
@@ -6970,8 +6850,6 @@ async function loadAccessManagerLists() {
     if (accessManagerBlockedCount) {
       accessManagerBlockedCount.textContent = blocked.length ? `${blocked.length}` : '';
     }
-
-    renderObserverMonitorPanel([...pending, ...approved, ...blocked]);
   } catch (error) {
     console.error('Erro ao carregar a fila de aprovação:', error);
     if (error?.code === 'permission-denied') {
