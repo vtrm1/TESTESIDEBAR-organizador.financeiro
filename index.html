@@ -3985,13 +3985,14 @@ async function syncUserProfile(user) {
     const snapshot = await profileRef.get();
     const existingProfile = snapshot.exists ? (snapshot.data() || {}) : {};
     const now = firebase.firestore.Timestamp.now();
+    const serverNow = FieldValue.serverTimestamp();
     const updates = {
       email: user.email || existingProfile.email || null,
       normalizedEmail: normalized || existingProfile.normalizedEmail || null,
       displayName: user.displayName || existingProfile.displayName || null,
       photoURL: user.photoURL || existingProfile.photoURL || null,
-      lastLoginAt: now,
-      updatedAt: now,
+      lastLoginAt: serverNow,
+      updatedAt: serverNow,
     };
 
     if (!existingProfile.createdAt) {
@@ -4086,7 +4087,7 @@ async function syncUserProfile(user) {
     updates.status = status;
 
     await profileRef.set(updates, { merge: true });
-    const mergedProfile = { ...existingProfile, ...updates, status, role };
+    const mergedProfile = { ...existingProfile, ...updates, lastLoginAt: now, updatedAt: now, status, role };
     workspaceProfilesCache.set(user.uid, mergedProfile);
     return { uid: user.uid, ...mergedProfile };
   } catch (error) {
@@ -6827,10 +6828,19 @@ async function loadAccessManagerLists() {
 
   try {
     const profilesRef = db.collection('profiles');
+    const getProfiles = async (status) => {
+      try {
+        return await profilesRef.where('status', '==', status).get({ source: 'server' });
+      } catch (serverError) {
+        console.warn(`Falha ao buscar perfis (${status}) no servidor, usando cache:`, serverError);
+        return profilesRef.where('status', '==', status).get();
+      }
+    };
+
     const [pendingSnap, approvedSnap, blockedSnap] = await Promise.all([
-      profilesRef.where('status', '==', 'pending').get(),
-      profilesRef.where('status', '==', 'approved').get(),
-      profilesRef.where('status', '==', 'blocked').get(),
+      getProfiles('pending'),
+      getProfiles('approved'),
+      getProfiles('blocked'),
     ]);
 
     const pending = pendingSnap.docs.map((doc) => ({ uid: doc.id, ...(doc.data() || {}) }));
