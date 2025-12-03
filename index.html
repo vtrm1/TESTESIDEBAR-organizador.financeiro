@@ -4086,6 +4086,25 @@ async function syncUserProfile(user) {
 
     updates.status = status;
 
+    if (existingProfile.approvedAt && updates.approvedAt === undefined) {
+      updates.approvedAt = existingProfile.approvedAt;
+    }
+    if (existingProfile.approvedBy && updates.approvedBy === undefined) {
+      updates.approvedBy = existingProfile.approvedBy;
+    }
+    if (existingProfile.pendingAt && updates.pendingAt === undefined) {
+      updates.pendingAt = existingProfile.pendingAt;
+    }
+    if (existingProfile.blockedAt && updates.blockedAt === undefined) {
+      updates.blockedAt = existingProfile.blockedAt;
+    }
+    if (existingProfile.blockedBy && updates.blockedBy === undefined) {
+      updates.blockedBy = existingProfile.blockedBy;
+    }
+    if (existingProfile.blockedReason && updates.blockedReason === undefined) {
+      updates.blockedReason = existingProfile.blockedReason;
+    }
+
     await profileRef.set(updates, { merge: true });
     const mergedProfile = { ...existingProfile, ...updates, lastLoginAt: now, updatedAt: now, status, role };
     workspaceProfilesCache.set(user.uid, mergedProfile);
