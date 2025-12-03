@@ -30,6 +30,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
 <!-- NOVO: Modal de Gráficos Interativos com filtros -->
 <div id="modal-graficos" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden" role="dialog" aria-modal="true" aria-labelledby="modal-graficos-title">
@@ -1482,6 +1483,12 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
         <p class="mt-2 text-gray-500 dark:text-gray-400 text-sm leading-relaxed">
           Aprove ou bloqueie contas antes de liberar o painel. Convide clientes apenas depois de validar e-mails e permissões.
         </p>
+        <div class="mt-3 flex justify-end">
+          <button id="btn-export-active-users" type="button" class="inline-flex items-center gap-2 rounded-lg border border-emerald-200 dark:border-emerald-800 px-3 py-2 text-xs font-semibold text-emerald-700 dark:text-emerald-200 hover:bg-emerald-50 dark:hover:bg-emerald-800/30 transition-colors">
+            <i class="fa-solid fa-file-excel"></i>
+            <span>Exportar Excel</span>
+          </button>
+        </div>
       </div>
       <div class="space-y-4">
         <section class="rounded-2xl border border-emerald-100 dark:border-emerald-900/40 bg-emerald-50/40 dark:bg-emerald-500/5 overflow-hidden">
@@ -1581,6 +1588,19 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
           <i class="fa-solid fa-user-check text-emerald-500"></i>
           <span>Controle de acesso</span>
         </button>
+        <button id="btn-open-abuse-monitor" type="button" aria-expanded="false" class="hidden w-full flex items-center gap-2 px-4 py-2 text-left text-sm text-amber-700 dark:text-amber-200 hover:bg-amber-50 dark:hover:bg-amber-500/10 transition-colors">
+          <i class="fa-solid fa-triangle-exclamation text-amber-500"></i>
+          <span>Abusos detectados</span>
+          <span id="abuse-monitor-summary" class="ml-auto text-[0.65rem] uppercase tracking-wide text-amber-600/80 dark:text-amber-200/70"></span>
+        </button>
+        <div id="abuse-monitor-panel" class="hidden border-t border-amber-100 dark:border-amber-900/40 bg-white dark:bg-gray-800">
+          <div class="px-4 py-3 space-y-2 text-[0.7rem] text-amber-800 dark:text-amber-100">
+            <p id="abuse-monitor-loading" class="hidden text-xs text-amber-700 dark:text-amber-200">Carregando registros…</p>
+            <p id="abuse-monitor-empty" class="hidden text-xs text-amber-700/80 dark:text-amber-200/70">Nenhum abuso registrado nas últimas verificações.</p>
+            <p id="abuse-monitor-error" class="hidden text-xs text-red-600 dark:text-red-300"></p>
+            <ul id="abuse-monitor-list" class="space-y-2 max-h-56 overflow-y-auto pr-1"></ul>
+          </div>
+        </div>
         <button id="btn-open-workspace-sharing" type="button" class="w-full flex items-center gap-2 px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
           <i class="fa fa-people-group text-emerald-500"></i>
           <span>Família</span>
@@ -3253,6 +3273,8 @@ const NOTIFICATION_PROMPT_KEY = 'of-notification-prompted';
 let notificationPrompted = false;
 
 let observersContext = { workspaceId: null, monthKey: null };
+let filtroMesChangeTimeout = null;
+let lastMonthChangeValue = null;
 const monthTotals = {
   gastos: new Map(),
   entradas: new Map(),
@@ -3269,12 +3291,31 @@ let cachedMesesEntradas = new Set();
 let cachedMesesInvestimentos = new Set();
 let monthCacheWorkspaceId = null;
 let monthCacheLoadedAt = 0;
+let observersLastBootAt = 0;
 const MONTH_CACHE_TTL = 1000 * 60 * 15;
 const SNAPSHOT_LIMITS = {
   gastos: 240,
   entradas: 240,
   investimentos: 240,
+  parcelados: 400,
 };
+
+const MONTH_FALLBACK_COOLDOWN = 1000 * 60 * 60 * 2;
+const OBSERVER_RESTART_COOLDOWN = 1000 * 30;
+let monthFallbackLastRunAt = 0;
+let monthFallbackLastWorkspaceId = null;
+
+const OBSERVER_MONITOR_STORAGE_KEY = 'of-observer-monitor';
+const OBSERVER_MONITOR_SYNC_THRESHOLD = 15;
+const OBSERVER_MONITOR_SYNC_INTERVAL = 1000 * 60 * 5;
+const OBSERVER_ABUSE_LIMIT = 30;
+const OBSERVER_ABUSE_WINDOW = 1000 * 60 * 60;
+const OBSERVER_ABUSE_REPORT_COOLDOWN = 1000 * 60 * 60;
+let observerMonitorStateCache = null;
+let observerMonitorSyncTimeout = null;
+const observerAbuseReportPromises = new Map();
+let abuseMonitorLoadedAt = 0;
+let abuseMonitorLoading = false;
 
 const investmentSnapshotTotals = new Map();
 const investmentSummaryTotals = new Map();
@@ -3951,13 +3992,14 @@ async function syncUserProfile(user) {
     const snapshot = await profileRef.get();
     const existingProfile = snapshot.exists ? (snapshot.data() || {}) : {};
     const now = firebase.firestore.Timestamp.now();
+    const serverNow = FieldValue.serverTimestamp();
     const updates = {
       email: user.email || existingProfile.email || null,
       normalizedEmail: normalized || existingProfile.normalizedEmail || null,
       displayName: user.displayName || existingProfile.displayName || null,
       photoURL: user.photoURL || existingProfile.photoURL || null,
-      lastLoginAt: now,
-      updatedAt: now,
+      lastLoginAt: serverNow,
+      updatedAt: serverNow,
     };
 
     if (!existingProfile.createdAt) {
@@ -4051,8 +4093,27 @@ async function syncUserProfile(user) {
 
     updates.status = status;
 
+    if (existingProfile.approvedAt && updates.approvedAt === undefined) {
+      updates.approvedAt = existingProfile.approvedAt;
+    }
+    if (existingProfile.approvedBy && updates.approvedBy === undefined) {
+      updates.approvedBy = existingProfile.approvedBy;
+    }
+    if (existingProfile.pendingAt && updates.pendingAt === undefined) {
+      updates.pendingAt = existingProfile.pendingAt;
+    }
+    if (existingProfile.blockedAt && updates.blockedAt === undefined) {
+      updates.blockedAt = existingProfile.blockedAt;
+    }
+    if (existingProfile.blockedBy && updates.blockedBy === undefined) {
+      updates.blockedBy = existingProfile.blockedBy;
+    }
+    if (existingProfile.blockedReason && updates.blockedReason === undefined) {
+      updates.blockedReason = existingProfile.blockedReason;
+    }
+
     await profileRef.set(updates, { merge: true });
-    const mergedProfile = { ...existingProfile, ...updates, status, role };
+    const mergedProfile = { ...existingProfile, ...updates, lastLoginAt: now, updatedAt: now, status, role };
     workspaceProfilesCache.set(user.uid, mergedProfile);
     return { uid: user.uid, ...mergedProfile };
   } catch (error) {
@@ -4417,6 +4478,18 @@ const accessManagerBlockedEmpty = document.getElementById('access-manager-blocke
 const accessManagerPendingCount = document.getElementById('access-manager-pending-count');
 const accessManagerApprovedCount = document.getElementById('access-manager-approved-count');
 const accessManagerBlockedCount = document.getElementById('access-manager-blocked-count');
+const exportActiveUsersButton = document.getElementById('btn-export-active-users');
+const localObserverMonitorContainer = document.getElementById('local-observer-monitor');
+const localObserverMonitorCount = document.getElementById('local-observer-monitor-count');
+const localObserverMonitorWindow = document.getElementById('local-observer-monitor-window');
+const localObserverMonitorLast = document.getElementById('local-observer-monitor-last');
+const abuseMonitorButton = document.getElementById('btn-open-abuse-monitor');
+const abuseMonitorPanel = document.getElementById('abuse-monitor-panel');
+const abuseMonitorList = document.getElementById('abuse-monitor-list');
+const abuseMonitorEmpty = document.getElementById('abuse-monitor-empty');
+const abuseMonitorError = document.getElementById('abuse-monitor-error');
+const abuseMonitorLoadingIndicator = document.getElementById('abuse-monitor-loading');
+const abuseMonitorSummary = document.getElementById('abuse-monitor-summary');
 const accessManagerSectionToggles = Array.from(document.querySelectorAll('[data-access-section-toggle]'));
 const accessManagerSectionBodies = {};
 const accessManagerSectionCarets = {};
@@ -4644,6 +4717,10 @@ const bibleVerses = [
   {
     text: 'Aprende com a formiga, preguiçoso; ela prepara sua comida no verão e ajunta o seu suprimento na colheita.',
     reference: 'Provérbios 6:6-8'
+  },
+  {
+    text: 'Tudo tem o seu tempo determinado, e há tempo para todo propósito debaixo do céu.',
+    reference: 'Eclesiastes 3:1'
   },
   {
     text: 'O homem bom deixa herança para os filhos dos seus filhos.',
@@ -6037,6 +6114,9 @@ function setUserMenuState(open) {
   if (userMenuCaret) {
     userMenuCaret.classList.toggle('rotate-180', isUserMenuOpen);
   }
+  if (!isUserMenuOpen) {
+    hideAbuseMonitorPanel();
+  }
 }
 
 function toggleUserMenu(force) {
@@ -6264,9 +6344,19 @@ function isCurrentUserAdmin() {
 }
 
 function updateAdminControlsVisibility() {
-  if (!accessManagerButton) return;
   const visible = isCurrentUserAdmin();
-  accessManagerButton.classList.toggle('hidden', !visible);
+  if (accessManagerButton) {
+    accessManagerButton.classList.toggle('hidden', !visible);
+  }
+  if (abuseMonitorButton) {
+    abuseMonitorButton.classList.toggle('hidden', !visible);
+    if (!visible) {
+      hideAbuseMonitorPanel();
+      if (abuseMonitorSummary) {
+        abuseMonitorSummary.textContent = '';
+      }
+    }
+  }
 }
 
 async function startAppForCurrentUser(forceReload = false) {
@@ -6278,6 +6368,11 @@ async function startAppForCurrentUser(forceReload = false) {
   appStartInProgress = true;
   try {
     await ensureUserWorkspace(currentUser);
+    const state = loadObserverMonitorState();
+    const monitorEntry = state?.entries?.[currentUser.uid];
+    if (monitorEntry) {
+      updateLocalObserverMonitorUI(monitorEntry);
+    }
     if (!appBootstrapped) {
       boot();
       appBootstrapped = true;
@@ -6764,10 +6859,19 @@ async function loadAccessManagerLists() {
 
   try {
     const profilesRef = db.collection('profiles');
+    const getProfiles = async (status) => {
+      try {
+        return await profilesRef.where('status', '==', status).get({ source: 'server' });
+      } catch (serverError) {
+        console.warn(`Falha ao buscar perfis (${status}) no servidor, usando cache:`, serverError);
+        return profilesRef.where('status', '==', status).get();
+      }
+    };
+
     const [pendingSnap, approvedSnap, blockedSnap] = await Promise.all([
-      profilesRef.where('status', '==', 'pending').get(),
-      profilesRef.where('status', '==', 'approved').get(),
-      profilesRef.where('status', '==', 'blocked').get(),
+      getProfiles('pending'),
+      getProfiles('approved'),
+      getProfiles('blocked'),
     ]);
 
     const pending = pendingSnap.docs.map((doc) => ({ uid: doc.id, ...(doc.data() || {}) }));
@@ -7040,6 +7144,10 @@ function handleUserSignedOut() {
   currentUserProfile = null;
   appReadyForCurrentUser = false;
   appStartInProgress = false;
+  observerAbuseReportPromises.clear();
+  abuseMonitorLoadedAt = 0;
+  hideAbuseMonitorPanel();
+  clearLocalObserverMonitorUI();
   resetWalletState({ resetUI: true });
   walletOpeningCache.clear();
   walletClosingCache.clear();
@@ -7060,6 +7168,8 @@ function handleUserSignedOut() {
     });
   }
   monthlySummaryPending.clear();
+  observersContext = { workspaceId: null, monthKey: null };
+  observersLastBootAt = 0;
   if (accessProfileUnsubscribe) {
     accessProfileUnsubscribe();
     accessProfileUnsubscribe = null;
@@ -7464,6 +7574,30 @@ if (workspaceJoinForm) {
     });
   }
 
+  if (exportActiveUsersButton) {
+    exportActiveUsersButton.addEventListener('click', () => {
+      exportActiveUsersToExcel().catch((error) => {
+        console.error('Erro ao exportar usuários:', error);
+        showToast('Não foi possível exportar agora.', 'error');
+      });
+    });
+  }
+
+  if (abuseMonitorButton) {
+    abuseMonitorButton.addEventListener('click', () => {
+      if (!isCurrentUserAdmin()) {
+        showToast('Somente administradores podem acessar este painel.', 'error');
+        return;
+      }
+      const isOpen = abuseMonitorPanel && !abuseMonitorPanel.classList.contains('hidden');
+      if (isOpen) {
+        hideAbuseMonitorPanel();
+      } else {
+        toggleAbuseMonitorPanel(true);
+      }
+    });
+  }
+
   if (accessManagerClose) {
     accessManagerClose.addEventListener('click', closeAccessManagerModal);
   }
@@ -7778,6 +7912,573 @@ const mergeMonthSets = (...sets) => {
   });
   return merged;
 };
+
+let appAnalyticsInstance;
+function getAppAnalytics() {
+  if (appAnalyticsInstance !== undefined) {
+    return appAnalyticsInstance;
+  }
+  appAnalyticsInstance = null;
+  try {
+    if (window.appAnalytics) {
+      appAnalyticsInstance = window.appAnalytics;
+    } else if (firebase?.analytics) {
+      const analyticsCandidate = firebase.analytics();
+      if (analyticsCandidate && typeof analyticsCandidate.logEvent === 'function') {
+        appAnalyticsInstance = analyticsCandidate;
+        window.appAnalytics = analyticsCandidate;
+      }
+    }
+  } catch (error) {
+    console.warn('Analytics indisponível:', error);
+    appAnalyticsInstance = null;
+  }
+  return appAnalyticsInstance;
+}
+
+function logAnalyticsEvent(name, params = {}) {
+  if (!name) return;
+  try {
+    const analytics = getAppAnalytics();
+    if (analytics && typeof analytics.logEvent === 'function') {
+      analytics.logEvent(name, params);
+      return;
+    }
+  } catch (error) {
+    console.warn('Falha ao registrar evento analítico:', error);
+    return;
+  }
+  if (typeof console !== 'undefined' && console.info) {
+    console.info('[analytics]', name, params);
+  }
+}
+
+function normalizeTimestampToDate(value) {
+  if (!value) return null;
+  if (typeof value.toDate === 'function') return value.toDate();
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function isDateInCurrentMonth(dateValue) {
+  const date = normalizeTimestampToDate(dateValue);
+  if (!date) return false;
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth(), 1);
+  const end = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  return date >= start && date < end;
+}
+
+function formatLastAccessForExport(dateValue) {
+  const date = normalizeTimestampToDate(dateValue);
+  if (!date) return '';
+  return date.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+}
+
+async function exportActiveUsersToExcel() {
+  if (!isCurrentUserAdmin()) {
+    showToast('Somente administradores podem exportar usuários.', 'error');
+    return;
+  }
+
+  await firebaseReady.catch(() => null);
+
+  if (!db || typeof XLSX === 'undefined') {
+    showToast('Exportação indisponível no momento.', 'error');
+    return;
+  }
+
+  const button = exportActiveUsersButton;
+  const setButtonLoading = (loading) => {
+    if (!button) return;
+    button.disabled = loading;
+    button.classList.toggle('opacity-60', loading);
+    button.classList.toggle('cursor-not-allowed', loading);
+    const label = button.querySelector('span');
+    if (loading) {
+      if (label) label.dataset.originalText = label.textContent;
+      if (label) label.textContent = 'Exportando...';
+    } else if (label && label.dataset.originalText) {
+      label.textContent = label.dataset.originalText;
+      delete label.dataset.originalText;
+    }
+  };
+
+  try {
+    setButtonLoading(true);
+
+    let profilesSnap;
+    try {
+      profilesSnap = await db.collection('profiles').get({ source: 'server' });
+    } catch (serverError) {
+      console.warn('Exportação: fallback para cache ao buscar perfis:', serverError);
+      profilesSnap = await db.collection('profiles').get();
+    }
+
+    const enrichedProfiles = profilesSnap.docs
+      .map((doc) => ({ uid: doc.id, ...(doc.data() || {}) }))
+      .filter((profile) => isDateInCurrentMonth(profile.lastAccess || profile.lastLoginAt));
+
+    if (!enrichedProfiles.length) {
+      showToast('Nenhum usuário com acesso registrado neste mês.', 'info');
+      return;
+    }
+
+    const sortedProfiles = enrichedProfiles
+      .map((profile) => {
+        const lastAccessDate = normalizeTimestampToDate(profile.lastAccess || profile.lastLoginAt);
+        return {
+          ...profile,
+          _lastAccessMs: lastAccessDate ? lastAccessDate.getTime() : 0,
+          _accessCount: typeof profile.accessCount === 'number' ? profile.accessCount : -Infinity,
+        };
+      })
+      .sort((a, b) => {
+        if (a._accessCount !== b._accessCount) {
+          return b._accessCount - a._accessCount;
+        }
+        return b._lastAccessMs - a._lastAccessMs;
+      });
+
+    const rows = sortedProfiles.map((profile) => ({
+      uid: profile.uid || '',
+      name: profile.name || '',
+      email: profile.email || '',
+      role: profile.role || '',
+      status: profile.status || '',
+      lastAccess: formatLastAccessForExport(profile.lastAccess || profile.lastLoginAt),
+      accessCount: typeof profile.accessCount === 'number' ? profile.accessCount : '',
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Usuários ativos');
+    XLSX.writeFile(workbook, 'usuarios-ativos-mes.xlsx');
+    showToast('Exportação concluída.', 'success');
+  } catch (error) {
+    console.error('Erro ao exportar usuários ativos:', error);
+    showToast('Não foi possível exportar agora.', 'error');
+  } finally {
+    setButtonLoading(false);
+  }
+}
+
+function loadObserverMonitorState() {
+  if (observerMonitorStateCache) {
+    return observerMonitorStateCache;
+  }
+  let parsed = { entries: {}, updatedAt: 0 };
+  try {
+    const raw = localStorage.getItem(OBSERVER_MONITOR_STORAGE_KEY);
+    if (raw) {
+      const data = JSON.parse(raw);
+      if (data && typeof data === 'object') {
+        parsed = {
+          entries: data.entries && typeof data.entries === 'object' ? data.entries : {},
+          updatedAt: typeof data.updatedAt === 'number' ? data.updatedAt : 0,
+        };
+      }
+    }
+  } catch (error) {
+    console.warn('Falha ao carregar monitoramento de observers:', error);
+  }
+  observerMonitorStateCache = parsed;
+  return observerMonitorStateCache;
+}
+
+function persistObserverMonitorState(state) {
+  if (!state || typeof state !== 'object') {
+    return;
+  }
+  observerMonitorStateCache = state;
+  try {
+    localStorage.setItem(OBSERVER_MONITOR_STORAGE_KEY, JSON.stringify(state));
+  } catch (error) {
+    console.warn('Falha ao salvar monitoramento de observers:', error);
+  }
+}
+
+function clearLocalObserverMonitorUI() {
+  if (!localObserverMonitorContainer) return;
+  localObserverMonitorContainer.classList.add('hidden');
+  if (localObserverMonitorCount) localObserverMonitorCount.textContent = '';
+  if (localObserverMonitorWindow) localObserverMonitorWindow.textContent = '';
+  if (localObserverMonitorLast) localObserverMonitorLast.textContent = '';
+}
+
+function updateLocalObserverMonitorUI(entry) {
+  if (!localObserverMonitorContainer) {
+    return;
+  }
+  if (!entry || typeof entry.count !== 'number' || entry.count <= 0) {
+    clearLocalObserverMonitorUI();
+    return;
+  }
+
+  localObserverMonitorContainer.classList.remove('hidden');
+  if (localObserverMonitorCount) {
+    localObserverMonitorCount.textContent = `×${entry.count}`;
+  }
+
+  const now = Date.now();
+  const windowBoots = Array.isArray(entry.recentBoots)
+    ? entry.recentBoots.filter((ts) => typeof ts === 'number' && (now - ts) <= OBSERVER_ABUSE_WINDOW)
+    : [];
+  const windowCount = windowBoots.length;
+  if (localObserverMonitorWindow) {
+    localObserverMonitorWindow.textContent = windowCount > 0
+      ? `Última hora: ×${windowCount}`
+      : 'Última hora: nenhuma reinicialização';
+  }
+
+  if (localObserverMonitorLast) {
+    const lastBootRaw = entry.lastBootAt;
+    let lastBootDate = null;
+    if (lastBootRaw instanceof Date) {
+      lastBootDate = lastBootRaw;
+    } else if (typeof lastBootRaw?.toDate === 'function') {
+      lastBootDate = lastBootRaw.toDate();
+    } else if (typeof lastBootRaw === 'number') {
+      const parsed = new Date(lastBootRaw);
+      lastBootDate = Number.isNaN(parsed.getTime()) ? null : parsed;
+    }
+    localObserverMonitorLast.textContent = lastBootDate
+      ? `Último registro em ${lastBootDate.toLocaleString('pt-BR')}`
+      : 'Nenhum registro recente.';
+  }
+}
+
+function hideAbuseMonitorPanel() {
+  if (!abuseMonitorPanel) return;
+  abuseMonitorPanel.classList.add('hidden');
+  if (abuseMonitorButton) {
+    abuseMonitorButton.setAttribute('aria-expanded', 'false');
+  }
+}
+
+function renderAbuseMonitorEntries(entries) {
+  if (!abuseMonitorList || !abuseMonitorEmpty) {
+    return;
+  }
+
+  abuseMonitorList.innerHTML = '';
+  const total = Array.isArray(entries) ? entries.length : 0;
+
+  if (abuseMonitorSummary) {
+    abuseMonitorSummary.textContent = total > 0
+      ? `${total} alerta${total > 1 ? 's' : ''}`
+      : '';
+  }
+
+  if (!total) {
+    abuseMonitorList.classList.add('hidden');
+    abuseMonitorEmpty.classList.remove('hidden');
+    return;
+  }
+
+  abuseMonitorEmpty.classList.add('hidden');
+  abuseMonitorList.classList.remove('hidden');
+
+  entries.forEach((entry) => {
+    const li = document.createElement('li');
+    li.className = 'rounded-lg border border-amber-100 dark:border-amber-900/40 bg-amber-50/60 dark:bg-amber-500/15 px-3 py-2 text-[0.68rem] text-amber-800 dark:text-amber-100 flex flex-col gap-1';
+
+    const header = document.createElement('div');
+    header.className = 'flex items-center justify-between gap-2';
+
+    const uidLabel = document.createElement('span');
+    uidLabel.className = 'font-semibold truncate';
+    uidLabel.textContent = entry.uid || '(desconhecido)';
+
+    const countBadge = document.createElement('span');
+    countBadge.className = 'text-xs font-semibold text-amber-800 dark:text-amber-100';
+    countBadge.textContent = `×${entry.qtdReinicios || 0}`;
+
+    header.appendChild(uidLabel);
+    header.appendChild(countBadge);
+    li.appendChild(header);
+
+    if (entry.email) {
+      const emailLabel = document.createElement('span');
+      emailLabel.className = 'text-[0.62rem] text-amber-700/80 dark:text-amber-200/70 break-words';
+      emailLabel.textContent = entry.email;
+      li.appendChild(emailLabel);
+    }
+
+    if (entry.workspace) {
+      const workspaceLabel = document.createElement('span');
+      workspaceLabel.className = 'text-[0.6rem] text-amber-700/70 dark:text-amber-200/60';
+      workspaceLabel.textContent = `Workspace: ${entry.workspace}`;
+      li.appendChild(workspaceLabel);
+    }
+
+    if (entry.timestampLabel) {
+      const tsLabel = document.createElement('span');
+      tsLabel.className = 'text-[0.6rem] text-amber-700/60 dark:text-amber-200/50';
+      tsLabel.textContent = entry.timestampLabel;
+      li.appendChild(tsLabel);
+    }
+
+    abuseMonitorList.appendChild(li);
+  });
+}
+
+async function loadAbuseMonitorReports(force = false) {
+  if (!isCurrentUserAdmin()) {
+    return;
+  }
+  if (!db || !abuseMonitorPanel || !abuseMonitorList) {
+    return;
+  }
+  if (abuseMonitorLoading) {
+    return;
+  }
+  const now = Date.now();
+  if (!force && abuseMonitorLoadedAt && (now - abuseMonitorLoadedAt) < 60000) {
+    return;
+  }
+
+  abuseMonitorLoading = true;
+  if (abuseMonitorError) {
+    abuseMonitorError.classList.add('hidden');
+    abuseMonitorError.textContent = '';
+  }
+  if (abuseMonitorLoadingIndicator) {
+    abuseMonitorLoadingIndicator.classList.remove('hidden');
+  }
+
+  try {
+    const snapshot = await db.collection('admin-abuse-monitor')
+      .orderBy('timestamp', 'desc')
+      .limit(50)
+      .get();
+
+    const entries = snapshot.docs.map((doc) => {
+      const data = doc.data() || {};
+      const rawTimestamp = data.timestamp;
+      let timestampLabel = '';
+      if (rawTimestamp) {
+        let date;
+        if (typeof rawTimestamp?.toDate === 'function') {
+          date = rawTimestamp.toDate();
+        } else if (rawTimestamp instanceof Date) {
+          date = rawTimestamp;
+        } else if (typeof rawTimestamp === 'number') {
+          const parsed = new Date(rawTimestamp);
+          date = Number.isNaN(parsed.getTime()) ? null : parsed;
+        }
+        if (date && !Number.isNaN(date.getTime())) {
+          timestampLabel = `Registrado em ${formatDateTime(date)}`;
+        }
+      }
+      return {
+        uid: data.uid || doc.id,
+        email: data.email || '',
+        workspace: data.workspace || '',
+        qtdReinicios: Number(data.qtdReinicios || 0),
+        timestampLabel,
+      };
+    });
+
+    renderAbuseMonitorEntries(entries);
+    abuseMonitorLoadedAt = Date.now();
+    logAnalyticsEvent('abuse_monitor_viewed', { count: entries.length, uid: currentUser?.uid || null });
+  } catch (error) {
+    console.error('Falha ao carregar registros de abuso:', error);
+    if (abuseMonitorSummary) {
+      abuseMonitorSummary.textContent = '';
+    }
+    if (abuseMonitorError) {
+      let message = 'Não foi possível carregar os alertas agora. Tente novamente mais tarde.';
+      if (error && typeof error === 'object') {
+        const code = error.code;
+        if (code === 'permission-denied') {
+          message = 'Sem permissão para listar alertas. Verifique se as regras do Firestore liberam leitura para administradores.';
+        } else if (code === 'unavailable' || code === 'network-request-failed') {
+          message = 'Conexão indisponível para carregar alertas. Tente novamente quando estiver online.';
+        }
+      }
+      abuseMonitorError.textContent = message;
+      abuseMonitorError.classList.remove('hidden');
+    }
+    if (abuseMonitorEmpty) {
+      abuseMonitorEmpty.classList.add('hidden');
+    }
+    if (abuseMonitorList) {
+      abuseMonitorList.classList.add('hidden');
+    }
+  } finally {
+    abuseMonitorLoading = false;
+    if (abuseMonitorLoadingIndicator) {
+      abuseMonitorLoadingIndicator.classList.add('hidden');
+    }
+  }
+}
+
+function toggleAbuseMonitorPanel(forceOpen) {
+  if (!abuseMonitorButton || !abuseMonitorPanel) {
+    return;
+  }
+  const isOpen = !abuseMonitorPanel.classList.contains('hidden');
+  const shouldOpen = typeof forceOpen === 'boolean' ? forceOpen : !isOpen;
+  if (!shouldOpen) {
+    hideAbuseMonitorPanel();
+    return;
+  }
+  if (!isCurrentUserAdmin()) {
+    showToast('Somente administradores podem acessar este painel.', 'error');
+    return;
+  }
+  abuseMonitorPanel.classList.remove('hidden');
+  abuseMonitorButton.setAttribute('aria-expanded', 'true');
+  loadAbuseMonitorReports(true).catch((error) => {
+    console.error('Falha ao atualizar painel de abusos:', error);
+  });
+}
+
+function incrementObserverMonitor(uid, workspaceId) {
+  if (!uid) {
+    return null;
+  }
+  const state = loadObserverMonitorState();
+  const now = Date.now();
+  const entries = state.entries || {};
+  const entry = entries[uid] || {
+    count: 0,
+    lastBootAt: 0,
+    lastWorkspace: null,
+    lastSyncedCount: 0,
+    lastSyncedAt: 0,
+    recentBoots: [],
+    lastAbuseReportedAt: 0,
+    lastAbuseReportedCount: 0,
+  };
+  entry.count += 1;
+  entry.lastBootAt = now;
+  entry.lastWorkspace = workspaceId || entry.lastWorkspace || null;
+
+  const existingBoots = Array.isArray(entry.recentBoots)
+    ? entry.recentBoots.filter((ts) => typeof ts === 'number' && (now - ts) <= OBSERVER_ABUSE_WINDOW)
+    : [];
+  existingBoots.push(now);
+  if (existingBoots.length > (OBSERVER_ABUSE_LIMIT * 3)) {
+    existingBoots.splice(0, existingBoots.length - (OBSERVER_ABUSE_LIMIT * 3));
+  }
+  entry.recentBoots = existingBoots;
+
+  updateLocalObserverMonitorUI(entry);
+
+  const abuseThresholdReached = existingBoots.length >= OBSERVER_ABUSE_LIMIT;
+  const lastReportAt = Number(entry.lastAbuseReportedAt || 0);
+  const canReportAbuse = abuseThresholdReached
+    && (now - lastReportAt) >= OBSERVER_ABUSE_REPORT_COOLDOWN
+    && !observerAbuseReportPromises.has(uid);
+
+  if (canReportAbuse) {
+    entry.lastAbuseReportedAt = now;
+    entry.lastAbuseReportedCount = existingBoots.length;
+  }
+
+  entries[uid] = entry;
+  state.entries = entries;
+  state.updatedAt = now;
+  persistObserverMonitorState(state);
+
+  if (canReportAbuse) {
+    const reportPromise = reportObserverAbuse(uid, workspaceId, entry)
+      .catch((error) => {
+        console.warn('Falha ao enviar alerta de abuso:', error);
+      })
+      .finally(() => {
+        observerAbuseReportPromises.delete(uid);
+      });
+    observerAbuseReportPromises.set(uid, reportPromise);
+  }
+
+  scheduleObserverMonitorSync(uid);
+  return entry;
+}
+
+function scheduleObserverMonitorSync(uid) {
+  if (!uid) {
+    return;
+  }
+  const state = loadObserverMonitorState();
+  const entry = state.entries?.[uid];
+  if (!entry) {
+    return;
+  }
+  const now = Date.now();
+  const lastSyncedAt = entry.lastSyncedAt || 0;
+  const lastSyncedCount = entry.lastSyncedCount || 0;
+  const shouldSync = (entry.count - lastSyncedCount) >= OBSERVER_MONITOR_SYNC_THRESHOLD
+    || (now - lastSyncedAt) >= OBSERVER_MONITOR_SYNC_INTERVAL;
+  if (!shouldSync) {
+    return;
+  }
+  if (observerMonitorSyncTimeout) {
+    clearTimeout(observerMonitorSyncTimeout);
+  }
+  observerMonitorSyncTimeout = setTimeout(() => {
+    syncObserverMonitor(uid).catch((error) => {
+      console.warn('Falha ao sincronizar monitoramento de observers:', error);
+    });
+  }, 300);
+}
+
+async function syncObserverMonitor(uid) {
+  if (!uid || !db) {
+    return;
+  }
+  const state = loadObserverMonitorState();
+  const entry = state.entries?.[uid];
+  if (!entry) {
+    return;
+  }
+  try {
+    const payload = {
+      count: entry.count,
+      lastBootAt: entry.lastBootAt || null,
+      lastWorkspace: entry.lastWorkspace || null,
+      updatedAt: firebase?.firestore?.FieldValue?.serverTimestamp
+        ? firebase.firestore.FieldValue.serverTimestamp()
+        : null,
+    };
+    await db.collection('profiles').doc(uid).set({ observerMonitor: payload }, { merge: true });
+    entry.lastSyncedCount = entry.count;
+    entry.lastSyncedAt = Date.now();
+    state.entries[uid] = entry;
+    state.updatedAt = entry.lastSyncedAt;
+    persistObserverMonitorState(state);
+  } catch (error) {
+    console.warn('Erro ao atualizar monitoramento no perfil:', error);
+  }
+}
+
+async function reportObserverAbuse(uid, workspaceId, entry) {
+  if (!uid || !db) {
+    return;
+  }
+  try {
+    const payload = {
+      uid,
+      email: currentUser?.email || null,
+      workspace: workspaceId || entry?.lastWorkspace || null,
+      qtdReinicios: Number(entry?.recentBoots?.length || entry?.count || 0) || 0,
+      timestamp: firebase?.firestore?.FieldValue?.serverTimestamp
+        ? firebase.firestore.FieldValue.serverTimestamp()
+        : new Date(),
+    };
+    await db.collection('admin-abuse-monitor').doc(uid).set(payload, { merge: true });
+    logAnalyticsEvent('observer_abuse_reported', {
+      uid,
+      workspaceId: payload.workspace || null,
+      qtdReinicios: payload.qtdReinicios,
+    });
+  } catch (error) {
+    console.warn('Falha ao registrar abuso de observers:', error);
+  }
+}
 const pruneMonthTotals = (map, limit = 48) => {
   if (!map || typeof map.size !== 'number') {
     return;
@@ -14550,7 +15251,43 @@ async function preloadMonthCaches(force = false) {
   if (!workspaceId) {
     return;
   }
+  const filtroMesEl = document.getElementById('filtro-mes');
+  const selectedCandidate = filtroMesEl ? filtroMesEl.value : null;
+  const requestedMonthKey = (() => {
+    if (selectedCandidate && selectedCandidate !== 'all') {
+      return selectedCandidate;
+    }
+    return getCurrentWalletMonthKey();
+  })();
+
   const now = Date.now();
+  if (!force && requestedMonthKey && monthlySummariesCache.has(requestedMonthKey)) {
+    const sameWorkspace = monthCacheWorkspaceId === workspaceId;
+    if (sameWorkspace) {
+      const monthsFromSummaries = new Set();
+      monthlySummariesCache.forEach((summary, key) => {
+        if (!key) return;
+        monthsFromSummaries.add(key);
+      });
+      if (monthsFromSummaries.size > 0) {
+        cachedMesesGastos = mergeMonthSets(monthsFromSummaries, cachedMesesGastos);
+        cachedMesesEntradas = mergeMonthSets(monthsFromSummaries, cachedMesesEntradas);
+        cachedMesesInvestimentos = mergeMonthSets(monthsFromSummaries, cachedMesesInvestimentos);
+      } else {
+        cachedMesesGastos.add(requestedMonthKey);
+        cachedMesesEntradas.add(requestedMonthKey);
+        cachedMesesInvestimentos.add(requestedMonthKey);
+      }
+      monthCacheWorkspaceId = workspaceId;
+      monthCacheLoadedAt = now;
+      mesesDisponiveis = mergeMonthSets(new Set(monthTotals.gastos.keys()), cachedMesesGastos);
+      mesesEntradasDisponiveis = mergeMonthSets(new Set(monthTotals.entradas.keys()), cachedMesesEntradas);
+      mesesInvestimentosDisponiveis = mergeMonthSets(new Set(monthTotals.investimentos.keys()), cachedMesesInvestimentos);
+      atualizarFiltroMeses();
+      return;
+    }
+  }
+
   if (!force && monthCacheWorkspaceId === workspaceId && (now - monthCacheLoadedAt) < MONTH_CACHE_TTL) {
     return;
   }
@@ -14564,9 +15301,9 @@ async function preloadMonthCaches(force = false) {
       .catch(() => null);
 
     let usedSummaries = false;
-    const nextCachedMesesGastos = new Set();
-    const nextCachedMesesEntradas = new Set();
-    const nextCachedMesesInvestimentos = new Set();
+    const nextCachedMesesGastos = new Set(cachedMesesGastos || []);
+    const nextCachedMesesEntradas = new Set(cachedMesesEntradas || []);
+    const nextCachedMesesInvestimentos = new Set(cachedMesesInvestimentos || []);
 
     if (summariesSnap && !summariesSnap.empty) {
       summariesSnap.docs.forEach((doc) => {
@@ -14583,43 +15320,79 @@ async function preloadMonthCaches(force = false) {
     }
 
     if (!usedSummaries) {
-      const [gastosSnap, entradasSnap, investimentosSnap] = await Promise.all([
-        userCollectionRef('gastos').orderBy('mesFatura', 'desc').limit(limit).get().catch(() => null),
-        userCollectionRef('entradas').orderBy('data', 'desc').limit(limit).get().catch(() => null),
-        userCollectionRef('investimentos').orderBy('data', 'desc').limit(limit).get().catch(() => null),
-      ]);
+      const cooldownActive = monthFallbackLastWorkspaceId === workspaceId
+        && (now - monthFallbackLastRunAt) < MONTH_FALLBACK_COOLDOWN;
 
-      if (gastosSnap && !gastosSnap.empty) {
-        gastosSnap.docs.forEach((doc) => {
-          const data = typeof doc.data === 'function' ? doc.data() : doc.data;
-          if (!data) return;
-          const key = data.mesFatura || (data.data ? yyyymm(data.data.toDate ? data.data.toDate() : new Date(data.data)) : null);
-          if (key) {
-            nextCachedMesesGastos.add(key);
-          }
+      if (cooldownActive) {
+        const remaining = MONTH_FALLBACK_COOLDOWN - (now - monthFallbackLastRunAt);
+        console.info('Preload fallback em cooldown. Pulando consulta pesada.', {
+          workspaceId,
+          requestedMonthKey,
+          cooldownMs: Math.max(0, remaining),
         });
-      }
+        logAnalyticsEvent('month_preload_cooldown_skip', {
+          workspaceId: workspaceId || null,
+          month: requestedMonthKey || null,
+          cooldownMs: Math.max(0, remaining),
+        });
+      } else {
+        const [gastosSnap, entradasSnap, investimentosSnap] = await Promise.all([
+          userCollectionRef('gastos').orderBy('mesFatura', 'desc').limit(limit).get().catch(() => null),
+          userCollectionRef('entradas').orderBy('data', 'desc').limit(limit).get().catch(() => null),
+          userCollectionRef('investimentos').orderBy('data', 'desc').limit(limit).get().catch(() => null),
+        ]);
 
-      if (entradasSnap && !entradasSnap.empty) {
-        entradasSnap.docs.forEach((doc) => {
-          const data = typeof doc.data === 'function' ? doc.data() : doc.data;
-          if (!data?.data) return;
-          const dt = data.data.toDate ? data.data.toDate() : new Date(data.data);
-          if (!Number.isNaN(dt?.getTime?.())) {
-            nextCachedMesesEntradas.add(yyyymm(dt));
-          }
+        const fallbackStats = {
+          workspaceId,
+          requestedMonthKey,
+          gastosDocs: gastosSnap?.size || 0,
+          entradasDocs: entradasSnap?.size || 0,
+          investimentosDocs: investimentosSnap?.size || 0,
+        };
+        console.info('Preload fallback executado.', fallbackStats);
+        logAnalyticsEvent('month_preload_fallback', {
+          workspaceId: workspaceId || null,
+          month: requestedMonthKey || null,
+          gastosDocs: fallbackStats.gastosDocs,
+          entradasDocs: fallbackStats.entradasDocs,
+          investimentosDocs: fallbackStats.investimentosDocs,
         });
-      }
 
-      if (investimentosSnap && !investimentosSnap.empty) {
-        investimentosSnap.docs.forEach((doc) => {
-          const data = typeof doc.data === 'function' ? doc.data() : doc.data;
-          if (!data?.data) return;
-          const dt = data.data.toDate ? data.data.toDate() : new Date(data.data);
-          if (!Number.isNaN(dt?.getTime?.())) {
-            nextCachedMesesInvestimentos.add(yyyymm(dt));
-          }
-        });
+        monthFallbackLastRunAt = now;
+        monthFallbackLastWorkspaceId = workspaceId;
+
+        if (gastosSnap && !gastosSnap.empty) {
+          gastosSnap.docs.forEach((doc) => {
+            const data = typeof doc.data === 'function' ? doc.data() : doc.data;
+            if (!data) return;
+            const key = data.mesFatura || (data.data ? yyyymm(data.data.toDate ? data.data.toDate() : new Date(data.data)) : null);
+            if (key) {
+              nextCachedMesesGastos.add(key);
+            }
+          });
+        }
+
+        if (entradasSnap && !entradasSnap.empty) {
+          entradasSnap.docs.forEach((doc) => {
+            const data = typeof doc.data === 'function' ? doc.data() : doc.data;
+            if (!data?.data) return;
+            const dt = data.data.toDate ? data.data.toDate() : new Date(data.data);
+            if (!Number.isNaN(dt?.getTime?.())) {
+              nextCachedMesesEntradas.add(yyyymm(dt));
+            }
+          });
+        }
+
+        if (investimentosSnap && !investimentosSnap.empty) {
+          investimentosSnap.docs.forEach((doc) => {
+            const data = typeof doc.data === 'function' ? doc.data() : doc.data;
+            if (!data?.data) return;
+            const dt = data.data.toDate ? data.data.toDate() : new Date(data.data);
+            if (!Number.isNaN(dt?.getTime?.())) {
+              nextCachedMesesInvestimentos.add(yyyymm(dt));
+            }
+          });
+        }
       }
     }
 
@@ -14655,8 +15428,28 @@ async function startObservers(force = false){
     || unsubWalletSettings || unsubWalletAccounts || unsubWalletSnapshot || unsubWalletTimeline
     || unsubWalletOpeningHistory
   );
+  const now = Date.now();
+  const sameTarget = observersContext.workspaceId === workspaceId && observersContext.monthKey === normalizedMonth;
+  if (!force && sameTarget && observersLastBootAt && (now - observersLastBootAt) < OBSERVER_RESTART_COOLDOWN) {
+    const elapsed = now - observersLastBootAt;
+    console.info('startObservers ignorado devido a cooldown ativo.', {
+      workspaceId,
+      month: normalizedMonth,
+      elapsedMs: elapsed,
+    });
+    logAnalyticsEvent('observer_restart_cooldown_skip', {
+      workspaceId: workspaceId || null,
+      month: normalizedMonth || null,
+      elapsedMs: elapsed,
+    });
+    return;
+  }
 
   if (!force && contextMatches && hasActiveObservers) {
+    return;
+  }
+
+  if (!force && observersContext.monthKey === normalizedMonth && observersContext.workspaceId === workspaceId && hasActiveObservers) {
     return;
   }
 
@@ -14665,6 +15458,11 @@ async function startObservers(force = false){
     walletClosingCache.clear();
   }
 
+  if (currentUser?.uid) {
+    incrementObserverMonitor(currentUser.uid, workspaceId);
+  }
+
+  observersLastBootAt = now;
   observersContext = { workspaceId, monthKey: normalizedMonth };
   attachTagsMetadataListener();
   attachMonthlySummaryListener(normalizedMonth);
@@ -14842,7 +15640,8 @@ async function startObservers(force = false){
     entradasQuery = entradasQuery
       .where('data', '>=', monthStartTimestamp)
       .where('data', '<', monthEndTimestamp)
-      .orderBy('data', 'desc');
+      .orderBy('data', 'desc')
+      .limit(SNAPSHOT_LIMITS.entradas);
   } else {
     entradasQuery = entradasQuery.orderBy('data', 'desc').limit(SNAPSHOT_LIMITS.entradas);
   }
@@ -14872,7 +15671,8 @@ async function startObservers(force = false){
     investimentosQuery = investimentosQuery
       .where('data', '>=', monthStartTimestamp)
       .where('data', '<', monthEndTimestamp)
-      .orderBy('data', 'desc');
+      .orderBy('data', 'desc')
+      .limit(SNAPSHOT_LIMITS.investimentos);
   } else {
     investimentosQuery = investimentosQuery.orderBy('data', 'desc').limit(SNAPSHOT_LIMITS.investimentos);
   }
@@ -15027,7 +15827,7 @@ async function startObservers(force = false){
     showToast('Erro ao carregar histórico de gastos.', 'error');
   });
 
-  unsubParcelados = userCollectionRef('parcelados').orderBy('dataInicio','desc').onSnapshot(snap=>{
+  unsubParcelados = userCollectionRef('parcelados').orderBy('dataInicio','desc').limit(SNAPSHOT_LIMITS.parcelados).onSnapshot(snap=>{
     hideSpinner('parcelados-loading-spinner'); // Oculta spinner de parcelados
     allParceladosDocs = snap.docs;
 
@@ -17867,11 +18667,34 @@ document.getElementById('filtro-mes').addEventListener('change', () => {
   const filtroMesEl = document.getElementById('filtro-mes');
   if (!filtroMesEl) return;
   const valorSelecionado = filtroMesEl.value;
-  if (valorSelecionado && valorSelecionado !== 'all') {
+  const workspaceId = getActiveWorkspaceId();
+  const sameMonthAsContext = valorSelecionado === observersContext.monthKey
+    && observersContext.workspaceId === workspaceId;
+
+  if (valorSelecionado && valorSelecionado !== 'all' && valorSelecionado !== painelFinanceiroState.entradasUltimoMesSelecionado) {
     painelFinanceiroState.entradasUltimoMesSelecionado = valorSelecionado;
   }
-  // Ao mudar o filtro de mês, reinicia os observers para carregar os dados do novo mês
-  startObservers();
+
+  logAnalyticsEvent('month_change', {
+    month: valorSelecionado || 'all',
+    previous: lastMonthChangeValue || null,
+    workspaceId: workspaceId || null,
+    sameMonth: sameMonthAsContext,
+    timestamp: Date.now(),
+  });
+  lastMonthChangeValue = valorSelecionado;
+
+  if (sameMonthAsContext) {
+    return;
+  }
+
+  if (filtroMesChangeTimeout) {
+    clearTimeout(filtroMesChangeTimeout);
+  }
+  filtroMesChangeTimeout = setTimeout(() => {
+    filtroMesChangeTimeout = null;
+    startObservers();
+  }, 250);
 });
 
 /* ===========================
