@@ -44,8 +44,12 @@ service cloud.firestore {
     }
 
     match /profiles/{uid} {
-      function unchangedOrNew(field) {
-        return !(field in resource.data) || request.resource.data[field] == resource.data[field];
+      function onlySelfMetadataUpdates() {
+        let allowed = ['lastAccess', 'lastLoginAt', 'updatedAt'];
+        let diff = request.resource.data.diff(resource.data);
+        return diff.changedKeys().hasOnly(allowed) &&
+               diff.addedKeys().hasOnly(allowed) &&
+               diff.removedKeys().hasOnly([]);
       }
 
       allow create: if isSignedIn() && uid == request.auth.uid;
@@ -54,16 +58,7 @@ service cloud.firestore {
 
       allow update: if isSignedIn() && (
         isAdmin() ||
-        (uid == request.auth.uid &&
-         (resource.data.status == 'pending' || (
-           request.resource.data.role == resource.data.role &&
-           request.resource.data.status == resource.data.status &&
-           unchangedOrNew('approvedAt') &&
-           unchangedOrNew('approvedBy') &&
-           unchangedOrNew('blockedAt') &&
-           unchangedOrNew('blockedBy') &&
-           unchangedOrNew('blockedReason')
-         )))
+        (uid == request.auth.uid && onlySelfMetadataUpdates())
       );
 
       allow delete: if false;
