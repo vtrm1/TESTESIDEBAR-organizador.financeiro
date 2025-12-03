@@ -30,6 +30,7 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
 <!-- NOVO: Modal de Gráficos Interativos com filtros -->
 <div id="modal-graficos" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden" role="dialog" aria-modal="true" aria-labelledby="modal-graficos-title">
@@ -1482,6 +1483,12 @@ html.dark .scroll-area::-webkit-scrollbar-thumb {
         <p class="mt-2 text-gray-500 dark:text-gray-400 text-sm leading-relaxed">
           Aprove ou bloqueie contas antes de liberar o painel. Convide clientes apenas depois de validar e-mails e permissões.
         </p>
+        <div class="mt-3 flex justify-end">
+          <button id="btn-export-active-users" type="button" class="inline-flex items-center gap-2 rounded-lg border border-emerald-200 dark:border-emerald-800 px-3 py-2 text-xs font-semibold text-emerald-700 dark:text-emerald-200 hover:bg-emerald-50 dark:hover:bg-emerald-800/30 transition-colors">
+            <i class="fa-solid fa-file-excel"></i>
+            <span>Exportar Excel</span>
+          </button>
+        </div>
       </div>
       <div class="space-y-4">
         <section class="rounded-2xl border border-emerald-100 dark:border-emerald-900/40 bg-emerald-50/40 dark:bg-emerald-500/5 overflow-hidden">
@@ -4471,6 +4478,7 @@ const accessManagerBlockedEmpty = document.getElementById('access-manager-blocke
 const accessManagerPendingCount = document.getElementById('access-manager-pending-count');
 const accessManagerApprovedCount = document.getElementById('access-manager-approved-count');
 const accessManagerBlockedCount = document.getElementById('access-manager-blocked-count');
+const exportActiveUsersButton = document.getElementById('btn-export-active-users');
 const localObserverMonitorContainer = document.getElementById('local-observer-monitor');
 const localObserverMonitorCount = document.getElementById('local-observer-monitor-count');
 const localObserverMonitorWindow = document.getElementById('local-observer-monitor-window');
@@ -7566,6 +7574,15 @@ if (workspaceJoinForm) {
     });
   }
 
+  if (exportActiveUsersButton) {
+    exportActiveUsersButton.addEventListener('click', () => {
+      exportActiveUsersToExcel().catch((error) => {
+        console.error('Erro ao exportar usuários:', error);
+        showToast('Não foi possível exportar agora.', 'error');
+      });
+    });
+  }
+
   if (abuseMonitorButton) {
     abuseMonitorButton.addEventListener('click', () => {
       if (!isCurrentUserAdmin()) {
@@ -7933,6 +7950,116 @@ function logAnalyticsEvent(name, params = {}) {
   }
   if (typeof console !== 'undefined' && console.info) {
     console.info('[analytics]', name, params);
+  }
+}
+
+function normalizeTimestampToDate(value) {
+  if (!value) return null;
+  if (typeof value.toDate === 'function') return value.toDate();
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function isDateInCurrentMonth(dateValue) {
+  const date = normalizeTimestampToDate(dateValue);
+  if (!date) return false;
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth(), 1);
+  const end = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+  return date >= start && date < end;
+}
+
+function formatLastAccessForExport(dateValue) {
+  const date = normalizeTimestampToDate(dateValue);
+  if (!date) return '';
+  return date.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+}
+
+async function exportActiveUsersToExcel() {
+  if (!isCurrentUserAdmin()) {
+    showToast('Somente administradores podem exportar usuários.', 'error');
+    return;
+  }
+
+  await firebaseReady.catch(() => null);
+
+  if (!db || typeof XLSX === 'undefined') {
+    showToast('Exportação indisponível no momento.', 'error');
+    return;
+  }
+
+  const button = exportActiveUsersButton;
+  const setButtonLoading = (loading) => {
+    if (!button) return;
+    button.disabled = loading;
+    button.classList.toggle('opacity-60', loading);
+    button.classList.toggle('cursor-not-allowed', loading);
+    const label = button.querySelector('span');
+    if (loading) {
+      if (label) label.dataset.originalText = label.textContent;
+      if (label) label.textContent = 'Exportando...';
+    } else if (label && label.dataset.originalText) {
+      label.textContent = label.dataset.originalText;
+      delete label.dataset.originalText;
+    }
+  };
+
+  try {
+    setButtonLoading(true);
+
+    let profilesSnap;
+    try {
+      profilesSnap = await db.collection('profiles').get({ source: 'server' });
+    } catch (serverError) {
+      console.warn('Exportação: fallback para cache ao buscar perfis:', serverError);
+      profilesSnap = await db.collection('profiles').get();
+    }
+
+    const enrichedProfiles = profilesSnap.docs
+      .map((doc) => ({ uid: doc.id, ...(doc.data() || {}) }))
+      .filter((profile) => isDateInCurrentMonth(profile.lastAccess || profile.lastLoginAt));
+
+    if (!enrichedProfiles.length) {
+      showToast('Nenhum usuário com acesso registrado neste mês.', 'info');
+      return;
+    }
+
+    const sortedProfiles = enrichedProfiles
+      .map((profile) => {
+        const lastAccessDate = normalizeTimestampToDate(profile.lastAccess || profile.lastLoginAt);
+        return {
+          ...profile,
+          _lastAccessMs: lastAccessDate ? lastAccessDate.getTime() : 0,
+          _accessCount: typeof profile.accessCount === 'number' ? profile.accessCount : -Infinity,
+        };
+      })
+      .sort((a, b) => {
+        if (a._accessCount !== b._accessCount) {
+          return b._accessCount - a._accessCount;
+        }
+        return b._lastAccessMs - a._lastAccessMs;
+      });
+
+    const rows = sortedProfiles.map((profile) => ({
+      uid: profile.uid || '',
+      name: profile.name || '',
+      email: profile.email || '',
+      role: profile.role || '',
+      status: profile.status || '',
+      lastAccess: formatLastAccessForExport(profile.lastAccess || profile.lastLoginAt),
+      accessCount: typeof profile.accessCount === 'number' ? profile.accessCount : '',
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(rows);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Usuários ativos');
+    XLSX.writeFile(workbook, 'usuarios-ativos-mes.xlsx');
+    showToast('Exportação concluída.', 'success');
+  } catch (error) {
+    console.error('Erro ao exportar usuários ativos:', error);
+    showToast('Não foi possível exportar agora.', 'error');
+  } finally {
+    setButtonLoading(false);
   }
 }
 
